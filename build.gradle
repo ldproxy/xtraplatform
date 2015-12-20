@@ -450,6 +450,7 @@ allprojects {
     }
 
     conf2ScopeMappings.addMapping(1, configurations.provided, 'compile')
+    conf2ScopeMappings.addMapping(1, configurations.embedded, 'compile')
 }
 
 
