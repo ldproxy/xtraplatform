@@ -447,6 +447,8 @@ allprojects {
             }
         }
     }
+
+    conf2ScopeMappings.addMapping(1, configurations.provided, 'compile')
 }
 
 
@@ -476,7 +478,4 @@ configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n'}) {
 }
 
 conf2ScopeMappings.addMapping(1, configurations.provided, 'compile')
-    task mappings << {
-    println conf2ScopeMappings.mappings
-}
 
