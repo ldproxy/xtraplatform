@@ -1,0 +1,19 @@
+dependencies {
+	
+	// TODO: move to console bundle
+	// decided to embed or use as bundle
+	// for webconsole
+    provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo.webconsole', version: '1.7.0'
+    embedded group: 'org.json', name: 'json', version: '20070829'
+}
+
+jar {
+    manifest { 
+        instruction 'Embed-Dependency',
+            'json'
+        
+        instruction 'Embed-Transitive', 'true'
+        instruction 'Embed-Export', 'true'
+        instruction 'Embed-Import', 'false'        
+    }
+}

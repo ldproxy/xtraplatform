@@ -1,0 +1,18 @@
+def excludes = [
+	'xtraplatform-bundles',
+	'xtraplatform-runtime',
+	'xtraplatform-devel'
+]
+
+rootDir.parentFile.listFiles().each { file ->
+    if (file.isDirectory() && file.name.startsWith('xtraplatform-')) {
+    	def exclude = false
+    	excludes.each {
+    		if (file.name.startsWith(it))
+    			exclude = true
+    	}
+    	if (!exclude)
+        	includeFlat file.name
+    }
+    
+}

@@ -1,0 +1,6 @@
+rootDir.parentFile.listFiles().each { file ->
+    if (file.isDirectory() && file.name.startsWith('xtraplatform-devel')) {
+    	includeFlat file.name
+    }
+    
+}

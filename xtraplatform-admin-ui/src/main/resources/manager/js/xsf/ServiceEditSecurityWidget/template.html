@@ -1,0 +1,58 @@
+<form data-dojo-attach-point='containerNode'>
+    <div class="dijitDialogPaneContentArea">
+        <ul data-dojo-attach-point='formElementList'>
+            <li class="empty"></li>
+            <li>
+                <label for='public'>${messages.public}:</label>
+                <input name='setting' type='radio'
+                       data-dojo-type='dijit/form/RadioButton' data-dojo-props='required:true'
+                       value="public"
+                       data-dojo-attach-point="public"
+                       />
+            </li>
+            <li class="empty"></li>
+            <li>
+                <label for='private'>${messages.private}:</label>
+                <input name='setting' type='radio'
+                       data-dojo-type='dijit/form/RadioButton' data-dojo-props='required:true'
+                       value="private"
+                       data-dojo-attach-point="private"
+                       />
+            </li>
+            <li class="empty"></li>
+            <li>
+                <label for='privategroups'>${messages.privateForGroups}:</label>
+                <input name='setting' type='radio'
+                       data-dojo-type='dijit/form/RadioButton' data-dojo-props='required:true'
+                       value="privategroups"
+                       data-dojo-attach-point="privategroups"
+                       />
+            </li>
+            <li class="empty"></li>
+            <li data-dojo-attach-point="groupsNode_li">
+                <label for='groupsNode'>${messages.groups}:</label>
+                <div id="groupsNode" class="container" style="min-height: 100px;max-height: 100px;overflow-x: hidden; overflow-y:auto;border: 1px solid darkgray; min-width: 250px">
+                </div>
+            </li>
+            <li class="empty"></li>
+            <li data-dojo-attach-point="groupsAllowedNode_li">
+                <label for='groupsAllowedNode'>${messages.groupsAllowed}:</label>
+                <div id="groupsAllowedNode" class="container" style="min-height: 100px;max-height: 100px;overflow-x: hidden; overflow-y:auto;border: 1px solid darkgray; min-width: 250px">
+                </div>
+            </li>
+
+        </ul>
+    </div>
+    <div class="dijitDialogPaneActionBar">
+        <button 
+            data-dojo-type='dijit/form/Button' 
+            data-dojo-attach-point="submitButton" 
+            type='submit' 
+            class="inverse">${messages.apply}</button>
+        <button 
+            data-dojo-type='dijit/form/Button' 
+            data-dojo-attach-point="cancelButton" 
+            type='button' 
+            class="default">${messages.cancel}</button>
+    </div>
+</form>

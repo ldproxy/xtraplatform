@@ -1,0 +1,11 @@
+dependencies {
+    provided project(':xtraplatform-util')
+    //provided project(':xtraplatform-runtime')
+}
+
+jar {
+    manifest { 
+        instruction 'Import-Package', 'javax.servlet' 
+        instruction 'Import-Package', '*' 
+    }
+}

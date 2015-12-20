@@ -1,0 +1,20 @@
+package de.ii.xsf.configstore.api.rest;
+
+import de.ii.xsf.core.api.Resource;
+
+import java.io.IOException;
+
+/**
+ * Created by zahnen on 21.11.15.
+ */
+public class DeleteCacheTransaction<T extends Resource> extends  AbstractCacheTransaction<T> {
+
+    public DeleteCacheTransaction(ResourceCache<T> cache, String key) {
+        super(cache, key);
+    }
+
+    @Override
+    public void execute() throws IOException {
+        cache.remove(key);
+    }
+}

@@ -1,0 +1,20 @@
+dependencies {
+    provided project(':xtraplatform-sessions-api')
+    //compile project(':xsf-logging-api')
+    provided project(':xtraplatform-config-store-api')
+    
+    embedded group: 'org.apache.felix', name: 'org.apache.felix.http.proxy', version: '2.2.2'
+}    
+
+jar {
+    manifest { 
+        instruction 'Embed-Dependency',
+            'org.apache.felix.http.proxy'
+        
+        instruction 'Embed-Transitive', 'true'
+        instruction 'Embed-Export', 'false'
+        instruction 'Embed-Import', 'true'
+        
+        
+    }
+}

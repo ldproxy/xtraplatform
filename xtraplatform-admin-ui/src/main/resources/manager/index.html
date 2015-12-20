@@ -1,0 +1,59 @@
+<!DOCTPYE html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Service Manager</title>
+    <link rel="stylesheet" href="../css/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/dbootstrap/theme/dbootstrap/dbootstrap.css">
+    <link rel="stylesheet" href="../css/xsf/theme.css">
+    <style type="text/css" media="screen"></style>
+</head>
+
+<body class="dbootstrap">
+    <div id="container">
+        <div id="header">
+            <ul id="top-menu" class="top-menu"></ul>
+            <div id="logo">
+                <!--img src="../img/xsf/logo-32.png" width="221" height="32" alt="XtraProxy" /-->
+            </div>
+            <ul id="menu" class="menu"></ul>
+        </div>
+        <div id="content" class="clearfix"></div>
+    </div>
+    <div id="footer" class="clearfix">
+        <div id="footer-wrapper">
+            <div id="copyright">
+                &copy;&nbsp;2014-2015&nbsp;<a href="http://www.interactive-instruments.de/" title="interactive instruments GmbH">interactive&nbsp;instruments&nbsp;GmbH</a>
+            </div>
+            <div id="right-footer"></div>
+        </div>
+    </div>
+    <script>
+    dojoConfig = {
+        has: {
+            "dojo-firebug": true,
+            "dojo-debug-messages": false
+        },
+        packages: [{
+            name: "manager",
+            location: '../../manager/js'
+        }, {
+            name: "xsf",
+            location: '../../manager/js/xsf'
+        }, {
+            name: "dbootstrap",
+            location: '../../css/dbootstrap'
+        }]
+    };
+    </script>
+    <script type="text/javascript" src="../js/dojo/dojo.js" data-dojo-config="async: true"></script>
+    <script type="text/javascript">
+    require(["manager/app", "dbootstrap/icon_support!", "dojo/domReady!"],
+        function(app) {
+            app.init();
+        });
+    </script>
+</body>
+
+</html>

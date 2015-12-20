@@ -1,0 +1,6 @@
+jar {
+    manifest { 
+        instruction 'Export-Package', 'de.ii.xsf.core.views'
+        instruction 'Private-Package', '*'
+    }
+}

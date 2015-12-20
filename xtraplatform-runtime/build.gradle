@@ -1,0 +1,6 @@
+dependencies {
+	// TODO: shouldn't this be provided for everyone
+	// no, this is not a bundle, so maybe it is really compile
+    compile group: 'org.apache.felix', name: 'org.apache.felix.main', version: '4.4.1'
+    compile 'com.google.guava:guava:17.0'
+} 

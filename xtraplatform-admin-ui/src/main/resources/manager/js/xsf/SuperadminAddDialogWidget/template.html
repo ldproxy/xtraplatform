@@ -1,0 +1,60 @@
+<form data-dojo-attach-point='containerNode'>
+    <div class="dijitDialogPaneContentArea">
+        <ul data-dojo-attach-point='formElementList'>
+            <li>
+                <label for='username'>Username:</label>
+                <input name='username' type='text'
+                       data-dojo-type='dijit/form/ValidationTextBox' data-dojo-props='required:true'
+                       observer='reactor'
+                       />
+            </li>
+            <li class="empty"></li>
+            <li>
+                <label for='rawPassword'>Password:</label>
+                <input name='rawPassword' id="rawPassword" type='password' data-dojo-attach-point="rawPassword"
+                       data-dojo-type='dijit/form/ValidationTextBox' type="password" data-dojo-props='required:true'
+                       />
+            </li>
+            <li class="empty"></li>
+            <li>
+                <label for='passwordVerify'>confirm:</label>
+                <input name='passwordVerify' type='password' data-dojo-attach-point="passwordVerify"
+                       data-dojo-type='dijit/form/ValidationTextBox' data-dojo-props='required:true'
+                       constraints="{'other': 'rawPassword'}"
+                       validator=confirmPassword
+                       intermediateChanges=true
+                       invalidMessage="This password doesn't match your first password"/>
+            </li>
+            <li class="empty"></li>
+            <li>
+                <label for='email'>Email:</label>
+                <input name='email' type='text' 
+                       data-dojo-type='dijit/form/ValidationTextBox' data-dojo-props='required:true'/>
+            </li>
+            <li class="empty"></li>
+            <li>
+                <label for='realname'>Name:</label>
+                <input name='realname' type='text' 
+                       data-dojo-type='dijit/form/ValidationTextBox' data-dojo-props='required:true'/>
+            </li>
+            <li class="empty"></li>
+            <li>
+                <label for='description'>Description:</label>
+                <textarea name='description' 
+                          data-dojo-type='dijit/form/Textarea' style='max-height:100px;'></textarea>
+            </li>
+        </ul>
+    </div>
+    <div class="dijitDialogPaneActionBar">
+        <button 
+            data-dojo-type='dijit/form/Button' 
+            data-dojo-attach-point="submitButton" 
+            type='submit' 
+            class="inverse">Create</button>
+        <button 
+            data-dojo-type='dijit/form/Button' 
+            data-dojo-attach-point="cancelButton" 
+            type='button' 
+            class="default">Cancel</button>
+    </div>
+</form>

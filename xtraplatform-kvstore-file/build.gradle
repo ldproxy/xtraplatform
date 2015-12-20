@@ -1,0 +1,12 @@
+dependencies {
+    provided project(':xtraplatform-kvstore-api')
+    provided project(':xtraplatform-util')
+}
+
+jar {
+    manifest { 
+        instruction 'Export-Package'
+        instruction 'Private-Package', 
+            'de.ii.xsf.configstore.file'
+    }
+}

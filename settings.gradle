@@ -1,0 +1,8 @@
+rootProject.name = 'xtraplatform'
+
+rootDir.listFiles().each { file ->
+    if (file.isDirectory() && file.name.startsWith('xtraplatform-') && !file.name.startsWith('xtraplatform-bundles')) {
+        include file.name
+    }
+    
+}

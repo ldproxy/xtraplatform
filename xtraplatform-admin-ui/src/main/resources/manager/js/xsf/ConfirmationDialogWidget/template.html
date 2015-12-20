@@ -1,0 +1,17 @@
+<form data-dojo-attach-point='containerNode'>
+    <div class="dijitDialogPaneContentArea">
+        ${content}
+    </div>
+    <div class="dijitDialogPaneActionBar">
+        <button 
+            data-dojo-type='dijit/form/Button' 
+            data-dojo-attach-point="submitButton" 
+            type='submit' 
+            class="inverse">${messages.yes}</button>
+        <button 
+            data-dojo-type='dijit/form/Button' 
+            data-dojo-attach-point="cancelButton" 
+            type='button' 
+            class="default">${messages.no}</button>
+    </div>
+</form>

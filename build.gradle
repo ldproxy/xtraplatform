@@ -1,0 +1,482 @@
+buildscript {  
+    repositories {
+        mavenCentral() 
+        jcenter()
+        maven {
+            url "http://repository.excilys.com/content/groups/public"
+        }
+        maven {
+            url "http://nyx/artifactory/plugins-snapshot"
+        }
+        maven {
+            url "http://nyx/artifactory/plugins-release"
+        }
+    } 
+    dependencies { 
+        classpath group: 'de.interactive-instruments', name: 'gradle-plugin-forgerock-i18n', version: '1.0.6'
+        classpath group: 'de.interactive-instruments', name: 'gradle-plugin-osgi-ipojo', version: '1.12.1.26'
+        classpath group: 'de.interactive-instruments', name: 'gradle-plugin-deployment-stages', version: '1.0.6'
+        
+        classpath group: 'net.serenity-bdd', name: 'serenity-gradle-plugin', version: '1.1.16'
+        
+    } 
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'forgerock-i18n'
+
+    sourceCompatibility = 1.7
+    
+    repositories {     
+        mavenCentral()
+        jcenter()
+        maven {
+            url "http://nyx/artifactory/libs-release"
+        }
+        maven {
+            url "http://maven.forgerock.org/repo/repo"
+        }
+        maven {
+            url 'http://oss.sonatype.org/content/repositories/snapshots'
+        }
+    }
+    
+    dependencies {    
+        testCompile group: 'org.testng', name: 'testng', version: '6.8.5'
+        testCompile group: 'junit', name: 'junit', version: '4.12'
+        testCompile group: 'org.mockito', name: 'mockito-core', version: '1.9.5'
+        testCompile ('net.serenity-bdd:serenity-core:1.1.16') {
+            exclude module: 'guava'
+        }
+        testCompile ('net.serenity-bdd:serenity-junit:1.1.16') {
+            exclude module: 'guava'
+        }
+    }
+    
+    test {
+        useTestNG()
+        options {
+            includeGroups 'default'
+            /* if you want to run tests for debugging purposes that are not part
+            of the continuous integration, put them in the "debug"-group and
+            uncomment the following line just in your local working copy
+             */
+            //includeGroups 'debug'
+            //includeGroups 'performance'
+            //includeGroups 'integration'
+        }
+        testLogging.showStandardStreams = true
+        reports.html.enabled = true
+    
+    }
+    
+    // aggregated javadoc
+    afterEvaluate { project ->
+        rootProject.javadoc {
+            classpath += project.sourceSets.main.compileClasspath
+            source += project.sourceSets.main.allJava
+        }
+    }   
+}
+
+task testReport(type: TestReport) {
+    destinationDir = file("$buildDir/reports/allTests")
+    // Include the results from the `test` task in all subprojects
+    reportOn subprojects*.test
+}
+test.finalizedBy testReport
+
+// Serenitiy BDD
+apply plugin: 'net.serenity-bdd.aggregator'
+gradle.startParameter.continueOnFailure = true
+aggregate.doFirst {
+    System.setProperty("serenity.test.root", "de.ii.xsf.bdd.features")
+}
+task testBdd {
+    outputs.dir file(serenity.outputDirectory)
+    finalizedBy aggregate
+}
+  
+subprojects {
+    task testBddCopy(type: Copy) {
+        finalizedBy rootProject.testBdd
+        from new File(buildDir, 'site/serenity')
+        into rootProject.file(rootProject.serenity.outputDirectory)
+    }
+    task testBdd(type: Test) {
+        finalizedBy testBddCopy
+        useJUnit {}
+        systemProperty 'serenity.test.root', 'de.ii.xsf.bdd.features'
+        testLogging.showStandardStreams = true
+    }
+    rootProject.testBdd{
+        inputs.dir new File(buildDir, 'site/serenity')
+    }
+    
+}
+
+
+
+version = '1.0.0'
+
+configurations {
+    cfg
+    bundles {
+        transitive = false
+    }
+    bundles2 {
+        transitive = false
+    }
+    bundles3 {
+        transitive = false
+    }
+
+    provided {
+        transitive = false
+    }
+    compile.extendsFrom provided
+}
+
+ext {
+    ignoreBundles = ['xtraplatform-runtime']
+}
+
+dependencies {
+    cfg files("$buildDir/cfg")   
+    
+    /*provided group: 'org.slf4j', name: 'osgi-over-slf4j', version: '1.7.6'
+    
+    provided group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.8.0'
+    provided group: 'org.apache.felix', name: 'org.apache.felix.eventadmin', version: '1.3.2'
+    provided group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.5.0'
+    
+    provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
+    provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.eventadmin', version: '1.8.0'
+    provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.whiteboard', version: '1.6.0'
+    provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.extender', version: '1.4.0'
+    
+    provided group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '2.2.2'
+    provided group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '2.2.2'
+    
+    
+    
+    provided group: 'commons-fileupload', name: 'commons-fileupload', version: '1.3.1'
+    provided group: 'commons-io', name: 'commons-io', version: '2.4'
+    provided group: 'org.apache.felix', name: 'org.apache.felix.webconsole', version: '4.2.2'
+    provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo.webconsole', version: '1.7.0'
+    provided group: 'org.apache.felix', name: 'org.apache.felix.webconsole.plugins.memoryusage', version: '1.0.4'
+    */
+    provided subprojects.findAll { [] == ignoreBundles.findAll { it2 -> it.name =~ it2 } }
+    
+    provided project(':xtraplatform-dropwizard')
+
+    //compile subprojects
+}
+
+
+
+/*applicationDistribution.from(configurations.bundles) {
+    into "bundles/runtime"
+}
+applicationDistribution.from(configurations.bundles2) {
+    into "bundles/platform"
+}
+applicationDistribution.from(configurations.bundles3) {
+    into "bundles/platform"
+}*/
+
+/*ext {
+    cfgFileName = 'xsf.json'
+    devel = [
+        cfgDir: new File(buildDir, 'cfg'),
+        logDir:  new File(buildDir, 'log'),
+        bundlesDir: new File(buildDir, 'bundles'),
+        felixCacheDir: new File(new File(buildDir, 'cfg'), 'felix-cache'),
+        cfgFile: file('src/main/resources/cfg/xsf.development.json')
+    ]
+    testing = [
+        dir: new File(buildDir, 'stages/testing'),
+        cfgDir: new File(buildDir, 'stages/testing/cfg'),
+        logDir:  new File(buildDir, 'stages/testing/log'),
+        bundlesDir: new File(buildDir, 'bundles'),
+        cfgFile: file('src/main/resources/cfg/xsf.testing.json')
+    ]
+    production = [
+        dir: new File(buildDir, 'stages/production'),
+        cfgDir: new File(buildDir, 'stages/production/cfg'),
+        logDir:  new File(buildDir, 'stages/production/log'),
+        bundlesDir: new File(buildDir, 'bundles'),
+        cfgFile: file('src/main/resources/cfg/xsf.production.json')
+    ]
+    cloud = [
+        dir: new File(buildDir, 'stages/cloud'),
+        cfgDir: new File(buildDir, 'stages/cloud/cfg'),
+        logDir:  new File(buildDir, 'stages/cloud/log'),
+        bundlesDir: new File(buildDir, 'bundles'),
+        cfgFile: file('src/main/resources/cfg/xsf.cloud.json')
+    ]
+}
+ 
+
+
+
+task devBundles(type: Sync) {
+    from configurations.bundles
+    into new File(devel.bundlesDir, 'runtime')
+}
+task devBundles3(type: Copy) {
+    from configurations.bundles3
+    into new File(devel.bundlesDir, 'platform')
+}
+
+task devEnv {
+    inputs.file devel.cfgFile
+    //outputs.dir devel.cfgDir
+    dependsOn tasks.devBundles
+    dependsOn tasks.devBundles3
+    doLast {
+        if (!new File(devel.cfgDir, cfgFileName).exists()) {
+            copy {
+                from devel.cfgFile
+                into devel.cfgDir
+                rename { cfgFileName }
+            }
+        }
+        if (!devel.logDir.exists())
+        devel.logDir.mkdirs()
+        if (devel.felixCacheDir.exists())
+        devel.felixCacheDir.deleteDir()
+    }
+}
+
+task testingEnv {
+    inputs.file testing.cfgFile
+    outputs.dir testing.dir
+    
+    doLast {
+        copy {
+            from testing.cfgFile
+            into testing.cfgDir
+            rename { cfgFileName }
+        }
+        if (!testing.logDir.exists())
+        testing.logDir.mkdirs()
+        if (!testing.bundlesDir.exists()) {
+            testing.bundlesDir.mkdirs()             
+        }
+        copy {
+            from configurations.bundles
+            into testing.bundlesDir
+        }
+    }
+}
+
+task productionEnv {
+    inputs.file production.cfgFile
+    outputs.dir production.dir
+    
+    doLast {
+        copy {
+            from production.cfgFile
+            into production.cfgDir
+            rename { cfgFileName }
+        }
+        if (!production.logDir.exists())
+        production.logDir.mkdirs()
+        if (!production.bundlesDir.exists()) {
+            production.bundlesDir.mkdirs()             
+        }
+        copy {
+            from configurations.bundles
+            into production.bundlesDir
+        }
+    }
+}
+    
+task cloudEnv {
+    inputs.file cloud.cfgFile
+    outputs.dir cloud.dir
+    
+    doLast {
+        copy {
+            from cloud.cfgFile
+            into cloud.cfgDir
+            rename { cfgFileName }
+        }
+        if (!cloud.logDir.exists())
+        cloud.logDir.mkdirs()
+        if (!cloud.bundlesDir.exists()) {
+            cloud.bundlesDir.mkdirs()             
+        }
+        copy {
+            from configurations.bundles
+            into new File(devel.bundlesDir, 'runtime')
+        }
+    }
+}*/
+ 
+/*run {
+    dependsOn devEnv
+    workingDir = buildDir
+    args = ["server", "cfg/xsf.json"]
+}
+
+tasks.run.doFirst { println classpath.asPath}
+*/
+/*startScripts.applicationName = 'xsf'
+stages {
+    development {
+        applicationDistribution.from(testingEnv)
+    }
+    testing {
+        applicationDistribution.from(testingEnv)
+    }
+    sprint {
+        applicationDistribution.from(testingEnv)
+    }
+    production {
+        applicationDistribution.from(productionEnv)
+    }
+    production_min {
+        applicationDistribution.from(productionEnv)
+    }
+    production_full {
+        applicationDistribution.from(productionEnv)
+    }
+    production_cloud {
+        applicationDistribution.from(cloudEnv)
+    }
+}*/
+
+
+
+
+/*task(debug, type: JavaExec) {
+    main = "de.ii.xsf.runtime.FelixRuntime"
+    dependsOn classes
+    dependsOn devEnv
+    //dependsOn configurations.bundles
+    classpath sourceSets.main.runtimeClasspath
+    //classpath configurations.bundles
+    workingDir = buildDir
+    args = ["server", "cfg/xsf.json"]
+    debug = true
+}*/
+
+allprojects {
+    jar {
+        manifest {
+            attributes("Implementation-Title": project.name, "Implementation-Version": project.version)
+        }
+    }
+
+    configurations {
+        embedded
+        provided
+        compile.extendsFrom embedded
+        compile.extendsFrom provided
+    }
+} 
+
+subprojects {
+    apply plugin: 'osgi-ipojo'
+    version = '1.0.0'
+    
+    /*configurations {
+        provided
+    }
+    
+    sourceSets {
+        main.compileClasspath += configurations.provided
+    }
+ 
+    dependencies {
+        provided rootProject
+        testCompile rootProject
+    }*/
+
+    dependencies {
+    provided 'com.google.guava:guava:17.0'
+
+        provided group: 'org.slf4j', name: 'slf4j-api', version: '1.7.6'
+    provided group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.3'
+    provided group: 'ch.qos.logback', name: 'logback-core', version: '1.1.3'
+
+        provided group: 'org.osgi', name: 'org.osgi.compendium', version: '4.2.0'
+        provided group: 'org.apache.felix', name: 'org.apache.felix.framework', version: '4.4.1'
+        provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
+    }
+    
+    jar {
+        manifest { 
+            instruction '-removeheaders', 'Bnd-LastModified'
+            instructionReplace "Bundle-SymbolicName",project.name.replaceAll('-', '.')
+        }
+    }
+    
+    /*task deploy(type: Copy) {
+        from jar
+        into new File(devel.bundlesDir, 'platform')
+    }
+    
+    task undeploy(type: Delete) {
+        delete new File(new File(devel.bundlesDir, 'platform'), jar.archiveName)
+    }
+    
+    if ([] == ignoreBundles.findAll { it2 -> project.name =~ it2 }) {
+        jar.finalizedBy deploy
+    }
+    else {
+        jar.finalizedBy undeploy
+    }*/
+
+    
+}
+
+allprojects {
+    apply plugin: 'maven'
+
+    group = 'de.interactive-instruments'
+    version += '-SNAPSHOT'
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                repository(url: "http://nyx/artifactory/libs-snapshot-local")
+            }
+        }
+    }
+}
+
+
+configure(subprojects.findAll {it.name != 'xtraplatform-api' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-logging-i18n' && it.name != 'xtraplatform-runtime'}) {
+    dependencies {
+        compile project(':xtraplatform-api')
+    }
+}
+
+configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-runtime'}) {
+    dependencies {
+        compile project(':xtraplatform-dropwizard')
+    }
+    
+    jar {
+    manifest { 
+     instruction 'Import-Package', 'com.fasterxml.jackson.module.afterburner.ser'   
+     instruction 'Import-Package', '*'   
+    }
+    }
+}
+
+configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n'}) {
+    dependencies {
+        compile project(':xtraplatform-logging-i18n')
+    }
+}
+
+conf2ScopeMappings.addMapping(1, configurations.provided, 'compile')
+    task mappings << {
+    println conf2ScopeMappings.mappings
+}
+

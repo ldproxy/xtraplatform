@@ -1,0 +1,71 @@
+{
+    "useFormattedJsonOutput": true,
+    "allowServiceReAdding": true,
+    "server": {
+        "applicationConnectors": [
+            {
+                "type": "http",
+                "port": "7080"
+            }
+        ],
+        "adminConnectors": [
+            {
+                "type": "http",
+                "port": "7081"
+            }
+        ],
+        "gzip": {
+            "enabled": false
+        },
+        "requestLog": {
+            "timeZone": "Europe/Berlin",
+            "appenders": [
+                {
+                    "type": "file",
+                    "currentLogFilename": "/opt/xsf/log/requests.log",
+                    "archive": true,
+                    "archivedLogFilenamePattern": "/opt/xsf/log/requests-%d.log.gz",
+                    "archivedFileCount": 7,
+                    "timeZone": "Europe/Berlin"
+                }
+            ]
+        },
+        "shutdownGracePeriod": "5s"
+    },
+    "httpClient": {
+        "timeout": "30000ms",
+        "connectionTimeout": "30000ms"
+    },
+    "logging": {
+        "level": "INFO",
+        "appenders": [
+            {
+                "type": "file",
+                "currentLogFilename": "/opt/xsf/log/xsf.log",
+                "archive": true,
+                "archivedLogFilenamePattern": "/opt/xsf/log/xsf-%d.log.gz",
+                "archivedFileCount": 7,
+                "timeZone": "Europe/Berlin"
+            }
+        ],
+        "loggers" : {
+            "xsf.libs.js" : "ERROR",
+            "xsf.viewer.mapapps" : "ERROR",
+            "xsf.security.oauth2" : "ERROR",
+            "xsf.libs.css" : "ERROR",
+            "xsf.security" : "ERROR",
+            "xsf.core.admin.ui" : "ERROR",
+            "de.ii.xtraserver.framework.osgi.OsgiBundle" : "ERROR",
+            "xsf.module.wfs2gsfs" : "ERROR",
+            "de.conterra.mapapps":"ERROR",
+            "org.eclipse.jetty":"ERROR",
+            "com.sun.jersey":"ERROR",
+            "io.dropwizard":"ERROR",
+            "org.apache.http": "ERROR",
+            "org.apache.felix": "ERROR",
+            "org.elasticsearch": "ERROR",
+            "com.codahale": "ERROR",
+            "org.geotools": "ERROR"
+        }
+    }
+}

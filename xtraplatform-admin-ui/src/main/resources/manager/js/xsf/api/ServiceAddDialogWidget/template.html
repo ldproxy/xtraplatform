@@ -1,0 +1,28 @@
+<form data-dojo-attach-point='containerNode'>
+    <input data-dojo-attach-point="serviceType" name="type" type="hidden" value=""/>
+    <div class="dijitDialogPaneContentArea">
+        <ul data-dojo-attach-point='formElementList'>
+            <li>
+                <label for='name'>ID:</label>
+                <input name='id' type='text'
+                       data-dojo-type='dijit/form/ValidationTextBox'
+                       observer='reactor' 
+                       data-dojo-props="required:true, regExp:'[a-z0-9_\\-]+', invalidMessage:'Invalid: Only numbers, lowercase characters, - and _ are allowed'"
+                       />
+            </li>
+            <li class="empty"></li>
+        </ul>
+    </div>
+    <div class="dijitDialogPaneActionBar">
+        <button 
+            data-dojo-type='dijit/form/Button' 
+            data-dojo-attach-point="submitButton" 
+            type='submit' 
+            class="inverse">Add</button>
+        <button 
+            data-dojo-type='dijit/form/Button' 
+            data-dojo-attach-point="cancelButton" 
+            type='button' 
+            class="default">Cancel</button>
+    </div>
+</form>
