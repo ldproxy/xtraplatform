@@ -47,6 +47,13 @@ public class FelixRuntime {
             cfgDir = new File(args[1]).getParentFile();
         } else {
             cfgDir = new File("cfg").getAbsoluteFile();
+            if (!cfgDir.exists()) {
+                cfgDir = new File("../cfg").getAbsoluteFile();
+            }
+        }
+        if (!cfgDir.exists()) {
+            System.out.println("ERROR: NO CFG DIR FOUND");
+            return;    
         }
         System.out.println("CFG DIR: " + cfgDir.getAbsolutePath());
 
