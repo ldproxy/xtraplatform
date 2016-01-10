@@ -1,5 +1,5 @@
 dependencies {
-    // TODO: CFG_DIR_KEY
+    // TODO: DATA_DIR_KEY
     provided group: 'de.interactive-instruments', name: 'xtraplatform-runtime', version: '1.0.0-SNAPSHOT'
     
     embedded(group: 'io.dropwizard', name: 'dropwizard-core', version: '0.7.1') {

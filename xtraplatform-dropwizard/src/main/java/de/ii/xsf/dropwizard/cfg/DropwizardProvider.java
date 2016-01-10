@@ -6,12 +6,11 @@ import ch.qos.logback.core.Appender;
 import com.codahale.metrics.httpclient.InstrumentedHttpClient;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.io.Resources;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 import de.ii.xsf.dropwizard.api.Dropwizard;
-import static de.ii.xsf.dropwizard.api.Dropwizard.FLAG_ALLOW_SERVICE_READDING;
-import static de.ii.xsf.dropwizard.api.Dropwizard.FLAG_USE_FORMATTED_JSON_OUTPUT;
 import de.ii.xsf.dropwizard.api.HttpClients;
-import static de.ii.xsf.runtime.FelixRuntime.CFG_DIR_KEY;
+import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
 import io.dropwizard.Application;
 import io.dropwizard.cli.Cli;
 import io.dropwizard.client.HttpClientBuilder;
@@ -25,6 +24,7 @@ import io.dropwizard.setup.Environment;
 import io.dropwizard.util.JarLocation;
 import io.dropwizard.views.ViewBundle;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -74,7 +74,8 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
 
     private static final Logger ROOT_LOGGER = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
-    public static final String CFG_FILE_NAME = "xsf.json";
+    public static final String CFG_FILE_NAME = "xtraplatform.json";
+    public static final String CFG_FILE_TEMPLATE_NAME = "/xtraplatform.default.json";
     public static final String DW_CMD = "server";
 
     // Service not published by default
@@ -94,9 +95,14 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     @Validate
     public void start() {
 
-        File cfgFile = new File(new File(context.getProperty(CFG_DIR_KEY)), CFG_FILE_NAME);
+        // TODO: move to config store
+        File cfgFile = new File(new File(context.getProperty(DATA_DIR_KEY)), CFG_FILE_NAME);
 
         try {
+            if (!cfgFile.isFile()) {
+                Resources.asByteSource(Resources.getResource(DropwizardProvider.class, CFG_FILE_TEMPLATE_NAME)).copyTo(new FileOutputStream(cfgFile));
+            }
+
             init(cfgFile);
 
             // publish the service once the initialization

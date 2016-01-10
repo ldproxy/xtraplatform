@@ -18,14 +18,11 @@ import org.osgi.framework.BundleContext;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRegistration;
-import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static de.ii.xsf.runtime.FelixRuntime.CFG_DIR_KEY;
 
 /**
  *
@@ -49,7 +46,6 @@ public class WebServerDropwizard {
     @Requires
     private Dropwizard dw;
 
-    private final File cfgDir;
     private boolean initialized;
     private Server server;
     private SessionManager sessionManager;
@@ -60,15 +56,6 @@ public class WebServerDropwizard {
     private final ExecutorService startStopThread;
 
     public WebServerDropwizard() {
-
-        this.cfgDir = new File(context.getProperty(CFG_DIR_KEY));
-        if (!cfgDir.exists()) {
-            cfgDir.mkdirs();
-        }
-        if (!cfgDir.isDirectory()) {
-            // TODO 
-            // throw exception
-        }
 
         this.url = "";
 

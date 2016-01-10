@@ -69,4 +69,9 @@ publishing {
             }
         }
     }
+    repositories {
+        maven {
+            url "http://nyx/artifactory/libs-snapshot-local"
+        }
+    }
 }

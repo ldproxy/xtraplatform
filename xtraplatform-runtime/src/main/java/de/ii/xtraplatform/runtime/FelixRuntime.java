@@ -1,4 +1,4 @@
-package de.ii.xsf.runtime;
+package de.ii.xtraplatform.runtime;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
@@ -17,7 +17,12 @@ public class FelixRuntime {
 
     //private static final LocalizedLogger LOGGER = XSFLogger.getLogger(FelixRuntime.class);
     
-    public static final String CFG_DIR_KEY = "de.ii.xsf.dirs.cfg";
+    public static final String DATA_DIR_KEY = "de.ii.xtraplatform.directories.data";
+    private static final String DATA_DIR_NAME = "data";
+    private static final String BUNDLES_DIR_NAME = "bundles";
+    private static final String RUNTIME_BUNDLES_DIR_NAME = "runtime";
+    private static final String PLATFORM_BUNDLES_DIR_NAME = "platform";
+    private static final String FELIX_CACHE_DIR_NAME = "felix-cache";
     
     private static final Map<String, String> exports = new ImmutableMap.Builder<String, String>()
             //.put("javax.xml.bind", "0.0")
@@ -28,50 +33,65 @@ public class FelixRuntime {
             .put("javax.net", "0.0")
             .put("sun.misc", "0.0")
             .put("sun.reflect", "0.0")
-//            .put("org.json", "20070829")
-//            .put("org.apache.commons.beanutils", "1.8.3")
 // TODO
             .put("org.apache.felix.main", "0.0")
             .put("org.apache.felix.framework", "0.0")
             .build();
 
-    private Map felixConfig = new HashMap();
-    private File cfgDir;
-    
-    private Felix felix = null;
+    private final Map<String, String> felixConfig;
+    private final File dataDir;
+    private final File bundlesDir;
+    private Felix felix;
     
     public static void main(String[] args) throws Exception {
-        File cfgDir;
+        File dataDir;
+        File bundlesDir;
 
         if (args.length >= 1) {
-            cfgDir = new File(args[1]).getParentFile();
+            dataDir = new File(args[0]);
         } else {
-            cfgDir = new File("cfg").getAbsoluteFile();
-            if (!cfgDir.exists()) {
-                cfgDir = new File("../cfg").getAbsoluteFile();
+            dataDir = new File(DATA_DIR_NAME).getAbsoluteFile();
+            if (!dataDir.exists()) {
+                dataDir = new File("../" + DATA_DIR_NAME).getAbsoluteFile();
             }
         }
-        if (!cfgDir.exists()) {
-            System.out.println("ERROR: NO CFG DIR FOUND");
+        if (!dataDir.exists()) {
+            System.out.println("ERROR: NO DATA DIR FOUND");
             return;    
         }
-        System.out.println("CFG DIR: " + cfgDir.getAbsolutePath());
+        System.out.println("DATA DIR: " + dataDir.getAbsolutePath());
 
-        FelixRuntime fr = new FelixRuntime(cfgDir);
+        if (args.length >= 2) {
+            bundlesDir = new File(args[1]);
+        } else {
+            bundlesDir = new File(BUNDLES_DIR_NAME).getAbsoluteFile();
+            if (!bundlesDir.exists()) {
+                bundlesDir = new File("../" + BUNDLES_DIR_NAME).getAbsoluteFile();
+            }
+        }
+        if (!bundlesDir.exists()) {
+            System.out.println("ERROR: NO BUNDLES DIR FOUND");
+            return;
+        }
+        System.out.println("BUNDLES DIR: " + bundlesDir.getAbsolutePath());
+
+        FelixRuntime fr = new FelixRuntime(dataDir, bundlesDir);
         fr.init();
         fr.start();
     }
 
-    public FelixRuntime(File cfgDir) {
-        this.cfgDir = cfgDir;
+    public FelixRuntime(File dataDir, File bundlesDir) {
+        this.felixConfig = new HashMap<>();
+        this.dataDir = dataDir;
+        this.bundlesDir = bundlesDir;
     }
 
     public void init() throws Exception {
         
-        String bundleDir = new File(new File(cfgDir.getParentFile(), "bundles"), "runtime").getAbsolutePath();
+        File runtimeBundleDir = new File(bundlesDir, RUNTIME_BUNDLES_DIR_NAME);
         String levelOne = "";
         String levelTwo = "";
-        for (File f : new File(bundleDir).listFiles()) {
+        for (File f : runtimeBundleDir.listFiles()) {
             if (f.getName().endsWith(".jar")) {
                 if (!f.getName().startsWith("org.apache.felix.http")) {
                     levelOne += "reference:file:" + f.getAbsolutePath().replaceAll(" ", "%20") + " ";
@@ -85,7 +105,7 @@ public class FelixRuntime {
         felixConfig.put(AutoProcessor.AUTO_START_PROP + ".2", levelTwo);
         felixConfig.put(FelixConstants.FRAMEWORK_BEGINNING_STARTLEVEL, "3");
         
-        felixConfig.put("felix.fileinstall.dir", new File(new File(cfgDir.getParentFile(), "bundles"), "platform").getAbsolutePath());
+        felixConfig.put("felix.fileinstall.dir", new File(bundlesDir, PLATFORM_BUNDLES_DIR_NAME).getAbsolutePath());
         felixConfig.put("felix.fileinstall.active.level", "1");
         felixConfig.put("felix.fileinstall.start.level", "3");
         //felixConfig.put("felix.fileinstall.filter", "^xsf-.*");
@@ -94,7 +114,7 @@ public class FelixRuntime {
         //felixConfig.put(AutoProcessor.AUTO_DEPLOY_DIR_PROPERY, bundleDir);
         //felixConfig.put(AutoProcessor.AUTO_DEPLOY_ACTION_PROPERY, "install,start");
         
-        felixConfig.put(FelixConstants.FRAMEWORK_STORAGE, new File(cfgDir, "felix-cache").getAbsolutePath());
+        felixConfig.put(FelixConstants.FRAMEWORK_STORAGE, new File(dataDir, FELIX_CACHE_DIR_NAME).getAbsolutePath());
 
         // Export the host provided service interface package.
         felixConfig.put(FelixConstants.FRAMEWORK_SYSTEMPACKAGES_EXTRA, Joiner.on(',').withKeyValueSeparator(";version=").join(exports));
@@ -104,7 +124,7 @@ public class FelixRuntime {
         //list.add(this);
         //felixConfig.put(FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, list);
         
-        felixConfig.put(CFG_DIR_KEY, cfgDir.getAbsolutePath());
+        felixConfig.put(DATA_DIR_KEY, dataDir.getAbsolutePath());
         
         try {
             // Now create an instance of the framework with

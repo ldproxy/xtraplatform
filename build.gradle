@@ -354,7 +354,7 @@ stages {
 
 
 /*task(debug, type: JavaExec) {
-    main = "de.ii.xsf.runtime.FelixRuntime"
+    main = "FelixRuntime"
     dependsOn classes
     dependsOn devEnv
     //dependsOn configurations.bundles
