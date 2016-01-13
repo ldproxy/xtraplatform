@@ -1,3 +1,18 @@
+/**
+ * Copyright 2016 interactive instruments GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.ii.xsf.core.rest;
 
 import com.fasterxml.jackson.databind.util.JSONPObject;
@@ -5,6 +20,7 @@ import com.google.common.base.Optional;
 import com.sun.jersey.api.core.ResourceContext;
 import de.ii.xsf.core.api.ArcGisServiceCatalog;
 import de.ii.xsf.core.api.Service;
+import de.ii.xsf.core.views.GenericView;
 import de.ii.xsf.logging.XSFLogger;
 import de.ii.xtraserver.framework.i18n.FrameworkMessages;
 import de.ii.xsf.core.api.MediaTypeCharset;
@@ -32,6 +48,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
+import io.dropwizard.views.View;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -119,8 +137,14 @@ public class ServicesResource {
 
     @GET
     @Produces(MediaTypeCharset.TEXT_HTML_UTF8)
-    public DirectoryView getServicesHtml(@Auth(required = false) AuthenticatedUser authUser, @QueryParam("token") String token) {
-        return new DirectoryView(serviceRegistry.getServices(authUser), "services", uriInfo.getPath(), token);
+    public View getServicesHtml(@Auth(required = false) AuthenticatedUser authUser, @QueryParam("token") String token) {
+        if (serviceResourceFactories.size() == 1) {
+            View view = serviceResourceFactories.values().iterator().next().getServicesView(serviceRegistry.getServices(authUser), uriInfo.getRequestUri());
+            if (view != null) {
+                return view;
+            }
+        }
+        return new GenericView(serviceRegistry.getServices(authUser), "services", uriInfo.getPath(), token);
     }
 
     @Path("/{service}/")
@@ -153,9 +177,10 @@ public class ServicesResource {
         return s;
     }
 
-    @Path("/{service}/FeatureServer")
+    // TODO: move to XtraProxy
+    /*@Path("/{service}/FeatureServer")
     public ServiceResource getServiceFS(@Auth(protectedResource = true, exceptions = "arcgis") AuthenticatedUser user, @PathParam("service") String service, @QueryParam("callback") String callback) {
         return getServiceResource(user, service, callback);
-    }
+    }*/
 
 }

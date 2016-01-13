@@ -11,11 +11,15 @@ buildscript {
         maven {
             url "http://nyx/artifactory/plugins-release"
         }
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     } 
     dependencies { 
         classpath group: 'de.interactive-instruments', name: 'gradle-plugin-forgerock-i18n', version: '1.0.6'
         classpath group: 'de.interactive-instruments', name: 'gradle-plugin-osgi-ipojo', version: '1.12.1.26'        
         classpath group: 'net.serenity-bdd', name: 'serenity-gradle-plugin', version: '1.1.16'
+        classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.12.1"
         
     } 
 }
@@ -54,6 +58,7 @@ subprojects {
     apply plugin: 'forgerock-i18n'
     apply plugin: 'osgi-ipojo'
     apply plugin: 'maven-publish'
+    apply plugin: "license"
 
     version = '1.0.0'
 
@@ -62,6 +67,17 @@ subprojects {
     group = 'de.interactive-instruments'
 
     sourceCompatibility = 1.7
+
+    license {
+        header rootProject.file('../gradle/license-header')
+        strictCheck true
+        excludes([
+                "**/*.mustache",
+                "**/*.png",
+                "**/*.ico",
+                "**/*.xcf",
+                "**/*.json"])
+    }
     
     repositories {     
         mavenLocal()

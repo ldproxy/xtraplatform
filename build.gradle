@@ -11,6 +11,9 @@ buildscript {
         maven {
             url "http://nyx/artifactory/plugins-release"
         }
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     } 
     dependencies { 
         classpath group: 'de.interactive-instruments', name: 'gradle-plugin-forgerock-i18n', version: '1.0.6'
@@ -18,6 +21,7 @@ buildscript {
         classpath group: 'de.interactive-instruments', name: 'gradle-plugin-deployment-stages', version: '1.0.6'
         
         classpath group: 'net.serenity-bdd', name: 'serenity-gradle-plugin', version: '1.1.16'
+        classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.12.1"
         
     } 
 }
@@ -25,8 +29,20 @@ buildscript {
 allprojects {
     apply plugin: 'java'
     apply plugin: 'forgerock-i18n'
+    apply plugin: "license"
 
     sourceCompatibility = 1.7
+
+    license {
+        header rootProject.file('gradle/license-header')
+        strictCheck true
+        excludes([
+                "**/*.mustache",
+                "**/*.png",
+                "**/*.ico",
+                "**/*.xcf",
+                "**/*.json"])
+    }
     
     repositories {     
         mavenLocal()
