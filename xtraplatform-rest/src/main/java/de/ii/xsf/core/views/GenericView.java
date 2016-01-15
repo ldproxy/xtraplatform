@@ -15,7 +15,11 @@
  */
 package de.ii.xsf.core.views;
 
+import de.ii.xsf.logging.XSFLogger;
 import io.dropwizard.views.View;
+import org.forgerock.i18n.slf4j.LocalizedLogger;
+
+import java.net.URI;
 
 /**
  *
@@ -23,42 +27,35 @@ import io.dropwizard.views.View;
  */
 public class GenericView extends View {
 
-    private final String uri;
-    private String token;
-    private Object directory;
+    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(GenericView.class);
+
+    private final URI uri;
+    private Object data;
     
-    public GenericView(String template, String uri, String token) {
+    public GenericView(String template, URI uri) {
         super(template + ".mustache");
         this.uri = uri;
-        this.token = "";
-        if (token != null && !token.isEmpty()) {
-            this.token = "?token=" + token;
-        }
-        this.directory = null;
+        this.data = null;
     }
 
-    public GenericView(Object directory, String template, String uri, String token) {
-        this(template, uri, token);
-        this.directory = directory;
+    public GenericView(String template, URI uri, Object data) {
+        this(template, uri);
+        this.data = data;
     }
 
-    public String getPrefix() {
-        if (uri.endsWith("/")) {
+    public String getPath() {
+        if (uri.getPath().endsWith("/")) {
             return "";
         } else {           
-            return uri.substring( uri.lastIndexOf("/")+1)+"/";
+            return uri.getPath().substring( uri.getPath().lastIndexOf("/")+1)+"/";
         }
     }
-    
-    public String getToken() {
-        return token;
+
+    public String getQuery() {
+        return "?" + (uri.getQuery() != null ? uri.getQuery() + "&" : "");
     }
 
-    public String getJsonQuery() {
-        return token.isEmpty() ? "?f=json" : token + "&f=json";
-    }
-
-    public Object getDirectory() {
-        return directory;
+    public Object getData() {
+        return data;
     }
 }

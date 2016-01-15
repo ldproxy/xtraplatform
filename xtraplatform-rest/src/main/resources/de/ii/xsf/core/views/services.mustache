@@ -3,12 +3,12 @@
 <h3>Folder: /</h3>
 <h4>Services:</h4>
 <ul>
-{{#directory}}
-<li><a href="{{prefix}}{{id}}/FeatureServer/">{{id}}</a>&nbsp;({{type}})</li>
-{{/directory}}
-{{^directory}}
+{{#data}}
+<li><a href="{{path}}{{browseUrl}}">{{id}}</a>&nbsp;({{type}})</li>
+{{/data}}
+{{^data}}
 <i>None</i>
-{{/directory}}
+{{/data}}
 </ul>
 
 {{> footer}}

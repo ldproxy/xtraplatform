@@ -16,7 +16,6 @@
 package de.ii.xsf.core.rest;
 
 import com.fasterxml.jackson.databind.util.JSONPObject;
-import com.google.common.base.Optional;
 import com.sun.jersey.api.core.ResourceContext;
 import de.ii.xsf.core.api.ArcGisServiceCatalog;
 import de.ii.xsf.core.api.Service;
@@ -26,20 +25,17 @@ import de.ii.xtraserver.framework.i18n.FrameworkMessages;
 import de.ii.xsf.core.api.MediaTypeCharset;
 import de.ii.xsf.core.api.ServiceCatalog;
 import de.ii.xsf.core.api.ServiceRegistry;
-import de.ii.xsf.core.api.exceptions.ArcGisTokenRequiredException;
 import de.ii.xsf.core.api.exceptions.ResourceNotFound;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
-import de.ii.xsf.core.api.permission.Organization;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
 import de.ii.xsf.core.api.rest.ServiceResource;
 import de.ii.xsf.core.api.rest.ServiceResourceFactory;
-import de.ii.xsf.core.views.DirectoryView;
+
 import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -144,7 +140,7 @@ public class ServicesResource {
                 return view;
             }
         }
-        return new GenericView(serviceRegistry.getServices(authUser), "services", uriInfo.getPath(), token);
+        return new GenericView("services", uriInfo.getRequestUri(), serviceRegistry.getServices(authUser));
     }
 
     @Path("/{service}/")
