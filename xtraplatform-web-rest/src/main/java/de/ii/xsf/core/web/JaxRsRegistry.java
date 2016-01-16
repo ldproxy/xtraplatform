@@ -16,6 +16,7 @@
 package de.ii.xsf.core.web;
 
 import com.sun.jersey.spi.container.ContainerRequestFilter;
+import com.sun.jersey.spi.container.ContainerResponseFilter;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 import de.ii.xsf.dropwizard.api.Dropwizard;
 import de.ii.xsf.logging.XSFLogger;
@@ -173,8 +174,13 @@ public class JaxRsRegistry implements LifeCycle.Listener {
             }
             if (!filterCache.isEmpty()) {
                 for (Object filter : filterCache) {
-                    jersey.getResourceConfig().getContainerRequestFilters().add(filter.getClass());
-                    LOGGER.getLogger().debug("Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
+                    if (filter instanceof ContainerRequestFilter) {
+                        jersey.getResourceConfig().getContainerRequestFilters().add(filter.getClass());
+                        LOGGER.getLogger().debug("Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
+                    } else if (filter instanceof ContainerResponseFilter) {
+                        jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
+                        LOGGER.getLogger().debug("Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
+                    }
                 }
                 filterCache.clear();
             }
@@ -259,6 +265,9 @@ public class JaxRsRegistry implements LifeCycle.Listener {
             if (jersey.getResourceConfig().getContainerRequestFilters().remove(object.getClass())) {
                 LOGGER.getLogger().debug("Unregistered JAX-RS ContainerRequestFilter {})", object.getClass());
                 return true;
+            } else if (jersey.getResourceConfig().getContainerResponseFilters().remove(object.getClass())) {
+                LOGGER.getLogger().debug("Unregistered JAX-RS ContainerResponseFilter {})", object.getClass());
+                return true;
             }
         } else {
             if (filterCache.contains(object)) {
@@ -282,7 +291,7 @@ public class JaxRsRegistry implements LifeCycle.Listener {
     }
 
     private boolean isFilter(Object service) {
-        return service != null && service instanceof ContainerRequestFilter;
+        return service != null && (service instanceof ContainerRequestFilter || service instanceof ContainerResponseFilter);
     }
 
     private boolean hasRegisterableAnnotation(Object service) {
