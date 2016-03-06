@@ -18,6 +18,8 @@ package de.ii.xsf.core.api.rest;
 import de.ii.xsf.core.api.Service;
 import io.dropwizard.views.View;
 
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Collection;
 
@@ -26,6 +28,7 @@ import java.util.Collection;
  * @author zahnen
  */
 public interface ServiceResourceFactory {
-    public Class getServiceResourceClass();
-    public View getServicesView(Collection<Service> services, URI uri);
+    Class getServiceResourceClass();
+    View getServicesView(Collection<Service> services, URI uri);
+    Response getResponseForParams(Collection<Service> services, UriInfo uriInfo);
 }

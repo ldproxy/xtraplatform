@@ -114,6 +114,12 @@ public class ServicesResource {
 
     @GET
     public Response getServices(@Auth(required = false) AuthenticatedUser authUser, @QueryParam("callback") String callback) {
+        if (serviceResourceFactories.size() == 1) {
+            Response response = serviceResourceFactories.values().iterator().next().getResponseForParams(serviceRegistry.getServices(authUser), uriInfo);
+            if (response != null) {
+                return response;
+            }
+        }
 
         ServiceCatalog catalog = new ArcGisServiceCatalog(serviceRegistry.getServices(authUser));
 
@@ -133,14 +139,19 @@ public class ServicesResource {
 
     @GET
     @Produces(MediaTypeCharset.TEXT_HTML_UTF8)
-    public View getServicesHtml(@Auth(required = false) AuthenticatedUser authUser, @QueryParam("token") String token) {
+    public Response getServicesHtml(@Auth(required = false) AuthenticatedUser authUser, @QueryParam("token") String token) {
         if (serviceResourceFactories.size() == 1) {
+            Response response = serviceResourceFactories.values().iterator().next().getResponseForParams(serviceRegistry.getServices(authUser), uriInfo);
+            if (response != null) {
+                return response;
+            }
+
             View view = serviceResourceFactories.values().iterator().next().getServicesView(serviceRegistry.getServices(authUser), uriInfo.getRequestUri());
             if (view != null) {
-                return view;
+                return Response.ok(view).build();
             }
         }
-        return new GenericView("services", uriInfo.getRequestUri(), serviceRegistry.getServices(authUser));
+        return Response.ok(new GenericView("services", uriInfo.getRequestUri(), serviceRegistry.getServices(authUser))).build();
     }
 
     @Path("/{service}/")

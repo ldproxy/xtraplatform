@@ -30,7 +30,7 @@
             }
         ],
         "gzip": {
-            "enabled": false
+            "enabled": true
         },
         "requestLog": {
             "timeZone": "Europe/Berlin",
@@ -38,8 +38,7 @@
                 {
                     "type": "file",
                     "currentLogFilename": "./data/log/requests.log",
-                    "archive": false,
-                    "timeZone": "Europe/Berlin"
+                    "archive": false
                 }
             ]
         },
