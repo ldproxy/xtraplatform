@@ -157,6 +157,17 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
         return resourceCache.get(getPathString(path));
     }
 
+    protected void fillCache() {
+        for (String[] path: getAllPaths()) {
+            List<String> resourceIds = getResourceIds(path);
+            if (fullCache) {
+                for (String id : resourceIds) {
+                    getResource(path, id);
+                }
+            }
+        }
+    }
+
     protected List<String> getResourceIds(String[] path) {
         return getResourceCache(path).getResourceIds();
     }
