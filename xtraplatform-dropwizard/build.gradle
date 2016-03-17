@@ -1,6 +1,6 @@
 dependencies {
     // TODO: DATA_DIR_KEY
-    provided group: 'de.interactive-instruments', name: 'xtraplatform-runtime', version: '1.0.0-SNAPSHOT'
+    provided group: 'de.interactive_instruments', name: 'xtraplatform-runtime', version: '1.0.1'
     
     embedded(group: 'io.dropwizard', name: 'dropwizard-core', version: '0.7.1') {
         exclude group: 'org.slf4j', module: 'slf4j-api'

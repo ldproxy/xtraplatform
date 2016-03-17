@@ -17,7 +17,6 @@ package de.ii.xtraserver.framework.tasks;
 
 import com.google.common.collect.ImmutableMultimap;
 import de.ii.xsf.logging.XSFLogger;
-import de.ii.xtraserver.framework.i18n.FrameworkMessages;
 import io.dropwizard.lifecycle.ServerLifecycleListener;
 import io.dropwizard.servlets.tasks.Task;
 import java.io.PrintWriter;
@@ -44,11 +43,11 @@ public class StopTask extends Task implements ServerLifecycleListener {
                 @Override
                 public void run() {
                     try {
-                        LOGGER.info(FrameworkMessages.SHUTTING_DOWN_XTRASERVERFRAMEWORK);
+                        //LOGGER.info(FrameworkMessages.SHUTTING_DOWN_XTRASERVERFRAMEWORK);
                         server.stop();
-                        LOGGER.info(FrameworkMessages.XTRASERVERFRAMEWORK_HAS_STOPPED);
+                        //LOGGER.info(FrameworkMessages.XTRASERVERFRAMEWORK_HAS_STOPPED);
                     } catch (Exception ex) {
-                        LOGGER.error(FrameworkMessages.ERROR_WHEN_STOPPING_XTRASERVERFRAMEWORK, ex.getMessage() , ex);
+                        //LOGGER.error(FrameworkMessages.ERROR_WHEN_STOPPING_XTRASERVERFRAMEWORK, ex.getMessage() , ex);
                     }
                 }
             }.start();

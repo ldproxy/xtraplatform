@@ -21,7 +21,6 @@ import de.ii.xsf.core.api.ArcGisServiceCatalog;
 import de.ii.xsf.core.api.Service;
 import de.ii.xsf.core.views.GenericView;
 import de.ii.xsf.logging.XSFLogger;
-import de.ii.xtraserver.framework.i18n.FrameworkMessages;
 import de.ii.xsf.core.api.MediaTypeCharset;
 import de.ii.xsf.core.api.ServiceCatalog;
 import de.ii.xsf.core.api.ServiceRegistry;
@@ -178,7 +177,7 @@ public class ServicesResource {
         Service s = serviceRegistry.getService(authUser, id);
 
         if (s == null || !s.isStarted()) {
-            throw new ResourceNotFound(FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale()), callback);
+            throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale()),*/ callback);
         }
 
         return s;

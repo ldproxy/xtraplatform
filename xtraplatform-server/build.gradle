@@ -1,3 +1,5 @@
+version = '1.0.1'
+
 dependencies {
     provided project(':xtraplatform-sessions-api')
     //compile project(':xsf-logging-api')

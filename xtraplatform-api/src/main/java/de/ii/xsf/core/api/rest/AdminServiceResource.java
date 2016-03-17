@@ -23,7 +23,6 @@ import de.ii.xsf.core.api.exceptions.XtraserverFrameworkException;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
-import static de.ii.xtraserver.framework.i18n.FrameworkMessages.DELETED_SERVICE_WTH_ID;
 import java.io.IOException;
 import java.util.Map;
 import javax.ws.rs.Consumes;
@@ -75,7 +74,7 @@ abstract public class AdminServiceResource implements ServiceResource {
         try {
             MDC.put("service", id);
             serviceRegistry.deleteService(authUser, service);
-            LOGGER.info(DELETED_SERVICE_WTH_ID, id);
+            //LOGGER.info(DELETED_SERVICE_WTH_ID, id);
             return Response.ok().build();
         } finally {
             MDC.remove("service");

@@ -1,3 +1,5 @@
+version = '1.0.1'
+
 dependencies {
 	// TODO: shouldn't this be provided for everyone
 	// no, this is not a bundle, so maybe it is really compile

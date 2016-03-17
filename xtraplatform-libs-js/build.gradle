@@ -1,50 +1,20 @@
 
 ext {
     dojoVersion = '1.9.3'
-    dgridVersion = '0.3.10'
-    xstyleVersion = '0.2.0'
+    xstyleVersion = '0.3.1'
     putSelectorVersion = '0.3.5'
     storehouseVersion = '1.0.1'
-    
-    angularVersion = '1.3.15'
-    angularUiBootstrapVersion = '0.12.1-1'
-    angularUiRouterVersion = '0.2.13'
-    angularUiUtilsVersion = '0.2.2'
-    angularTranslateVersion = '2.6.1'
-    angularTranslatePartialVersion = '2.6.0'
 }
 
 ext {
     dojoName = 'dojo'
-    dgridName = 'dgrid'
 }
-// always use uncompressed dojo in dev stage
-/*stages {
-    '.*' beforeEvaluate: {
-        ext {
-            dojoName = 'dojo'
-            dgridName = 'dgrid'
-        }
-    }
-    development beforeEvaluate: {
-        dojoName = 'dojo-src'
-        dgridName = 'dgrid-debug'
-    }
-}*/
 
 dependencies {
     embedded group: 'org.webjars', name: dojoName, version: dojoVersion
-    embedded group: 'org.dojotoolkit', name: dgridName, version: dgridVersion
-    embedded group: 'org.dojotoolkit', name: 'xstyle', version: xstyleVersion
-    embedded group: 'org.dojotoolkit', name: 'put-selector', version: putSelectorVersion
-    embedded group: 'org.dojotoolkit', name: 'storehouse', version: storehouseVersion
-    
-    embedded 'org.webjars:angularjs:' + angularVersion
-    embedded 'org.webjars:angular-ui-bootstrap:' + angularUiBootstrapVersion
-    embedded 'org.webjars:angular-ui-router:' + angularUiRouterVersion
-    embedded 'org.webjars:angular-ui-utils:' + angularUiUtilsVersion
-    embedded 'org.webjars:angular-translate:' + angularTranslateVersion
-    embedded 'org.webjars:angular-translate-loader-partial:' + angularTranslatePartialVersion
+    embedded group: 'org.webjars.bower', name: 'xstyle', version: xstyleVersion
+    embedded group: 'org.webjars', name: 'put-selector', version: putSelectorVersion
+    embedded group: 'de.interactive_instruments', name: 'storehouse', version: storehouseVersion
     
 }
 
@@ -53,16 +23,9 @@ jar {
     manifest { 
         instruction 'Embed-Dependency',
             dojoName,
-            dgridName,
             'xstyle',
             'put-selector',
-            'storehouse',
-            'angularjs',
-            'angular-ui-bootstrap',
-            'angular-ui-router',
-            'angular-ui-utils',
-            'angular-translate',
-            'angular-translate-loader-partial'
+            'storehouse'
         instruction 'Embed-Transitive', 'true'
         
         instruction 'X-Web-Resource-Version', '1.0'
@@ -70,15 +33,8 @@ jar {
             '/js/dojo;/META-INF/resources/webjars/' + dojoName + '/' + dojoVersion + '/dojo',
             '/js/dijit;/META-INF/resources/webjars/' + dojoName + '/' + dojoVersion + '/dijit',
             '/js/dojox;/META-INF/resources/webjars/' + dojoName + '/' + dojoVersion + '/dojox',
-            '/js/dgrid;/dgrid',
-            '/js/xstyle;/xstyle',
-            '/js/put-selector;/put-selector',
-            '/js/storehouse;/storehouse',
-            '/js/angularjs;/META-INF/resources/webjars/angularjs/' + angularVersion,
-            '/js/angular-ui-bootstrap;/META-INF/resources/webjars/angular-ui-bootstrap/' + angularUiBootstrapVersion,
-            '/js/angular-ui-router;/META-INF/resources/webjars/angular-ui-router/' + angularUiRouterVersion,
-            '/js/angular-ui-utils;/META-INF/resources/webjars/angular-ui-utils/' + angularUiUtilsVersion,
-            '/js/angular-translate;/META-INF/resources/webjars/angular-translate/' + angularTranslateVersion,
-            '/js/angular-translate-loader-partial;/META-INF/resources/webjars/angular-translate-loader-partial/' + angularTranslatePartialVersion
+            '/js/xstyle;/META-INF/resources/webjars/xstyle/' + xstyleVersion,
+            '/js/put-selector;/META-INF/resources/webjars/put-selector/' + putSelectorVersion,
+            '/js/storehouse;/storehouse'
     }
 }

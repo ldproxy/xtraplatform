@@ -1,3 +1,5 @@
+version = '1.0.1'
+
 dependencies {
 	// used for DeepUpdate, to core or config-store
 	// and decide to embed or use as bundle 

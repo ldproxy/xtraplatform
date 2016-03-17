@@ -35,7 +35,6 @@ import de.ii.xsf.core.api.rest.AdminServiceResourceFactory;
 import de.ii.xsf.core.api.rest.ModuleResource;
 import de.ii.xsf.core.api.rest.ServiceResource;
 import de.ii.xsf.dropwizard.api.Jackson;
-import de.ii.xtraserver.framework.i18n.FrameworkMessages;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -196,7 +195,7 @@ public class AdminResource {
         Module m = modulesRegistry.getModule(id);
 
         if (m == null) {
-            throw new ResourceNotFound(FrameworkMessages.A_MODULE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale()));
+            throw new ResourceNotFound(/*FrameworkMessages.A_MODULE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale())*/);
         }
 
         return getAdminModuleResource(m);
@@ -241,7 +240,7 @@ public class AdminResource {
         Service s = serviceRegistry.getService(authUser, id);
 
         if (s == null) {
-            throw new ResourceNotFound(FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale()));
+            throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale())*/);
         }
 
         ServiceResource sr = getAdminServiceResource(s);

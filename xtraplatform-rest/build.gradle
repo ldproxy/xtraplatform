@@ -1,3 +1,5 @@
+version = '1.0.1'
+
 jar {
     manifest { 
         instruction 'Export-Package', 'de.ii.xsf.core.views'

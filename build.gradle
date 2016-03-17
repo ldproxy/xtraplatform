@@ -3,33 +3,24 @@ buildscript {
         mavenCentral() 
         jcenter()
         maven {
-            url "http://repository.excilys.com/content/groups/public"
-        }
-        maven {
-            url "http://nyx/artifactory/plugins-snapshot"
-        }
-        maven {
-            url "http://nyx/artifactory/plugins-release"
-        }
-        maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven {
+            url "https://dl.bintray.com/iide/maven"
+        }
     } 
-    dependencies { 
-        classpath group: 'de.interactive-instruments', name: 'gradle-plugin-forgerock-i18n', version: '1.0.6'
-        classpath group: 'de.interactive-instruments', name: 'gradle-plugin-osgi-ipojo', version: '1.12.1.26'
-        classpath group: 'de.interactive-instruments', name: 'gradle-plugin-deployment-stages', version: '1.0.6'
-        
-        classpath group: 'net.serenity-bdd', name: 'serenity-gradle-plugin', version: '1.1.16'
+    dependencies {
+        classpath group: 'de.interactive_instruments', name: 'gradle-plugin-osgi-ipojo', version: '1.12.1.26'
         classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.12.1"
-        
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
     } 
 }
 
 allprojects {
     apply plugin: 'java'
-    apply plugin: 'forgerock-i18n'
     apply plugin: "license"
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.bintray'
 
     sourceCompatibility = 1.7
 
@@ -49,13 +40,13 @@ allprojects {
         mavenCentral()
         jcenter()
         maven {
-            url "http://nyx/artifactory/libs-release"
-        }
-        maven {
             url "http://maven.forgerock.org/repo/repo"
         }
         maven {
             url 'http://oss.sonatype.org/content/repositories/snapshots'
+        }
+        maven {
+            url "https://dl.bintray.com/iide/maven"
         }
     }
     
@@ -63,12 +54,6 @@ allprojects {
         testCompile group: 'org.testng', name: 'testng', version: '6.8.5'
         testCompile group: 'junit', name: 'junit', version: '4.12'
         testCompile group: 'org.mockito', name: 'mockito-core', version: '1.9.5'
-        testCompile ('net.serenity-bdd:serenity-core:1.1.16') {
-            exclude module: 'guava'
-        }
-        testCompile ('net.serenity-bdd:serenity-junit:1.1.16') {
-            exclude module: 'guava'
-        }
     }
     
     test {
@@ -104,34 +89,6 @@ task testReport(type: TestReport) {
 }
 test.finalizedBy testReport
 
-// Serenitiy BDD
-apply plugin: 'net.serenity-bdd.aggregator'
-gradle.startParameter.continueOnFailure = true
-aggregate.doFirst {
-    System.setProperty("serenity.test.root", "de.ii.xsf.bdd.features")
-}
-task testBdd {
-    outputs.dir file(serenity.outputDirectory)
-    finalizedBy aggregate
-}
-  
-subprojects {
-    task testBddCopy(type: Copy) {
-        finalizedBy rootProject.testBdd
-        from new File(buildDir, 'site/serenity')
-        into rootProject.file(rootProject.serenity.outputDirectory)
-    }
-    task testBdd(type: Test) {
-        finalizedBy testBddCopy
-        useJUnit {}
-        systemProperty 'serenity.test.root', 'de.ii.xsf.bdd.features'
-        testLogging.showStandardStreams = true
-    }
-    rootProject.testBdd{
-        inputs.dir new File(buildDir, 'site/serenity')
-    }
-    
-}
 
 
 
@@ -191,195 +148,6 @@ dependencies {
     //compile subprojects
 }
 
-
-
-/*applicationDistribution.from(configurations.bundles) {
-    into "bundles/runtime"
-}
-applicationDistribution.from(configurations.bundles2) {
-    into "bundles/platform"
-}
-applicationDistribution.from(configurations.bundles3) {
-    into "bundles/platform"
-}*/
-
-/*ext {
-    cfgFileName = 'xsf.json'
-    devel = [
-        cfgDir: new File(buildDir, 'cfg'),
-        logDir:  new File(buildDir, 'log'),
-        bundlesDir: new File(buildDir, 'bundles'),
-        felixCacheDir: new File(new File(buildDir, 'cfg'), 'felix-cache'),
-        cfgFile: file('src/main/resources/cfg/xsf.development.json')
-    ]
-    testing = [
-        dir: new File(buildDir, 'stages/testing'),
-        cfgDir: new File(buildDir, 'stages/testing/cfg'),
-        logDir:  new File(buildDir, 'stages/testing/log'),
-        bundlesDir: new File(buildDir, 'bundles'),
-        cfgFile: file('src/main/resources/cfg/xsf.testing.json')
-    ]
-    production = [
-        dir: new File(buildDir, 'stages/production'),
-        cfgDir: new File(buildDir, 'stages/production/cfg'),
-        logDir:  new File(buildDir, 'stages/production/log'),
-        bundlesDir: new File(buildDir, 'bundles'),
-        cfgFile: file('src/main/resources/cfg/xsf.production.json')
-    ]
-    cloud = [
-        dir: new File(buildDir, 'stages/cloud'),
-        cfgDir: new File(buildDir, 'stages/cloud/cfg'),
-        logDir:  new File(buildDir, 'stages/cloud/log'),
-        bundlesDir: new File(buildDir, 'bundles'),
-        cfgFile: file('src/main/resources/cfg/xsf.cloud.json')
-    ]
-}
- 
-
-
-
-task devBundles(type: Sync) {
-    from configurations.bundles
-    into new File(devel.bundlesDir, 'runtime')
-}
-task devBundles3(type: Copy) {
-    from configurations.bundles3
-    into new File(devel.bundlesDir, 'platform')
-}
-
-task devEnv {
-    inputs.file devel.cfgFile
-    //outputs.dir devel.cfgDir
-    dependsOn tasks.devBundles
-    dependsOn tasks.devBundles3
-    doLast {
-        if (!new File(devel.cfgDir, cfgFileName).exists()) {
-            copy {
-                from devel.cfgFile
-                into devel.cfgDir
-                rename { cfgFileName }
-            }
-        }
-        if (!devel.logDir.exists())
-        devel.logDir.mkdirs()
-        if (devel.felixCacheDir.exists())
-        devel.felixCacheDir.deleteDir()
-    }
-}
-
-task testingEnv {
-    inputs.file testing.cfgFile
-    outputs.dir testing.dir
-    
-    doLast {
-        copy {
-            from testing.cfgFile
-            into testing.cfgDir
-            rename { cfgFileName }
-        }
-        if (!testing.logDir.exists())
-        testing.logDir.mkdirs()
-        if (!testing.bundlesDir.exists()) {
-            testing.bundlesDir.mkdirs()             
-        }
-        copy {
-            from configurations.bundles
-            into testing.bundlesDir
-        }
-    }
-}
-
-task productionEnv {
-    inputs.file production.cfgFile
-    outputs.dir production.dir
-    
-    doLast {
-        copy {
-            from production.cfgFile
-            into production.cfgDir
-            rename { cfgFileName }
-        }
-        if (!production.logDir.exists())
-        production.logDir.mkdirs()
-        if (!production.bundlesDir.exists()) {
-            production.bundlesDir.mkdirs()             
-        }
-        copy {
-            from configurations.bundles
-            into production.bundlesDir
-        }
-    }
-}
-    
-task cloudEnv {
-    inputs.file cloud.cfgFile
-    outputs.dir cloud.dir
-    
-    doLast {
-        copy {
-            from cloud.cfgFile
-            into cloud.cfgDir
-            rename { cfgFileName }
-        }
-        if (!cloud.logDir.exists())
-        cloud.logDir.mkdirs()
-        if (!cloud.bundlesDir.exists()) {
-            cloud.bundlesDir.mkdirs()             
-        }
-        copy {
-            from configurations.bundles
-            into new File(devel.bundlesDir, 'runtime')
-        }
-    }
-}*/
- 
-/*run {
-    dependsOn devEnv
-    workingDir = buildDir
-    args = ["server", "cfg/xsf.json"]
-}
-
-tasks.run.doFirst { println classpath.asPath}
-*/
-/*startScripts.applicationName = 'xsf'
-stages {
-    development {
-        applicationDistribution.from(testingEnv)
-    }
-    testing {
-        applicationDistribution.from(testingEnv)
-    }
-    sprint {
-        applicationDistribution.from(testingEnv)
-    }
-    production {
-        applicationDistribution.from(productionEnv)
-    }
-    production_min {
-        applicationDistribution.from(productionEnv)
-    }
-    production_full {
-        applicationDistribution.from(productionEnv)
-    }
-    production_cloud {
-        applicationDistribution.from(cloudEnv)
-    }
-}*/
-
-
-
-
-/*task(debug, type: JavaExec) {
-    main = "FelixRuntime"
-    dependsOn classes
-    dependsOn devEnv
-    //dependsOn configurations.bundles
-    classpath sourceSets.main.runtimeClasspath
-    //classpath configurations.bundles
-    workingDir = buildDir
-    args = ["server", "cfg/xsf.json"]
-    debug = true
-}*/
 
 allprojects {
     jar {
@@ -448,52 +216,56 @@ subprojects {
         jar.finalizedBy undeploy
     }*/
 
-    
-}
+    task sourceJar(type: Jar) {
+        from sourceSets.main.allSource
+    }
 
-allprojects {
-    apply plugin: 'maven'
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from components.java
 
-    group = 'de.interactive-instruments'
-    version += '-SNAPSHOT'
-
-    uploadArchives {
-        repositories {
-            mavenDeployer {
-                repository(url: "http://nyx/artifactory/libs-snapshot-local")
+                artifact sourceJar {
+                    classifier "sources"
+                }
             }
         }
     }
 
-    conf2ScopeMappings.addMapping(1, configurations.provided, 'compile')
-    conf2ScopeMappings.addMapping(1, configurations.embedded, 'compile')
-}
-
-
-configure(subprojects.findAll {it.name != 'xtraplatform-api' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-logging-i18n' && it.name != 'xtraplatform-runtime'}) {
-    dependencies {
-        compile project(':xtraplatform-api')
+    bintray {
+        user = project.bintrayUser
+        key = project.bintrayApiKey
+        publications = ['maven']
+        publish = false
+        pkg {
+            repo = 'maven'
+            name = project.name
+            userOrg = 'iide'
+            licenses = ['Apache-2.0']
+            websiteUrl = 'https://github.com/interactive-instruments/XtraPlatform'
+            issueTrackerUrl = 'https://github.com/interactive-instruments/XtraPlatform/issues'
+            vcsUrl = 'https://github.com/interactive-instruments/XtraPlatform.git'
+            githubRepo = 'interactive-instruments/XtraPlatform'
+            githubReleaseNotesFile = 'README.md'
+            version {
+                name = project.version
+            }
+        }
     }
 }
 
-configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-runtime'}) {
-    dependencies {
-        compile project(':xtraplatform-dropwizard')
-    }
-    
-    jar {
-    manifest { 
-     instruction 'Import-Package', 'com.fasterxml.jackson.module.afterburner.ser'   
-     instruction 'Import-Package', '*'   
-    }
-    }
+allprojects {
+
+    group = 'de.interactive_instruments'
+    //version += '-SNAPSHOT'
+
+
 }
+
+
 
 configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n'}) {
     dependencies {
         compile project(':xtraplatform-logging-i18n')
     }
 }
-
-conf2ScopeMappings.addMapping(1, configurations.provided, 'compile')
-

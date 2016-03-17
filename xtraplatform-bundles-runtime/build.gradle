@@ -1,10 +1,21 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
+    }
+}
+
 apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
 
-version = '1.0.0'
+version = '1.0.1'
 
-version += '-SNAPSHOT'
+//version += '-SNAPSHOT'
 
-group = 'de.interactive-instruments'
+group = 'de.interactive_instruments'
 
 repositories {     
     mavenCentral()
@@ -30,7 +41,7 @@ dependencies {
     //bundles group: 'org.eclipse.jetty.orbit', name: 'javax.servlet', version: '3.0.0.v201112011016'
    
     // TODO
-    bundles group: 'de.interactive-instruments', name: 'xtraplatform-dropwizard', version: '1.0.0-SNAPSHOT'
+    bundles group: 'de.interactive_instruments', name: 'xtraplatform-dropwizard', version: '1.0.0'
 
     // felix
     bundles group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.8.0'
@@ -69,9 +80,26 @@ publishing {
             }
         }
     }
-    repositories {
-        maven {
-            url "http://nyx/artifactory/libs-snapshot-local"
+}
+
+bintray {
+    user = project.bintrayUser
+    key = project.bintrayApiKey
+    publications = ['maven']
+    publish = false
+    pkg {
+        repo = 'maven'
+        name = project.name
+        userOrg = 'iide'
+        licenses = ['Apache-2.0']
+        websiteUrl = 'https://github.com/interactive-instruments/XtraPlatform'
+        issueTrackerUrl = 'https://github.com/interactive-instruments/XtraPlatform/issues'
+        vcsUrl = 'https://github.com/interactive-instruments/XtraPlatform.git'
+        githubRepo = 'interactive-instruments/XtraPlatform'
+        githubReleaseNotesFile = 'README.md'
+        version {
+            name = project.version
         }
     }
 }
+
