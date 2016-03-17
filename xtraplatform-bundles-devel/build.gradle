@@ -173,24 +173,25 @@ subprojects {
             }
         }
     }
-
-    bintray {
-        user = project.bintrayUser
-        key = project.bintrayApiKey
-        publications = ['maven']
-        publish = false
-        pkg {
-            repo = 'maven'
-            name = project.name
-            userOrg = 'iide'
-            licenses = ['Apache-2.0']
-            websiteUrl = 'https://github.com/interactive-instruments/XtraPlatform'
-            issueTrackerUrl = 'https://github.com/interactive-instruments/XtraPlatform/issues'
-            vcsUrl = 'https://github.com/interactive-instruments/XtraPlatform.git'
-            githubRepo = 'interactive-instruments/XtraPlatform'
-            githubReleaseNotesFile = 'README.md'
-            version {
-                name = project.version
+    afterEvaluate { project ->
+        bintray {
+            user = project.bintrayUser
+            key = project.bintrayApiKey
+            publications = ['maven']
+            publish = false
+            pkg {
+                repo = 'maven'
+                name = project.name
+                userOrg = 'iide'
+                licenses = ['Apache-2.0']
+                websiteUrl = 'https://github.com/interactive-instruments/XtraPlatform'
+                issueTrackerUrl = 'https://github.com/interactive-instruments/XtraPlatform/issues'
+                vcsUrl = 'https://github.com/interactive-instruments/XtraPlatform.git'
+                githubRepo = 'interactive-instruments/XtraPlatform'
+                githubReleaseNotesFile = 'README.md'
+                version {
+                    name = project.version
+                }
             }
         }
     }

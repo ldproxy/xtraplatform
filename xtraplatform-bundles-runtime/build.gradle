@@ -11,7 +11,7 @@ buildscript {
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
-version = '1.0.1'
+version = '1.0.3'
 
 //version += '-SNAPSHOT'
 
@@ -41,7 +41,7 @@ dependencies {
     //bundles group: 'org.eclipse.jetty.orbit', name: 'javax.servlet', version: '3.0.0.v201112011016'
    
     // TODO
-    bundles group: 'de.interactive_instruments', name: 'xtraplatform-dropwizard', version: '1.0.0'
+    bundles group: 'de.interactive_instruments', name: 'xtraplatform-dropwizard', version: '1.0.2'
 
     // felix
     bundles group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.8.0'

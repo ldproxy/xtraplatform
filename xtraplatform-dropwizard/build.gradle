@@ -1,3 +1,5 @@
+version = '1.0.2'
+
 dependencies {
     // TODO: DATA_DIR_KEY
     provided group: 'de.interactive_instruments', name: 'xtraplatform-runtime', version: '1.0.1'
