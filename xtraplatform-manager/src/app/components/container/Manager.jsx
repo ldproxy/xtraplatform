@@ -1,7 +1,9 @@
 
 // TODO: does not work, importing in index.html for now
 //import styles
-import 'grommet/scss/vanilla/index';
+//import 'grommet/scss/vanilla/index';
+import '../../scss/default/index';
+import '../App.scss';
 
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux'

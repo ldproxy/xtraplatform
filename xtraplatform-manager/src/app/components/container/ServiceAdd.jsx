@@ -83,7 +83,10 @@ class ServiceAdd extends Component {
                     <FormFields>
                         <fieldset>
                             <FormField label="ID" style={ { width: '100%' } }>
-                                <TextInput name="id" value={ id } onDOMChange={ this._handleInputChange } />
+                                <TextInput name="id"
+                                    autoFocus
+                                    value={ id }
+                                    onDOMChange={ this._handleInputChange } />
                             </FormField>
                             <FormField label="WFS URL" style={ { width: '100%' } }>
                                 <TextInput name="url" value={ url } onDOMChange={ this._handleInputChange } />

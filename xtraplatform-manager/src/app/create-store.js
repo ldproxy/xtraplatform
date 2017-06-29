@@ -42,7 +42,7 @@ export default function(data) {
 
     // Be sure to ONLY add this middleware in development!
     const middleware = process.env.NODE_ENV !== 'production' ?
-        [require('redux-immutable-state-invariant')() /*, promiseMiddleware*/ , sagaMiddleware, routerMiddleware2] :
+        [require('redux-immutable-state-invariant').default() /*, promiseMiddleware*/ , sagaMiddleware, routerMiddleware2] :
         [ /*promiseMiddleware, */ sagaMiddleware, routerMiddleware2];
 
     var store = createStore(

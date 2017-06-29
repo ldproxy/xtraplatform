@@ -1,0 +1,16 @@
+
+
+.notification-details .grommetux-background-color-index--dark .grommetux-button, .grommetux-background-color-index--light .grommetux-background-color-index--dark .grommetux-button {
+    border-color: rgba(255, 255, 255, 0) !important;
+}
+
+.notification-details .grommetux-notification__message + * {
+    margin-top: 0px;
+}
+
+.notification-details .grommetux-anchor__icon {
+    display: inline-block;
+    height: initial;
+    padding: 0px;
+    padding-left: 12px;
+}

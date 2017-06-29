@@ -9,7 +9,7 @@ class ServiceApi {
 
     static getServices() {
         return fetch(`/rest/admin/services/`)
-            .then(checkStatus)
+            .then(handleErrors)
             .then(parseJSON)
     /*.catch(function(error) {
         console.log('request failed', error)
@@ -22,7 +22,7 @@ class ServiceApi {
     }
     static getService(id) {
         return fetch(`/rest/admin/services/${id}/`)
-            .then(checkStatus)
+            .then(handleErrors)
             .then(parseJSON)
     /*return new Promise((resolve) => {
         setTimeout(() => {
@@ -32,7 +32,7 @@ class ServiceApi {
     }
     static getServiceConfig(id) {
         return fetch(`/rest/admin/services/${id}/config/`)
-            .then(checkStatus)
+            .then(handleErrors)
             .then(parseJSON)
     /*return new Promise((resolve) => {
         setTimeout(() => {
@@ -56,7 +56,7 @@ class ServiceApi {
             })
         })
             //TODO
-            //.then(checkStatus)
+            //.then(handleErrors)
             .then(ServiceApi.getServiceConfig.bind(null, id))
     }
 
@@ -65,7 +65,7 @@ class ServiceApi {
         return fetch(`/rest/admin/services/${id}/`, {
             method: 'DELETE'
         })
-            .then(checkStatus)
+            .then(handleErrors)
     }
 
     static postService(params) {
@@ -76,18 +76,20 @@ class ServiceApi {
             },
             body: JSON.stringify(params)
         })
-            .then(checkStatus)
+            .then(handleErrors)
     }
 }
 
-function checkStatus(response) {
-    if (response.status >= 200 && response.status < 300) {
-        return response
-    } else {
-        var error = new Error(response.statusText)
-        error.response = response
-        throw error
+function handleErrors(response) {
+    if (!response.ok) {
+        return parseJSON(response)
+            .then(json => {
+                var error = new Error(response.statusText)
+                error.response = json && json.error || {}
+                throw error
+            })
     }
+    return response;
 }
 
 function parseJSON(response) {

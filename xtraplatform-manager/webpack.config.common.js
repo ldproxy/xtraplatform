@@ -1,8 +1,15 @@
 const resolve = require('path').resolve;
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
 
-module.exports = function() {
+module.exports = function(env) {
+
+const extractSass = new ExtractTextPlugin({
+    filename: "[name].[contenthash].css",
+    disable: env !== "production"
+});
+
 return {
     context: resolve(__dirname, 'src/app'),
 
@@ -21,7 +28,7 @@ return {
     },
 
     resolve: {
-        extensions: [".js", ".jsx", ".json", ".css", ".scss"]
+        extensions: [".js", ".jsx", ".json", ".scss"]
     },
 
     module: {
@@ -35,24 +42,18 @@ return {
             },
             {
                 test: /\.scss$/,
-                use: [
-                    {
-                        loader: 'style-loader'
+                use: extractSass.extract({
+                    use: [{
+                        loader: "css-loader"
                     }, {
-                        loader: 'css-loader'/*,
+                        loader: "sass-loader",
                         options: {
-                            modules: true
-                        }*/
-                    }, /*{
-              loader: 'postcss-loader'
-            },*/ {
-                        loader: 'sass-loader',
-                        options: {
-                            includePaths: [resolve(__dirname, 'node_modules')]
+                            includePaths: ["node_modules"]
                         }
-                    }
-                ],
-            },
+                    }],
+                    fallback: "style-loader"
+                })
+            }
         ],
     },
 
@@ -61,12 +62,11 @@ return {
         new webpack.optimize.CommonsChunkPlugin({
             name: 'vendor',
             minChunks: function(module) {
-                // this assumes your vendor imports exist in the node_modules directory
-                return module.context && module.context.indexOf('node_modules') !== -1;
+                return module.context && (module.context.indexOf('node_modules') !== -1 || module.context.indexOf('vendor') !== -1);
             }
         }),
         new webpack.optimize.CommonsChunkPlugin({
-            name: 'manifest',
+            name: 'manifest'
         }),
 
         new HtmlWebpackPlugin({
@@ -74,6 +74,8 @@ return {
             //favicon: 'assets/img/favicon.png',
             template: 'index.html'
         }),
+
+        extractSass
 
     ],
 }

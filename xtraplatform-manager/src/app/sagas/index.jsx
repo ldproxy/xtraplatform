@@ -73,9 +73,9 @@ function* addService(action) {
     } catch ( error ) {
         yield put(actions.addFailed({
             ...action.payload,
+            ...error,
             text: 'Failed to add service with id ' + action.payload.id,
-            status: 'critical',
-            error: error
+            status: 'critical'
         }));
     }
 }

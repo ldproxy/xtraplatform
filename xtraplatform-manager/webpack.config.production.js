@@ -5,32 +5,32 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 const commonConfig = require('./webpack.config.common');
 
 module.exports = function(env) {
-    return webpackMerge(commonConfig(), {
-        output: {
-          filename: '[name].[chunkhash].js',
-        },
+return webpackMerge(commonConfig(env), {
+    output: {
+        filename: '[name].[chunkhash].js',
+    },
 
-        devtool: 'eval',
-        
-        plugins: [
-          new CleanWebpackPlugin([resolve(__dirname, 'dist')]),
+    devtool: 'eval',
 
-          new webpack.HashedModuleIdsPlugin(),
+    plugins: [
+        new CleanWebpackPlugin([resolve(__dirname, 'dist')]),
 
-          new webpack.LoaderOptionsPlugin({
-              minimize: true,
-              debug: false
-          }),
+        new webpack.HashedModuleIdsPlugin(),
 
-          new webpack.DefinePlugin({
-              'process.env': {
-                  'NODE_ENV': JSON.stringify('production')
-              }
-          }),
-          
-          new webpack.optimize.UglifyJsPlugin({
-          })
-        ]
-    })
+        new webpack.LoaderOptionsPlugin({
+            minimize: true,
+            debug: false
+        }),
+
+        new webpack.DefinePlugin({
+            'process.env': {
+                'NODE_ENV': JSON.stringify('production')
+            }
+        }),
+
+        new webpack.optimize.UglifyJsPlugin({
+        })
+    ]
+})
 }
 
