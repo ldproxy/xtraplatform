@@ -1,4 +1,21 @@
+plugins {
+    id "com.moowork.node" version "1.1.1"
+}
+
+node {
+    download = false
+}
+
 version='1.0.0-SNAPSHOT'
+
+sourceSets {
+  main {
+      resources {
+        srcDir 'src/main/javascript'
+        exclude 'node_modules/**'
+      }
+  }
+}
 
 jar {
     manifest {
@@ -8,10 +25,23 @@ jar {
     }
 }
 
-plugins {
-    id "com.moowork.node" version "1.1.1"
+npm_install {
+  execOverrides {
+    it.workingDir = 'src/main/javascript'
+  }
 }
 
-node {
-    download = false
+task npm_build(type: NpmTask) {
+  execOverrides {
+    it.workingDir = 'src/main/javascript'
+  }
+  args = ['run', 'build']
+}
+
+npm_build.dependsOn npm_install
+
+npm_start {
+  execOverrides {
+    it.workingDir = 'src/main/javascript'
+  }
 }

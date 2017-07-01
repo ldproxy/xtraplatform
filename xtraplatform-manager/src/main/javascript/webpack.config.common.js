@@ -11,14 +11,14 @@ const extractSass = new ExtractTextPlugin({
 });
 
 return {
-    context: resolve(__dirname, 'src/app'),
+    context: resolve(),
 
     entry: [
         './index.jsx'
     ],
     output: {
         filename: '[name].js',
-        path: resolve(__dirname, 'dist')
+        path: resolve('../resources/manager')
     },
 
     devtool: 'eval',
@@ -38,7 +38,7 @@ return {
                 use: [{
                     loader: 'babel-loader',
                 }],
-                exclude: /(node_modules)/
+                exclude: /node_modules(?!\/xtraplatform)/
             },
             {
                 test: /\.scss$/,

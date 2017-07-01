@@ -7,7 +7,7 @@ module.exports = function(env) {
 return webpackMerge.strategy({
     entry: 'prepend'
 }
-)(commonConfig(), {
+)(commonConfig(env), {
     entry: [
         'react-hot-loader/patch'
     ],
@@ -26,7 +26,7 @@ return webpackMerge.strategy({
         port: 7090,
         hot: true,
         stats: 'normal',
-        contentBase: resolve(__dirname, 'dist'),
+        contentBase: resolve('../resources/manager'),
         publicPath: '/',
         proxy: {
             "/rest": "http://localhost:7080"

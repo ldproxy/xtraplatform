@@ -13,7 +13,9 @@ return webpackMerge(commonConfig(env), {
     devtool: 'eval',
 
     plugins: [
-        new CleanWebpackPlugin([resolve(__dirname, 'dist')]),
+        new CleanWebpackPlugin(['resources/manager'], {
+            root: resolve('../')
+        }),
 
         new webpack.HashedModuleIdsPlugin(),
 
