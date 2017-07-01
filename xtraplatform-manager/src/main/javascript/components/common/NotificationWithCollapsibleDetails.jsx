@@ -11,6 +11,9 @@ import CaretNextIcon from 'grommet/components/icons/base/CaretNext';
 import CaretDownIcon from 'grommet/components/icons/base/CaretDown';
 
 
+import './NotificationWithCollapsibleDetails.scss';
+
+
 class NotificationWithCollapsibleDetails extends Component {
 
     constructor(props) {

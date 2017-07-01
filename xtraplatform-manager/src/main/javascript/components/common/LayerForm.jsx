@@ -1,6 +1,8 @@
 // (C) Copyright 2016 Hewlett Packard Enterprise Development LP
 
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+
 import Layer from 'grommet/components/Layer';
 import Box from 'grommet/components/Box';
 import Form from 'grommet/components/Form';
@@ -13,12 +15,7 @@ import BusyIcon from 'grommet/components/icons/Spinning';
 
 export default class LayerForm extends Component {
 
-    constructor() {
-        super();
-        this._onSubmit = this._onSubmit.bind(this);
-    }
-
-    _onSubmit(event) {
+    _onSubmit = (event) => {
         event.preventDefault();
         this.props.onSubmit();
     }

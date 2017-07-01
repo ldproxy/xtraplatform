@@ -24,6 +24,7 @@ import { routerReducer, routerMiddleware } from 'react-router-redux'
 import { hashHistory as history } from 'react-router'
 import createSagaMiddleware from 'redux-saga'
 import rootSaga from './sagas'
+import { reducer as uiReducer } from 'redux-ui'
 
 // The data parameter that we see here is used to initialize our Redux store with data. We didn't
 // talk about this yet for simplicity but thanks to it your reducers can be initialized
@@ -34,7 +35,8 @@ import rootSaga from './sagas'
 export default function(data) {
     var reducer = combineReducers({
         ...reducers,
-        routing: routerReducer
+        routing: routerReducer,
+        ui: uiReducer
     })
 
     const routerMiddleware2 = routerMiddleware(history)

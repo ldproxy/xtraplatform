@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
+
 import Split from 'grommet/components/Split';
 import Article from 'grommet/components/Article';
 import Header from 'grommet/components/Header';
@@ -15,25 +16,29 @@ import ListItem from 'grommet/components/ListItem';
 import LinkPreviousIcon from 'grommet/components/icons/base/LinkPrevious';
 import MoreIcon from 'grommet/components/icons/base/More';
 import ListPlaceholder from 'grommet-addons/components/ListPlaceholder';
+
 import ServiceActions from './ServiceActions';
+import ServiceEditGeneral from '../presentational/ServiceEditGeneral';
+
 import { push } from 'react-router-redux'
 import { actions, getSelectedService, getService, getFeatureTypes } from '../../reducers/service'
 
 
-const mapStateToProps = (state, props) => {
-    return {
-        service: getService(state, props.params.id),
-        featureTypes: getFeatureTypes(state, props.params.id),
-        selectedService: getSelectedService(state)
-    }
-}
+@connect(
+    (state, props) => {
+        return {
+            service: getService(state, props.params.id),
+            selectedService: getSelectedService(state)
+        }
+    },
+    (dispatch) => {
+        return {
+            ...bindActionCreators(actions, dispatch),
+            dispatch
+        }
+    })
 
-const mapDispatchToProps = (dispatch) => ({
-    ...bindActionCreators(actions, dispatch),
-    dispatch
-});
-
-class ServiceShow extends Component {
+export default class ServiceShow extends Component {
 
     constructor(props) {
         super(props);
@@ -68,68 +73,35 @@ class ServiceShow extends Component {
         });
     }
 
-    // TODO
-    _select = (fid) => {
-        return () => {
-            var sid = this.props.service.id;
-            console.log('selected: ', sid, fid);
-            // TODO: save in store and push via action, see ferret
-            //this.props.dispatch(actions.selectFeatureType(fid));
-            this.props.dispatch(push('/services/' + sid + '/' + fid));
-        };
+    _onChange = (change) => {
+        const {service, updateService} = this.props;
 
+        updateService({
+            ...change,
+            id: service.id
+        });
     }
 
-    _renderFeatureTypes() {
-        const {featureTypes} = this.props;
-
-        let fts = []
-
-        if (featureTypes)
-            fts = featureTypes.map((ft, i) => <ListItem key={ ft.id } separator={ i === 0 ? 'horizontal' : 'bottom' } onClick={ this._select(ft.name) }>
-                                                  { ft.displayName }
-                                              </ListItem>)
-        return (
-            <Section pad={ { vertical: 'medium' } } full="horizontal">
-                <Box pad={ { horizontal: 'medium' } }>
-                    <Heading tag="h2">
-                        Feature Types
-                    </Heading>
-                </Box>
-                <List>
-                    { fts.length <= 0 ?
-                      <ListPlaceholder /> :
-                      fts }
-                </List>
-            </Section>
-        );
-    }
-
+    // TODO: use some kind of declarative wrapper like refetch
     render() {
-        const {service, role, category, virtualMachine, updateService, removeService} = this.props;
+        const {service, children, updateService, removeService} = this.props;
         console.log('loading service ', service ? service.id : 'none');
-
-        let fts;
-        fts = this._renderFeatureTypes();
 
         let sidebar;
         let sidebarControl;
-        if ('read only' !== role) {
-            let onSidebarClose;
-            if ('single' === this.props.responsive) {
-                sidebarControl = (
-                    <Button icon={ <MoreIcon /> } onClick={ this._onToggleSidebar } />
-                );
-                onSidebarClose = this._onToggleSidebar;
-            }
-            sidebar = (
-                <ServiceActions category={ category }
-                    service={ service }
-                    onClose={ onSidebarClose }
-                    updateService={ updateService }
-                    removeService={ removeService } />
+        let onSidebarClose;
+        if ('single' === this.props.responsive) {
+            sidebarControl = (
+                <Button icon={ <MoreIcon /> } onClick={ this._onToggleSidebar } />
             );
+            onSidebarClose = this._onToggleSidebar;
         }
+        sidebar = (
+            <ServiceActions service={ service }
+                onClose={ onSidebarClose }
+                updateService={ updateService }
+                removeService={ removeService } />
+        );
 
         return (
             service && <Split flex="left"
@@ -154,7 +126,8 @@ class ServiceShow extends Component {
                                    <Section full="horizontal" pad="none">
                                        <Notification pad="medium" status={ service.status === 'STARTED' ? 'ok' : 'critical' } message={ service.status === 'STARTED' ? 'Online' : 'Offline' } />
                                    </Section>
-                                   { fts }
+                                   <ServiceEditGeneral service={ service } onChange={ this._onChange } />
+                                   { children }
                                </Article>
                            </div>
                            { sidebar }
@@ -163,8 +136,3 @@ class ServiceShow extends Component {
     }
 }
 
-
-
-const ConnectedServiceShow = connect(mapStateToProps, mapDispatchToProps)(ServiceShow)
-
-export default ConnectedServiceShow
