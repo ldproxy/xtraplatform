@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
+import { connectRequest } from 'redux-query';
+import normalize from '../../apis/ServiceNormalizer'
 
 import Split from 'grommet/components/Split';
 import Article from 'grommet/components/Article';
@@ -8,7 +10,6 @@ import Header from 'grommet/components/Header';
 import Heading from 'grommet/components/Heading';
 import Section from 'grommet/components/Section';
 import Box from 'grommet/components/Box';
-import Anchor from 'grommet/components/Anchor';
 import Button from 'grommet/components/Button';
 import Notification from 'grommet/components/Notification';
 import List from 'grommet/components/List';
@@ -19,16 +20,29 @@ import ListPlaceholder from 'grommet-addons/components/ListPlaceholder';
 
 import ServiceActions from './ServiceActions';
 import ServiceEditGeneral from '../presentational/ServiceEditGeneral';
+import Anchor from '../common/AnchorLittleRouter';
 
 import { push } from 'react-router-redux'
 import { actions, getSelectedService, getService, getFeatureTypes } from '../../reducers/service'
 
 
+
+@connectRequest(
+    (props) => ({
+        url: `/rest/admin/services/${props.urlParams.id}/config/`,
+        transform: (serviceConfig) => normalize([serviceConfig]).entities,
+        update: {
+            services: (prev, next) => next,
+            featureTypes: (prev, next) => next,
+            mappings: (prev, next) => next
+        }
+    }))
+
+
 @connect(
     (state, props) => {
         return {
-            service: getService(state, props.params.id),
-            selectedService: getSelectedService(state)
+            service: state.entities.services ? state.entities.services[props.urlParams.id] : null
         }
     },
     (dispatch) => {
@@ -53,7 +67,7 @@ export default class ServiceShow extends Component {
     }
 
     // TODO: use some kind of declarative wrapper like refetch
-    componentDidMount() {
+    /*componentDidMount() {
         const {selectService, params} = this.props;
 
         selectService(params.id);
@@ -65,7 +79,7 @@ export default class ServiceShow extends Component {
 
         if (params && selectedService !== params.id)
             selectService(params.id);
-    }
+    }*/
 
     _onToggleSidebar() {
         this.setState({

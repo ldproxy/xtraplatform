@@ -1,43 +1,49 @@
-import 'babel-polyfill';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux'
-import { AppContainer } from 'react-hot-loader';
-import { hashHistory as history } from 'react-router'
-import { syncHistoryWithStore } from 'react-router-redux'
-import createStore from './create-store'
-import App from './components/container/App'
-import { actions } from './reducers/app'
-//console.log(actions);
 
-import services from './assets/services'
+import { render } from './components/common/AppLittleRouter'
 
-const render = (Component, store) => {
-    ReactDOM.render(
-        <AppContainer>
-            <Provider store={ store }>
-                <Component history={ syncHistoryWithStore(history, store) } />
-            </Provider>
-        </AppContainer>,
-        document.getElementById('app-wrapper')
-    );
-};
+import Manager from './components/container/Manager'
+import Services from './components/container/Services'
+import ServiceShow from './components/container/ServiceShow'
+import ServiceAdd from './components/container/ServiceAdd'
 
 
-const store = createStore( /*{
-    service: services
-}*/ )
-store.dispatch(actions.changeTitle('ldproxy'));
-document.title = 'ldproxy Manager';
 
-render(App, store);
+const app = {
+    applicationName: 'XtraPlatform',
+    routes: {
+        path: '/',
+        component: Manager,
+        title: 'Manager',
+        routes: [
+            {
+                path: '/services/add',
+                component: ServiceAdd,
+                parent: '/services'
+            },
+            {
+                path: '/services/:id',
+                component: ServiceShow,
+                parent: '/services'
+            },
+            {
+                path: '/services/:id/:ftid',
+                parent: '/services/:id'
+            },
+            {
+                path: '/services',
+                component: Services,
+                title: 'Services',
+                menu: true
+            }
+        ]
+    }
+}
+
+render(app);
 
 // Hot Module Replacement API
 if (module && module.hot) {
-    module.hot.accept('./components/container/App', () => {
-        render(App, store)
+    module.hot.accept('./index.jsx', () => {
+        render(app);
     });
-/*module.hot.accept('./create-store', () => {
-    render(App, createStore())
-});*/
 }

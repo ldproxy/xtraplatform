@@ -1,56 +1,59 @@
-// Tutorial 12 - Provider-and-connect.js
-
-// There is not much to say here, you've seen this plenty of times and it should feel pretty
-// familiar to you now...
-
-// One thing to notice though: we're not using the thunk middleware that we've seen before. Instead
-// we use a promise middleware solution that will allow us to handle asynchronous action creators and
-// to do some nice real time updates on our UI (could also do some optimistic updates).
-// This middleware was discussed here: https://github.com/rackt/redux/issues/99 and it is used
-// in this very good react-redux-universal-example: https://github.com/erikras/react-redux-universal-hot-example
-// that I strongly suggest you get a look at (later, not right now ;)).
-
 import { createStore, applyMiddleware, combineReducers } from 'redux'
 import { composeWithDevTools } from 'redux-devtools-extension/developmentOnly';
-// You can go and see the code for this middleware, it's not very complicated and makes a good
-// exercise to sharpen your understanding on middlewares.
-//import promiseMiddleware from './promise-middleware'
 
-// We'll just have one reducer in this application but the ES6 import notation below is
-// pretty interesting to import and produce a reducers hash in one go. Have a look in
-// ./reducers.js to see what our reducer actually do (no magic there).
-import * as reducers from './reducers'
-import { routerReducer, routerMiddleware } from 'react-router-redux'
-import { hashHistory as history } from 'react-router'
+//import { routerReducer, routerMiddleware } from 'react-router-redux'
+//import { hashHistory as history } from 'react-router'
+
+import { routerForBrowser, initializeCurrentLocation, push } from 'redux-little-router';
+import { routesToLittleRouter } from './util'
+//import { persistStore } from 'redux-persist'
+//import { createFilter } from 'redux-persist-transform-filter';
+//import createActionBuffer from 'redux-action-buffer'
+
 import createSagaMiddleware from 'redux-saga'
-import rootSaga from './sagas'
 import { reducer as uiReducer } from 'redux-ui'
+import { entitiesReducer, queriesReducer, queryMiddleware } from 'redux-query';
 
-// The data parameter that we see here is used to initialize our Redux store with data. We didn't
-// talk about this yet for simplicity but thanks to it your reducers can be initialized
-// with real data if you already have some. For example in an isomorphic/universal app where you
-// fetch data server-side, serialize and pass it to the client, your Redux store can be
-// initialized with that data.
-// We're not passing any data here but it's good to know about this createStore's ability.
-export default function(data) {
-    var reducer = combineReducers({
-        ...reducers,
-        routing: routerReducer,
-        ui: uiReducer
+
+import * as reducers from './reducers'
+//import rootSaga from './sagas'
+
+export default function(routes, data) {
+
+    const {reducer: routerReducer, middleware: routerMiddleware, enhancer: routerEnhancer} = routerForBrowser({
+        routes: routesToLittleRouter(routes),
+        basename: '/manager'
     })
 
-    const routerMiddleware2 = routerMiddleware(history)
-    const sagaMiddleware = createSagaMiddleware()
+    const combine = (reds) => combineReducers({
+        ...reds,
+        router: routerReducer,
+        ui: uiReducer,
+        entities: entitiesReducer,
+        queries: queriesReducer,
+    })
+
+    const reducer = combine(reducers)
+
+    //const routerMiddleware2 = routerMiddleware(history)
+    //const sagaMiddleware = createSagaMiddleware()
+
+    const queriesMiddleware = queryMiddleware((state) => state.queries, (state) => state.entities)
+
+    //const initMiddleware = createActionBuffer(appActions.initApp.toString());
+
+    const middleware = [ /*sagaMiddleware,*/ routerMiddleware, queriesMiddleware /*, initMiddleware*/ ];
 
     // Be sure to ONLY add this middleware in development!
-    const middleware = process.env.NODE_ENV !== 'production' ?
-        [require('redux-immutable-state-invariant').default() /*, promiseMiddleware*/ , sagaMiddleware, routerMiddleware2] :
-        [ /*promiseMiddleware, */ sagaMiddleware, routerMiddleware2];
+    //if (process.env.NODE_ENV !== 'production')
+    //middleware.unshift(require('redux-immutable-state-invariant').default())
+
 
     var store = createStore(
         reducer,
         data,
         composeWithDevTools(
+            routerEnhancer,
             applyMiddleware(...middleware),
         // other store enhancers if any
         )
@@ -60,15 +63,40 @@ export default function(data) {
         // Enable Webpack hot module replacement for reducers
         module.hot.accept('./reducers', () => {
             const nextReducer = require('./reducers');
-            store.replaceReducer(combineReducers(nextReducer));
+            store.replaceReducer(combine(nextReducer));
         });
     }
 
-    sagaMiddleware.run(rootSaga);
+    //sagaMiddleware.run(rootSaga);
+
+    const initialLocation = store.getState().router;
+    if (initialLocation) {
+        store.dispatch(initializeCurrentLocation(initialLocation));
+    }
 
     return store
 }
 
-// Go to ./application.jsx to learn of the first Redux binding for React: the Provider component.
+/*
+const persistingStore = persistStore(store, {
+    keyPrefix: 'PMT.',
+    debounce: 1000,
+    whitelist: ['auth', 'app'],
+    transforms: [
+        createFilter(
+            'app',
+            ['useThreePaneView', 'useSmallerFont', 'menuOpen', 'flattenInheritance', 'flattenOninas', 'busy']
+        )
+    ]
+}, () => {
+    // ...after creating your store
+    const initialLocation = store.getState().router;
+    if (initialLocation) {
+        //TODO
+        setTimeout(function() {
+            store.dispatch(initializeCurrentLocation(initialLocation));
+        }, 500)
 
-
+    }
+});
+*/

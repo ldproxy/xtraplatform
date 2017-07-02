@@ -96,7 +96,7 @@ function* removeService(action) {
 }
 
 function* rootSaga() {
-    yield fork(loadServices);
+    //yield fork(loadServices);
     yield takeEvery(actions.selectService, loadServiceConfig);
     yield takeEvery(actions.updateService, updateServiceConfig);
     yield takeEvery(actions.addService, addService);

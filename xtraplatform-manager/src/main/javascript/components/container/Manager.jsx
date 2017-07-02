@@ -7,16 +7,18 @@ import '../../scss/default/index';
 import React, { Component } from 'react';
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
+
 import App from 'grommet/components/App';
 import Split from 'grommet/components/Split';
 import NavSidebar from '../presentational/NavSidebar'
+
 import { actions, getTitle, getRoutes, getNavActive } from '../../reducers/app'
 
 
 const mapStateToProps = (state /*, props*/ ) => {
     return {
-        title: getTitle(state),
-        routes: getRoutes(state),
+        //title: getTitle(state),
+        //routes: getRoutes(state),
         navActive: getNavActive(state)
     }
 }
@@ -27,19 +29,26 @@ const mapDispatchToProps = (dispatch) => ({
 
 class Manager extends Component {
 
+    componentDidMount() {
+        const {applicationName, title} = this.props;
+
+        document.title = `${applicationName} ${title}`;
+    }
+
     render() {
-        const {navToggle, navActive} = this.props;
+        const {navToggle, navActive, applicationName, routes, children} = this.props;
+
 
         let nav;
         if (navActive) {
-            nav = <NavSidebar title={ this.props.title } routes={ this.props.routes } onClose={ navToggle.bind(null, false) } />;
+            nav = <NavSidebar title={ applicationName } routes={ routes } onClose={ navToggle.bind(null, false) } />;
         }
 
         return (
             <App centered={ false }>
                 <Split flex="right">
                     { nav }
-                    { this.props.children }
+                    { children }
                 </Split>
             </App>
         );

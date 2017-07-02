@@ -1,11 +1,13 @@
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
+import { mutateAsync, requestAsync } from 'redux-query';
+import normalize from '../../apis/ServiceNormalizer'
 import ui from 'redux-ui';
 
 import Section from 'grommet/components/Section';
 import Box from 'grommet/components/Box';
-import Anchor from 'grommet/components/Anchor';
 import Header from 'grommet/components/Header';
 import Heading from 'grommet/components/Heading';
 import Footer from 'grommet/components/Footer';
@@ -17,6 +19,7 @@ import LinkPreviousIcon from 'grommet/components/icons/base/LinkPrevious';
 
 
 import TextInputUi from '../common/TextInputUi';
+import Anchor from '../common/AnchorLittleRouter';
 import { actions } from '../../reducers/service'
 
 
@@ -31,9 +34,33 @@ import { actions } from '../../reducers/service'
     (state, props) => {
         return {}
     },
-    (dispatch) => {
+    (dispatch, props) => {
         return {
-            ...bindActionCreators(actions, dispatch)
+            addService: () => {
+                dispatch(mutateAsync({
+                    url: `/rest/admin/services/`,
+                    body: JSON.stringify(props.ui),
+                    options: {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                }))
+                    .then((result) => {
+                        if (result.status === 200) {
+                            dispatch(requestAsync({
+                                url: `/rest/admin/services/${props.ui.id}/`,
+                                transform: (service) => normalize([service]).entities,
+                                update: {
+                                    services: (prev, next) => next
+                                }
+                            }));
+                        } else {
+                            console.log('ERR', result)
+                        }
+                    })
+            }
         }
     })
 
@@ -47,8 +74,7 @@ export default class ServiceAdd extends Component {
     }
 
     render() {
-        const {ui, updateUI} = this.props;
-        const {children} = this.props;
+        const {ui, updateUI, addService, children} = this.props;
 
         return (
             <div>
@@ -80,7 +106,7 @@ export default class ServiceAdd extends Component {
                         </fieldset>
                     </FormFields>
                     <Footer pad={ { "vertical": "medium" } }>
-                        <Button label='Add' primary={ true } onClick={ this._addService } />
+                        <Button label='Add' primary={ true } onClick={ addService } />
                     </Footer>
                 </Form>
             </div>
