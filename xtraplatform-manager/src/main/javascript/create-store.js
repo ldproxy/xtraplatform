@@ -4,7 +4,7 @@ import { composeWithDevTools } from 'redux-devtools-extension/developmentOnly';
 //import { routerReducer, routerMiddleware } from 'react-router-redux'
 //import { hashHistory as history } from 'react-router'
 
-import { routerForBrowser, initializeCurrentLocation, push } from 'redux-little-router';
+import { routerForHash, initializeCurrentLocation, push } from 'redux-little-router';
 import { routesToLittleRouter } from './util'
 //import { persistStore } from 'redux-persist'
 //import { createFilter } from 'redux-persist-transform-filter';
@@ -19,10 +19,10 @@ import * as reducers from './reducers'
 //import rootSaga from './sagas'
 
 export default function(routes, data) {
-
-    const {reducer: routerReducer, middleware: routerMiddleware, enhancer: routerEnhancer} = routerForBrowser({
+    console.log(routesToLittleRouter(routes));
+    const {reducer: routerReducer, middleware: routerMiddleware, enhancer: routerEnhancer} = routerForHash({
         routes: routesToLittleRouter(routes),
-        basename: '/manager'
+    //basename: '/manager'
     })
 
     const combine = (reds) => combineReducers({

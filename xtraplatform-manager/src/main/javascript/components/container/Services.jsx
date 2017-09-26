@@ -1,77 +1,51 @@
 import React, { Component } from 'react';
-import { bindActionCreators } from 'redux'
+import PropTypes from 'prop-types';
 import { connect } from 'react-redux'
-import { push } from 'redux-little-router'
 import { connectRequest } from 'redux-query';
-import normalize from '../../apis/ServiceNormalizer'
-
-import ServiceIndex from '../presentational/ServiceIndex'
-import { actions as srvcActions, getServices } from '../../reducers/service'
-import { actions, getNavActive } from '../../reducers/app'
-
+import ServiceApi from '../../apis/ServiceApi'
 
 @connect(
     (state, props) => {
         return {
             services: state.entities.services, //getServices(state),
             serviceIds: state.entities.serviceIds,
-            navActive: getNavActive(state),
-            messages: state.service.messages
+            serviceType: state.router.params && state.router.params.id && state.entities.services && state.entities.services[state.router.params.id] && state.entities.services[state.router.params.id].type // || 'base'
         }
-    },
-    {
-        ...actions,
-        ...srvcActions,
-        push
     }
 )
 
 @connectRequest(
     (props) => {
         if (!props.serviceIds) {
-            return {
-                url: `/rest/admin/services/`,
-                transform: (serviceIds) => ({
-                    serviceIds: serviceIds
-                }),
-                update: {
-                    serviceIds: (prev, next) => next
-                }
-            }
+            return ServiceApi.getServicesQuery()
         }
-
-        return props.serviceIds.map(id => ({
-            url: `/rest/admin/services/${id}/`,
-            transform: (service) => normalize([service]).entities,
-            update: {
-                services: (prev, next) => Object.assign({}, prev, next)
-            }
-        }))
+        return props.serviceIds.map(id => ServiceApi.getServiceQuery(id))
     })
 
 export default class Services extends Component {
 
-    /*_select = (id) => {
-        return () => {
-            console.log('selected: ', id);
-            // TODO: save in store and push via action, see ferret
-            //this.props.dispatch(actions.selectService(id));
-            this.props.push('/services/' + id);
-        };
-
-    }*/
-
     render() {
-        const {services, navActive, navToggle, messages, clearMessage} = this.props;
-        return (
-            <ServiceIndex services={ services }
-                role="ADMINISTRATOR"
-                index={ {} }
-                messages={ messages }
-                changeLocation={ this.props.push }
-                navActive={ navActive }
-                onNavOpen={ navToggle.bind(null, true) }
-                onMessageClose={ clearMessage } />
+        const {services, serviceIds, serviceType, children, ...rest} = this.props;
+
+        const componentProps = {
+            services,
+            serviceIds,
+            serviceType
+        }
+
+        const childrenWithProps = React.Children.map(children,
+            (child) => React.cloneElement(child, {}, React.cloneElement(React.Children.only(child.props.children), componentProps))
         );
+
+        return <div>
+                   { childrenWithProps }
+               </div>
     }
 }
+
+Services.propTypes = {
+    //children: PropTypes.element.isRequired
+};
+
+Services.defaultProps = {
+};

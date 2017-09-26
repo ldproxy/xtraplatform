@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
 
 import Header from 'grommet/components/Header';
 import Heading from 'grommet/components/Heading';
@@ -18,13 +17,8 @@ import LayerForm from '../common/LayerForm';
 import Paragraph from 'grommet/components/Paragraph';
 
 
-const mapStateToProps = (state /*, props*/ ) => {
-    return {
 
-    }
-}
-
-class ServiceActions extends Component {
+export default class ServiceActions extends Component {
 
     constructor(props) {
         super(props);
@@ -136,11 +130,11 @@ class ServiceActions extends Component {
                             target="_blank" />
                         { stateControls }
                         { /*<Button align="start"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            plain={ true }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            icon={ <EditIcon /> }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            label="Edit"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            onClick={ this._onEdit }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            a11yTitle={ `Edit ${service.name} Virtual Machine` } />*/ }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            plain={ true }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            icon={ <EditIcon /> }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            label="Edit"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            onClick={ this._onEdit }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            a11yTitle={ `Edit ${service.name} Virtual Machine` } />*/ }
                         <Button align="start"
                             plain={ true }
                             icon={ <TrashIcon /> }
@@ -154,8 +148,3 @@ class ServiceActions extends Component {
         );
     }
 }
-
-
-const ConnectedServiceActions = connect(mapStateToProps)(ServiceActions)
-
-export default ConnectedServiceActions

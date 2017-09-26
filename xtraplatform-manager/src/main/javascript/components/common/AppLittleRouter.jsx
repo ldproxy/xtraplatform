@@ -1,35 +1,32 @@
-import React, { Component } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, connect } from 'react-redux'
 import { AppContainer } from 'react-hot-loader';
-import { RouterProvider, Fragment } from 'redux-little-router';
+//import { RouterProvider } from 'redux-little-router';
 
-import createStore from '../../create-store'
-import App from '../common/AppFromRoutes'
+import App from './AppFromRoutes'
 
 
 let config;
 let store;
 
-export const render = (appConfig) => {
+export const render = (appStore, appConfig) => {
     config = appConfig;
+    store = appStore;
 
-    store = createStore(appConfig.routes);
-
-    _render(App, store, appConfig);
+    _render(App, store, config);
 }
 
 const _render = (Component, store, props) => {
-    const Connected = connect(state => ({
-        urlParams: state.router.params
-    }))(Component)
+    const Connected = connect((state => ({
+        urlParams: state.router.params,
+        urlQuery: state.router.query
+    })))(Component)
 
     ReactDOM.render(
         <AppContainer>
             <Provider store={ store }>
-                <RouterProvider store={ store }>
-                    <Connected { ...props } />
-                </RouterProvider>
+                <Connected { ...props } />
             </Provider>
         </AppContainer>,
         document.getElementById('app-wrapper')

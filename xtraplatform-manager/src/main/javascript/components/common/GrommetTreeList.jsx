@@ -10,7 +10,7 @@ import DownIcon from 'grommet/components/icons/base/Down';
 import StopIcon from 'grommet/components/icons/base/Stop';
 import StatusIcon from 'grommet/components/icons/Status';
 
-import TreeList from './TreeList'
+import TreeList from './TreeListStateful'
 
 class GrommetTreeList extends Component {
 
@@ -39,15 +39,18 @@ class GrommetTreeList extends Component {
     _renderLeaf = (leaf, isFirst, isLast, isSelected, isExpanded, hasChildren, depth, onSelect, onExpand) => {
 
         return <ListItem key={ leaf._id } separator={ isFirst ? 'horizontal' : 'bottom' } onClick={ () => onSelect(leaf) }>
-                   <Box direction="row" pad={ { between: 'small' } }>
-                       <span>{ depth > 0 && Array(depth).fill(0).map((v, i) => <StatusIcon key={ i } value="blank" size="medium" />) }</span>
+                   <Box direction="row" pad={ { between: 'small' } } margin='none'>
+                       { depth > 0 && Array(depth).fill(0).map((v, i) => <StatusIcon key={ i }
+                                                                             type="status"
+                                                                             value="blank"
+                                                                             size="small" />) }
                        { !leaf.expandable ?
                          <StopIcon size="small" />
                          :
                          isExpanded ?
-                         <MinusIcon size="small" /*onClick={ ()=> onExpand(leaf) }*/ />
+                         <MinusIcon size="small" onClick={ () => onExpand(leaf) } />
                          :
-                         <AddIcon size="small" /*onClick={ ()=> onExpand(leaf) }*/ /> }
+                         <AddIcon size="small" onClick={ () => onExpand(leaf) } /> }
                        <span className="message">{ leaf.title }</span>
                    </Box>
                </ListItem>

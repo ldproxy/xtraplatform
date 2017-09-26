@@ -81,13 +81,8 @@ function fetchFailed(state, action) {
 }
 
 function addFailed(state, action) {
-    let {[action.payload.id]: deletedItem, ...rest} = state.entities.services
     return {
         ...state,
-        entities: {
-            ...state.entities,
-            services: rest
-        },
         messages: {
             ...state.messages,
             [action.payload.id]: {

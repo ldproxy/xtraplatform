@@ -4,7 +4,7 @@ var commonProps = ['id']; // code
 
 var ftProps = commonProps.concat(['name', 'namespace', 'displayName', 'mappings']);
 
-var serviceProps = commonProps.concat(['type', 'name', 'description', 'status', 'featureTypes', 'dateCreated', 'wfsAdapter']);
+var serviceProps = commonProps.concat(['type', 'name', 'description', 'status', 'featureTypes', 'serviceProperties', 'dateCreated', 'wfsAdapter']);
 
 function filter(include, exclude, entity, parent) {
     var idFound = false
@@ -64,6 +64,14 @@ const ftSchema = new schema.Entity('featureTypes', {
     processStrategy: filter.bind(null, ftProps, [])
 });
 
+const serviceConfigSchema = new schema.Entity('serviceConfigs', {
+    featureTypes: new schema.Array(ftSchema)
+}, {
+    processStrategy: filter.bind(null, serviceProps, [])
+});
+
+const serviceConfigListSchema = new schema.Array(serviceConfigSchema);
+
 const serviceSchema = new schema.Entity('services', {
     featureTypes: new schema.Array(ftSchema)
 }, {
@@ -74,5 +82,13 @@ const serviceListSchema = new schema.Array(serviceSchema);
 
 export default function normalize2(services) {
     return normalize(services, serviceListSchema);
+}
+
+export const normalizeServices = function(services) {
+    return normalize(services, serviceListSchema);
+}
+
+export const normalizeServiceConfigs = function(services) {
+    return normalize(services, serviceConfigListSchema);
 }
 

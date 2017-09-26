@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import Tile from 'grommet/components/Tile';
 import Card from 'grommet/components/Card';
 import Heading from 'grommet/components/Heading';
+import Label from 'grommet/components/Label';
 import StatusIcon from 'grommet/components/icons/Status';
 import Spinning from 'grommet/components/icons/Spinning';
 import { Link } from 'redux-little-router';
@@ -32,7 +33,9 @@ export default class ServiceTile extends Component {
                                     { item.name }
                                 </Heading> }
                     textSize="small"
-                    label={ item.id }
+                    label={ <Label size='small' uppercase={ true } margin='small'>
+                                { item.id }
+                            </Label> }
                     description={ <span>{ icon } <span style={ { verticalAlign: 'middle' } }>{ status }</span></span> } />
             </Tile>
         );

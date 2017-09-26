@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
+import { push } from 'redux-little-router'
 import { mutateAsync, requestAsync } from 'redux-query';
-import normalize from '../../apis/ServiceNormalizer'
 import ui from 'redux-ui';
 
 import Section from 'grommet/components/Section';
@@ -17,10 +17,10 @@ import FormFields from 'grommet/components/FormFields';
 import FormField from 'grommet/components/FormField';
 import LinkPreviousIcon from 'grommet/components/icons/base/LinkPrevious';
 
-
+import ServiceApi from '../../apis/ServiceApi'
+import { actions } from '../../reducers/service'
 import TextInputUi from '../common/TextInputUi';
 import Anchor from '../common/AnchorLittleRouter';
-import { actions } from '../../reducers/service'
 
 
 
@@ -34,32 +34,25 @@ import { actions } from '../../reducers/service'
     (state, props) => {
         return {}
     },
-    (dispatch, props) => {
+    (dispatch) => {
         return {
-            addService: () => {
-                dispatch(mutateAsync({
-                    url: `/rest/admin/services/`,
-                    body: JSON.stringify(props.ui),
-                    options: {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    }
-                }))
+            addService: (service) => {
+                dispatch(mutateAsync(ServiceApi.addServiceQuery(service)))
                     .then((result) => {
                         if (result.status === 200) {
-                            dispatch(requestAsync({
-                                url: `/rest/admin/services/${props.ui.id}/`,
-                                transform: (service) => normalize([service]).entities,
-                                update: {
-                                    services: (prev, next) => next
-                                }
-                            }));
+                            dispatch(requestAsync(ServiceApi.getServiceQuery(service.id)));
                         } else {
-                            console.log('ERR', result)
+                            const error = result.body && result.body.error || {}
+                            dispatch(actions.addFailed({
+                                ...service,
+                                ...error,
+                                text: 'Failed to add service with id "' + service.id + '"',
+                                status: 'critical'
+                            }))
                         }
                     })
+
+                dispatch(push('/services'))
             }
         }
     })
@@ -106,7 +99,7 @@ export default class ServiceAdd extends Component {
                         </fieldset>
                     </FormFields>
                     <Footer pad={ { "vertical": "medium" } }>
-                        <Button label='Add' primary={ true } onClick={ addService } />
+                        <Button label='Add' primary={ true } onClick={ (ui.id.length < 3 || (ui.url.length < 11)) ? null : this._addService } />
                     </Footer>
                 </Form>
             </div>

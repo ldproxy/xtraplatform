@@ -11,7 +11,7 @@ const extractSass = new ExtractTextPlugin({
 });
 
 return {
-    context: resolve(__dirname),
+    context: resolve(),
 
     entry: [
         './index.jsx'
