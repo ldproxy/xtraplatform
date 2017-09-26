@@ -152,7 +152,7 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
 
     private void checkDeSerialization() throws IOException {
         if (serializedResource == null) {
-            if (operation == OPERATION.ADD) {
+            if (operation == OPERATION.ADD || operation == OPERATION.UPDATE) {
                 this.serializedResource = serializer.serializeAdd(resource);
             } else {
                 this.serializedResource = serializer.serializeUpdate(resource);
