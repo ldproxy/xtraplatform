@@ -1,3 +1,5 @@
+version='1.0.1-SNAPSHOT'
+
 jar {
     manifest { 
         instruction 'X-Web-Resource-Version', '1.1'
