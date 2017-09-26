@@ -56,7 +56,7 @@ public abstract class AbstractService implements Service, Comparable <AbstractSe
     }
 
     @Override
-    public long getDateCreated() {
+    public Long getDateCreated() {
         return dateCreated;
     }
 
@@ -66,7 +66,7 @@ public abstract class AbstractService implements Service, Comparable <AbstractSe
     }
 
     @Override
-    public long getLastModified() {
+    public Long getLastModified() {
         return lastModified;
     }
 

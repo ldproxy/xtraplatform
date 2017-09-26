@@ -29,6 +29,7 @@ public abstract class AbstractCacheTransaction<T extends Resource> implements Tr
     protected final ResourceCache<T> cache;
     protected final String key;
     private final T backup;
+    protected final boolean keyExists;
     protected ResourceTransaction.OPERATION operation;
     protected DeepUpdater<T> deepUpdater;
 
@@ -36,6 +37,7 @@ public abstract class AbstractCacheTransaction<T extends Resource> implements Tr
         this.cache = cache;
         this.key = key;
         this.backup = cache.get(key);
+        this.keyExists = cache.hasResource(key);
     }
     
     @Override
@@ -45,7 +47,7 @@ public abstract class AbstractCacheTransaction<T extends Resource> implements Tr
 
     @Override
     public void rollback() {
-        if (backup != null) {
+        if (backup != null || keyExists) {
             cache.put(key, backup);
         } else {
             cache.remove(key);

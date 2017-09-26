@@ -37,12 +37,12 @@ public interface Service {
     }
     
     @JsonView(JsonViews.DefaultView.class)
-    public long getDateCreated();
+    public Long getDateCreated();
 
     public void setDateCreated(long dateCreated);
 
     @JsonView({JsonViews.DefaultView.class,JsonViews.ConfigurationView.class})
-    public long getLastModified();
+    public Long getLastModified();
 
     public void setLastModified(long lastModified);
 

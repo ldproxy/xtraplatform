@@ -178,8 +178,38 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
 
     @Override
     public HttpClient getDefaultHttpClient() {
+        return getHttpClient("xsf", null);
+    }
 
-        InstrumentedHttpClient httpclient = (InstrumentedHttpClient) new HttpClientBuilder(getEnvironment()).using(getConfiguration().httpClient).build("xsf" + new DateTime().toString());
+    @Override
+    public HttpClient getUntrustedSslHttpClient(String id) {
+        // TODO: this workaround leads to untrusted ssl connections being accepted
+        SchemeRegistry registry = null;
+        try {
+            TrustStrategy acceptingTrustStrategy = new TrustStrategy() {
+                @Override
+                public boolean isTrusted(X509Certificate[] certificate, String authType) {
+                    return true;
+                }
+            };
+            SSLSocketFactory sf = new SSLSocketFactory(acceptingTrustStrategy, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+            registry = new SchemeRegistry();
+            registry.register(new Scheme("https", 443, sf));
+        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException | UnrecoverableKeyException ex) {
+        }
+
+        return getHttpClient(id, registry);
+    }
+
+    private HttpClient getHttpClient(String id, SchemeRegistry registry) {
+
+        HttpClientBuilder hcb = new HttpClientBuilder(getEnvironment()).using(getConfiguration().httpClient);
+
+        if (registry != null) {
+            hcb = hcb.using(registry);
+        }
+
+        InstrumentedHttpClient httpclient = (InstrumentedHttpClient) hcb.build(id + new DateTime().toString());
 
         httpclient.addRequestInterceptor(new HttpRequestInterceptor() {
 
@@ -223,32 +253,6 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
         });
 
         return httpclient;
-    }
-
-    @Override
-    public HttpClient getUntrustedSslHttpClient(String id) {
-        // TODO: this workaround leads to untrusted ssl connections being accepted
-        SchemeRegistry registry = null;
-        try {
-            TrustStrategy acceptingTrustStrategy = new TrustStrategy() {
-                @Override
-                public boolean isTrusted(X509Certificate[] certificate, String authType) {
-                    return true;
-                }
-            };
-            SSLSocketFactory sf = new SSLSocketFactory(acceptingTrustStrategy, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-            registry = new SchemeRegistry();
-            registry.register(new Scheme("https", 443, sf));
-        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException | UnrecoverableKeyException ex) {
-        }
-
-        HttpClientBuilder hcb = new HttpClientBuilder(getEnvironment());
-
-        if (registry != null) {
-            hcb = hcb.using(registry);
-        }
-
-        return hcb.build(id + new DateTime().toString());
     }
 
     @Override

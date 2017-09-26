@@ -41,7 +41,7 @@ public class JacksonProvider implements Jackson {
         //jsonMapper.disable(MapperFeature.USE_ANNOTATIONS);
         jsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
         jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     }
 
     @Override

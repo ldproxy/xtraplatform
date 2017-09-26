@@ -123,18 +123,24 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
         
         LOGGER.getLogger().debug("EXEC RT {} {} {} {} {} {}", operation, path, resourceId, serializedResource, resource, serializer);
 
+        if (operation != OPERATION.DELETE) {
         checkDeSerialization();
+        }
 
         for (Transaction t : transactions) {
-            LOGGER.getLogger().debug("WRITE T {}", t);
+            if (operation != OPERATION.DELETE) {
 
             try {
-                ((WriteTransaction<T>) t).write(resource);
+                    ((WriteTransaction<String>) t).write(serializedResource);
+                    LOGGER.getLogger().debug("WRITE T<String> {}", t);
             } catch (ClassCastException e) {
                 try {
-                    ((WriteTransaction<String>) t).write(serializedResource);
+                        ((WriteTransaction<T>) t).write(resource);
+                        LOGGER.getLogger().debug("WRITE T<T> {}", t);
                 } catch (ClassCastException e2) {
                     // ignore
+                        LOGGER.getLogger().debug("NO WRITE FOR T {}", t);
+                    }
                 }
             }
 
@@ -167,7 +173,12 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
 
     @Override
     public void rollback() {
-        super.rollback(); 
+        LOGGER.getLogger().debug("ROLLBACK RT {} {} {}", operation, path, resourceId);
+        //super.rollback();
+        for (Transaction t : transactions) {
+            LOGGER.getLogger().debug("ROLLBACK T {}", t);
+            t.rollback();
+        }
         close();
     }
 

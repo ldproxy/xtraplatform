@@ -19,6 +19,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.Files;
+import de.ii.xsf.logging.XSFLogger;
+import org.apache.commons.beanutils.PropertyUtils;
+import org.forgerock.i18n.slf4j.LocalizedLogger;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -26,13 +30,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
-import org.apache.commons.beanutils.PropertyUtils;
 
 /**
  *
  * @author fischer
  */
 public class DeepUpdater<T> {
+    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(DeepUpdater.class);
 
     protected final ObjectMapper jsonMapper;
                                                 
@@ -45,9 +49,12 @@ public class DeepUpdater<T> {
         applyUpdate(orig, update);
     }
 
-    public void applyUpdate(T orig, String json) throws IOException {
+    public T applyUpdate(T orig, String json) throws IOException {
+        LOGGER.getLogger().debug("APPLY UPDATE {}", json);
         ObjectNode update = (ObjectNode) jsonMapper.readTree(json);
         applyUpdate(orig, update);
+
+        return orig;
     }
 
     public void applyUpdate(T orig, Reader jsonReader) throws IOException {
@@ -56,12 +63,11 @@ public class DeepUpdater<T> {
     }
     
     public T applyUpdate(final T orig, final T obj) throws IOException {
-        T original = (T) jsonMapper.convertValue(orig, orig.getClass());
         ObjectNode update = (ObjectNode) jsonMapper.valueToTree(obj);
         
-        applyUpdate(original, update);
+        applyUpdate(orig, update);
         
-        return original;
+        return orig;
     }
 
     // recursion
@@ -74,7 +80,11 @@ public class DeepUpdater<T> {
                 try {
                     // We ignore arrays so they get instantiated fresh every time
                     // root.remove(fieldEntry.getKey());
-                    Object o2 = PropertyUtils.getProperty(original, fieldEntry.getKey());
+                    Object o2 = null;
+                    if (original instanceof Map)
+                        o2 = ((Map)original).get(fieldEntry.getKey());
+                    else
+                        o2 = PropertyUtils.getProperty(original, fieldEntry.getKey());
                     if (o2 != null && !(o2 instanceof int[])) {
 
                         this.processFieldOfTypeArray(i, fieldEntry, o2, (T) original);
@@ -92,7 +102,11 @@ public class DeepUpdater<T> {
                 }
             } else if (child.isObject()) {
                 try {
-                    Object o2 = PropertyUtils.getProperty(original, fieldEntry.getKey());
+                    Object o2 = null;
+                    if (original instanceof Map)
+                        o2 = ((Map)original).get(fieldEntry.getKey());
+                    else
+                        o2 = PropertyUtils.getProperty(original, fieldEntry.getKey());
                     if (o2 != null) {
                         // Only remove the JsonNode if the object already exists
                         // Otherwise it will be instantiated when the parent gets

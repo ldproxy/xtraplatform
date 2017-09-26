@@ -59,7 +59,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     protected static final String OVERRIDES_STORE_NAME = "#overrides#";
 
     private final KeyValueStore rootConfigStore;
-    private final String resourceType;
+    protected final String resourceType;
     private final Map<String, ResourceCache<T>> resourceCache;
     private final Lock resourceCacheLock;
     private final Map<String, ReadWriteLock> resourceLocks;
@@ -97,15 +97,15 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
 
     abstract protected T createEmptyResource();
 
-    private String getPathString(String[] path) {
+    protected String getPathString(String[] path) {
         return Joiner.on('/').skipNulls().join(path);
     }
 
-    private String getPathString(String[] path, String id) {
+    protected String getPathString(String[] path, String id) {
         return Joiner.on('/').skipNulls().join(getPathString(path), id);
     }
 
-    private String[] getPathArray(String path) {
+    protected String[] getPathArray(String path) {
         return Iterables.toArray(Splitter.on('/').omitEmptyStrings().trimResults().split(path), String.class);
     }
 
@@ -225,7 +225,17 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
 
         ResourceTransaction<T> resourceTransaction = openTransaction(path, resourceId, operation);
         if (resource != null) {
+            if (operation == OPERATION.UPDATE_OVERRIDE) {
+                // create clone of resource to be updated (needed for cache rollbacks)
+                // TODO
+                T merged = getResource(path, resourceId);//deepUpdater.applyUpdate(createEmptyResource(), getResource(path, resourceId));
+                // merge changes to cloned object
+                merged = deepUpdater.applyUpdate(merged, serializer.serializeUpdate(resource));
+
+                resourceTransaction.write(merged);
+            } else {
             resourceTransaction.write(resource);
+        }
         }
         executeTransaction(resourceTransaction);
     }
@@ -236,7 +246,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     
     // create all the sub-transactions that do the actual io
     protected ResourceTransaction<T> openTransaction(ResourceTransaction<T> resourceTransaction) {
-        LOGGER.getLogger().info("OPEN RT {} {} {}", resourceTransaction.getPath(), resourceTransaction.getResourceId(), getResourceLock(resourceTransaction.getPath(), resourceTransaction.getResourceId()));
+        LOGGER.getLogger().debug("OPEN RT {} {} {}", resourceTransaction.getPath(), resourceTransaction.getResourceId(), getResourceLock(resourceTransaction.getPath(), resourceTransaction.getResourceId()));
 
         resourceTransaction.setSerializer(serializer);
         resourceTransaction.setResourceLock(getResourceLock(resourceTransaction.getPath(), resourceTransaction.getResourceId()).writeLock());
@@ -247,19 +257,20 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
             resourceTransaction.setEmptyResource(createEmptyResource());
         }
         
-        Transaction storeTransaction;
+        List<Transaction> storeTransactions = new ArrayList<>();
         switch (resourceTransaction.getOperation()) {
             case DELETE:
+                storeTransactions.add(getResourceStore(resourceTransaction.getPath()).getChildStore(OVERRIDES_STORE_NAME).openDeleteTransaction(resourceTransaction.getResourceId()));
             case DELETE_ALL:
-                storeTransaction = getResourceStore(resourceTransaction.getPath()).openDeleteTransaction(resourceTransaction.getResourceId());
+                storeTransactions.add(getResourceStore(resourceTransaction.getPath()).openDeleteTransaction(resourceTransaction.getResourceId()));
                 break;
             case UPDATE_OVERRIDE:
-                storeTransaction = getResourceStore(resourceTransaction.getPath()).getChildStore(OVERRIDES_STORE_NAME).openWriteTransaction(resourceTransaction.getResourceId());
+                storeTransactions.add(getResourceStore(resourceTransaction.getPath()).getChildStore(OVERRIDES_STORE_NAME).openWriteTransaction(resourceTransaction.getResourceId()));
                 break;
             case ADD:
             case UPDATE:
             default:
-                storeTransaction = getResourceStore(resourceTransaction.getPath()).openWriteTransaction(resourceTransaction.getResourceId());
+                storeTransactions.add(getResourceStore(resourceTransaction.getPath()).openWriteTransaction(resourceTransaction.getResourceId()));
                 break;
         }
 
@@ -279,7 +290,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
         cacheTransaction.setOperation(resourceTransaction.getOperation());
         cacheTransaction.setDeepUpdater(deepUpdater);
 
-        resourceTransaction.addTransaction(storeTransaction);
+        resourceTransaction.addTransactions(storeTransactions);
         resourceTransaction.addTransaction(cacheTransaction);
         
         return resourceTransaction;
@@ -290,11 +301,11 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
         try {
             resourceTransaction.execute();
             
-            LOGGER.getLogger().info("COMMIT SRT");
+            LOGGER.getLogger().debug("COMMIT SRT");
             
             resourceTransaction.commit();
             
-            LOGGER.getLogger().info("COMMITTED SRT");
+            LOGGER.getLogger().debug("COMMITTED SRT");
             
         } catch (IOException | WriteError ex) {
             resourceTransaction.rollback();

@@ -148,7 +148,7 @@ public class AdminServiceWrapper implements Service{
     }
 
     @Override
-    public long getDateCreated() {
+    public Long getDateCreated() {
         return service.getDateCreated();
     }
 
@@ -158,7 +158,7 @@ public class AdminServiceWrapper implements Service{
     }
 
     @Override
-    public long getLastModified() {
+    public Long getLastModified() {
         return service.getLastModified();
     }
 

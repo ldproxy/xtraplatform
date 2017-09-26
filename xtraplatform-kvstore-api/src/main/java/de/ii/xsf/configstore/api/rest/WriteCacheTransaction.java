@@ -20,6 +20,8 @@ import de.ii.xsf.core.api.Resource;
 
 import java.io.IOException;
 
+import static de.ii.xsf.configstore.api.rest.ResourceTransaction.OPERATION.UPDATE_OVERRIDE;
+
 /**
  * Created by zahnen on 21.11.15.
  */
@@ -32,14 +34,16 @@ public class WriteCacheTransaction<T extends Resource> extends AbstractCacheTran
     @Override
     public void write(T value) throws IOException {
 
-        if (operation == ResourceTransaction.OPERATION.UPDATE_OVERRIDE) {
+        /*if (operation == UPDATE_OVERRIDE) {
+            if (cache.isFullCache() && keyExists) {
             // TODO: does this really create a copy?
             // otherwise rollback will not work
-            T merged = deepUpdater.applyUpdate(cache.get(key), value);
+                T merged = deepUpdater.applyUpdate(cache.get(key), serializer.serializeUpdate(value));
             cache.put(key, merged);
-        } else {
+            }
+        } else {*/
             cache.put(key, value);
-        }
+        //}
     }
 
     @Override
