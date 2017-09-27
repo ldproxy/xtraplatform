@@ -72,7 +72,7 @@ return {
         new HtmlWebpackPlugin({
             title: 'XtraPlatform Manager',
             //favicon: 'assets/img/favicon.png',
-            template: 'index.html'
+            template: resolve(__dirname, 'index.html')
         }),
 
         extractSass
