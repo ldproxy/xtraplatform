@@ -1,9 +1,0 @@
-jar {
-    manifest { 
-        instruction 'X-Web-Resource-Version', '1.0'
-        instruction 'X-Web-Resource', \
-            '/css/xsf;/css/xsf',
-            '/img/xsf;/img/xsf',
-            '/favicon.ico;/img/xsf/favicon.ico'
-    }
-}
