@@ -11,7 +11,7 @@ buildscript {
     } 
     dependencies {
         classpath group: 'de.interactive_instruments', name: 'gradle-plugin-osgi-ipojo', version: '1.12.1.26'
-        classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.12.1"
+        classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.14.0"
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
     } 
 }
@@ -71,6 +71,8 @@ subprojects {
                 "**/*.xcf",
                 "**/template.html",
                 "**/*.json"])
+        ext.year = Calendar.getInstance().get(Calendar.YEAR)
+        ext.name = "interactive instruments GmbH"
     }
     
     repositories {     
