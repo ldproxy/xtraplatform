@@ -1,12 +1,13 @@
 /**
  * Copyright 2017 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package de.ii.xsf.core.web;
 
+import com.google.common.collect.Sets;
 import de.ii.xsf.dropwizard.api.Dropwizard;
 import de.ii.xsf.logging.XSFLogger;
 import io.dropwizard.jetty.MutableServletContextHandler;
@@ -27,9 +28,11 @@ import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 
 /**
- *
  * @author zahnen
  */
 // used basic idea from https://github.com/hstaudacher/osgi-jax-rs-connector
@@ -42,7 +45,7 @@ import java.util.*;
         onArrival = "addingService",
         onDeparture = "removedService")
 
-public class JaxRsRegistry implements LifeCycle.Listener {
+public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
 
     private static final LocalizedLogger LOGGER = XSFLogger.getLogger(JaxRsRegistry.class);
     public static final String PUBLISH = "de.ii.xsf.jaxrs.publish";
@@ -50,8 +53,6 @@ public class JaxRsRegistry implements LifeCycle.Listener {
 
     private final BundleContext context;
     private final MutableServletContextHandler server;
-    //private final JerseyEnvironment jersey;
-    //private final ServletContainer jerseyContainer;
     private final SortedMap<Integer, Object> authProviders;
     private final List<Object> resourceCache;
     private final List<Object> providerCache;
@@ -60,34 +61,29 @@ public class JaxRsRegistry implements LifeCycle.Listener {
     private boolean isAuthProviderAvailable;
     private final Dropwizard dw;
     private ResourceConfig jersey;
-    private ResourceConfig resourceConfig;
+    private final List<JaxRsChangeListener> changeListeners;
 
     JaxRsRegistry(@Context BundleContext context, @Requires Dropwizard dw) {
         //super(context, context.createFilter(ANY_SERVICE_FILTER), null);
         this.context = context;
         this.server = dw.getApplicationContext();
-        //this.jersey = dw.getJersey();
-        //this.jerseyContainer = dw.getJerseyContainer();
 
         this.authProviders = new TreeMap<>();
         this.resourceCache = new ArrayList<>();
         this.providerCache = new ArrayList<>();
         this.filterCache = new ArrayList<>();
-
-        // workaround: reload calls init(scanner) and scanner is null without this
-        String[] pkgs = {"does.not.exist"};
-        //jersey.packages(pkgs);
+        this.changeListeners = new ArrayList<>();
 
         if (server.isAvailable()) {
             isJerseyAvailable = true;
         }
         server.addLifeCycleListener(this);
-        
+
         this.dw = dw;
 
         // TODO
         this.isAuthProviderAvailable = true;
-        this.resourceConfig = dw.getJersey().getResourceConfig();
+
         clearConfig();
     }
 
@@ -115,6 +111,34 @@ public class JaxRsRegistry implements LifeCycle.Listener {
             }
             jerseyChanged();
         }
+    }
+
+    @Override
+    public synchronized void addService(Object service) {
+
+        if (isRegisterable(service)) {
+            if (isResource(service)) {
+                jerseyRegisterResource(service);
+            } else if (isFilter(service)) {
+                jerseyAddFilter(service);
+            } else if (isProvider(service)) {
+                jerseyRegisterProvider(service);
+            }
+            jerseyChanged();
+        }
+    }
+
+    @Override
+    public synchronized Set<Object> getResources() {
+        if (isJerseyAvailable) {
+            return Sets.union(jersey.getInstances(), jersey.getSingletons());
+        }
+        return new HashSet<>();
+    }
+
+    @Override
+    public void addChangeListener(JaxRsChangeListener changeListener) {
+        changeListeners.add(changeListener);
     }
 
     public synchronized void removedService(ServiceReference reference) {
@@ -185,131 +209,54 @@ public class JaxRsRegistry implements LifeCycle.Listener {
                 filterCache.clear();
             }
 
-            LOGGER.getLogger().debug("OLD RC {} {}", dw.getJerseyContainer(), dw.getJerseyContainer().getConfiguration().getClasses());
-
-            final ServletContainer sc = new ServletContainer(jersey);
-
-            /*dw.getEnvironment().jersey().replace(new Function<ResourceConfig, Servlet>() {
-                @Nullable
-                @Override
-                public Servlet apply(@Nullable ResourceConfig input) {
-                    try {
-                        //sc.init(dw.getJerseyContainer().getServletConfig());
-                        LOGGER.getLogger().debug("NEW RC {} {}", sc, jersey.getClasses());
-                    } catch (ServletException e) {
-                        //ignore
-                    }
-
-                    return sc;
-                }
-            });*/
-
-            //jersey.register(new JacksonBinder(dw.getEnvironment().getObjectMapper()));
-
-            /*jersey.register(OpenApiResource.class);
-
-            List<Class<?>> cl = new ArrayList<>();
-            for (Class c : jersey.getClasses()) {
-                //cl.add(c.getPackage().getName());
-            }
-            for (Object c : jersey.getInstances()) {
-                //cl.add(c.getClass().getPackage().getName());
-                cl.add(c.getClass());
-            }
-            LOGGER.getLogger().debug("Registered JAX-RS CL {}", cl);
-
-            OpenAPI oas = new OpenAPI();
-            Info info = new Info()
-                    .title("Swagger Sample App")
-                    .description("This is a sample server Petstore server.  You can find out more about Swagger " +
-                            "at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).  For this sample, " +
-                            "you can use the api key `special-key` to test the authorization filters.")
-                    .termsOfService("http://swagger.io/terms/")
-                    .contact(new Contact()
-                            .email("apiteam@swagger.io"))
-                    .license(new License()
-                            .name("Apache 2.0")
-                            .url("http://www.apache.org/licenses/LICENSE-2.0.html"));
-
-            oas.info(info);
-
-
-
-
-            SwaggerConfiguration oasConfig = new SwaggerConfiguration()
-                    .openAPI(oas);
-            //        .resourcePackages(Sets.newHashSet(cl));
-
-            Reader reader = new Reader(oasConfig);
-            reader.read(jersey.getClasses());
-            reader.read(Sets.newHashSet(cl));
-
-            try {
-                new JaxrsOpenApiContextBuilder()
-                        .servletConfig(sc.getServletConfig())
-                        .openApiConfiguration(oasConfig)
-                        .buildContext(true);
-            } catch (OpenApiConfigurationException e) {
-                LOGGER.getLogger().debug("ERR", e);
-                //throw new ServletException(e.getMessage(), e);
-            }*/
-
-
-
-
-
-
-ServletHolder[] servletHolders = Arrays.<ServletHolder>copyOf(dw.getApplicationContext().getServletHandler().getServlets(), dw.getApplicationContext().getServletHandler().getServlets().length -1);
-            ServletMapping[] servletMappings = Arrays.<ServletMapping>copyOf(dw.getApplicationContext().getServletHandler().getServletMappings(), dw.getApplicationContext().getServletHandler().getServletMappings().length -1);
-ServletHolder shJersey = null;
-int j = 0;
-            int k = 0;
-
-            for (int i = 0; i < dw.getApplicationContext().getServletHandler().getServlets().length; i++ ) {
-                ServletHolder sh = dw.getApplicationContext().getServletHandler().getServlets()[i];
-
-                LOGGER.getLogger().debug("SERVLET {} {}", sh, sh.getName());
-
-                if (sh.getName().contains("jersey")) {
-                    try {
-                        shJersey = new NonblockingServletHolder(sc);
-                        //sh.setServlet(sc);
-                        //shJersey.setServletHandler(dw.getApplicationContext().getServletHandler());
-                        //shJersey.start();
-                        //shJersey.initialize();
-                        //LOGGER.getLogger().debug("LINK RC {} {} {} {}", sh, servletHolders[i], sh.getServlet(), ((ServletContainer)sh.getServlet()).getConfiguration().getSingletons());
-                    } catch (Exception e) {
-                        LOGGER.getLogger().debug("ERR", e);
-                    }
-                }
-                else {
-                    servletHolders[j] = sh;
-                    j++;
-                }
-
-                if (!dw.getApplicationContext().getServletHandler().getServletMappings()[i].containsPathSpec(dw.getJersey().getUrlPattern())) {
-                    servletMappings[k] = dw.getApplicationContext().getServletHandler().getServletMappings()[i];
-                    k++;
-                }
-            }
-            LOGGER.getLogger().debug("SERVLETS {} {}", servletHolders, servletMappings);
-
-            LOGGER.getLogger().debug("RC {} {} {}", jersey, jersey.getClasses(), jersey.getSingletons());
-
-            dw.getApplicationContext().getServletHandler().setServlets(servletHolders);
-            dw.getApplicationContext().getServletHandler().setServletMappings(servletMappings);
-            dw.getApplicationContext().addServlet(shJersey, dw.getJersey().getUrlPattern());
-
-            LOGGER.getLogger().debug("APP {}", dw.getApplicationContext().dump());
+            updateDropwizard();
 
             clearConfig();
-            //dw.getJerseyContainer().reload();
 
+            for (JaxRsChangeListener changeListener : changeListeners) {
+                if (changeListener != null) {
+                    changeListener.jaxRsChanged();
+                }
+            }
         }
     }
 
+    // TODO: can be moved to dw
+    private void updateDropwizard() {
+        Optional<ServletHolder> oldServletHolder = Arrays.stream(dw.getApplicationContext().getServletHandler().getServlets())
+                .filter(sh -> sh.getName().contains("jersey"))
+                .findFirst();
+
+        ServletHolder[] servletHolders = Arrays.stream(dw.getApplicationContext().getServletHandler().getServlets())
+                .filter(sh -> !sh.getName().contains("jersey"))
+                .toArray(ServletHolder[]::new);
+
+        ServletMapping[] servletMappings = Arrays.stream(dw.getApplicationContext().getServletHandler().getServletMappings())
+                .filter(sm -> !sm.getServletName().contains("jersey"))
+                .toArray(ServletMapping[]::new);
+
+        ServletHolder shJersey = new NonblockingServletHolder(new ServletContainer(jersey));
+
+        dw.getApplicationContext().getServletHandler().setServlets(servletHolders);
+        dw.getApplicationContext().getServletHandler().setServletMappings(servletMappings);
+        dw.getApplicationContext().addServlet(shJersey, dw.getJersey().getUrlPattern());
+
+        oldServletHolder
+                .ifPresent(servletHolder -> {
+                    try {
+                        servletHolder.doStop();
+                        LOGGER.getLogger().debug("Stopped ServletHolder {})", servletHolder.getName());
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                });
+        //LOGGER.getLogger().debug("APP {}", dw.getApplicationContext().dump());
+    }
+
     private void clearConfig() {
-        this.jersey = new ResourceConfig(resourceConfig);
+        ResourceConfig oldConfig = jersey != null ? jersey : dw.getJersey().getResourceConfig();
+        this.jersey = new ResourceConfig(oldConfig);
+        //LOGGER.getLogger().debug("OLD CFG {} NEW CFG {}", oldConfig, jersey);
     }
 
     private void registerAuthProvider(Object service, String type, int ranking) {
@@ -387,15 +334,15 @@ int j = 0;
         if (isJerseyAvailable) {
             // TODO: verify
             if (jersey.getClasses().remove(object.getClass())) {
-            //if (jersey.getResourceConfig().getContainerRequestFilters().remove(object.getClass())) {
+                //if (jersey.getResourceConfig().getContainerRequestFilters().remove(object.getClass())) {
                 LOGGER.getLogger().debug("Unregistered JAX-RS ContainerRequestFilter {})", object.getClass());
                 return true;
             } else // TODO: verify
                 if (jersey.getClasses().remove(object.getClass())) {
                     //if (jersey.getResourceConfig().getContainerResponseFilters().remove(object.getClass())) {
-                LOGGER.getLogger().debug("Unregistered JAX-RS ContainerResponseFilter {})", object.getClass());
-                return true;
-            }
+                    LOGGER.getLogger().debug("Unregistered JAX-RS ContainerResponseFilter {})", object.getClass());
+                    return true;
+                }
         } else {
             if (filterCache.contains(object)) {
                 filterCache.remove(object);

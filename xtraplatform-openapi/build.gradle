@@ -1,0 +1,53 @@
+version = '1.1.0'
+
+ext {
+    swaggerVersion='2.0.0-rc2'
+}
+/*configurations {
+    embedded {
+        transitive=false
+    }
+}*/
+dependencies {
+    /*embedded (group: 'io.openapi', name: 'openapi-jaxrs2', version: '2.0.0-rc2') {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+        exclude group: 'ch.qos.logback', module: 'logback-classic'
+        exclude group: 'ch.qos.logback', module: 'logback-core'
+        exclude group: 'javax.ws.rs', module: 'jsr311-api'
+
+    }*/
+
+    embedded group: 'io.swagger', name: 'swagger-jaxrs2', version: swaggerVersion
+    embedded group: 'io.swagger', name: 'swagger-models', version: swaggerVersion
+    embedded group: 'io.swagger', name: 'swagger-annotations', version: swaggerVersion
+    embedded group: 'io.swagger', name: 'swagger-integration', version: swaggerVersion
+    embedded group: 'io.swagger', name: 'swagger-core', version: swaggerVersion
+    embedded 'org.reflections:reflections:0.9.11'
+
+    provided project(':xtraplatform-web-rest')
+} 
+
+jar {
+    manifest { 
+        instruction 'Embed-Dependency',
+            'swagger-jaxrs2',
+                'swagger-models',
+                'swagger-annotations',
+                'swagger-integration',
+                'swagger-core',
+                'reflections'
+        
+        instruction 'Embed-Transitive', 'false'
+        instruction 'Embed-Export', 'true'
+        instruction 'Embed-Import', 'true'
+
+        instruction 'Import-Package', 'javax.ws.rs'
+        instruction 'Import-Package', 'javax.ws.rs.ext'
+        instruction 'Import-Package', 'javax.ws.rs.core'
+        instruction 'Import-Package', 'javax.servlet'
+        instruction 'Import-Package', 'javax.xml.bind.annotation'
+        instructionFirst 'Import-Package', '!com.google.gson'
+        instructionFirst 'Import-Package', '!org.dom4j'
+        instructionFirst 'Import-Package', '!org.dom4j.io'
+    }
+}
