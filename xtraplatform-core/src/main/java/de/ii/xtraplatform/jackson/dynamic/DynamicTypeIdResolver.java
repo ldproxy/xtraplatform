@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.jackson.dynamic;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
 import com.fasterxml.jackson.databind.type.TypeFactory;
@@ -22,6 +23,8 @@ import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+
+import java.io.IOException;
 
 /**
  * @author zahnen
@@ -80,6 +83,11 @@ public class DynamicTypeIdResolver implements TypeIdResolver {
     }
 
     @Override
+    public String getDescForKnownTypeIds() {
+        return null;
+    }
+
+    @Override
     public String idFromValueAndType(Object value, Class<?> suggestedType) {
         if (mapping.containsKey(suggestedType)) {
             return mapping.get(suggestedType);
@@ -89,7 +97,7 @@ public class DynamicTypeIdResolver implements TypeIdResolver {
     }
 
     @Override
-    public JavaType typeFromId(String id) {
+    public JavaType typeFromId(DatabindContext context, String id) {
         if (mapping.inverse().containsKey(id)) {
             Class<?> clazz = mapping.inverse().get(id);
             return TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);

@@ -19,9 +19,9 @@ buildscript {
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
-version = '1.0.2'
+version = '1.1.0'
 
-//version += '-SNAPSHOT'
+version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
 
@@ -53,13 +53,13 @@ subprojects {
     apply plugin: 'com.jfrog.bintray'
     apply plugin: "license"
 
-    version = '1.0.1'
+    version = '1.1.0'
 
-    //version += '-SNAPSHOT'
+    version += '-SNAPSHOT'
 
     group = 'de.interactive_instruments'
 
-    sourceCompatibility = 1.7
+    sourceCompatibility = 1.8
 
     license {
         header rootProject.file('../gradle/license-header')
@@ -141,16 +141,16 @@ subprojects {
         provided 'com.google.guava:guava:17.0'
 
         // TODO: retrieve from bundles-runtime
-        provided group: 'org.slf4j', name: 'slf4j-api', version: '1.7.6'
-        provided group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.3'
-        provided group: 'ch.qos.logback', name: 'logback-core', version: '1.1.3'
+        provided group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+        provided group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+        provided group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'
 
-        provided group: 'org.osgi', name: 'org.osgi.compendium', version: '4.2.0'
-        provided group: 'org.apache.felix', name: 'org.apache.felix.framework', version: '4.4.1'
+        provided group: 'org.osgi', name: 'org.osgi.compendium', version: '5.0.0'
+        provided group: 'org.apache.felix', name: 'org.apache.felix.framework', version: '5.6.8'
         provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
 
-        provided group: 'de.interactive_instruments', name: 'xtraplatform-api', version: '1.0.0'
-        provided group: 'de.interactive_instruments', name: 'xtraplatform-dropwizard', version: '1.0.0'
+        provided group: 'de.interactive_instruments', name: 'xtraplatform-api', version: '1.1.0-SNAPSHOT'
+        provided group: 'de.interactive_instruments', name: 'xtraplatform-dropwizard', version: '1.1.0-SNAPSHOT'
     }
     
     jar {

@@ -7,9 +7,6 @@
  */
 package de.ii.xsf.core.server;
 
-import com.sun.jersey.spi.container.ContainerRequest;
-import com.sun.jersey.spi.container.ContainerResponse;
-import com.sun.jersey.spi.container.ContainerResponseFilter;
 import de.ii.xsf.logging.XSFLogger;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -21,7 +18,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -50,10 +50,12 @@ public class RobotsServlet extends HttpServlet implements ContainerResponseFilte
     }
 
     @Override
-    public ContainerResponse filter(ContainerRequest request, ContainerResponse response) {
+    public void filter(ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext) throws IOException {
 
-        if (request.getPath().endsWith("services/robots.txt")) {
-            response.reset();
+        // TODO: verify
+
+        if (containerRequestContext.getUriInfo().getPath().endsWith("services/robots.txt")) {
+            //containerResponseContext.reset();
 
             StreamingOutput stream = new StreamingOutput() {
                 @Override
@@ -62,11 +64,13 @@ public class RobotsServlet extends HttpServlet implements ContainerResponseFilte
                 }
             };
 
-            Response r = Response.ok(stream, "text/plain").build();
-            response.setResponse(r);
+            //Response r = Response.ok(stream, "text/plain").build();
+            //response.setResponse(r);
+
+            containerResponseContext.setEntity(stream, null, MediaType.TEXT_PLAIN_TYPE);
         }
 
-        return response;
+        //return response;
     }
 
     private void writeContent(OutputStream output) {

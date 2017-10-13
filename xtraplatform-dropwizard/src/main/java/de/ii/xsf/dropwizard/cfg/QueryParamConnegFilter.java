@@ -7,10 +7,13 @@
  */
 package de.ii.xsf.dropwizard.cfg;
 
-import com.sun.jersey.spi.container.ContainerRequest;
-import com.sun.jersey.spi.container.ContainerRequestFilter;
+import org.glassfish.jersey.server.ContainerRequest;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.MediaType;
 
 /**
@@ -27,35 +30,18 @@ public class QueryParamConnegFilter implements ContainerRequestFilter {
         this.mediaExtentions.put("geojson", MediaType.APPLICATION_JSON_TYPE);
         this.mediaExtentions.put("html", MediaType.TEXT_HTML_TYPE);
     }
-    /**
-     * Create a filter with suffix to media type mappings.
-     *
-     * @param mediaExtentions the suffix to media type mappings.
-     */
-    /*public QueryParamConnegFilter(Map<String, MediaType> mediaExtentions) {
-        if (mediaExtentions == null) {
-            throw new IllegalArgumentException();
-        }
-
-        this.mediaExtentions = mediaExtentions;
-        this.languageExtentions = Collections.emptyMap();
-    }*/
 
     @Override
-    public ContainerRequest filter(ContainerRequest request) {
-        // Quick check for a 'f' parameter
-        if (!request.getQueryParameters().containsKey("f")) {
-            return request;
+    public void filter(ContainerRequestContext containerRequestContext) throws IOException {
+
+        if (containerRequestContext.getUriInfo().getQueryParameters().containsKey("f")) {
+            String format = containerRequestContext.getUriInfo().getQueryParameters().getFirst("f");
+
+            final MediaType accept = mediaExtentions.get(format);
+
+            if (accept != null) {
+                containerRequestContext.getHeaders().putSingle("Accept", accept.toString());
+            }
         }
-
-        String format = request.getQueryParameters().getFirst("f");
-
-
-        final MediaType accept = mediaExtentions.get(format);
-        if (accept != null) {
-            request.getRequestHeaders().putSingle("Accept", accept.toString());
-        }
-
-        return request;
     }
 }

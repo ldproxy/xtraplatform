@@ -10,13 +10,14 @@ package de.ii.xsf.core.api.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xsf.core.api.Service;
 import de.ii.xsf.core.api.ServiceRegistry;
-import de.ii.xsf.logging.XSFLogger;
 import de.ii.xsf.core.api.exceptions.XtraserverFrameworkException;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
-import java.io.IOException;
-import java.util.Map;
+import de.ii.xsf.logging.XSFLogger;
+import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.MDC;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
@@ -25,8 +26,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
-import org.slf4j.MDC;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  *
@@ -75,7 +76,7 @@ abstract public class AdminServiceResource implements ServiceResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateOrCallServiceOperation(@Auth(required = false) AuthenticatedUser authUser, @PathParam("id") String id, String request) {
+    public Response updateOrCallServiceOperation(/*@Auth(required = false) AuthenticatedUser authUser,*/ @PathParam("id") String id, String request) {
         try {
             MDC.put("service", id);
             try {
@@ -89,7 +90,7 @@ abstract public class AdminServiceResource implements ServiceResource {
                     } else if (operation.equals("stop")) {
                         service.stop();
                     } else {
-                        callServiceOperation(authUser, operation, parameter);
+                        callServiceOperation(/*authUser*/new AuthenticatedUser(), operation, parameter);
                     }
                     return Response.ok().build();
                 }
@@ -97,7 +98,7 @@ abstract public class AdminServiceResource implements ServiceResource {
                 throw new XtraserverFrameworkException();
             }
 
-            updateService(authUser, id, request);
+            updateService(/*authUser*/new AuthenticatedUser(), id, request);
             return Response.ok().build();
             
         } finally {

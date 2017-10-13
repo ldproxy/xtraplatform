@@ -7,20 +7,18 @@
  */
 package de.ii.xsf.core.server;
 
-import com.sun.jersey.api.core.ResourceConfig;
 import de.ii.xsf.core.api.session.SessionManager;
 import de.ii.xsf.dropwizard.api.Dropwizard;
 import de.ii.xsf.dropwizard.cfg.FakeResource;
 import de.ii.xsf.dropwizard.cfg.QueryParamConnegFilter;
 import de.ii.xsf.logging.XSFLogger;
 import org.apache.felix.http.proxy.ProxyServlet;
-import org.apache.felix.ipojo.Nullable;
 import org.apache.felix.ipojo.annotations.*;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.MultiException;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.osgi.framework.BundleContext;
 
 import javax.servlet.ServletContext;
@@ -185,17 +183,21 @@ public class WebServerDropwizard {
 
             dw.getJersey().setUrlPattern(JERSEY_ENDPOINT);
 
-            dw.getJersey().register(new FakeResource());
+            //dw.getJersey().register(new FakeResource());
 
-            dw.getJersey().getResourceConfig().getContainerRequestFilters().add(QueryParamConnegFilter.class);
-            dw.getJersey().enable(ResourceConfig.FEATURE_CANONICALIZE_URI_PATH);
+            // TODO: verify
+            dw.getJersey().getResourceConfig().register(QueryParamConnegFilter.class);
+            //dw.getJersey().getResourceConfig().getContainerRequestFilters().add(QueryParamConnegFilter.class);
+
+            // TODO: no longer part of jersey, replace with: https://stackoverflow.com/questions/23600676/how-to-normalize-uris-in-jersey-2
+            //dw.getJersey().enable(ResourceConfig.FEATURE_CANONICALIZE_URI_PATH);
 
             this.server = dw.getConfiguration().getServerFactory().build(dw.getEnvironment());
 
             ServletRegistration.Dynamic servlet = dw.getServlets().addServlet("osgi", new ProxyServlet());
             servlet.addMapping(APP_ENDPOINT);
 
-            dw.getEnvironment().getAdminContext().destroy();
+            /*dw.getEnvironment().getAdminContext().destroy();
             for (Connector c : server.getConnectors()) {
                 if (c.getName().equals("admin")) {
                     try {
@@ -205,7 +207,7 @@ public class WebServerDropwizard {
                         LOGGER.getLogger().debug("Error removing connector {}", c.getName(), ex);
                     }
                 }
-            }
+            }*/
 
             this.initialized = true;
         }
@@ -231,17 +233,18 @@ public class WebServerDropwizard {
         LOGGER.getLogger().debug("DW CLEANUP 3");
 
         // cleanup session manager
-        if (this.sessionManager == null) {
+        /*if (this.sessionManager == null) {
             disableSessionManager();
         } else {
             enableSessionManager(sessionManager);
-        }
+        }*/
 
         // cleanup url
         this.url = "";
     }
 
-    @Bind(optional = true, policy = BindingPolicy.DYNAMIC_PRIORITY)
+    // TODO: reimplement
+    /*@Bind(optional = true, policy = BindingPolicy.DYNAMIC_PRIORITY)
     public void bind(SessionManager sm) {
         LOGGER.getLogger().debug("DW BIND");
 
@@ -257,9 +260,9 @@ public class WebServerDropwizard {
         this.sessionManager = null;
 
         restart();
-    }
+    }*/
 
-    private void enableSessionManager(SessionManager sm) {
+    /*private void enableSessionManager(SessionManager sm) {
         if (!(sm instanceof Nullable || sm == null)) {
             LOGGER.getLogger().debug("enableSessionManager: {}", sm);
 
@@ -276,7 +279,7 @@ public class WebServerDropwizard {
         dw.getApplicationContext().setSessionHandler(null);
         dw.getApplicationContext().setSessionsEnabled(false);
         dw.getApplicationContext().getServer().setSessionIdManager(null);
-    }
+    }*/
 
     public String getUrl() {
         if (url.isEmpty()) {

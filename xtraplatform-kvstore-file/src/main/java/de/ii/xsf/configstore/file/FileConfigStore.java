@@ -71,7 +71,7 @@ public class FileConfigStore implements KeyValueStore {
 
     private File getFile(String id) {
 
-        if (id.contains("/") && id.contains(":")) {
+        if (id.contains("/") || id.contains("\\") || id.contains(":")) {
             String hash = StringUtils.createMD5Hash(id);
             addToIndex(id, hash);
             id = hash;

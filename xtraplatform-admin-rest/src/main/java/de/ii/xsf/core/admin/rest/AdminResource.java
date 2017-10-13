@@ -7,45 +7,15 @@
  */
 package de.ii.xsf.core.admin.rest;
 
-import com.sun.jersey.api.core.ResourceContext;
-import de.ii.xsf.core.api.AbstractService;
-import de.ii.xsf.core.api.ModulesRegistry;
-import de.ii.xsf.core.api.Service;
-import de.ii.xsf.logging.XSFLogger;
-import de.ii.xsf.core.api.MediaTypeCharset;
-import de.ii.xsf.core.api.Module;
-import de.ii.xsf.core.api.ServiceRegistry;
+import de.ii.xsf.core.api.*;
 import de.ii.xsf.core.api.exceptions.ResourceNotFound;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
 import de.ii.xsf.core.api.permission.Role;
-import de.ii.xsf.core.api.rest.AdminModuleResource;
-import de.ii.xsf.core.api.rest.AdminModuleResourceFactory;
-import de.ii.xsf.core.api.rest.AdminServiceResource;
-import de.ii.xsf.core.api.rest.AdminServiceResourceFactory;
-import de.ii.xsf.core.api.rest.ModuleResource;
-import de.ii.xsf.core.api.rest.ServiceResource;
+import de.ii.xsf.core.api.rest.*;
 import de.ii.xsf.dropwizard.api.Jackson;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import de.ii.xsf.logging.XSFLogger;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -53,9 +23,19 @@ import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.apache.felix.ipojo.whiteboard.Whiteboards;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.glassfish.jersey.server.ExtendedResourceContext;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.MDC;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import java.util.*;
 
 /**
  *
@@ -99,7 +79,7 @@ public class AdminResource {
     private String xsfVersion = "todo";
 
     @Context
-    ResourceContext rc;
+    ExtendedResourceContext rc;
 
     Map<String, AdminServiceResourceFactory> serviceResourceFactories;
     Map<String, AdminModuleResourceFactory> moduleResourceFactories;
@@ -216,10 +196,10 @@ public class AdminResource {
     @Path("/services")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response addService(@Auth(minRole = Role.PUBLISHER) AuthenticatedUser authUser, Map<String, String> request) {
+    public Response addService(/*@Auth(minRole = Role.PUBLISHER) AuthenticatedUser authUser,*/ Map<String, String> request) {
         try {
             MDC.put("service", request.get("id"));
-            serviceRegistry.addService(authUser, request.get("type"), request.get("id"), request);
+            serviceRegistry.addService(/*authUser*/new AuthenticatedUser(), request.get("type"), request.get("id"), request);
             return Response.ok().build();
         } finally {
             MDC.remove("service");
@@ -249,7 +229,7 @@ public class AdminResource {
             throw new ResourceNotFound();
         }
 
-        AdminServiceResource sr = (AdminServiceResource) rc.getResource(factory.getAdminServiceResourceClass());
+        AdminServiceResource sr = factory.getAdminServiceResource();//(AdminServiceResource) rc.getResource(factory.getAdminServiceResourceClass());
         sr.setService(s);
         sr.init(jackson.getDefaultObjectMapper(), serviceRegistry, permissions);
 
@@ -257,7 +237,7 @@ public class AdminResource {
     }
 
     private Map<String, String> flattenMultiMap(MultivaluedMap<String, String> multiMap) {
-        Map<String, String> flatMap = new HashMap();
+        Map<String, String> flatMap = new HashMap<>();
         for (String key : multiMap.keySet()) {
             flatMap.put(key, multiMap.getFirst(key));
         }

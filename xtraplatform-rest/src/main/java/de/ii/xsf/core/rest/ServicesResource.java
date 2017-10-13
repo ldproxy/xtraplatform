@@ -8,34 +8,15 @@
 package de.ii.xsf.core.rest;
 
 import com.fasterxml.jackson.databind.util.JSONPObject;
-import com.sun.jersey.api.core.ResourceContext;
-import de.ii.xsf.core.api.ArcGisServiceCatalog;
-import de.ii.xsf.core.api.Service;
-import de.ii.xsf.core.views.GenericView;
-import de.ii.xsf.logging.XSFLogger;
-import de.ii.xsf.core.api.MediaTypeCharset;
-import de.ii.xsf.core.api.ServiceCatalog;
-import de.ii.xsf.core.api.ServiceRegistry;
+import de.ii.xsf.core.api.*;
 import de.ii.xsf.core.api.exceptions.ResourceNotFound;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
 import de.ii.xsf.core.api.rest.ServiceResource;
 import de.ii.xsf.core.api.rest.ServiceResourceFactory;
-
-import java.util.HashMap;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
+import de.ii.xsf.core.views.GenericView;
+import de.ii.xsf.logging.XSFLogger;
 import io.dropwizard.views.View;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -43,9 +24,19 @@ import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.glassfish.jersey.server.ExtendedResourceContext;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.MDC;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -65,7 +56,7 @@ public class ServicesResource {
 
     private static final LocalizedLogger LOGGER = XSFLogger.getLogger(ServicesResource.class);
     @Context
-    ResourceContext rc;
+    ExtendedResourceContext rc;
     @Context
     UriInfo uriInfo;
     @Context

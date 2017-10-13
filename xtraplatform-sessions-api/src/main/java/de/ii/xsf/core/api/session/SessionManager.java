@@ -14,11 +14,14 @@ import org.eclipse.jetty.server.SessionIdManager;
  *
  * @author zahnen
  */
+
+// TODO: jetty implementation was simplififed in 9.4: http://www.eclipse.org/jetty/documentation/9.4.x/session-management.html
+
 public interface SessionManager {
 
-    public org.eclipse.jetty.server.SessionManager getSessionManager();
+    /*public org.eclipse.jetty.server.SessionManager getSessionManager();
 
     public SessionIdManager getSessionIdManager();
 
-    public void saveSession(HttpSession session);
+    public void saveSession(HttpSession session);*/
 }

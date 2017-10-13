@@ -1,19 +1,22 @@
-version = '1.0.3'
+version = '1.1.0'
 
+ext {
+    dropwizardVersion = '1.2.0'
+}
 dependencies {
     // TODO: DATA_DIR_KEY
-    provided group: 'de.interactive_instruments', name: 'xtraplatform-runtime', version: '1.0.1'
+    provided group: 'de.interactive_instruments', name: 'xtraplatform-runtime', version: '1.1.0-SNAPSHOT'
     
-    embedded(group: 'io.dropwizard', name: 'dropwizard-core', version: '0.7.1') {
+    embedded(group: 'io.dropwizard', name: 'dropwizard-core', version: dropwizardVersion) {
         exclude group: 'org.slf4j', module: 'slf4j-api'
         exclude group: 'org.slf4j', module: 'log4j-over-slf4j'
         exclude group: 'org.slf4j', module: 'jul-to-slf4j'
         exclude group: 'ch.qos.logback', module: 'logback-classic'
         exclude group: 'ch.qos.logback', module: 'logback-core'
     }
-    embedded group: 'io.dropwizard', name: 'dropwizard-views-mustache', version: '0.7.1'
-    embedded group: 'io.dropwizard', name: 'dropwizard-client', version: '0.7.1'
-    embedded group: 'io.dropwizard', name: 'dropwizard-auth', version: '0.7.1'
+    embedded group: 'io.dropwizard', name: 'dropwizard-views-mustache', version: dropwizardVersion
+    embedded group: 'io.dropwizard', name: 'dropwizard-client', version: dropwizardVersion
+    embedded group: 'io.dropwizard', name: 'dropwizard-auth', version: dropwizardVersion
     embedded (group: 'com.sun.mail', name: 'javax.mail', version: '1.5.2') {
         exclude module: 'activation'
     }
@@ -56,7 +59,27 @@ jar {
         instructionFirst 'Import-Package', '!org.codehaus.janino.*'
         instructionFirst 'Import-Package', '!org.codehaus.groovy.*'
         instructionFirst 'Import-Package', '!groovy.lang'
-        
-        
+
+        instructionFirst 'Import-Package', '!jersey.repackaged.com.google.common.*'
+        instructionFirst 'Import-Package', '!com.sun.jdi.connect.*'
+        instructionFirst 'Import-Package', '!com.sun.jdi.event.*'
+        instructionFirst 'Import-Package', '!org.apache.logging.log4j.*'
+        instructionFirst 'Import-Package', '!javax.money.*'
+        instructionFirst 'Import-Package', '!org.apache.catalina.valves'
+        instructionFirst 'Import-Package', '!com.sun.jdi.request.*'
+        instructionFirst 'Import-Package', '!com.sun.jdi.*'
+        instructionFirst 'Import-Package', '!org.apache.logging.log4j.message.*'
+        instructionFirst 'Import-Package', '!org.apache.catalina.*'
+        instructionFirst 'Import-Package', '!org.apache.log'
+        instructionFirst 'Import-Package', '!org.apache.catalina.connector'
+        instructionFirst 'Import-Package', '!javafx.beans.value.*'
+        instructionFirst 'Import-Package', '!org.apache.logging.log4j.spi.*'
+        instructionFirst 'Import-Package', '!org.apache.avalon.framework.logger.*'
+        instructionFirst 'Import-Package', '!org.apache.coyote.*'
+        instructionFirst 'Import-Package', 'javax.xml.stream'
+        instructionFirst 'Import-Package', 'org.w3c.dom'
+        instructionFirst 'Import-Package', 'javax.management'
+        instruction 'Import-Package', 'javax.annotation;version="[1.2,2)"'
+        instructionFirst 'Import-Package', 'javax.naming'
     }
 }
