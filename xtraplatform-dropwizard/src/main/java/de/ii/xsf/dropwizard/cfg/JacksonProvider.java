@@ -16,6 +16,9 @@ import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  *
  * @author zahnen
@@ -34,6 +37,7 @@ public class JacksonProvider implements Jackson {
         jsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
         jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+        jsonMapper.setDefaultMergeable(false);
     }
 
     @Override

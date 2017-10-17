@@ -1,15 +1,17 @@
 /**
  * Copyright 2017 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package de.ii.xsf.core.util.json;
 
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.io.Files;
 import de.ii.xsf.logging.XSFLogger;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -21,6 +23,7 @@ import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -31,7 +34,7 @@ public class DeepUpdater<T> {
     private static final LocalizedLogger LOGGER = XSFLogger.getLogger(DeepUpdater.class);
 
     protected final ObjectMapper jsonMapper;
-                                                
+
     public DeepUpdater(ObjectMapper jsonMapper) {
         this.jsonMapper = jsonMapper;
     }
@@ -53,18 +56,18 @@ public class DeepUpdater<T> {
         ObjectNode update = (ObjectNode) jsonMapper.readTree(jsonReader);
         applyUpdate(orig, update);
     }
-    
+
     public T applyUpdate(final T orig, final T obj) throws IOException {
         ObjectNode update = (ObjectNode) jsonMapper.valueToTree(obj);
-        
+
         applyUpdate(orig, update);
-        
+
         return orig;
     }
 
     // recursion
     protected void applyUpdate(Object original, ObjectNode updateRoot) throws IOException {
-        for (Iterator<Map.Entry<String, JsonNode>> i = updateRoot.fields(); i.hasNext();) {
+        for (Iterator<Map.Entry<String, JsonNode>> i = updateRoot.fields(); i.hasNext(); ) {
             Map.Entry<String, JsonNode> fieldEntry = i.next();
             JsonNode child = fieldEntry.getValue();
 
@@ -74,7 +77,7 @@ public class DeepUpdater<T> {
                     // root.remove(fieldEntry.getKey());
                     Object o2 = null;
                     if (original instanceof Map)
-                        o2 = ((Map)original).get(fieldEntry.getKey());
+                        o2 = ((Map) original).get(fieldEntry.getKey());
                     else
                         o2 = PropertyUtils.getProperty(original, fieldEntry.getKey());
                     if (o2 != null && !(o2 instanceof int[])) {
@@ -96,7 +99,7 @@ public class DeepUpdater<T> {
                 try {
                     Object o2 = null;
                     if (original instanceof Map)
-                        o2 = ((Map)original).get(fieldEntry.getKey());
+                        o2 = ((Map) original).get(fieldEntry.getKey());
                     else
                         o2 = PropertyUtils.getProperty(original, fieldEntry.getKey());
                     if (o2 != null) {
@@ -111,6 +114,14 @@ public class DeepUpdater<T> {
 
                 }
             }
+        }
+
+        //TODO: workaround for Enums as Map keys, worked before upgrade to jackson 2.9
+        if (original.getClass().equals(LinkedHashMap.class) && !((LinkedHashMap) original).isEmpty()) {
+            Map.Entry entry = (Map.Entry) ((LinkedHashMap) original).entrySet().iterator().next();
+            JavaType type = TypeFactory.defaultInstance().constructMapType(LinkedHashMap.class, entry.getKey().getClass(), entry.getValue().getClass());
+            jsonMapper.readerForUpdating(original).forType(type).readValue(updateRoot);
+            return;
         }
         jsonMapper.readerForUpdating(original).readValue(updateRoot);
     }
