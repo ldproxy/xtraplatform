@@ -168,7 +168,7 @@ subprojects {
     }
     afterEvaluate { project ->
     project.version += '-SNAPSHOT'
-    /*bintray {
+    bintray {
         user = project.bintrayUser
         key = project.bintrayApiKey
         publications = ['maven']
@@ -187,7 +187,7 @@ subprojects {
                 name = project.version
             }
         }
-    }*/
+    }
     }
 }
 
