@@ -174,7 +174,7 @@ subprojects {
         user = project.bintrayUser
         key = project.bintrayApiKey
         publications = ['maven']
-        publish = false
+        publish = true
         pkg {
             repo = 'maven'
             name = project.name
@@ -247,7 +247,7 @@ bintray {
     user = project.bintrayUser
     key = project.bintrayApiKey
     publications = ['maven']
-    publish = false
+    publish = true
     pkg {
         repo = 'maven'
         name = project.name
