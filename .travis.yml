@@ -12,10 +12,10 @@ install:
 - cd ../xtraplatform-runtime && ../gradlew publishToMavenLocal -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 - cd ../xtraplatform-bundles-core && ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 script:
-- cd xtraplatform-runtime && ../gradlew check -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+- cd ../xtraplatform-runtime && ../gradlew check -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 - cd ../xtraplatform-bundles-core && ../gradlew check -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 after_success:
-- cd xtraplatform-runtime && ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+- cd ../xtraplatform-runtime && ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 - cd ../xtraplatform-bundles-core && ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 - cd ../xtraplatform-bundles-runtime && ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 env:

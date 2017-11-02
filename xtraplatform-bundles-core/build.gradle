@@ -59,7 +59,7 @@ subprojects {
         header rootProject.file('../gradle/license-header')
         strictCheck true
         excludes([
-                "**/src/main/resources/**/*",
+                "**/swagger-ui*",
                 "**/*.mustache",
                 "**/*.png",
                 "**/*.ico",
