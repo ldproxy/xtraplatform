@@ -13,7 +13,7 @@ buildscript {
     dependencies {
         classpath group: 'de.interactive_instruments', name: 'gradle-plugin-osgi-ipojo', version: '1.12.1.27'
         classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.14.0"
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
     } 
 }
 
@@ -44,7 +44,7 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'osgi-ipojo'
     apply plugin: 'maven-publish'
-    //apply plugin: 'com.jfrog.bintray'
+    apply plugin: 'com.jfrog.bintray'
     apply plugin: "license"
 
     version = '1.1.0'
@@ -222,7 +222,7 @@ configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n'}) {
 
 publishing {
     publications {
-        maven(MavenPublication) {
+        mavenRoot(MavenPublication) {
             pom.withXml{
                 def dependenciesNode = asNode().appendNode('dependencies')
 
@@ -246,7 +246,7 @@ publishing {
 bintray {
     user = project.bintrayUser
     key = project.bintrayApiKey
-    publications = ['maven']
+    publications = ['mavenRoot']
     publish = true
     pkg {
         repo = 'maven'
