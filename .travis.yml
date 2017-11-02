@@ -8,11 +8,11 @@ cache:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
 install:
-- cd xtraplatform-runtime && ../gradlew assemble 
-- cd ../xtraplaform-bundles-core && ../gradlew assemble
+- cd xtraplatform-runtime && ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+- cd ../xtraplaform-bundles-core && ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 script:
-- cd xtraplatform-runtime && ../gradlew check 
-- cd ../xtraplaform-bundles-core && ../gradlew check
+- cd xtraplatform-runtime && ../gradlew check -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+- cd ../xtraplaform-bundles-core && ../gradlew check -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 after_success:
 - cd xtraplatform-runtime && ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 - cd ../xtraplaform-bundles-core && ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
