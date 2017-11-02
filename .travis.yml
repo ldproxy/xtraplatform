@@ -8,15 +8,15 @@ cache:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
 install:
-- cd xtraplatform-runtime && ./gradlew assemble 
-- cd ../xtraplaform-bundles-core && ./gradlew assemble
+- cd xtraplatform-runtime && ../gradlew assemble 
+- cd ../xtraplaform-bundles-core && ../gradlew assemble
 script:
-- cd xtraplatform-runtime && ./gradlew check 
-- cd ../xtraplaform-bundles-core && ./gradlew check
+- cd xtraplatform-runtime && ../gradlew check 
+- cd ../xtraplaform-bundles-core && ../gradlew check
 after_success:
-- cd xtraplatform-runtime && ./gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
-- cd ../xtraplaform-bundles-core && ./gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
-- cd ../xtraplaform-bundles-runtime && ./gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+- cd xtraplatform-runtime && ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+- cd ../xtraplaform-bundles-core && ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+- cd ../xtraplaform-bundles-runtime && ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 env:
   global:
   - secure: Ip0GZh7AwIE+U0ypjlRGg9L9qZpTFrxEwUlxwTVZbelJg1MOF/3ukKnDYb5kXmie5zrek5cPDjoTz3Bz3Z6jR6QpCLBwBSBRMGO0nHgazF0d633Tqc01EOQYpMyTTem5v9fcMN92j1YUxPWBbrztFbpKLKOma+bcJ7xzODm6ydhZXTuKC95MTIezDAVKxdyz2/i8w9mBCZqXGjSIj2Xnvc0/z8YzsDgZ6mPcQgzhy/TBsw224XZBaWfhOvNxF8sp1Tjmy7EKasVulstJP4561TNHCKBNqyn5SmNrG19tyULecjY6Qso9/8zxgOIw29Qio3YTWZuu4EXlVHZKdaYXZRwYdJoKDRkLHSxfAym9zuCegf2zULA3nti71cSIoVkgn31nPt7TP/GkZLLw/JB7QGEW+W/kUJRHMZdeTG6tMfuN0wUPHHSdSts2Ry+uA+GNcqeCtKnAHybLwlevcqB+UGrkHAY1h12svA2gtIVuWaUynMbNCcMDgM+PVN4/CHljKv7bYZVAQwsfn9HEkDYITzh+9NQTttVzXeBflvmtW0Qu750CFNroiGay0Mr/RzJLZkUJ5+1h2jQOqncODyzSUe9A7VgAEBxJNY4uF/055mnV2Fk5QH3D5WxS66ML6OoBIwBJHkttU65xPLYyF2eVJOsT8ZLjdxb76H/VTEByeOY=
