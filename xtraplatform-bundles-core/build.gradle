@@ -59,11 +59,13 @@ subprojects {
         header rootProject.file('../gradle/license-header')
         strictCheck true
         excludes([
+                "**/src/main/resources/**/*",
                 "**/*.mustache",
                 "**/*.png",
                 "**/*.ico",
                 "**/*.xcf",
-                "**/template.html",
+                "**/*.html",
+                "**/*.map",
                 "**/*.json"])
         ext.year = Calendar.getInstance().get(Calendar.YEAR)
         ext.name = "interactive instruments GmbH"
