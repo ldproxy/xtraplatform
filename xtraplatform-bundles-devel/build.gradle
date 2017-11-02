@@ -10,7 +10,7 @@ buildscript {
         }
     } 
     dependencies {
-        classpath group: 'de.interactive_instruments', name: 'gradle-plugin-osgi-ipojo', version: '1.12.1.26'
+        classpath group: 'de.interactive_instruments', name: 'gradle-plugin-osgi-ipojo', version: '1.12.1.27'
         classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.14.0"
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
     } 
