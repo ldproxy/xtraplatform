@@ -207,9 +207,9 @@ public class AdminResource {
     }
 
     @Path("/services/{id}")
-    public ServiceResource getAdminService(@Auth AuthenticatedUser authUser, @PathParam("id") String id) {
+    public ServiceResource getAdminService(/*@Auth AuthenticatedUser authUser,*/ @PathParam("id") String id) {
 
-        Service s = serviceRegistry.getService(authUser, id);
+        Service s = serviceRegistry.getService(/*authUser*/new AuthenticatedUser(), id);
 
         if (s == null) {
             throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale())*/);

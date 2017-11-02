@@ -12,10 +12,14 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.core.Appender;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import de.ii.xsf.dropwizard.api.Dropwizard;
 import de.ii.xsf.dropwizard.api.HttpClients;
+import de.ii.xtraplatform.dropwizard.views.FallbackMustacheViewRenderer;
 import io.dropwizard.Application;
+import io.dropwizard.Configuration;
 import io.dropwizard.cli.Cli;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
@@ -27,6 +31,8 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.JarLocation;
 import io.dropwizard.views.ViewBundle;
+import io.dropwizard.views.ViewRenderer;
+import io.dropwizard.views.mustache.MustacheViewRenderer;
 import org.apache.felix.ipojo.annotations.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.config.Registry;
@@ -72,6 +78,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
     public static final String CFG_FILE_NAME = "xtraplatform.json";
     public static final String CFG_FILE_TEMPLATE_NAME = "/xtraplatform.default.json";
+    public static final String TEMPLATE_DIR_NAME = "templates";
     public static final String DW_CMD = "server";
 
     // Service not published by default
@@ -84,6 +91,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     private XtraServerFrameworkConfiguration configuration;
     private Environment environment;
     private ServletContainer jerseyContainer;
+    private ViewRenderer mustacheRenderer;
 
     public DropwizardProvider() {
     }
@@ -126,7 +134,14 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
 
     @Override
     public void initialize(Bootstrap<XtraServerFrameworkConfiguration> bootstrap) {
-        bootstrap.addBundle(new ViewBundle());
+        this.mustacheRenderer = new FallbackMustacheViewRenderer();
+
+        bootstrap.addBundle(new ViewBundle<XtraServerFrameworkConfiguration>(ImmutableSet.of(mustacheRenderer)) {
+            @Override
+            public Map<String, Map<String, String>> getViewConfiguration(XtraServerFrameworkConfiguration configuration) {
+                return ImmutableMap.of(".mustache", ImmutableMap.of("fileRoot", new File(new File(context.getProperty(DATA_DIR_KEY)), TEMPLATE_DIR_NAME).getAbsolutePath()));
+            }
+        });
     }
 
     @Override
@@ -288,7 +303,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     @Override
     public String getExternalUrl() {
         if (!hasExternalUrl()) {
-            return "";
+                    return "http://" + getHostName() + ":" + String.valueOf(getApplicationPort()) + "/";
         }
 
         return getConfiguration().externalURL.endsWith("/") ? getConfiguration().externalURL : getConfiguration().externalURL + "/";
@@ -386,5 +401,10 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
                 //this.jerseyContainer = sc;                
             }
         }
+    }
+
+    @Override
+    public ViewRenderer getMustacheRenderer() {
+        return mustacheRenderer;
     }
 }

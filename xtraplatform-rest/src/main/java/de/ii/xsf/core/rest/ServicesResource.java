@@ -16,8 +16,10 @@ import de.ii.xsf.core.api.permission.AuthorizationProvider;
 import de.ii.xsf.core.api.rest.ServiceResource;
 import de.ii.xsf.core.api.rest.ServiceResourceFactory;
 import de.ii.xsf.core.views.GenericView;
+import de.ii.xsf.dropwizard.api.Dropwizard;
 import de.ii.xsf.logging.XSFLogger;
 import io.dropwizard.views.View;
+import io.swagger.oas.annotations.Operation;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -69,6 +71,9 @@ public class ServicesResource {
     @Requires(optional = true)
     private AuthorizationProvider permProvider;
 
+    @Requires
+    Dropwizard dropwizard;
+
     private Map<String, ServiceResourceFactory> serviceResourceFactories;
 
     @org.apache.felix.ipojo.annotations.Context
@@ -95,6 +100,7 @@ public class ServicesResource {
     }
 
     @GET
+    @Operation
     public Response getServices(@Auth(required = false) AuthenticatedUser authUser, @QueryParam("callback") String callback) {
         if (serviceResourceFactories.size() == 1) {
             Response response = serviceResourceFactories.values().iterator().next().getResponseForParams(serviceRegistry.getServices(authUser), uriInfo);
@@ -137,10 +143,10 @@ public class ServicesResource {
     }
 
     @Path("/{service}/")
-    public ServiceResource getServiceResource(@Auth(protectedResource = true, exceptions = "arcgis") AuthenticatedUser authUser, @PathParam("service") String id, @QueryParam("callback") String callback) {
+    public ServiceResource getServiceResource(/*@Auth(protectedResource = true, exceptions = "arcgis") AuthenticatedUser authUser,*/ @PathParam("service") String id, @QueryParam("callback") String callback) {
         try {
             MDC.put("service", id);
-            return getServiceResource(getService(authUser, id, callback));
+            return getServiceResource(getService(new AuthenticatedUser(), id, callback));
         } finally {
             MDC.remove("service");
         }
@@ -150,9 +156,11 @@ public class ServicesResource {
     // TODO: cache resource object per service
     private ServiceResource getServiceResource(Service s) {
         ServiceResourceFactory factory = serviceResourceFactories.get(s.getType());
-        ServiceResource sr = (ServiceResource) rc.getResource(factory.getServiceResourceClass());
+        //ServiceResource sr = (ServiceResource) rc.getResource(factory.getServiceResourceClass());
+        ServiceResource sr = rc.initResource(factory.getServiceResource());
         sr.setService(s);
         sr.init(permProvider);
+        sr.setMustacheRenderer(dropwizard.getMustacheRenderer());
         return sr;
     }
 

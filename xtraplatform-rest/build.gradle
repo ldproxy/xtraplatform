@@ -1,5 +1,9 @@
 version = '1.1.0'
 
+dependencies {
+    provided project(":xtraplatform-openapi")
+}
+
 jar {
     manifest { 
         instruction 'Export-Package', 'de.ii.xsf.core.views'

@@ -14,6 +14,7 @@ import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.jetty.setup.ServletEnvironment;
 import io.dropwizard.setup.Environment;
+import io.dropwizard.views.ViewRenderer;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import java.util.Map;
@@ -44,4 +45,6 @@ public interface Dropwizard {
     public XtraServerFrameworkConfiguration getConfiguration();
     public Environment getEnvironment();
     public void resetServer();
+
+    ViewRenderer getMustacheRenderer();
 }

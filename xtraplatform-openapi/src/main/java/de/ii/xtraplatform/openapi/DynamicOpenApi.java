@@ -1,17 +1,34 @@
 package de.ii.xtraplatform.openapi;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import de.ii.xsf.core.web.JaxRsChangeListener;
 import de.ii.xsf.core.web.JaxRsReg;
+import io.swagger.core.filter.OpenAPISpecFilter;
+import io.swagger.core.filter.SpecFilter;
 import io.swagger.jaxrs2.Reader;
 import io.swagger.jaxrs2.integration.resources.BaseOpenApiResource;
+import io.swagger.oas.models.Components;
 import io.swagger.oas.models.OpenAPI;
+import io.swagger.oas.models.media.*;
+import io.swagger.oas.models.parameters.Parameter;
+import io.swagger.oas.models.parameters.QueryParameter;
+import io.swagger.oas.models.servers.Server;
+import io.swagger.oas.models.tags.Tag;
 import io.swagger.util.Json;
 import io.swagger.util.Yaml;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletConfig;
 import javax.ws.rs.core.*;
+import javax.ws.rs.core.MediaType;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -21,6 +38,9 @@ import java.util.stream.Collectors;
 @Instantiate
 public class DynamicOpenApi extends BaseOpenApiResource implements JaxRsChangeListener {
 
+    private static Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApi.class);
+    public static final MediaType YAML_TYPE = new MediaType("application", "yaml");
+    public final static String YAML = "application/yaml";
     @Requires
     private JaxRsReg registry;
 
@@ -52,6 +72,10 @@ public class DynamicOpenApi extends BaseOpenApiResource implements JaxRsChangeLi
 
     @Override
     protected Response getOpenApi(HttpHeaders headers, ServletConfig config, Application app, UriInfo uriInfo, String type) throws Exception {
+        return getOpenApi(headers, uriInfo, type, null);
+    }
+
+    public Response getOpenApi(HttpHeaders headers, UriInfo uriInfo, String type, OpenAPISpecFilter specFilter) throws Exception {
 
         synchronized (DynamicOpenApi.class) {
             if (!upToDate) {
@@ -63,23 +87,58 @@ public class DynamicOpenApi extends BaseOpenApiResource implements JaxRsChangeLi
             return Response.status(404).build();
         }
 
+        OpenAPI oas = openApiSpec;
         boolean pretty = true;
+
+        if (specFilter != null) {
+            SpecFilter f = new SpecFilter();
+            oas = f.filter(openApiSpec, specFilter, getQueryParams(uriInfo.getQueryParameters()), getCookies(headers), getHeaders(headers));
+        }
 
         if (StringUtils.isNotBlank(type) && type.trim().equalsIgnoreCase("yaml")) {
             return Response.status(Response.Status.OK)
-                    .entity(pretty ? Yaml.pretty(openApiSpec) : Yaml.mapper().writeValueAsString(openApiSpec))
+                    .entity(pretty ? Yaml.pretty(oas) : Yaml.mapper().writeValueAsString(oas))
                     .type("application/yaml")
                     .build();
         } else {
             return Response.status(Response.Status.OK)
-                    .entity(pretty ? Json.pretty(openApiSpec) : Json.mapper().writeValueAsString(openApiSpec))
+                    .entity(pretty ? Json.pretty(oas) : Json.mapper().writeValueAsString(oas))
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .build();
         }
     }
 
-    protected OpenAPI getOpenApiSpec(HttpHeaders headers, ServletConfig config, Application app, UriInfo uriInfo, String type) throws Exception {
-        return null;
+    private static Map<String, List<String>> getQueryParams(MultivaluedMap<String, String> params) {
+        Map<String, List<String>> output = new HashMap<String, List<String>>();
+        if (params != null) {
+            for (String key : params.keySet()) {
+                List<String> values = params.get(key);
+                output.put(key, values);
+            }
+        }
+        return output;
+    }
+
+    private static Map<String, String> getCookies(HttpHeaders headers) {
+        Map<String, String> output = new HashMap<String, String>();
+        if (headers != null) {
+            for (String key : headers.getCookies().keySet()) {
+                Cookie cookie = headers.getCookies().get(key);
+                output.put(key, cookie.getValue());
+            }
+        }
+        return output;
+    }
+
+    private static Map<String, List<String>> getHeaders(HttpHeaders headers) {
+        Map<String, List<String>> output = new HashMap<String, List<String>>();
+        if (headers != null) {
+            for (String key : headers.getRequestHeaders().keySet()) {
+                List<String> values = headers.getRequestHeaders().get(key);
+                output.put(key, values);
+            }
+        }
+        return output;
     }
 }
 
