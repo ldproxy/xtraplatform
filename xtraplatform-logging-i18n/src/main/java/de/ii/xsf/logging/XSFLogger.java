@@ -15,6 +15,9 @@ import org.forgerock.i18n.slf4j.LocalizedLoggerFactory;
  *
  * @author fischer
  */
+
+// TODO: remove i18n!!!
+
 public class XSFLogger {
     private static LocalizedLoggerFactory loggerFactory = LocalizedLoggerFactory.getInstance(Locale.ROOT);
         

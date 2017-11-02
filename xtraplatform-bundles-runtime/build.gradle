@@ -2,22 +2,57 @@ buildscript {
     repositories {
         mavenCentral()
         jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
     dependencies {
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
+        classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.14.0"
     }
 }
 
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.github.hierynomus.license-report'
 
-version = '1.0.3'
+downloadLicenses {
+
+    ext.apacheTwo = license('Apache License, Version 2.0', 'http://opensource.org/licenses/Apache-2.0')
+    ext.bsd = license('BSD License', 'http://www.opensource.org/licenses/bsd-license.php')
+    ext.mit = license('MIT License', 'https://opensource.org/licenses/mit-license.php')
+    ext.cddlgpl = license('CDDL + GPLv2 with classpath exception', 'https://javaee.github.io/glassfish/LICENSE')
+    ext.epl = license('Eclipse Public License - Version 1.0', 'http://www.eclipse.org/org/documents/epl-v10.php')
+    ext.lgpl = license('LGPL 2.1', 'http://www.gnu.org/licenses/lgpl-2.1.html')
+
+    
+    aliases = [
+        (apacheTwo) : ['Apache Software License - Version 2.0', 'Apache License, version 2.0', 'The Apache License, Version 2.0', 'Apache Software Licenses', 'Apache 2.0', 'The Apache Software License, Version 2.0', 'Apache 2', 'Apache License Version 2.0', 'Apache License, Version 2.0', 'Apache License 2.0', license('Apache License 2.0', 'http://www.apache.org/licenses/LICENSE-2.0')],
+        (bsd) : ['BSD', 'The New BSD License', 'BSD License', license('New BSD License', 'http://www.opensource.org/licenses/bsd-license.php')],
+        (mit): ['MIT', 'MIT license', 'MIT License'],
+        (cddlgpl): ['CDDL + GPLv2 with classpath exception', 'CDDL+GPL License', 'CDDL/GPLv2+CE', 'CDDL 1.1', 'GPL2 w/ CPE'],
+        (epl): ['Eclipse Public License - Version 1.0', 'Eclipse Public License - v 1.0'],
+        (lgpl): ['LGPL 2.1', 'GNU Lesser General Public License']
+    ]
+
+    licenses = [
+        'org.json:json:20070829' : license('The JSON License', 'http://www.json.org/license.html')
+    ]
+
+    excludeDependencies = [
+        'de.interactive_instruments:xtraplatform-dropwizard:1.1.0'
+    ]
+
+    dependencyConfiguration = 'bundles'
+}
+version = '1.1.0'
 
 //version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
 
 repositories {     
+    mavenLocal()
     mavenCentral()
 }
 
@@ -33,7 +68,7 @@ dependencies {
     //bundles group: 'org.slf4j', name: 'slf4j-api', version: '1.7.6'
     //bundles group: 'org.slf4j', name: 'log4j-over-slf4j', version: '1.7.6'
     //bundles group: 'org.slf4j', name: 'jul-to-slf4j', version: '1.7.6'
-    bundles group: 'org.slf4j', name: 'osgi-over-slf4j', version: '1.7.6'
+    bundles group: 'org.slf4j', name: 'osgi-over-slf4j', version: '1.7.25'
     //bundles group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.3'
     //bundles group: 'ch.qos.logback', name: 'logback-core', version: '1.1.3'
 
@@ -41,22 +76,26 @@ dependencies {
     //bundles group: 'org.eclipse.jetty.orbit', name: 'javax.servlet', version: '3.0.0.v201112011016'
    
     // TODO
-    bundles group: 'de.interactive_instruments', name: 'xtraplatform-dropwizard', version: '1.0.2'
+    bundles group: 'de.interactive_instruments', name: 'xtraplatform-dropwizard', version: '1.1.0'
 
     // felix
-    bundles group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.8.0'
-    bundles group: 'org.apache.felix', name: 'org.apache.felix.eventadmin', version: '1.3.2'
-    bundles group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.5.0'
+    bundles group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.8.16'
+    bundles group: 'org.apache.felix', name: 'org.apache.felix.eventadmin', version: '1.4.10'
+    bundles group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.2'
 
     // felix http
-    bundles group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '2.2.2'
-    bundles group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '2.2.2'
+    bundles group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '3.0.18'
+    bundles group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '3.0.0'
     
     //felix ipojo
     bundles group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
     bundles group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.eventadmin', version: '1.8.0'
     bundles group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.whiteboard', version: '1.6.0'
     bundles group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.extender', version: '1.4.0'
+
+    //bundles group: 'org.apache.felix', name: 'org.apache.felix.gogo.shell', version: '1.0.0'
+    //bundles group: 'org.apache.felix', name: 'org.apache.felix.gogo.runtime', version: '1.0.8'
+    //bundles group: 'org.apache.felix', name: 'org.apache.felix.gogo.command', version: '1.0.2'
 }
 
 publishing {
@@ -91,7 +130,7 @@ bintray {
         repo = 'maven'
         name = project.name
         userOrg = 'iide'
-        licenses = ['Apache-2.0']
+        licenses = ['MPL-2.0']
         websiteUrl = 'https://github.com/interactive-instruments/XtraPlatform'
         issueTrackerUrl = 'https://github.com/interactive-instruments/XtraPlatform/issues'
         vcsUrl = 'https://github.com/interactive-instruments/XtraPlatform.git'

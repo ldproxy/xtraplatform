@@ -9,12 +9,14 @@ package de.ii.xsf.dropwizard.api;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Appender;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
 import de.ii.xsf.dropwizard.cfg.XtraServerFrameworkConfiguration;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.jetty.setup.ServletEnvironment;
 import io.dropwizard.setup.Environment;
+import io.dropwizard.views.ViewRenderer;
+import org.glassfish.jersey.servlet.ServletContainer;
+
 import java.util.Map;
 import javax.servlet.ServletContext;
 
@@ -43,4 +45,6 @@ public interface Dropwizard {
     public XtraServerFrameworkConfiguration getConfiguration();
     public Environment getEnvironment();
     public void resetServer();
+
+    ViewRenderer getMustacheRenderer();
 }

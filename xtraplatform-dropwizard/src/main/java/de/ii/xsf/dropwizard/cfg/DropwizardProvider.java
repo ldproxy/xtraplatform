@@ -10,15 +10,16 @@ package de.ii.xsf.dropwizard.cfg;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.core.Appender;
-import com.codahale.metrics.httpclient.InstrumentedHttpClient;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
 import de.ii.xsf.dropwizard.api.Dropwizard;
 import de.ii.xsf.dropwizard.api.HttpClients;
-import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
+import de.ii.xtraplatform.dropwizard.views.FallbackMustacheViewRenderer;
 import io.dropwizard.Application;
+import io.dropwizard.Configuration;
 import io.dropwizard.cli.Cli;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
@@ -30,45 +31,39 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.JarLocation;
 import io.dropwizard.views.ViewBundle;
+import io.dropwizard.views.ViewRenderer;
+import io.dropwizard.views.mustache.MustacheViewRenderer;
+import org.apache.felix.ipojo.annotations.*;
+import org.apache.http.client.HttpClient;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.glassfish.jersey.servlet.ServletContainer;
+import org.joda.time.DateTime;
+import org.osgi.framework.BundleContext;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
-import javax.servlet.ServletContext;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.ServiceController;
-import org.apache.felix.ipojo.annotations.Validate;
-import org.apache.http.Header;
-import org.apache.http.HeaderElement;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpResponseInterceptor;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.DeflateDecompressingEntity;
-import org.apache.http.client.entity.GzipDecompressingEntity;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.protocol.HttpContext;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.joda.time.DateTime;
-import org.osgi.framework.BundleContext;
-import org.slf4j.LoggerFactory;
+
+import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
 
 /**
  *
@@ -83,6 +78,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
     public static final String CFG_FILE_NAME = "xtraplatform.json";
     public static final String CFG_FILE_TEMPLATE_NAME = "/xtraplatform.default.json";
+    public static final String TEMPLATE_DIR_NAME = "templates";
     public static final String DW_CMD = "server";
 
     // Service not published by default
@@ -95,6 +91,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     private XtraServerFrameworkConfiguration configuration;
     private Environment environment;
     private ServletContainer jerseyContainer;
+    private ViewRenderer mustacheRenderer;
 
     public DropwizardProvider() {
     }
@@ -137,14 +134,21 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
 
     @Override
     public void initialize(Bootstrap<XtraServerFrameworkConfiguration> bootstrap) {
-        bootstrap.addBundle(new ViewBundle());
+        this.mustacheRenderer = new FallbackMustacheViewRenderer();
+
+        bootstrap.addBundle(new ViewBundle<XtraServerFrameworkConfiguration>(ImmutableSet.of(mustacheRenderer)) {
+            @Override
+            public Map<String, Map<String, String>> getViewConfiguration(XtraServerFrameworkConfiguration configuration) {
+                return ImmutableMap.of(".mustache", ImmutableMap.of("fileRoot", new File(new File(context.getProperty(DATA_DIR_KEY)), TEMPLATE_DIR_NAME).getAbsolutePath()));
+            }
+        });
     }
 
     @Override
     public void run(XtraServerFrameworkConfiguration configuration, Environment environment) throws Exception {
         this.configuration = configuration;
         this.environment = environment;
-        this.jerseyContainer = environment.getJerseyServletContainer();
+        this.jerseyContainer = (ServletContainer) environment.getJerseyServletContainer();
 
         this.environment.healthChecks().register("ModulesHealthCheck", new ModulesHealthCheck());
 
@@ -168,32 +172,45 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
         return environment;
     }
 
+    // TODO: use connection manager
+
     @Override
     public HttpClient getDefaultHttpClient() {
         return getHttpClient("xsf", null);
     }
 
+    // TODO: is available now via configuration: http://www.dropwizard.io/1.2.0/docs/manual/configuration.html#man-configuration-clients-http
     @Override
     public HttpClient getUntrustedSslHttpClient(String id) {
-        // TODO: this workaround leads to untrusted ssl connections being accepted
-        SchemeRegistry registry = null;
+        Registry<ConnectionSocketFactory> registry = null;
+
         try {
-            TrustStrategy acceptingTrustStrategy = new TrustStrategy() {
-                @Override
-                public boolean isTrusted(X509Certificate[] certificate, String authType) {
-                    return true;
-                }
-            };
-            SSLSocketFactory sf = new SSLSocketFactory(acceptingTrustStrategy, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-            registry = new SchemeRegistry();
-            registry.register(new Scheme("https", 443, sf));
-        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException | UnrecoverableKeyException ex) {
+            // use the TrustSelfSignedStrategy to allow Self Signed Certificates
+            SSLContext sslContext = SSLContextBuilder
+                    .create()
+                    .loadTrustMaterial(new TrustSelfSignedStrategy())
+                    .build();
+
+            // we can optionally disable hostname verification.
+            // if you don't want to further weaken the security, you don't have to include this.
+            HostnameVerifier allowAllHosts = new NoopHostnameVerifier();
+
+            // create an SSL Socket Factory to use the SSLContext with the trust self signed certificate strategy
+            // and allow all hosts verifier.
+            SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts);
+
+            registry = RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                    .register("https", sslConnectionSocketFactory)
+                    .build();
+        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException ex) {
+            //ignore
         }
 
         return getHttpClient(id, registry);
     }
 
-    private HttpClient getHttpClient(String id, SchemeRegistry registry) {
+    private HttpClient getHttpClient(String id, Registry<ConnectionSocketFactory> registry) {
 
         HttpClientBuilder hcb = new HttpClientBuilder(getEnvironment()).using(getConfiguration().httpClient);
 
@@ -201,9 +218,10 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
             hcb = hcb.using(registry);
         }
 
-        InstrumentedHttpClient httpclient = (InstrumentedHttpClient) hcb.build(id + new DateTime().toString());
+        CloseableHttpClient httpclient = hcb.build(id + new DateTime().toString());
 
-        httpclient.addRequestInterceptor(new HttpRequestInterceptor() {
+        // TODO: not needed anymore in 4.5, verify
+        /*httpclient.addRequestInterceptor(new HttpRequestInterceptor() {
 
             @Override
             public void process(
@@ -242,14 +260,14 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
                 }
             }
 
-        });
+        });*/
 
         return httpclient;
     }
 
     @Override
     public Map<String, Boolean> getFlags() {
-        Map<String, Boolean> flags = new HashMap();
+        Map<String, Boolean> flags = new HashMap<>();
 
         flags.put(FLAG_ALLOW_SERVICE_READDING, getConfiguration().allowServiceReAdding);
         flags.put(FLAG_USE_FORMATTED_JSON_OUTPUT, getConfiguration().useFormattedJsonOutput);
@@ -285,7 +303,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     @Override
     public String getExternalUrl() {
         if (!hasExternalUrl()) {
-            return "";
+                    return "http://" + getHostName() + ":" + String.valueOf(getApplicationPort()) + "/";
         }
 
         return getConfiguration().externalURL.endsWith("/") ? getConfiguration().externalURL : getConfiguration().externalURL + "/";
@@ -383,5 +401,10 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
                 //this.jerseyContainer = sc;                
             }
         }
+    }
+
+    @Override
+    public ViewRenderer getMustacheRenderer() {
+        return mustacheRenderer;
     }
 }

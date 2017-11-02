@@ -9,6 +9,7 @@ package de.ii.xsf.core.api.rest;
 
 import de.ii.xsf.core.api.Service;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
+import io.dropwizard.views.ViewRenderer;
 
 /**
  *
@@ -22,4 +23,6 @@ public interface ServiceResource {
     public void setService(Service service);
     
     public void init(AuthorizationProvider permProvider);
+
+    void setMustacheRenderer(ViewRenderer mustacheRenderer);
 }

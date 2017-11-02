@@ -7,11 +7,6 @@
  */
 package de.ii.xsf.core.api.organization.annotations;
 
-import com.sun.jersey.api.core.HttpContext;
-import com.sun.jersey.core.spi.component.ComponentContext;
-import com.sun.jersey.server.impl.inject.AbstractHttpContextInjectable;
-import com.sun.jersey.spi.inject.Injectable;
-import com.sun.jersey.spi.inject.PerRequestTypeInjectableProvider;
 import de.ii.xsf.core.api.permission.Organization;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
@@ -24,14 +19,17 @@ import org.apache.felix.ipojo.annotations.Provides;
  *
  * @author zahnen
  */
-@Component
+
+// TODO: used in security-oauth2/src/main/java/org/surfnet/oaaas/resource/OAuth2TokenResource.java
+
+/*@Component
 @Provides
 @Instantiate
 
-@Provider
-public class OrganizationIdProvider extends PerRequestTypeInjectableProvider<OrganizationId, String> {
+@Provider*/
+public class OrganizationIdProvider /*extends PerRequestTypeInjectableProvider<OrganizationId, String>*/ {
 
-    @Context
+    /*@Context
     HttpServletRequest request;
 
     public OrganizationIdProvider() {
@@ -49,5 +47,5 @@ public class OrganizationIdProvider extends PerRequestTypeInjectableProvider<Org
             }
 
         };
-    }
+    }*/
 }

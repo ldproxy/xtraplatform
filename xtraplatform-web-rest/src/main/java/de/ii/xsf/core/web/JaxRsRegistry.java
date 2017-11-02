@@ -7,32 +7,32 @@
  */
 package de.ii.xsf.core.web;
 
-import com.sun.jersey.spi.container.ContainerRequestFilter;
-import com.sun.jersey.spi.container.ContainerResponseFilter;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
+import com.google.common.collect.Sets;
 import de.ii.xsf.dropwizard.api.Dropwizard;
 import de.ii.xsf.logging.XSFLogger;
-import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.MutableServletContextHandler;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import javax.ws.rs.Path;
-import javax.ws.rs.ext.Provider;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
+import io.dropwizard.jetty.NonblockingServletHolder;
+import org.apache.felix.ipojo.annotations.*;
 import org.apache.felix.ipojo.whiteboard.Wbp;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlet.ServletMapping;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
+import javax.ws.rs.Path;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.ext.Provider;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+
 /**
- *
  * @author zahnen
  */
 // used basic idea from https://github.com/hstaudacher/osgi-jax-rs-connector
@@ -45,7 +45,7 @@ import org.osgi.framework.ServiceReference;
         onArrival = "addingService",
         onDeparture = "removedService")
 
-public class JaxRsRegistry implements LifeCycle.Listener {
+public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
 
     private static final LocalizedLogger LOGGER = XSFLogger.getLogger(JaxRsRegistry.class);
     public static final String PUBLISH = "de.ii.xsf.jaxrs.publish";
@@ -53,8 +53,6 @@ public class JaxRsRegistry implements LifeCycle.Listener {
 
     private final BundleContext context;
     private final MutableServletContextHandler server;
-    private final JerseyEnvironment jersey;
-    //private final ServletContainer jerseyContainer;
     private final SortedMap<Integer, Object> authProviders;
     private final List<Object> resourceCache;
     private final List<Object> providerCache;
@@ -62,29 +60,31 @@ public class JaxRsRegistry implements LifeCycle.Listener {
     private boolean isJerseyAvailable;
     private boolean isAuthProviderAvailable;
     private final Dropwizard dw;
+    private ResourceConfig jersey;
+    private final List<JaxRsChangeListener> changeListeners;
 
     JaxRsRegistry(@Context BundleContext context, @Requires Dropwizard dw) {
         //super(context, context.createFilter(ANY_SERVICE_FILTER), null);
         this.context = context;
         this.server = dw.getApplicationContext();
-        this.jersey = dw.getJersey();
-        //this.jerseyContainer = dw.getJerseyContainer();
 
         this.authProviders = new TreeMap<>();
         this.resourceCache = new ArrayList<>();
         this.providerCache = new ArrayList<>();
         this.filterCache = new ArrayList<>();
-
-        // workaround: reload calls init(scanner) and scanner is null without this
-        String[] pkgs = {"does.not.exist"};
-        jersey.packages(pkgs);
+        this.changeListeners = new ArrayList<>();
 
         if (server.isAvailable()) {
             isJerseyAvailable = true;
         }
         server.addLifeCycleListener(this);
-        
+
         this.dw = dw;
+
+        // TODO
+        this.isAuthProviderAvailable = true;
+
+        clearConfig();
     }
 
     public synchronized void addingService(ServiceReference reference) {
@@ -111,6 +111,34 @@ public class JaxRsRegistry implements LifeCycle.Listener {
             }
             jerseyChanged();
         }
+    }
+
+    @Override
+    public synchronized void addService(Object service) {
+
+        if (isRegisterable(service)) {
+            if (isResource(service)) {
+                jerseyRegisterResource(service);
+            } else if (isFilter(service)) {
+                jerseyAddFilter(service);
+            } else if (isProvider(service)) {
+                jerseyRegisterProvider(service);
+            }
+            jerseyChanged();
+        }
+    }
+
+    @Override
+    public synchronized Set<Object> getResources() {
+        if (isJerseyAvailable) {
+            return Sets.union(jersey.getInstances(), jersey.getSingletons());
+        }
+        return new HashSet<>();
+    }
+
+    @Override
+    public void addChangeListener(JaxRsChangeListener changeListener) {
+        changeListeners.add(changeListener);
     }
 
     public synchronized void removedService(ServiceReference reference) {
@@ -167,18 +195,68 @@ public class JaxRsRegistry implements LifeCycle.Listener {
             if (!filterCache.isEmpty()) {
                 for (Object filter : filterCache) {
                     if (filter instanceof ContainerRequestFilter) {
-                        jersey.getResourceConfig().getContainerRequestFilters().add(filter.getClass());
+                        // TODO: verify
+                        jersey.register(filter.getClass());
+                        //jersey.getResourceConfig().register() .getContainerRequestFilters().add(filter.getClass());
                         LOGGER.getLogger().debug("Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
                     } else if (filter instanceof ContainerResponseFilter) {
-                        jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
+                        // TODO: verify
+                        jersey.register(filter.getClass());
+                        //jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
                         LOGGER.getLogger().debug("Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
                     }
                 }
                 filterCache.clear();
             }
 
-            dw.getJerseyContainer().reload();
+            updateDropwizard();
+
+            clearConfig();
+
+            for (JaxRsChangeListener changeListener : changeListeners) {
+                if (changeListener != null) {
+                    changeListener.jaxRsChanged();
+                }
+            }
         }
+    }
+
+    // TODO: can be moved to dw
+    private void updateDropwizard() {
+        Optional<ServletHolder> oldServletHolder = Arrays.stream(dw.getApplicationContext().getServletHandler().getServlets())
+                .filter(sh -> sh.getName().contains("jersey"))
+                .findFirst();
+
+        ServletHolder[] servletHolders = Arrays.stream(dw.getApplicationContext().getServletHandler().getServlets())
+                .filter(sh -> !sh.getName().contains("jersey"))
+                .toArray(ServletHolder[]::new);
+
+        ServletMapping[] servletMappings = Arrays.stream(dw.getApplicationContext().getServletHandler().getServletMappings())
+                .filter(sm -> !sm.getServletName().contains("jersey"))
+                .toArray(ServletMapping[]::new);
+
+        ServletHolder shJersey = new NonblockingServletHolder(new ServletContainer(jersey));
+
+        dw.getApplicationContext().getServletHandler().setServlets(servletHolders);
+        dw.getApplicationContext().getServletHandler().setServletMappings(servletMappings);
+        dw.getApplicationContext().addServlet(shJersey, dw.getJersey().getUrlPattern());
+
+        oldServletHolder
+                .ifPresent(servletHolder -> {
+                    try {
+                        servletHolder.doStop();
+                        LOGGER.getLogger().debug("Stopped ServletHolder {})", servletHolder.getName());
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                });
+        //LOGGER.getLogger().debug("APP {}", dw.getApplicationContext().dump());
+    }
+
+    private void clearConfig() {
+        ResourceConfig oldConfig = jersey != null ? jersey : dw.getJersey().getResourceConfig();
+        this.jersey = new ResourceConfig(oldConfig);
+        //LOGGER.getLogger().debug("OLD CFG {} NEW CFG {}", oldConfig, jersey);
     }
 
     private void registerAuthProvider(Object service, String type, int ranking) {
@@ -232,7 +310,7 @@ public class JaxRsRegistry implements LifeCycle.Listener {
 
     private boolean jerseyUnregister(Object object) {
         if (isJerseyAvailable) {
-            if (jersey.getResourceConfig().getSingletons().remove(object)) {
+            if (jersey.getSingletons().remove(object)) {
                 LOGGER.getLogger().debug("Unregistered JAX-RS Resource/Provider {})", object.getClass());
                 return true;
             }
@@ -254,13 +332,17 @@ public class JaxRsRegistry implements LifeCycle.Listener {
 
     private boolean jerseyRemoveFilter(Object object) {
         if (isJerseyAvailable) {
-            if (jersey.getResourceConfig().getContainerRequestFilters().remove(object.getClass())) {
+            // TODO: verify
+            if (jersey.getClasses().remove(object.getClass())) {
+                //if (jersey.getResourceConfig().getContainerRequestFilters().remove(object.getClass())) {
                 LOGGER.getLogger().debug("Unregistered JAX-RS ContainerRequestFilter {})", object.getClass());
                 return true;
-            } else if (jersey.getResourceConfig().getContainerResponseFilters().remove(object.getClass())) {
-                LOGGER.getLogger().debug("Unregistered JAX-RS ContainerResponseFilter {})", object.getClass());
-                return true;
-            }
+            } else // TODO: verify
+                if (jersey.getClasses().remove(object.getClass())) {
+                    //if (jersey.getResourceConfig().getContainerResponseFilters().remove(object.getClass())) {
+                    LOGGER.getLogger().debug("Unregistered JAX-RS ContainerResponseFilter {})", object.getClass());
+                    return true;
+                }
         } else {
             if (filterCache.contains(object)) {
                 filterCache.remove(object);

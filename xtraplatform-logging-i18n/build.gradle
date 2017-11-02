@@ -1,4 +1,4 @@
-version = '1.0.1'
+version = '1.1.0'
 
 dependencies {
     /*compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.6'
@@ -37,6 +37,8 @@ jar {
         instructionFirst 'Import-Package', '!org.codehaus.janino.*'
         instructionFirst 'Import-Package', '!org.codehaus.groovy.*'
         instructionFirst 'Import-Package', '!groovy.lang'
+
+        instructionFirst 'Import-Package', 'org.slf4j'
         
     }
 }

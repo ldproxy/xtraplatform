@@ -21,6 +21,7 @@ import java.util.Collection;
  */
 public interface ServiceResourceFactory {
     Class getServiceResourceClass();
+    ServiceResource getServiceResource();
     View getServicesView(Collection<Service> services, URI uri);
     Response getResponseForParams(Collection<Service> services, UriInfo uriInfo);
 }

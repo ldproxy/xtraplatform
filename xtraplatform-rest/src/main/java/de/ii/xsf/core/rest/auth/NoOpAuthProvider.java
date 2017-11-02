@@ -7,12 +7,6 @@
  */
 package de.ii.xsf.core.rest.auth;
 
-import com.sun.jersey.api.core.HttpContext;
-import com.sun.jersey.api.model.Parameter;
-import com.sun.jersey.core.spi.component.ComponentContext;
-import com.sun.jersey.core.spi.component.ComponentScope;
-import com.sun.jersey.server.impl.inject.AbstractHttpContextInjectable;
-import com.sun.jersey.spi.inject.InjectableProvider;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.Organization;
@@ -29,17 +23,20 @@ import org.apache.felix.ipojo.annotations.StaticServiceProperty;
  *
  * @author zahnen
  */
-@Component
+
+// TODO: http://www.dropwizard.io/1.2.0/docs/manual/auth.html
+
+/*@Component
 @Provides(properties = {
     @StaticServiceProperty(name = "provider.type", type = "java.lang.String", value = "auth"),
     @StaticServiceProperty(name = "service.ranking", type = "int", value = "0")
 })
 @Instantiate
 
-@Provider
-public class NoOpAuthProvider implements InjectableProvider<Auth, Parameter> {
+@Provider*/
+public class NoOpAuthProvider /*implements InjectableProvider<Auth, Parameter>*/ {
 
-    @Context
+    /*@Context
     HttpServletRequest request;
 
     @Override
@@ -63,5 +60,5 @@ public class NoOpAuthProvider implements InjectableProvider<Auth, Parameter> {
                 return anonymous;
             }
         };
-    }
+    }*/
 }
