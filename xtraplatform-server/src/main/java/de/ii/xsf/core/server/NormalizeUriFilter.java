@@ -28,7 +28,7 @@ import java.net.URISyntaxException;
  */
 @Component
 @Provides
-@Instantiate
+//@Instantiate
 @PreMatching
 public class NormalizeUriFilter implements ContainerRequestFilter {
 
