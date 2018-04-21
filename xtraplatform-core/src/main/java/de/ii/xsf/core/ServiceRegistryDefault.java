@@ -117,7 +117,7 @@ public class ServiceRegistryDefault implements ServiceRegistry {
      }*/
     private Map<String, Service> getServicesForOrgId(AuthenticatedUser authUser) {
 
-        Map<String, Service> srvs = new HashMap<>();
+        Map<String, Service> srvs = new LinkedHashMap<>();
         for (ServiceModule mod : serviceModules.values()) {
             for (Service s : mod.getServiceList(authUser)) {
                 srvs.put(s.getId(), s);
