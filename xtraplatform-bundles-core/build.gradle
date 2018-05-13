@@ -75,9 +75,6 @@ subprojects {
         mavenCentral()
         jcenter()
         maven {
-            url "http://maven.forgerock.org/repo/repo"
-        }
-        maven {
             url 'http://oss.sonatype.org/content/repositories/snapshots'
         }
         maven {
@@ -192,13 +189,13 @@ subprojects {
     }
 }
 
-configure(subprojects.findAll {it.name != 'xtraplatform-api' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-logging-i18n' && it.name != 'xtraplatform-runtime'}) {
+configure(subprojects.findAll {it.name != 'xtraplatform-api' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-runtime'}) {
     dependencies {
         compile project(':xtraplatform-api')
     }
 }
 
-configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-runtime'}) {
+configure(subprojects.findAll {it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-runtime'}) {
     dependencies {
         compile project(':xtraplatform-dropwizard')
     }
@@ -208,12 +205,6 @@ configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n' && it.name
      instruction 'Import-Package', 'com.fasterxml.jackson.module.afterburner.ser'   
      instruction 'Import-Package', '*'   
     }
-    }
-}
-
-configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n'}) {
-    dependencies {
-        compile project(':xtraplatform-logging-i18n')
     }
 }
 
