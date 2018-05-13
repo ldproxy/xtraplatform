@@ -7,8 +7,10 @@
  */
 package de.ii.xsf.cfgstore.api;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.ii.xsf.core.api.Resource;
+
+import java.util.Map;
 
 /**
  *
@@ -17,12 +19,12 @@ import de.ii.xsf.core.api.Resource;
 public class JsonBundleConfig /*extends ObjectNode*/ implements Resource {
 
     private String id;
-    private ObjectNode cfg;
+    private Map<String, String> properties;
 
-    public JsonBundleConfig(String id, ObjectNode cfg) {
+    public JsonBundleConfig(String id, Map<String, String> properties) {
         //super(JsonNodeFactory.instance);
         this.id = id;
-        this.cfg = cfg;
+        this.properties = properties;
     }
 
     @Override
@@ -35,13 +37,12 @@ public class JsonBundleConfig /*extends ObjectNode*/ implements Resource {
         this.id = id;
     }
 
-    public ObjectNode getCfg() {
-        return cfg;
+    @JsonProperty
+    public Map<String, String> getProperties() {
+        return properties;
     }
 
-    public void setCfg(ObjectNode cfg) {
-        this.cfg = cfg;
+    public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
     }
-    
-    
 }

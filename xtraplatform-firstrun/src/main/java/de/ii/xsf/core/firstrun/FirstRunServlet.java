@@ -14,6 +14,7 @@ import de.ii.xsf.dropwizard.api.Dropwizard;
 import de.ii.xsf.logging.XSFLogger;
 import io.dropwizard.views.mustache.MustacheViewRenderer;
 import org.apache.felix.ipojo.annotations.*;
+import org.eclipse.jetty.http.HttpHeader;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 
 import javax.servlet.http.HttpServlet;
@@ -29,7 +30,7 @@ import java.util.List;
  */
 @Component
 @Provides(properties = {
-    @StaticServiceProperty(name = "alias", type = "java.lang.String", value = "/")
+    @StaticServiceProperty(name = "osgi.http.whiteboard.servlet.pattern", type = "java.lang.String", value = "")
 })
 @Instantiate
 
@@ -166,7 +167,11 @@ public class FirstRunServlet extends HttpServlet {
         }
         path = externalPath + path;
 
-        response.sendRedirect(path);
+        //response.sendRedirect(path);
+
+        response.setHeader(HttpHeader.LOCATION.asString(), path);
+        response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+        response.getOutputStream().close();
     }
 
     private void doResponse(HttpServletResponse response) throws IOException {

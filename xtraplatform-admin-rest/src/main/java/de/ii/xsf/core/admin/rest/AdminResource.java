@@ -7,6 +7,9 @@
  */
 package de.ii.xsf.core.admin.rest;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import de.ii.xsf.cfgstore.api.JsonBundleConfig;
+import de.ii.xsf.cfgstore.api.LocalBundleConfigStore;
 import de.ii.xsf.core.api.*;
 import de.ii.xsf.core.api.exceptions.ResourceNotFound;
 import de.ii.xsf.core.api.permission.Auth;
@@ -16,6 +19,7 @@ import de.ii.xsf.core.api.permission.Role;
 import de.ii.xsf.core.api.rest.*;
 import de.ii.xsf.dropwizard.api.Jackson;
 import de.ii.xsf.logging.XSFLogger;
+import io.dropwizard.jersey.caching.CacheControl;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -35,7 +39,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -70,11 +76,6 @@ public class AdminResource {
     // TODO
     @Requires(optional = true)
     private AuthorizationProvider permissions;
-    @Context
-    HttpServletRequest request;
-
-    @Context
-    HttpServletResponse response;
 
     private String xsfVersion = "todo";
 
@@ -125,16 +126,15 @@ public class AdminResource {
     }
 
     @GET
-    //@CacheControl(noCache = true, mustRevalidate = true)
+    @CacheControl(noCache = true)
     public AdminRoot getAdmin() {
         return new AdminRoot(xsfVersion);
     }
 
     @Path("/services")
     @GET
+    @CacheControl(noCache = true)
     public List getAdminServices(@Auth AuthenticatedUser authUser) {
-        response.setHeader("Cache-Control", "no-cache");
-
         List<String> resources = new ArrayList<String>();
 
         List<AbstractService> srvs = new ArrayList<AbstractService>();
@@ -154,16 +154,14 @@ public class AdminResource {
 
     @Path("/modules")
     @GET
+    @CacheControl(noCache = true)
     public Set<String> getModules() {
-        response.setHeader("Cache-Control", "no-cache");
-
         return modulesRegistry.getModules().keySet();
     }
 
     @Path("/modules/{id}")
+    @CacheControl(noCache = true)
     public ModuleResource getModule(@PathParam("id") String id) {
-        response.setHeader("Cache-Control", "no-cache");
-
         Module m = modulesRegistry.getModule(id);
 
         if (m == null) {
@@ -187,9 +185,8 @@ public class AdminResource {
 
     @Path("/servicetypes")
     @GET
+    @CacheControl(noCache = true)
     public Collection getAdminServiceTypes() {
-        response.setHeader("Cache-Control", "no-cache");
-
         return serviceRegistry.getServiceTypes();
     }
 
@@ -220,7 +217,45 @@ public class AdminResource {
         return sr;
     }
 
-    // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory 
+    @Requires
+    LocalBundleConfigStore localBundleConfigStore;
+
+    @Path("/settings")
+    @GET
+    @CacheControl(noCache = true)
+    public Map<String, Object> getSettingCategories(/*@Auth AuthenticatedUser authUser*/) {
+        return localBundleConfigStore.getCategories();
+    }
+
+    @Path("/settings/{category}")
+    @GET
+    @CacheControl(noCache = true)
+    public Map<String, Object> getSettingCategory(/*@Auth AuthenticatedUser authUser,*/ @PathParam("category") String category) {
+        if (!localBundleConfigStore.hasCategory(category)) {
+            throw new ResourceNotFound();
+        }
+
+        return localBundleConfigStore.getConfigProperties(category);
+    }
+
+    @Path("/settings/{category}")
+    @POST
+    @CacheControl(noCache = true)
+    public Map<String, Object> postSettingCategory(/*@Auth AuthenticatedUser authUser,*/ @PathParam("category") String category, Map<String, String> body) {
+        if (!localBundleConfigStore.hasCategory(category)) {
+            throw new ResourceNotFound();
+        }
+
+        try {
+            localBundleConfigStore.updateConfigProperties(category, body);
+        } catch (IOException e) {
+            throw new NotAcceptableException();
+        }
+
+        return localBundleConfigStore.getConfigProperties(category);
+    }
+
+    // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory
     // TODO: cache resource object per service
     private AdminServiceResource getAdminServiceResource(Service s) {
 

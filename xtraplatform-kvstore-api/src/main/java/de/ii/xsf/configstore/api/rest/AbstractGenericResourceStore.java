@@ -201,7 +201,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
 
         try {
             Reader customReader = getResourceStore(path).getChildStore(OVERRIDES_STORE_NAME).getValueReader(id);
-            deepUpdater.applyUpdate(resource, customReader);
+            deepUpdater.applyUpdate(resource, serializer.deserializeMerge(customReader));
         } catch (KeyNotFoundException ex) {
             // no override when not found
         }
@@ -222,7 +222,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
                 // TODO
                 T merged = getResource(path, resourceId);//deepUpdater.applyUpdate(createEmptyResource(), getResource(path, resourceId));
                 // merge changes to cloned object
-                merged = deepUpdater.applyUpdate(merged, serializer.serializeUpdate(resource));
+                merged = deepUpdater.applyUpdate(merged, serializer.serializeMerge(resource));
 
                 resourceTransaction.write(merged);
             } else {

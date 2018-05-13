@@ -45,9 +45,9 @@ downloadLicenses {
 
     dependencyConfiguration = 'bundles'
 }
-version = '1.1.0'
+version = '1.1.1'
 
-//version += '-SNAPSHOT'
+version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
 
@@ -84,8 +84,8 @@ dependencies {
     bundles group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.2'
 
     // felix http
-    bundles group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '3.0.18'
-    bundles group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '3.0.0'
+    bundles group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '4.0.0'
+    bundles group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '4.0.0'
     
     //felix ipojo
     bundles group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'

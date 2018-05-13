@@ -7,9 +7,14 @@
  */
 package de.ii.xsf.cfgstore.api.handler;
 
+import de.ii.xsf.cfgstore.api.ConfigPropertyDescriptor;
+
 /**
  *
  * @author zahnen
  */
 public @interface LocalBundleConfig {
+    String category() default "SINGLETON";
+
+    ConfigPropertyDescriptor[] properties() default {};
 }

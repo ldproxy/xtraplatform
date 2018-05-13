@@ -18,6 +18,7 @@ import de.ii.xsf.core.api.rest.ServiceResourceFactory;
 import de.ii.xsf.core.views.GenericView;
 import de.ii.xsf.dropwizard.api.Dropwizard;
 import de.ii.xsf.logging.XSFLogger;
+import io.dropwizard.jersey.caching.CacheControl;
 import io.dropwizard.views.View;
 import io.swagger.oas.annotations.Operation;
 import org.apache.felix.ipojo.annotations.Component;
@@ -140,6 +141,21 @@ public class ServicesResource {
             }
         }
         return Response.ok(new GenericView("services", uriInfo.getRequestUri(), serviceRegistry.getServices(authUser))).build();
+    }
+
+    @GET
+    @Path("/___static___/{file: .+}")
+    @Produces(MediaType.WILDCARD)
+    @Operation
+    @CacheControl(maxAge = 3600)
+    public Response getFile(@PathParam("file") String file) {
+        LOGGER.getLogger().debug("FILE {})", file);
+
+        if (serviceResourceFactories.size() == 1) {
+            return serviceResourceFactories.values().iterator().next().getFile(file);
+        }
+
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 
     @Path("/{service}/")

@@ -66,7 +66,7 @@ public class DeepUpdater<T> {
     }
 
     // recursion
-    protected void applyUpdate(Object original, ObjectNode updateRoot) throws IOException {
+    public void applyUpdate(Object original, ObjectNode updateRoot) throws IOException {
         for (Iterator<Map.Entry<String, JsonNode>> i = updateRoot.fields(); i.hasNext(); ) {
             Map.Entry<String, JsonNode> fieldEntry = i.next();
             JsonNode child = fieldEntry.getValue();

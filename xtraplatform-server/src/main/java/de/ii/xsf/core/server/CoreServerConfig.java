@@ -7,44 +7,36 @@
  */
 package de.ii.xsf.core.server;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Strings;
 import de.ii.xsf.cfgstore.api.BundleConfigDefault;
+import de.ii.xsf.cfgstore.api.ConfigPropertyDescriptor;
 import de.ii.xsf.cfgstore.api.handler.LocalBundleConfig;
-import java.io.IOException;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
+
+import java.io.IOException;
 
 /**
  *
  * @author zahnen
  */
-//@LocalConfiguration
 @Component
 @Provides(specifications = {CoreServerConfig.class})
 @Instantiate
-@LocalBundleConfig
+@LocalBundleConfig(category = "Webserver Sett-ings", properties = {
+        @ConfigPropertyDescriptor(name = CoreServerConfig.EXTERNAL_URL, label = "External URL", defaultValue = "http://hostname/rest/services"),
+        @ConfigPropertyDescriptor(name = "port", label = "Port", defaultValue = "7080")
+})
 public class CoreServerConfig extends BundleConfigDefault {
 
-    private String externalUrl;
+    static final String EXTERNAL_URL = "externalUrl";
 
-    public CoreServerConfig() {
-        // set default values
-        this.externalUrl = "bla";
-    }
-
-    @JsonProperty
     public String getExternalUrl() {
-        return externalUrl;
+        return Strings.nullToEmpty(properties.get(EXTERNAL_URL));
     }
 
     public void setExternalUrl(String externalUrl) {
-        this.externalUrl = externalUrl;
-    }
-
-    @Override
-    public void save() throws IOException {
-        setExternalUrl("notbla");
-        super.save();
+        properties.put(EXTERNAL_URL, externalUrl);
     }
 }
