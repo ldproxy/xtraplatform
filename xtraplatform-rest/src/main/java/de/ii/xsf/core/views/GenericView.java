@@ -7,9 +7,9 @@
  */
 package de.ii.xsf.core.views;
 
-import de.ii.xsf.logging.XSFLogger;
 import io.dropwizard.views.View;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 
@@ -19,7 +19,7 @@ import java.net.URI;
  */
 public class GenericView extends View {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(GenericView.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GenericView.class);
 
     private final URI uri;
     private Object data;

@@ -9,29 +9,30 @@ package de.ii.xtraserver.framework.osgi;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import de.ii.xsf.logging.XSFLogger;
 import de.ii.xsf.dropwizard.cfg.XtraServerFrameworkConfiguration;
 import io.dropwizard.ConfiguredBundle;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import org.apache.felix.framework.Felix;
+import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.http.proxy.ProxyServlet;
+import org.apache.felix.main.AutoProcessor;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletRegistration;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletRegistration;
-import org.apache.felix.framework.Felix;
-import org.apache.felix.framework.util.FelixConstants;
-import org.apache.felix.http.proxy.ProxyServlet;
-import org.apache.felix.main.AutoProcessor;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
 
 /**
  *
@@ -40,7 +41,7 @@ import org.osgi.framework.ServiceRegistration;
 @Deprecated
 public class OsgiBundle implements ConfiguredBundle<XtraServerFrameworkConfiguration>, Managed, BundleActivator {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(OsgiBundle.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OsgiBundle.class);
     private static final Map<String, String> exports = new ImmutableMap.Builder<String, String>()
             .put("javax.servlet", "3.0.0")
             .put("javax.servlet.http", "3.0.0")
@@ -239,7 +240,7 @@ public class OsgiBundle implements ConfiguredBundle<XtraServerFrameworkConfigura
             felix = new Felix(felixConfig);
             felix.init();
         } catch (Exception ex) {
-            LOGGER.getLogger().error("Could not create Felix OSGi runtime: " + ex);
+            LOGGER.error("Could not create Felix OSGi runtime: " + ex);
         }
         
         // (9) Use the system bundle context to process the auto-deploy
@@ -247,7 +248,7 @@ public class OsgiBundle implements ConfiguredBundle<XtraServerFrameworkConfigura
         AutoProcessor.process(felixConfig, felix.getBundleContext());
 
 
-        //LOGGER.getLogger().info("SET_PROXY_SERVLET");
+        //LOGGER.info("SET_PROXY_SERVLET");
         ServletRegistration.Dynamic servlet = e.servlets().addServlet("osgi", new ProxyServlet());
         servlet.addMapping(osgiEndpoint);
     }
@@ -276,9 +277,9 @@ public class OsgiBundle implements ConfiguredBundle<XtraServerFrameworkConfigura
                 }
             }
 
-            LOGGER.getLogger().info("FELIX_STARTED");
+            LOGGER.info("FELIX_STARTED");
         } catch (Exception ex) {
-            LOGGER.getLogger().error("Could not create Felix OSGi runtime: " + ex);
+            LOGGER.error("Could not create Felix OSGi runtime: " + ex);
         }
 
     }
@@ -300,7 +301,7 @@ public class OsgiBundle implements ConfiguredBundle<XtraServerFrameworkConfigura
 
     @Override
     public void start(BundleContext bc) throws Exception {
-        //LOGGER.getLogger().info("SET_BUNDLE_CONTEXT");
+        //LOGGER.info("SET_BUNDLE_CONTEXT");
         
         servletContext.setAttribute(BundleContext.class.getName(), bc);
 

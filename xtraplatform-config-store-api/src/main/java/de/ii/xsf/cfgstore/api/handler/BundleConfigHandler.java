@@ -11,13 +11,13 @@ import com.google.common.collect.ImmutableMap;
 import de.ii.xsf.cfgstore.api.BundleConfigDefault;
 import de.ii.xsf.cfgstore.api.BundleConfigStore;
 import de.ii.xsf.cfgstore.api.ConfigurationListenerRegistry;
-import de.ii.xsf.logging.XSFLogger;
 import org.apache.felix.ipojo.ConfigurationException;
 import org.apache.felix.ipojo.InstanceManager;
 import org.apache.felix.ipojo.PrimitiveHandler;
 import org.apache.felix.ipojo.metadata.Attribute;
 import org.apache.felix.ipojo.metadata.Element;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Dictionary;
@@ -29,7 +29,7 @@ import java.util.Map;
  */
 public class BundleConfigHandler extends PrimitiveHandler {
 
-    protected static final LocalizedLogger LOGGER = XSFLogger.getLogger(BundleConfigHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BundleConfigHandler.class);
     public static final String NAMESPACE = "de.ii.xsf.cfgstore.api.handler";//BundleConfigHandler.class.getPackage().getName();
 
     protected ConfigurationListenerRegistry clr;
@@ -81,7 +81,7 @@ public class BundleConfigHandler extends PrimitiveHandler {
         try {
             ((BundleConfigDefault) instance).init(instanceManager.getContext().getBundle().getSymbolicName(), instanceManager.getClassName(), store, clr, category, properties);
         } catch (IOException ex) {
-            LOGGER.getLogger().error("The component instance {} failed", instance, ex);
+            LOGGER.error("The component instance {} failed", instance, ex);
             this.stop();
         }
     }

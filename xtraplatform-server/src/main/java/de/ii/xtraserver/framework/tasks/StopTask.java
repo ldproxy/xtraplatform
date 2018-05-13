@@ -8,12 +8,13 @@
 package de.ii.xtraserver.framework.tasks;
 
 import com.google.common.collect.ImmutableMultimap;
-import de.ii.xsf.logging.XSFLogger;
 import io.dropwizard.lifecycle.ServerLifecycleListener;
 import io.dropwizard.servlets.tasks.Task;
-import java.io.PrintWriter;
 import org.eclipse.jetty.server.Server;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.PrintWriter;
 
 /**
  *
@@ -21,7 +22,7 @@ import org.forgerock.i18n.slf4j.LocalizedLogger;
  */
 public class StopTask extends Task implements ServerLifecycleListener {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(StopTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StopTask.class);
     private Server server = null;
 
     public StopTask() {

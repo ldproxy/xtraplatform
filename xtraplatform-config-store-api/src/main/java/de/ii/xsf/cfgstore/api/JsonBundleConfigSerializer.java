@@ -13,8 +13,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import de.ii.xsf.configstore.api.rest.GenericResourceSerializer;
-import de.ii.xsf.logging.XSFLogger;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -26,8 +26,8 @@ import java.util.Map;
  * @author zahnen
  */
 public class JsonBundleConfigSerializer extends GenericResourceSerializer<JsonBundleConfig> {
-    
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(JsonBundleConfigSerializer.class);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonBundleConfigSerializer.class);
     
     public JsonBundleConfigSerializer(ObjectMapper jsonMapper) {
         super(jsonMapper);
@@ -38,7 +38,7 @@ public class JsonBundleConfigSerializer extends GenericResourceSerializer<JsonBu
         final Map<String,String> values = jsonMapper.readValue(reader, new TypeReference<LinkedHashMap<String,String>>(){});
         resource.setProperties(values);
         
-        LOGGER.getLogger().debug("LOCALBUNDLECONFIGSTORE deserialize: {}", resource.getResourceId());
+        LOGGER.debug("LOCALBUNDLECONFIGSTORE deserialize: {}", resource.getResourceId());
         
         return resource;
     }
@@ -53,21 +53,21 @@ public class JsonBundleConfigSerializer extends GenericResourceSerializer<JsonBu
     @Override
     public String serializeAdd(JsonBundleConfig resource) throws IOException {
         final String values = jsonMapper.writeValueAsString(resource.getProperties());
-        LOGGER.getLogger().debug("LOCALBUNDLECONFIGSTORE serializeAdd: {}", values);
+        LOGGER.debug("LOCALBUNDLECONFIGSTORE serializeAdd: {}", values);
         
         return values;
     }
 
     @Override
     public String serializeUpdate(JsonBundleConfig resource) throws IOException {
-        LOGGER.getLogger().debug("LOCALBUNDLECONFIGSTORE serializeUpdate");
+        LOGGER.debug("LOCALBUNDLECONFIGSTORE serializeUpdate");
         return serializeAdd(resource);
     }
 
     @Override
     public String serializeMerge(JsonBundleConfig resource) throws IOException {
         final String values = jsonMapper.writeValueAsString(ImmutableMap.of("properties", resource.getProperties()));
-        LOGGER.getLogger().debug("LOCALBUNDLECONFIGSTORE serializeMerge: {}", values);
+        LOGGER.debug("LOCALBUNDLECONFIGSTORE serializeMerge: {}", values);
 
         return values;
     }

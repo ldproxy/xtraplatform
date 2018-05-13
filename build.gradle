@@ -43,9 +43,6 @@ allprojects {
         mavenCentral()
         jcenter()
         maven {
-            url "http://maven.forgerock.org/repo/repo"
-        }
-        maven {
             url 'http://oss.sonatype.org/content/repositories/snapshots'
         }
         maven {
@@ -268,8 +265,3 @@ allprojects {
 
 
 
-configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n'}) {
-    dependencies {
-        compile project(':xtraplatform-logging-i18n')
-    }
-}

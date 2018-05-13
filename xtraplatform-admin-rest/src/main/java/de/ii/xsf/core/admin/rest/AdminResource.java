@@ -7,18 +7,24 @@
  */
 package de.ii.xsf.core.admin.rest;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import de.ii.xsf.cfgstore.api.JsonBundleConfig;
 import de.ii.xsf.cfgstore.api.LocalBundleConfigStore;
-import de.ii.xsf.core.api.*;
+import de.ii.xsf.core.api.AbstractService;
+import de.ii.xsf.core.api.MediaTypeCharset;
+import de.ii.xsf.core.api.Module;
+import de.ii.xsf.core.api.ModulesRegistry;
+import de.ii.xsf.core.api.Service;
+import de.ii.xsf.core.api.ServiceRegistry;
 import de.ii.xsf.core.api.exceptions.ResourceNotFound;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
-import de.ii.xsf.core.api.permission.Role;
-import de.ii.xsf.core.api.rest.*;
+import de.ii.xsf.core.api.rest.AdminModuleResource;
+import de.ii.xsf.core.api.rest.AdminModuleResourceFactory;
+import de.ii.xsf.core.api.rest.AdminServiceResource;
+import de.ii.xsf.core.api.rest.AdminServiceResourceFactory;
+import de.ii.xsf.core.api.rest.ModuleResource;
+import de.ii.xsf.core.api.rest.ServiceResource;
 import de.ii.xsf.dropwizard.api.Jackson;
-import de.ii.xsf.logging.XSFLogger;
 import io.dropwizard.jersey.caching.CacheControl;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -26,22 +32,32 @@ import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.apache.felix.ipojo.whiteboard.Whiteboards;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.glassfish.jersey.server.ExtendedResourceContext;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotAcceptableException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -65,7 +81,7 @@ import java.util.stream.Collectors;
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
 public class AdminResource {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(AdminResource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminResource.class);
 
     @Requires
     private ModulesRegistry modulesRegistry;

@@ -14,13 +14,14 @@ import de.ii.xsf.configstore.api.WriteTransaction;
 import de.ii.xsf.core.api.Resource;
 import de.ii.xsf.core.api.exceptions.ResourceNotFound;
 import de.ii.xsf.core.api.exceptions.WriteError;
-import de.ii.xsf.logging.XSFLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 
 /**
  *
@@ -28,7 +29,7 @@ import org.forgerock.i18n.slf4j.LocalizedLogger;
  */
 public class ResourceTransaction<T extends Resource> extends MultiTransaction implements WriteTransaction<T> {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(ResourceTransaction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResourceTransaction.class);
 
     public enum OPERATION {
 
@@ -64,10 +65,10 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
 
     private void open() throws IOException {
         if (resourceLock == null) {
-            LOGGER.getLogger().error("resourceLock is not set {}", this);
+            LOGGER.error("resourceLock is not set {}", this);
             throw new IOException("resourceLock is not set");
         }
-        LOGGER.getLogger().debug("LOCK RT");
+        LOGGER.debug("LOCK RT");
 
         if (closed) {
             resourceLock.lock();
@@ -77,7 +78,7 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
 
     // TODO: do we need cache for this?
     protected void validate() {
-        LOGGER.getLogger().debug("VALIDATE RT {} {} {}", operation, path, resourceId);
+        LOGGER.debug("VALIDATE RT {} {} {}", operation, path, resourceId);
 
         switch (operation) {
             case ADD:
@@ -105,7 +106,7 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
     public void execute() throws IOException {
         // TODO
         if (operation == OPERATION.DELETE_ALL) {
-            LOGGER.getLogger().debug("IGNORE RT {}", operation);
+            LOGGER.debug("IGNORE RT {}", operation);
             return;
         }
 
@@ -113,7 +114,7 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
 
         validate();
         
-        LOGGER.getLogger().debug("EXEC RT {} {} {} {} {} {}", operation, path, resourceId, serializedResource, resource, serializer);
+        LOGGER.debug("EXEC RT {} {} {} {} {} {}", operation, path, resourceId, serializedResource, resource, serializer);
 
         if (operation != OPERATION.DELETE) {
         checkDeSerialization();
@@ -124,19 +125,19 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
 
             try {
                     ((WriteTransaction<String>) t).write(serializedResource);
-                    LOGGER.getLogger().debug("WRITE T<String> {}", t);
+                    LOGGER.debug("WRITE T<String> {}", t);
             } catch (ClassCastException e) {
                 try {
                         ((WriteTransaction<T>) t).write(resource);
-                        LOGGER.getLogger().debug("WRITE T<T> {}", t);
+                        LOGGER.debug("WRITE T<T> {}", t);
                 } catch (ClassCastException e2) {
                     // ignore
-                        LOGGER.getLogger().debug("NO WRITE FOR T {}", t);
+                        LOGGER.debug("NO WRITE FOR T {}", t);
                     }
                 }
             }
 
-            LOGGER.getLogger().debug("EXECUTE T {}", t);
+            LOGGER.debug("EXECUTE T {}", t);
 
             t.execute();
         }
@@ -149,9 +150,9 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
             } else {
                 this.serializedResource = serializer.serializeUpdate(resource);
             }
-            LOGGER.getLogger().debug("SERIALIZE R {}", serializedResource);
+            LOGGER.debug("SERIALIZE R {}", serializedResource);
         } else if (resource == null) {
-            LOGGER.getLogger().debug("DESERIALIZE R {}", serializedResource);
+            LOGGER.debug("DESERIALIZE R {}", serializedResource);
             this.resource = serializer.deserialize(emptyResource, new StringReader(serializedResource));
         }
     }
@@ -165,10 +166,10 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
 
     @Override
     public void rollback() {
-        LOGGER.getLogger().debug("ROLLBACK RT {} {} {}", operation, path, resourceId);
+        LOGGER.debug("ROLLBACK RT {} {} {}", operation, path, resourceId);
         //super.rollback();
         for (Transaction t : transactions) {
-            LOGGER.getLogger().debug("ROLLBACK T {}", t);
+            LOGGER.debug("ROLLBACK T {}", t);
             t.rollback();
         }
         close();
@@ -176,7 +177,7 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
 
     @Override
     public void commit() {
-        LOGGER.getLogger().debug("COMMIT RT {} {} {}", operation, path, resourceId);
+        LOGGER.debug("COMMIT RT {} {} {}", operation, path, resourceId);
         super.commit(); 
         close();
     }

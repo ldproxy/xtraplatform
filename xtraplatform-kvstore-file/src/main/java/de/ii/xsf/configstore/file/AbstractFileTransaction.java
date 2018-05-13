@@ -8,25 +8,23 @@
 package de.ii.xsf.configstore.file;
 
 import de.ii.xsf.configstore.api.Transaction;
-import de.ii.xsf.logging.XSFLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Writer;
 import java.nio.file.Files;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 
 /**
  * @author fischer
  */
 public abstract class AbstractFileTransaction implements Transaction {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(AbstractFileTransaction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFileTransaction.class);
     private static final String BACKUP_EXTENSION = "-backup";
 
     protected final File file;
@@ -65,7 +63,7 @@ public abstract class AbstractFileTransaction implements Transaction {
                 file.delete();
             }
         } catch (IOException ex) {
-            LOGGER.getLogger().error("Rollback failed for file: {}", file.getAbsolutePath(), ex);
+            LOGGER.error("Rollback failed for file: {}", file.getAbsolutePath(), ex);
         }
     }
 
@@ -74,7 +72,7 @@ public abstract class AbstractFileTransaction implements Transaction {
             BufferedReader br = new BufferedReader(new FileReader(file));
             return br.readLine() == null;
         } catch (IOException ex) {
-            LOGGER.getLogger().error("File is empty failed for file: {}", file.getAbsolutePath(), ex);
+            LOGGER.error("File is empty failed for file: {}", file.getAbsolutePath(), ex);
         }
         return false;
     }

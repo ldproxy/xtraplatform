@@ -12,18 +12,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import de.ii.xsf.core.api.Module;
 import de.ii.xsf.core.api.ModulesRegistry;
-import de.ii.xsf.logging.XSFLogger;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import javax.ws.rs.WebApplicationException;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.WebApplicationException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -38,7 +39,7 @@ import org.osgi.framework.ServiceReference;
   onDeparture="onDeparture")
 public class ModulesRegistryWhiteboard implements ModulesRegistry{
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(ModulesRegistryWhiteboard.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ModulesRegistryWhiteboard.class);
     
     @Context
     private BundleContext context;
@@ -59,14 +60,14 @@ public class ModulesRegistryWhiteboard implements ModulesRegistry{
         Module mod = context.getService(ref);
         if (mod != null) {
             modules.put(mod.getName(), mod);
-            LOGGER.getLogger().debug("Module started: {}", mod.getName());
+            LOGGER.debug("Module started: {}", mod.getName());
         }
     }    
     public synchronized void onDeparture(ServiceReference<Module> ref) {
         Module mod = context.getService(ref);
         if (mod != null) {
             modules.remove(mod.getName());
-            LOGGER.getLogger().debug("Module gone: {}", mod.getName());
+            LOGGER.debug("Module gone: {}", mod.getName());
         }
     }   
     

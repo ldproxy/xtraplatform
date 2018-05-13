@@ -12,13 +12,13 @@ import de.ii.xsf.configstore.api.KeyValueStore;
 import de.ii.xsf.configstore.api.rest.AbstractGenericResourceStore;
 import de.ii.xsf.core.util.json.DeepUpdater;
 import de.ii.xsf.dropwizard.api.Jackson;
-import de.ii.xsf.logging.XSFLogger;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.Validate;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  *
@@ -37,8 +36,8 @@ import java.util.Set;
 @Provides
 @Instantiate
 public class LocalBundleConfigStoreDefault extends AbstractGenericResourceStore<JsonBundleConfig, LocalBundleConfigStore> implements LocalBundleConfigStore {
-    
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(LocalBundleConfigStoreDefault.class);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalBundleConfigStoreDefault.class);
     
     public static final String STORE_ID = "local-bundle-config-store";
 

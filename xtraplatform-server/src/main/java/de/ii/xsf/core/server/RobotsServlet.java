@@ -7,12 +7,12 @@
  */
 package de.ii.xsf.core.server;
 
-import de.ii.xsf.logging.XSFLogger;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.StaticServiceProperty;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -39,7 +39,7 @@ import java.io.PrintStream;
 
 public class RobotsServlet extends HttpServlet implements ContainerResponseFilter {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(RobotsServlet.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RobotsServlet.class);
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {

@@ -7,19 +7,20 @@
  */
 package de.ii.xsf.configstore.api.rest;
 
-import de.ii.xsf.core.api.Resource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
-import de.ii.xsf.configstore.api.KeyValueStore;
 import de.ii.xsf.configstore.api.KeyNotFoundException;
+import de.ii.xsf.configstore.api.KeyValueStore;
 import de.ii.xsf.configstore.api.Transaction;
 import de.ii.xsf.configstore.api.rest.ResourceTransaction.OPERATION;
-import de.ii.xsf.core.api.exceptions.ResourceNotFound;
+import de.ii.xsf.core.api.Resource;
 import de.ii.xsf.core.api.exceptions.WriteError;
-import de.ii.xsf.logging.XSFLogger;
 import de.ii.xsf.core.util.json.DeepUpdater;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.InvocationHandler;
@@ -36,7 +37,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 
 /**
  *
@@ -46,7 +46,7 @@ import org.forgerock.i18n.slf4j.LocalizedLogger;
  */
 public abstract class AbstractGenericResourceStore<T extends Resource, U extends ResourceStore> implements ResourceStore<T> {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(AbstractGenericResourceStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractGenericResourceStore.class);
 
     protected static final String OVERRIDES_STORE_NAME = "#overrides#";
 
@@ -178,7 +178,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
             }
 
             resource = readResource(path, id, resource);
-            LOGGER.getLogger().debug("deserialized resource with id {}", id);
+            LOGGER.debug("deserialized resource with id {}", id);
             getResourceCache(path).put(id, resource);
 
         } catch (KeyNotFoundException ex) {
@@ -186,7 +186,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
             return null;
         } catch (Exception ex) {
             // TODO ...
-            LOGGER.getLogger().error("Error deserializing resource with id {}", id, ex);
+            LOGGER.error("Error deserializing resource with id {}", id, ex);
         } finally {
             getResourceLock(path, id).readLock().unlock();
         }
@@ -196,7 +196,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
 
     protected T readResource(String[] path, String id, T resource) throws IOException, KeyNotFoundException {
         Reader resourceReader = getResourceStore(path).getValueReader(id);
-        LOGGER.getLogger().debug("deserializing resource with id {}", id);
+        LOGGER.debug("deserializing resource with id {}", id);
         serializer.deserialize(resource, resourceReader);
 
         try {
@@ -238,7 +238,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     
     // create all the sub-transactions that do the actual io
     protected ResourceTransaction<T> openTransaction(ResourceTransaction<T> resourceTransaction) {
-        LOGGER.getLogger().debug("OPEN RT {} {} {}", resourceTransaction.getPath(), resourceTransaction.getResourceId(), getResourceLock(resourceTransaction.getPath(), resourceTransaction.getResourceId()));
+        LOGGER.debug("OPEN RT {} {} {}", resourceTransaction.getPath(), resourceTransaction.getResourceId(), getResourceLock(resourceTransaction.getPath(), resourceTransaction.getResourceId()));
 
         resourceTransaction.setSerializer(serializer);
         resourceTransaction.setResourceLock(getResourceLock(resourceTransaction.getPath(), resourceTransaction.getResourceId()).writeLock());
@@ -293,11 +293,11 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
         try {
             resourceTransaction.execute();
             
-            LOGGER.getLogger().debug("COMMIT SRT");
+            LOGGER.debug("COMMIT SRT");
             
             resourceTransaction.commit();
             
-            LOGGER.getLogger().debug("COMMITTED SRT");
+            LOGGER.debug("COMMITTED SRT");
             
         } catch (IOException | WriteError ex) {
             resourceTransaction.rollback();

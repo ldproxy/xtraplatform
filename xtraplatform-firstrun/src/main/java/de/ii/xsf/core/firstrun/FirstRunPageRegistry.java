@@ -8,17 +8,18 @@
 package de.ii.xsf.core.firstrun;
 
 import de.ii.xsf.core.api.firstrun.FirstRunPage;
-import de.ii.xsf.logging.XSFLogger;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -34,7 +35,7 @@ import org.osgi.framework.ServiceReference;
 
 public class FirstRunPageRegistry {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(FirstRunPageRegistry.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FirstRunPageRegistry.class);
     
     @Context
     private BundleContext context;
@@ -49,7 +50,7 @@ public class FirstRunPageRegistry {
         FirstRunPage page = context.getService(ref);
         if (page != null) {
             pages.add(page);
-            LOGGER.getLogger().debug("Firstrun page registered: {}", page.getClass());
+            LOGGER.debug("Firstrun page registered: {}", page.getClass());
         }
     }
 
@@ -57,7 +58,7 @@ public class FirstRunPageRegistry {
         FirstRunPage page = context.getService(ref);
         if (page != null) {
             pages.remove(page);
-            LOGGER.getLogger().debug("Firstrun page unregistered: {}", page.getClass());
+            LOGGER.debug("Firstrun page unregistered: {}", page.getClass());
         }
     }
 

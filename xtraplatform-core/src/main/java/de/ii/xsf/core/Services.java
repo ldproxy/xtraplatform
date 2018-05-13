@@ -7,7 +7,6 @@
  */
 package de.ii.xsf.core;
 
-import de.ii.xsf.logging.XSFLogger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -18,6 +17,11 @@ import de.ii.xsf.core.api.Service;
 import de.ii.xsf.core.api.ServiceCatalog;
 import de.ii.xsf.core.api.ServiceModule;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,9 +29,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 
 /**
  *
@@ -35,7 +36,7 @@ import org.forgerock.i18n.slf4j.LocalizedLogger;
  */
 public class Services extends AbstractServiceCatalog implements ServiceCatalog {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(Services.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Services.class);
     
     private static final String SERVICE_CONFIGURATION_SUFFIX = "-service.json";
     //private ModulesBundle modules;

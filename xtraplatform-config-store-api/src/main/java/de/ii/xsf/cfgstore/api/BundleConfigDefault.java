@@ -12,12 +12,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import de.ii.xsf.configstore.api.rest.ResourceStore;
-import de.ii.xsf.logging.XSFLogger;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
@@ -28,7 +26,7 @@ import java.util.Map;
  */
 public abstract class BundleConfigDefault implements BundleConfig /*implements Resource*/ {
 
-    protected static final LocalizedLogger LOGGER = XSFLogger.getLogger(BundleConfigDefault.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BundleConfigDefault.class);
 
     private String configId;
     private String bundleId;
@@ -46,11 +44,11 @@ public abstract class BundleConfigDefault implements BundleConfig /*implements R
         this.listeners = listeners;
         this.category = category;
 
-        LOGGER.getLogger().debug("BUNDLECONFIG BIND: {} {}", bundleId, configId);
+        LOGGER.debug("BUNDLECONFIG BIND: {} {}", bundleId, configId);
 
         if (!getStore().hasResource(configId)) {
 
-            LOGGER.getLogger().debug("BUNDLECONFIG ADD");
+            LOGGER.debug("BUNDLECONFIG ADD");
 
             // TODO: lower case, defaults ignored
             this.properties = properties.values().stream()
@@ -68,7 +66,7 @@ public abstract class BundleConfigDefault implements BundleConfig /*implements R
 
             deserialize(json);
 
-            LOGGER.getLogger().debug("BUNDLECONFIG GET {}", json.getProperties());
+            LOGGER.debug("BUNDLECONFIG GET {}", json.getProperties());
         }
 
         store.addConfigPropertyDescriptors(category, bundleId, configId, properties);
@@ -76,7 +74,7 @@ public abstract class BundleConfigDefault implements BundleConfig /*implements R
 
     @Override
     public void save() throws IOException {
-        LOGGER.getLogger().debug("BUNDLECONFIG SAVE");
+        LOGGER.debug("BUNDLECONFIG SAVE");
         
         JsonBundleConfig json = serialize();
 

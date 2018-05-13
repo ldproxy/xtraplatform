@@ -9,28 +9,36 @@ package de.ii.xsf.core.web;
 
 import com.google.common.collect.Sets;
 import de.ii.xsf.dropwizard.api.Dropwizard;
-import de.ii.xsf.logging.XSFLogger;
 import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.jetty.NonblockingServletHolder;
-import org.apache.felix.ipojo.annotations.*;
+import org.apache.felix.ipojo.annotations.Component;
+import org.apache.felix.ipojo.annotations.Context;
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
+import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlet.ServletMapping;
 import org.eclipse.jetty.util.component.LifeCycle;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * @author zahnen
@@ -47,7 +55,7 @@ import java.util.stream.Collector;
 
 public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(JaxRsRegistry.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JaxRsRegistry.class);
     public static final String PUBLISH = "de.ii.xsf.jaxrs.publish";
     public static final String ANY_SERVICE_FILTER = "(&(objectClass=*)(!(" + PUBLISH + "=false)))";
 
@@ -181,14 +189,14 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
             if (!providerCache.isEmpty()) {
                 for (Object provider : providerCache) {
                     jersey.register(provider);
-                    LOGGER.getLogger().debug("Registered JAX-RS Provider {}", provider.getClass());
+                    LOGGER.debug("Registered JAX-RS Provider {}", provider.getClass());
                 }
                 providerCache.clear();
             }
             if (isAuthProviderAvailable && !resourceCache.isEmpty()) {
                 for (Object resource : resourceCache) {
                     jersey.register(resource);
-                    LOGGER.getLogger().debug("Registered JAX-RS Resource {}", resource.getClass());
+                    LOGGER.debug("Registered JAX-RS Resource {}", resource.getClass());
                 }
                 resourceCache.clear();
             }
@@ -198,12 +206,12 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
                         // TODO: verify
                         jersey.register(filter.getClass());
                         //jersey.getResourceConfig().register() .getContainerRequestFilters().add(filter.getClass());
-                        LOGGER.getLogger().debug("Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
+                        LOGGER.debug("Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
                     } else if (filter instanceof ContainerResponseFilter) {
                         // TODO: verify
                         jersey.register(filter.getClass());
                         //jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
-                        LOGGER.getLogger().debug("Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
+                        LOGGER.debug("Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
                     }
                 }
                 filterCache.clear();
@@ -245,18 +253,18 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
                 .ifPresent(servletHolder -> {
                     try {
                         servletHolder.doStop();
-                        LOGGER.getLogger().debug("Stopped ServletHolder {})", servletHolder.getName());
+                        LOGGER.debug("Stopped ServletHolder {})", servletHolder.getName());
                     } catch (Exception e) {
                         // ignore
                     }
                 });
-        //LOGGER.getLogger().debug("APP {}", dw.getApplicationContext().dump());
+        //LOGGER.debug("APP {}", dw.getApplicationContext().dump());
     }
 
     private void clearConfig() {
         ResourceConfig oldConfig = jersey != null ? jersey : dw.getJersey().getResourceConfig();
         this.jersey = new ResourceConfig(oldConfig);
-        //LOGGER.getLogger().debug("OLD CFG {} NEW CFG {}", oldConfig, jersey);
+        //LOGGER.debug("OLD CFG {} NEW CFG {}", oldConfig, jersey);
     }
 
     private void registerAuthProvider(Object service, String type, int ranking) {
@@ -265,11 +273,11 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
                 if (!authProviders.isEmpty()) {
                     Object oldService = authProviders.get(authProviders.lastKey());
                     if (oldService != null && jerseyUnregister(oldService)) {
-                        LOGGER.getLogger().debug("Deregistered JAX-RS Auth Provider {})", oldService.getClass());
+                        LOGGER.debug("Deregistered JAX-RS Auth Provider {})", oldService.getClass());
                     }
                 }
                 jerseyRegisterProvider(service);
-                LOGGER.getLogger().debug("Registered JAX-RS Auth Provider {})", service.getClass());
+                LOGGER.debug("Registered JAX-RS Auth Provider {})", service.getClass());
             }
             authProviders.put(ranking, service);
             isAuthProviderAvailable = true;
@@ -281,14 +289,14 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
         if (type != null && type.equals("auth")) {
             if (ranking == authProviders.lastKey()) {
                 if (jerseyUnregister(service)) {
-                    LOGGER.getLogger().debug("Deregistered JAX-RS Auth Provider {})", service.getClass());
+                    LOGGER.debug("Deregistered JAX-RS Auth Provider {})", service.getClass());
                 }
                 authProviders.remove(ranking);
                 if (!authProviders.isEmpty()) {
                     Object newService = authProviders.get(authProviders.lastKey());
                     if (newService != null) {
                         jerseyRegisterProvider(newService);
-                        LOGGER.getLogger().debug("Registered JAX-RS Auth Provider {})", newService.getClass());
+                        LOGGER.debug("Registered JAX-RS Auth Provider {})", newService.getClass());
                     }
                 }
                 reload = true;
@@ -311,7 +319,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     private boolean jerseyUnregister(Object object) {
         if (isJerseyAvailable) {
             if (jersey.getSingletons().remove(object)) {
-                LOGGER.getLogger().debug("Unregistered JAX-RS Resource/Provider {})", object.getClass());
+                LOGGER.debug("Unregistered JAX-RS Resource/Provider {})", object.getClass());
                 return true;
             }
         } else {
@@ -335,12 +343,12 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
             // TODO: verify
             if (jersey.getClasses().remove(object.getClass())) {
                 //if (jersey.getResourceConfig().getContainerRequestFilters().remove(object.getClass())) {
-                LOGGER.getLogger().debug("Unregistered JAX-RS ContainerRequestFilter {})", object.getClass());
+                LOGGER.debug("Unregistered JAX-RS ContainerRequestFilter {})", object.getClass());
                 return true;
             } else // TODO: verify
                 if (jersey.getClasses().remove(object.getClass())) {
                     //if (jersey.getResourceConfig().getContainerResponseFilters().remove(object.getClass())) {
-                    LOGGER.getLogger().debug("Unregistered JAX-RS ContainerResponseFilter {})", object.getClass());
+                    LOGGER.debug("Unregistered JAX-RS ContainerResponseFilter {})", object.getClass());
                     return true;
                 }
         } else {

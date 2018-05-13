@@ -7,22 +7,23 @@
  */
 package de.ii.xsf.cfgstore.api;
 
-import de.ii.xsf.logging.XSFLogger;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.apache.felix.ipojo.whiteboard.Whiteboards;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -40,7 +41,7 @@ import org.osgi.framework.ServiceReference;
 })
 public class ConfigurationListenerRegistryDefault implements ConfigurationListenerRegistry {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(ConfigurationListenerRegistryDefault.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationListenerRegistryDefault.class);
 
     @Context
     BundleContext context;
@@ -110,7 +111,7 @@ public class ConfigurationListenerRegistryDefault implements ConfigurationListen
         }
 
         registry.get(configClass).add(cl);
-        LOGGER.getLogger().info("CONFIGLISTENER: {} is listening for configuration {}", cl.getClass().getName(), configClass.getName());
+        LOGGER.info("CONFIGLISTENER: {} is listening for configuration {}", cl.getClass().getName(), configClass.getName());
     }
 
     @Override
@@ -118,7 +119,7 @@ public class ConfigurationListenerRegistryDefault implements ConfigurationListen
         if (registry.containsKey(cfg.getClass())) {
             for (ConfigurationListener cl : registry.get(cfg.getClass())) {
                 cl.onConfigurationUpdate(cfg);
-                LOGGER.getLogger().info("CONFIGLISTENER: updating {}", cl.getClass().getName());
+                LOGGER.info("CONFIGLISTENER: updating {}", cl.getClass().getName());
             }
         }
     }

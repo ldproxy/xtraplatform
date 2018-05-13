@@ -9,17 +9,19 @@ package de.ii.xsf.core.server;
 
 import de.ii.xsf.core.api.session.SessionManager;
 import de.ii.xsf.dropwizard.api.Dropwizard;
-import de.ii.xsf.dropwizard.cfg.FakeResource;
 import de.ii.xsf.dropwizard.cfg.QueryParamConnegFilter;
-import de.ii.xsf.logging.XSFLogger;
 import org.apache.felix.http.proxy.ProxyServlet;
-import org.apache.felix.ipojo.annotations.*;
-import org.eclipse.jetty.server.Connector;
+import org.apache.felix.ipojo.annotations.Component;
+import org.apache.felix.ipojo.annotations.Context;
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Invalidate;
+import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.annotations.Validate;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.util.MultiException;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.osgi.framework.BundleContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRegistration;
@@ -37,7 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Instantiate
 public class WebServerDropwizard {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(WebServerDropwizard.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebServerDropwizard.class);
     private static final String APP_ENDPOINT = "/*";
     private static final String JERSEY_ENDPOINT = "/rest/*";
 
@@ -106,23 +108,23 @@ public class WebServerDropwizard {
 
                         started = false;
 
-                        LOGGER.getLogger().info("Stopped web server at {}", u);
+                        LOGGER.info("Stopped web server at {}", u);
                         Thread.sleep(1000);
 
                     } catch (MultiException ex) {
                         for (Throwable t : ex.getThrowables()) {
                             if (t != null) {
-                                LOGGER.getLogger().error("Error stopping web server: {}", t.getMessage());
-                                LOGGER.getLogger().debug("Error stopping web server", t);
+                                LOGGER.error("Error stopping web server: {}", t.getMessage());
+                                LOGGER.debug("Error stopping web server", t);
                             }
                         }
                     } catch (Exception ex) {
-                        LOGGER.getLogger().error("Error stopping web server: {}", ex.getMessage());
-                        LOGGER.getLogger().debug("Error stopping web server", ex);
+                        LOGGER.error("Error stopping web server: {}", ex.getMessage());
+                        LOGGER.debug("Error stopping web server", ex);
                     }
                 }
                 if (!started && (action == StartStopAction.START || action == StartStopAction.RESTART)) {
-                    LOGGER.getLogger().debug("DW START {}", Thread.currentThread().getName());
+                    LOGGER.debug("DW START {}", Thread.currentThread().getName());
                     cleanup();
 
                     try {
@@ -130,11 +132,11 @@ public class WebServerDropwizard {
 
                         started = true;
 
-                        LOGGER.getLogger().info("Started web server at {}", getUrl());
+                        LOGGER.info("Started web server at {}", getUrl());
 
                     } catch (Exception ex) {
-                        LOGGER.getLogger().error("Error starting web server: {}", ex.getMessage());
-                        LOGGER.getLogger().debug("Error starting web server", ex);
+                        LOGGER.error("Error starting web server: {}", ex.getMessage());
+                        LOGGER.debug("Error starting web server", ex);
                     }
                 }
             } finally {
@@ -145,14 +147,14 @@ public class WebServerDropwizard {
 
     @Validate
     protected void startBundle() {
-        LOGGER.getLogger().debug("DW STARTBUNDLE");
+        LOGGER.debug("DW STARTBUNDLE");
 
         start();
     }
 
     @Invalidate
     protected void stopBundle() {
-        LOGGER.getLogger().debug("DW STOPBUNDLE");
+        LOGGER.debug("DW STOPBUNDLE");
 
         stop();
 
@@ -160,26 +162,26 @@ public class WebServerDropwizard {
     }
 
     protected void start() {
-        LOGGER.getLogger().debug("DW START");
+        LOGGER.debug("DW START");
 
         startStopThread.submit(new StartStop(StartStopAction.START));
     }
 
     protected void stop() {
-        LOGGER.getLogger().debug("DW STOP");
+        LOGGER.debug("DW STOP");
 
         startStopThread.submit(new StartStop(StartStopAction.STOP));
     }
 
     protected void restart() {
-        LOGGER.getLogger().debug("DW RESTART");
+        LOGGER.debug("DW RESTART");
 
         startStopThread.submit(new StartStop(StartStopAction.RESTART));
     }
 
     private void init() {
         if (!initialized) {
-            LOGGER.getLogger().info("-----------------------------------------------------");
+            LOGGER.info("-----------------------------------------------------");
 
             dw.getJersey().setUrlPattern(JERSEY_ENDPOINT);
 
@@ -204,7 +206,7 @@ public class WebServerDropwizard {
                         c.stop();
                         server.removeConnector(c);
                     } catch (Exception ex) {
-                        LOGGER.getLogger().debug("Error removing connector {}", c.getName(), ex);
+                        LOGGER.debug("Error removing connector {}", c.getName(), ex);
                     }
                 }
             }*/
@@ -214,15 +216,15 @@ public class WebServerDropwizard {
     }
 
     private void cleanup() {
-        LOGGER.getLogger().debug("DW CLEANUP");
+        LOGGER.debug("DW CLEANUP");
         if (!initialized) {
-            LOGGER.getLogger().debug("DW CLEANUP 1");
+            LOGGER.debug("DW CLEANUP 1");
             init();
             // cleanup servletContext
             ServletContext servletContext = dw.getApplicationContext().getServletContext();
             servletContext.setAttribute(BundleContext.class.getName(), context);
         } else {
-            LOGGER.getLogger().debug("DW CLEANUP 2");
+            LOGGER.debug("DW CLEANUP 2");
             // cleanup servletContext
             ServletContext servletContext = dw.getApplicationContext().getServletContext();
             servletContext.setAttribute(BundleContext.class.getName(), context);
@@ -230,7 +232,7 @@ public class WebServerDropwizard {
             dw.resetServer();
         }
 
-        LOGGER.getLogger().debug("DW CLEANUP 3");
+        LOGGER.debug("DW CLEANUP 3");
 
         // cleanup session manager
         /*if (this.sessionManager == null) {
@@ -246,7 +248,7 @@ public class WebServerDropwizard {
     // TODO: reimplement
     /*@Bind(optional = true, policy = BindingPolicy.DYNAMIC_PRIORITY)
     public void bind(SessionManager sm) {
-        LOGGER.getLogger().debug("DW BIND");
+        LOGGER.debug("DW BIND");
 
         this.sessionManager = sm;
 
@@ -255,7 +257,7 @@ public class WebServerDropwizard {
 
     @Unbind
     public void unbind(SessionManager sm) {
-        LOGGER.getLogger().debug("DW UNBIND");
+        LOGGER.debug("DW UNBIND");
 
         this.sessionManager = null;
 
@@ -264,7 +266,7 @@ public class WebServerDropwizard {
 
     /*private void enableSessionManager(SessionManager sm) {
         if (!(sm instanceof Nullable || sm == null)) {
-            LOGGER.getLogger().debug("enableSessionManager: {}", sm);
+            LOGGER.debug("enableSessionManager: {}", sm);
 
             org.eclipse.jetty.server.SessionManager sm2 = sm.getSessionManager();
             dw.getApplicationContext().setSessionHandler(new SessionHandler(sm2));
@@ -274,7 +276,7 @@ public class WebServerDropwizard {
     }
 
     private void disableSessionManager() {
-        LOGGER.getLogger().debug("disableSessionManager");
+        LOGGER.debug("disableSessionManager");
 
         dw.getApplicationContext().setSessionHandler(null);
         dw.getApplicationContext().setSessionsEnabled(false);
