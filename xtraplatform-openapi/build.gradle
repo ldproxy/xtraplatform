@@ -1,5 +1,5 @@
 version = '1.1.1'
-version += '-SNAPSHOT'
+//version += '-SNAPSHOT'
 
 ext {
     swaggerVersion='2.0.0-rc2'

@@ -8,7 +8,6 @@ cache:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
 install:
-- cd xtraplatform-logging-i18n && ../gradlew publishToMavenLocal -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 - cd ../xtraplatform-runtime && ../gradlew publishToMavenLocal -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 - cd ../xtraplatform-bundles-core && ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 script:

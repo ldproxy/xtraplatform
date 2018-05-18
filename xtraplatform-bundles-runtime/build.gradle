@@ -47,7 +47,7 @@ downloadLicenses {
 }
 version = '1.1.1'
 
-version += '-SNAPSHOT'
+//version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
 
