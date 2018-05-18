@@ -1,4 +1,4 @@
-version = '1.1.1'
+version = '1.1.2'
 //version += '-SNAPSHOT'
 
 ext {
@@ -36,6 +36,8 @@ jar {
         instruction 'Embed-Transitive', 'true'
         instruction 'Embed-Export', 'true'
         instruction 'Embed-Import', 'true'
+
+	instructionReplace 'Require-Capability', 'osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"'
         
         instructionFirst 'Import-Package', '!org.yaml.*'
         instructionFirst 'Import-Package', '!javax.persistence'
