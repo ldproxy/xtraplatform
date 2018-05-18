@@ -74,7 +74,7 @@ import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
 @Instantiate
 public class DropwizardProvider extends Application<XtraServerFrameworkConfiguration> implements Dropwizard, HttpClients {
 
-    private static final Logger ROOT_LOGGER = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+    //private static final Logger ROOT_LOGGER = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
     public static final String CFG_FILE_NAME = "xtraplatform.json";
     public static final String CFG_FILE_TEMPLATE_NAME = "/xtraplatform.default.json";
@@ -354,23 +354,23 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
 
     @Override
     public void attachLoggerAppender(Appender appender) {
-        if (!appender.isStarted()) {
+        /*if (!appender.isStarted()) {
             appender.setContext(ROOT_LOGGER.getLoggerContext());
             appender.start();
         }
-        ROOT_LOGGER.addAppender(appender);
+        ROOT_LOGGER.addAppender(appender);*/
     }
 
     @Override
     public void detachLoggerAppender(Appender appender) {
-        ROOT_LOGGER.detachAppender(appender);
-        appender.stop();
+        //ROOT_LOGGER.detachAppender(appender);
+        //appender.stop();
     }
 
     @Override
     public void setLoggingLevel(Level level) {
         // TODO: this only works for loggers whose level is not set explicitely in config
-        ROOT_LOGGER.setLevel(level);
+        //ROOT_LOGGER.setLevel(level);
     }
 
     @Override

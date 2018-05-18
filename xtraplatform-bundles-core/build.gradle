@@ -20,7 +20,7 @@ buildscript {
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
-version = '1.1.4'
+version = '1.1.5'
 //version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
@@ -166,7 +166,7 @@ subprojects {
     }
     afterEvaluate { project ->
     //project.version += '-SNAPSHOT'
-    /*bintray {
+/*    bintray {
         user = project.bintrayUser
         key = project.bintrayApiKey
         publications = ['maven']
