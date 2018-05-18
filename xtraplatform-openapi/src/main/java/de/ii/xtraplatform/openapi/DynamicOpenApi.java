@@ -156,7 +156,6 @@ public class DynamicOpenApi extends BaseOpenApiResource implements JaxRsChangeLi
 /*
 import de.ii.xsf.core.web.rest.JaxRsChangeListener;
 import de.ii.xsf.core.web.rest.JaxRsReg;
-import de.ii.xsf.logging.XSFLogger;
 import io.openapi.annotations.Info;
 import io.openapi.annotations.SwaggerDefinition;
 import io.openapi.config.FilterFactory;
@@ -167,7 +166,6 @@ import io.openapi.jaxrs.listing.SwaggerSerializers;
 import io.openapi.models.Swagger;
 import io.openapi.util.Yaml;
 import org.apache.felix.ipojo.annotations.*;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 
 import javax.ws.rs.core.*;
 import java.util.*;
@@ -187,7 +185,6 @@ import java.util.*;
 @Instantiate
 public class SwaggerApi implements JaxRsChangeListener {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(SwaggerApi.class);
 
     @Requires
     private JaxRsReg registry;

@@ -1,8 +1,8 @@
 version = '1.1.1'
-version = '-SNAPSHOT'
+version += '-SNAPSHOT'
 
 ext {
-    dropwizardVersion = '1.2.0'
+    dropwizardVersion = '1.2.6'
 }
 dependencies {
     // TODO: DATA_DIR_KEY
@@ -21,6 +21,7 @@ dependencies {
     embedded (group: 'com.sun.mail', name: 'javax.mail', version: '1.5.2') {
         exclude module: 'activation'
     }
+    embedded group: 'org.threeten', name: 'threeten-extra', version: '1.3.2'
 }    
 
 jar {
@@ -30,7 +31,8 @@ jar {
             'dropwizard-views-mustache',
             'dropwizard-client',
             'dropwizard-auth',
-            'javax.mail'
+            'javax.mail',
+            'threeten-extra'
         instruction 'Embed-Transitive', 'true'
         instruction 'Embed-Export', 'true'
         instruction 'Embed-Import', 'true'
@@ -77,10 +79,22 @@ jar {
         instructionFirst 'Import-Package', '!org.apache.logging.log4j.spi.*'
         instructionFirst 'Import-Package', '!org.apache.avalon.framework.logger.*'
         instructionFirst 'Import-Package', '!org.apache.coyote.*'
+        instructionFirst 'Import-Package', '!afu.org.checkerframework.framework.type'
+        instructionFirst 'Import-Package', '!afu.com.sun.source.tree'
         instructionFirst 'Import-Package', 'javax.xml.stream'
         instructionFirst 'Import-Package', 'org.w3c.dom'
         instructionFirst 'Import-Package', 'javax.management'
         instruction 'Import-Package', 'javax.annotation;version="[1.2,2)"'
         instructionFirst 'Import-Package', 'javax.naming'
+        instructionFirst 'Import-Package', 'javax.net'
+        instructionFirst 'Import-Package', 'javax.activation'
+        instructionFirst 'Import-Package', 'org.xml.sax'
+        instructionFirst 'Import-Package', 'javax.xml.parsers'
+        instructionFirst 'Import-Package', 'javax.xml.transform'
+        instructionFirst 'Import-Package', 'javax.xml.transform.stream'
+        instructionFirst 'Import-Package', 'javax.xml.transform.sax'
+        instructionFirst 'Import-Package', 'javax.xml.transform.dom'
+        instructionFirst 'Import-Package', 'javax.xml.bind'
+        instructionFirst 'Import-Package', 'javax.xml.bind.annotation'
     }
 }
