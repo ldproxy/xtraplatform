@@ -7,9 +7,20 @@
  */
 package de.ii.xsf.cfgstore.api;
 
+import java.lang.annotation.Target;
+
 /**
- *
  * @author zahnen
  */
-public interface LocalBundleConfigStore extends BundleConfigStore {
+@Target({})
+public @interface ConfigPropertyDescriptor {
+    String name();
+
+    String label();
+
+    String defaultValue() default "";
+
+    String description() default "";
+
+    String validator() default "";
 }

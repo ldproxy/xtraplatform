@@ -14,17 +14,15 @@ import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import de.ii.xsf.logging.XSFLogger;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author zahnen
@@ -40,7 +38,7 @@ import java.io.IOException;
     onDeparture="onDeparture")
 public class DynamicTypeIdResolver implements TypeIdResolver {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(DynamicTypeIdResolver.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamicTypeIdResolver.class);
 
     private final BundleContext context;
     private JavaType mBaseType;
@@ -54,7 +52,7 @@ public class DynamicTypeIdResolver implements TypeIdResolver {
     public synchronized void onArrival(ServiceReference<JacksonSubTypeIds> ref) {
         JacksonSubTypeIds ids = context.getService(ref);
         if (ids != null) {
-            LOGGER.getLogger().debug("REGISTERING SUBTYPE IDS {}", ids.getMapping());
+            LOGGER.debug("REGISTERING SUBTYPE IDS {}", ids.getMapping());
             mapping.putAll(ids.getMapping());
         }
     }

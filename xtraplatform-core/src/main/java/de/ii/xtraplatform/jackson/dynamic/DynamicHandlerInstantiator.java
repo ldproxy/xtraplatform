@@ -7,18 +7,22 @@
  */
 package de.ii.xtraplatform.jackson.dynamic;
 
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.KeyDeserializer;
+import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.cfg.HandlerInstantiator;
 import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 import de.ii.xsf.dropwizard.api.Jackson;
-import de.ii.xsf.logging.XSFLogger;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Requires;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author zahnen
@@ -27,14 +31,14 @@ import org.forgerock.i18n.slf4j.LocalizedLogger;
 @Instantiate
 public class DynamicHandlerInstantiator extends HandlerInstantiator {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(DynamicHandlerInstantiator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamicHandlerInstantiator.class);
 
     @Requires
     DynamicTypeIdResolver typeIdResolver;
 
     public DynamicHandlerInstantiator(@Requires Jackson jackson) {
         jackson.getDefaultObjectMapper().setHandlerInstantiator(this);
-        LOGGER.getLogger().debug("REGISTERED DynamicHandlerInstantiator {}", this);
+        LOGGER.debug("REGISTERED DynamicHandlerInstantiator {}", this);
     }
 
     @Override
@@ -60,7 +64,7 @@ public class DynamicHandlerInstantiator extends HandlerInstantiator {
     @Override
     public TypeIdResolver typeIdResolverInstance(MapperConfig<?> config, Annotated annotated, Class<?> resolverClass) {
         if (resolverClass.equals(DynamicTypeIdResolver.class)) {
-            LOGGER.getLogger().debug("DynamicHandlerInstantiator typeIdResolverInstance {} {}", resolverClass, typeIdResolver);
+            LOGGER.debug("DynamicHandlerInstantiator typeIdResolverInstance {} {}", resolverClass, typeIdResolver);
             return typeIdResolver;
         }
         return null;

@@ -8,6 +8,7 @@
 package de.ii.xsf.configstore.api.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.ii.xsf.core.api.Resource;
 import java.io.IOException;
 import java.io.Reader;
@@ -31,12 +32,22 @@ public class GenericResourceSerializer<T extends Resource> implements ResourceSe
     }
 
     @Override
+    public ObjectNode deserializeMerge(Reader reader) throws IOException {
+        return (ObjectNode) jsonMapper.readTree(reader);
+    }
+
+    @Override
     public String serializeAdd(T resource) throws IOException {
         return jsonMapper.writer().writeValueAsString(resource);
     }
 
     @Override
     public String serializeUpdate(T resource) throws IOException {
+        return jsonMapper.writer().writeValueAsString(resource);
+    }
+
+    @Override
+    public String serializeMerge(T resource) throws IOException {
         return jsonMapper.writer().writeValueAsString(resource);
     }
 }

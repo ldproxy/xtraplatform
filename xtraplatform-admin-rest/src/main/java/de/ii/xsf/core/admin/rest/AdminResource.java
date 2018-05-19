@@ -7,35 +7,57 @@
  */
 package de.ii.xsf.core.admin.rest;
 
-import de.ii.xsf.core.api.*;
+import de.ii.xsf.cfgstore.api.LocalBundleConfigStore;
+import de.ii.xsf.core.api.AbstractService;
+import de.ii.xsf.core.api.MediaTypeCharset;
+import de.ii.xsf.core.api.Module;
+import de.ii.xsf.core.api.ModulesRegistry;
+import de.ii.xsf.core.api.Service;
+import de.ii.xsf.core.api.ServiceRegistry;
 import de.ii.xsf.core.api.exceptions.ResourceNotFound;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
-import de.ii.xsf.core.api.permission.Role;
-import de.ii.xsf.core.api.rest.*;
+import de.ii.xsf.core.api.rest.AdminModuleResource;
+import de.ii.xsf.core.api.rest.AdminModuleResourceFactory;
+import de.ii.xsf.core.api.rest.AdminServiceResource;
+import de.ii.xsf.core.api.rest.AdminServiceResourceFactory;
+import de.ii.xsf.core.api.rest.ModuleResource;
+import de.ii.xsf.core.api.rest.ServiceResource;
 import de.ii.xsf.dropwizard.api.Jackson;
-import de.ii.xsf.logging.XSFLogger;
+import io.dropwizard.jersey.caching.CacheControl;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.apache.felix.ipojo.whiteboard.Whiteboards;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.glassfish.jersey.server.ExtendedResourceContext;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotAcceptableException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -59,7 +81,7 @@ import java.util.*;
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
 public class AdminResource {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(AdminResource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminResource.class);
 
     @Requires
     private ModulesRegistry modulesRegistry;
@@ -70,11 +92,6 @@ public class AdminResource {
     // TODO
     @Requires(optional = true)
     private AuthorizationProvider permissions;
-    @Context
-    HttpServletRequest request;
-
-    @Context
-    HttpServletResponse response;
 
     private String xsfVersion = "todo";
 
@@ -125,16 +142,15 @@ public class AdminResource {
     }
 
     @GET
-    //@CacheControl(noCache = true, mustRevalidate = true)
+    @CacheControl(noCache = true)
     public AdminRoot getAdmin() {
         return new AdminRoot(xsfVersion);
     }
 
     @Path("/services")
     @GET
+    @CacheControl(noCache = true)
     public List getAdminServices(@Auth AuthenticatedUser authUser) {
-        response.setHeader("Cache-Control", "no-cache");
-
         List<String> resources = new ArrayList<String>();
 
         List<AbstractService> srvs = new ArrayList<AbstractService>();
@@ -154,16 +170,14 @@ public class AdminResource {
 
     @Path("/modules")
     @GET
+    @CacheControl(noCache = true)
     public Set<String> getModules() {
-        response.setHeader("Cache-Control", "no-cache");
-
         return modulesRegistry.getModules().keySet();
     }
 
     @Path("/modules/{id}")
+    @CacheControl(noCache = true)
     public ModuleResource getModule(@PathParam("id") String id) {
-        response.setHeader("Cache-Control", "no-cache");
-
         Module m = modulesRegistry.getModule(id);
 
         if (m == null) {
@@ -187,9 +201,8 @@ public class AdminResource {
 
     @Path("/servicetypes")
     @GET
+    @CacheControl(noCache = true)
     public Collection getAdminServiceTypes() {
-        response.setHeader("Cache-Control", "no-cache");
-
         return serviceRegistry.getServiceTypes();
     }
 
@@ -220,7 +233,45 @@ public class AdminResource {
         return sr;
     }
 
-    // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory 
+    @Requires
+    LocalBundleConfigStore localBundleConfigStore;
+
+    @Path("/settings")
+    @GET
+    @CacheControl(noCache = true)
+    public Map<String, Object> getSettingCategories(/*@Auth AuthenticatedUser authUser*/) {
+        return localBundleConfigStore.getCategories();
+    }
+
+    @Path("/settings/{category}")
+    @GET
+    @CacheControl(noCache = true)
+    public Map<String, Object> getSettingCategory(/*@Auth AuthenticatedUser authUser,*/ @PathParam("category") String category) {
+        if (!localBundleConfigStore.hasCategory(category)) {
+            throw new ResourceNotFound();
+        }
+
+        return localBundleConfigStore.getConfigProperties(category);
+    }
+
+    @Path("/settings/{category}")
+    @POST
+    @CacheControl(noCache = true)
+    public Map<String, Object> postSettingCategory(/*@Auth AuthenticatedUser authUser,*/ @PathParam("category") String category, Map<String, String> body) {
+        if (!localBundleConfigStore.hasCategory(category)) {
+            throw new ResourceNotFound();
+        }
+
+        try {
+            localBundleConfigStore.updateConfigProperties(category, body);
+        } catch (IOException e) {
+            throw new NotAcceptableException();
+        }
+
+        return localBundleConfigStore.getConfigProperties(category);
+    }
+
+    // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory
     // TODO: cache resource object per service
     private AdminServiceResource getAdminServiceResource(Service s) {
 

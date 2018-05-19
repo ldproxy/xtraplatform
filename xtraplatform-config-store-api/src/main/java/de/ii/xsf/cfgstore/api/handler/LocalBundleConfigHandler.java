@@ -9,8 +9,12 @@ package de.ii.xsf.cfgstore.api.handler;
 
 import de.ii.xsf.cfgstore.api.ConfigurationListenerRegistry;
 import de.ii.xsf.cfgstore.api.LocalBundleConfigStore;
+import org.apache.felix.ipojo.ConfigurationException;
 import org.apache.felix.ipojo.annotations.Handler;
 import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.metadata.Element;
+
+import java.util.Dictionary;
 
 /**
  * Created by zahnen on 27.11.15.
@@ -23,6 +27,12 @@ public class LocalBundleConfigHandler extends BundleConfigHandler {
 
     @Requires
     private LocalBundleConfigStore localStore;
+
+    @Override
+    public void configure(Element metadata, Dictionary configuration) throws ConfigurationException {
+        this.annotationName = LocalBundleConfig.class.getSimpleName().toLowerCase();
+        super.configure(metadata, configuration);
+    }
 
     @Override
     public void onCreation(Object instance) {

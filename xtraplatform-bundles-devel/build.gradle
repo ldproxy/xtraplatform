@@ -19,9 +19,9 @@ buildscript {
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
-version = '1.1.0'
+version = '1.1.1'
 
-version += '-SNAPSHOT'
+//version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
 
@@ -42,9 +42,9 @@ dependencies {
 
     bundles group: 'commons-fileupload', name: 'commons-fileupload', version: '1.3.1'
     bundles group: 'commons-io', name: 'commons-io', version: '2.4'
-    bundles group: 'org.apache.felix', name: 'org.apache.felix.webconsole', version: '4.2.2'
+    bundles group: 'org.apache.felix', name: 'org.apache.felix.webconsole', version: '4.3.4'
     bundles group: 'org.apache.felix', name: 'org.apache.felix.ipojo.webconsole', version: '1.7.0'
-    bundles group: 'org.apache.felix', name: 'org.apache.felix.webconsole.plugins.memoryusage', version: '1.0.4'
+    bundles group: 'org.apache.felix', name: 'org.apache.felix.webconsole.plugins.memoryusage', version: '1.0.8'
 }
 
 subprojects {
@@ -150,8 +150,8 @@ subprojects {
         provided group: 'org.apache.felix', name: 'org.apache.felix.framework', version: '5.6.8'
         provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
 
-        provided group: 'de.interactive_instruments', name: 'xtraplatform-api', version: '1.1.0-SNAPSHOT'
-        provided group: 'de.interactive_instruments', name: 'xtraplatform-dropwizard', version: '1.1.0-SNAPSHOT'
+        provided group: 'de.interactive_instruments', name: 'xtraplatform-api', version: '1.1.1-SNAPSHOT'
+        provided group: 'de.interactive_instruments', name: 'xtraplatform-dropwizard', version: '1.1.1-SNAPSHOT'
     }
     
     jar {

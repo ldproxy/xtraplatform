@@ -24,4 +24,5 @@ public interface ServiceResourceFactory {
     ServiceResource getServiceResource();
     View getServicesView(Collection<Service> services, URI uri);
     Response getResponseForParams(Collection<Service> services, UriInfo uriInfo);
+    Response getFile(String file);
 }

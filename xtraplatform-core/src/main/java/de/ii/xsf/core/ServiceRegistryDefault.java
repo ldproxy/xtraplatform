@@ -16,16 +16,25 @@ import de.ii.xsf.core.api.exceptions.XtraserverFrameworkException;
 import de.ii.xsf.core.api.organization.OrganizationDecider;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.dropwizard.api.Dropwizard;
-import de.ii.xsf.logging.XSFLogger;
-import org.apache.felix.ipojo.annotations.*;
+import org.apache.felix.ipojo.annotations.Component;
+import org.apache.felix.ipojo.annotations.Context;
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
+import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static de.ii.xsf.dropwizard.api.Dropwizard.FLAG_ALLOW_SERVICE_READDING;
@@ -44,7 +53,7 @@ import static de.ii.xsf.dropwizard.api.Dropwizard.FLAG_ALLOW_SERVICE_READDING;
 
 public class ServiceRegistryDefault implements ServiceRegistry {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(ServiceRegistryDefault.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceRegistryDefault.class);
     private final static String DEFAULT_ORGANIZATION = "default_root_org";
     
     @Requires
@@ -117,7 +126,7 @@ public class ServiceRegistryDefault implements ServiceRegistry {
      }*/
     private Map<String, Service> getServicesForOrgId(AuthenticatedUser authUser) {
 
-        Map<String, Service> srvs = new HashMap<>();
+        Map<String, Service> srvs = new LinkedHashMap<>();
         for (ServiceModule mod : serviceModules.values()) {
             for (Service s : mod.getServiceList(authUser)) {
                 srvs.put(s.getId(), s);
@@ -174,7 +183,7 @@ public class ServiceRegistryDefault implements ServiceRegistry {
             srvc = module.addService(authUser, id, params, null);
         } catch (IOException ex) {
             //LOGGER.error(FrameworkMessages.IO_ERROR_WHILE_ADDING_SERVICE, ex);
-            LOGGER.getLogger().error("Error adding service with id {}", id, ex);
+            LOGGER.error("Error adding service with id {}", id, ex);
             throw new WebApplicationException();
         }
 

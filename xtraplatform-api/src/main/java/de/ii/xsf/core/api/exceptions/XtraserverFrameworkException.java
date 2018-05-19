@@ -8,12 +8,12 @@
 package de.ii.xsf.core.api.exceptions;
 
 import com.fasterxml.jackson.databind.util.JSONPObject;
-import static de.ii.xsf.core.api.exceptions.MessageCompiler.compileMessage;
-import java.util.ArrayList;
-import java.util.List;
+
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -30,7 +30,7 @@ public class XtraserverFrameworkException extends WebApplicationException {
     protected List<String> details = new ArrayList();
 
     public XtraserverFrameworkException(Object m, Object... args) {
-        msg = MessageCompiler.compileMessage(m, args);
+        msg = (String) m;//MessageCompiler.compileMessage(m, args);
     }
 
     public XtraserverFrameworkException() {
@@ -49,9 +49,9 @@ public class XtraserverFrameworkException extends WebApplicationException {
         this.msg = msg;
     }
     
-    public void setMsg(Object m, Object... args) {
+    /*public void setMsg(Object m, Object... args) {
         this.msg = MessageCompiler.compileMessage(m, args);
-    }
+    }*/
 
     public void setCallback(String callback) {
         //System.out.println(callback);
@@ -82,9 +82,9 @@ public class XtraserverFrameworkException extends WebApplicationException {
         this.details.add(detail);
     }
     
-    public void addDetail(Object m, Object... args) {
+    /*public void addDetail(Object m, Object... args) {
         this.details.add(compileMessage(m, args));
-    }
+    }*/
     
     public List<String> getDetails() {
         return this.details;

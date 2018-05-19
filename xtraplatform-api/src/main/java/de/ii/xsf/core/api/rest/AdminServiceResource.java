@@ -14,8 +14,8 @@ import de.ii.xsf.core.api.exceptions.XtraserverFrameworkException;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
-import de.ii.xsf.logging.XSFLogger;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import javax.ws.rs.Consumes;
@@ -37,7 +37,7 @@ abstract public class AdminServiceResource implements ServiceResource {
 
     private static final String OPERATION_KEY = "_operation_";
     private static final String OPERATION_PARAMETER_KEY = "_parameter_";
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(AdminServiceResource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminServiceResource.class);
     protected ObjectMapper jsonMapper;
     protected AuthorizationProvider permissions;
     //private Services services;
@@ -81,7 +81,7 @@ abstract public class AdminServiceResource implements ServiceResource {
             MDC.put("service", id);
             try {
                 Map<String, String> req = jsonMapper.readValue(request, Map.class);
-                LOGGER.getLogger().debug(request);
+                LOGGER.debug(request);
                 if (req.containsKey(OPERATION_KEY)) {
                     String operation = req.get(OPERATION_KEY);
                     String parameter = req.containsKey(OPERATION_PARAMETER_KEY) ? req.get(OPERATION_PARAMETER_KEY) : "";

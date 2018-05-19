@@ -7,13 +7,14 @@
  */
 package de.ii.xsf.core.api;
 
-import de.ii.xsf.logging.XSFLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 
 /**
  *
@@ -23,7 +24,7 @@ public abstract class AbstractService implements Service, Comparable <AbstractSe
 
     private static final String SERVICE_CONFIG_FILE_NAME = "-service.json";
     private static final String CUSTOM_CONFIG_FILE_NAME = "-customconfig.json";
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(AbstractService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractService.class);
     protected String id;
     protected String type;
     protected String name;

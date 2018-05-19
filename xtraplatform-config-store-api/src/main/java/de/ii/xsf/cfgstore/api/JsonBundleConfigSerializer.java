@@ -7,23 +7,27 @@
  */
 package de.ii.xsf.cfgstore.api;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import de.ii.xsf.configstore.api.rest.GenericResourceSerializer;
-import de.ii.xsf.logging.XSFLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringWriter;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  *
  * @author zahnen
  */
 public class JsonBundleConfigSerializer extends GenericResourceSerializer<JsonBundleConfig> {
-    
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(JsonBundleConfigSerializer.class);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonBundleConfigSerializer.class);
     
     public JsonBundleConfigSerializer(ObjectMapper jsonMapper) {
         super(jsonMapper);
@@ -31,33 +35,40 @@ public class JsonBundleConfigSerializer extends GenericResourceSerializer<JsonBu
 
     @Override
     public JsonBundleConfig deserialize(JsonBundleConfig resource, Reader reader) throws IOException {
-        ObjectNode node = (ObjectNode)jsonMapper.readTree(reader);
+        final Map<String,String> values = jsonMapper.readValue(reader, new TypeReference<LinkedHashMap<String,String>>(){});
+        resource.setProperties(values);
         
-        // TODO: this might not survive a refactoring
-        //resource.setResourceId(node.get("resourceId").textValue());
-        resource.setCfg(node);
-        
-        LOGGER.getLogger().debug("LOCALBUNDLECONFIGSTORE deserialize: {}", resource.getResourceId());
+        LOGGER.debug("LOCALBUNDLECONFIGSTORE deserialize: {}", resource.getResourceId());
         
         return resource;
     }
 
     @Override
+    public ObjectNode deserializeMerge(Reader reader) throws IOException {
+        ObjectNode object = super.deserializeMerge(reader);
+
+        return new ObjectNode(jsonMapper.getNodeFactory(), Maps.newHashMap(ImmutableMap.of("properties", object)));
+    }
+
+    @Override
     public String serializeAdd(JsonBundleConfig resource) throws IOException {
-        StringWriter wr = new StringWriter();
-        JsonGenerator gen = jsonMapper.getFactory().createGenerator(wr);
-        jsonMapper.writeTree(gen, resource.getCfg());
+        final String values = jsonMapper.writeValueAsString(resource.getProperties());
+        LOGGER.debug("LOCALBUNDLECONFIGSTORE serializeAdd: {}", values);
         
-        LOGGER.getLogger().debug("LOCALBUNDLECONFIGSTORE serializeAdd: {}", wr.toString());
-        
-        return wr.toString();
+        return values;
     }
 
     @Override
     public String serializeUpdate(JsonBundleConfig resource) throws IOException {
-        LOGGER.getLogger().debug("LOCALBUNDLECONFIGSTORE serializeUpdate");
+        LOGGER.debug("LOCALBUNDLECONFIGSTORE serializeUpdate");
         return serializeAdd(resource);
     }
-    
-    
+
+    @Override
+    public String serializeMerge(JsonBundleConfig resource) throws IOException {
+        final String values = jsonMapper.writeValueAsString(ImmutableMap.of("properties", resource.getProperties()));
+        LOGGER.debug("LOCALBUNDLECONFIGSTORE serializeMerge: {}", values);
+
+        return values;
+    }
 }

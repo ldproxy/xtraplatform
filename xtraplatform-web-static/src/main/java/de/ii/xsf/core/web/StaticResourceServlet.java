@@ -7,12 +7,15 @@
  */
 package de.ii.xsf.core.web;
 
-import de.ii.xsf.core.web.amdatu.DefaultPages;
 import com.google.common.base.CharMatcher;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Resources;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
+import de.ii.xsf.core.web.amdatu.DefaultPages;
+import org.osgi.framework.Bundle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -21,18 +24,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.Charset;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import de.ii.xsf.logging.XSFLogger;
-import java.net.URL;
-import javax.servlet.DispatcherType;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
-import org.osgi.framework.Bundle;
 
 public class StaticResourceServlet extends HttpServlet {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(StaticResourceServlet.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StaticResourceServlet.class);
     private static final CharMatcher SLASHES = CharMatcher.is('/');
 
     private static class CachedAsset {
@@ -160,7 +159,7 @@ public class StaticResourceServlet extends HttpServlet {
                 output.write(cachedAsset.getResource());
             }
         } catch (RuntimeException | URISyntaxException ignored) {
-            LOGGER.getLogger().debug("exception: {}", ignored);
+            LOGGER.debug("exception: {}", ignored);
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }

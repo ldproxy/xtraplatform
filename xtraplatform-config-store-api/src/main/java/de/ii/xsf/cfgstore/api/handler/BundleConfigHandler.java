@@ -7,19 +7,21 @@
  */
 package de.ii.xsf.cfgstore.api.handler;
 
+import com.google.common.collect.ImmutableMap;
 import de.ii.xsf.cfgstore.api.BundleConfigDefault;
+import de.ii.xsf.cfgstore.api.BundleConfigStore;
 import de.ii.xsf.cfgstore.api.ConfigurationListenerRegistry;
-import de.ii.xsf.cfgstore.api.JsonBundleConfig;
-import de.ii.xsf.configstore.api.rest.ResourceStore;
-import de.ii.xsf.logging.XSFLogger;
 import org.apache.felix.ipojo.ConfigurationException;
 import org.apache.felix.ipojo.InstanceManager;
 import org.apache.felix.ipojo.PrimitiveHandler;
+import org.apache.felix.ipojo.metadata.Attribute;
 import org.apache.felix.ipojo.metadata.Element;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Dictionary;
+import java.util.Map;
 
 /**
  *
@@ -27,12 +29,15 @@ import java.util.Dictionary;
  */
 public class BundleConfigHandler extends PrimitiveHandler {
 
-    protected static final LocalizedLogger LOGGER = XSFLogger.getLogger(BundleConfigHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BundleConfigHandler.class);
     public static final String NAMESPACE = "de.ii.xsf.cfgstore.api.handler";//BundleConfigHandler.class.getPackage().getName();
 
     protected ConfigurationListenerRegistry clr;
-    protected ResourceStore<JsonBundleConfig> store;
+    protected BundleConfigStore store;
+    protected String annotationName;
     private InstanceManager instanceManager;
+    private String category;
+    private Map<String, Map<String, String>> properties;
 
 
     @Override
@@ -41,7 +46,32 @@ public class BundleConfigHandler extends PrimitiveHandler {
             throw new ConfigurationException("The class " + getPojoMetadata().getClassName() + " does not extend " + BundleConfigDefault.class.getName());
         }
 
+        Element[] bundleConfigElements = metadata.getElements(annotationName, NAMESPACE);
+
+        if (bundleConfigElements[0].containsAttribute("category")) {
+            this.category = bundleConfigElements[0].getAttribute("category");
+        }
+        if (bundleConfigElements[0].containsElement("configpropertydescriptor", "de.ii.xsf.cfgstore.api")) {
+            parseProperties(bundleConfigElements[0].getElements("configpropertydescriptor", "de.ii.xsf.cfgstore.api"));
+        }
+
         instanceManager = getInstanceManager();
+    }
+
+    private void parseProperties(final Element[] properties) {
+        final ImmutableMap.Builder<String, Map<String, String>> builder = ImmutableMap.builder();
+
+        for (Element property: properties) {
+            final ImmutableMap.Builder<String, String> builder1 = ImmutableMap.builder();
+
+            for (Attribute attribute: property.getAttributes()) {
+                builder1.put(attribute.getName(), attribute.getValue());
+            }
+
+            builder.put(property.getAttribute("name"), builder1.build());
+        }
+
+        this.properties = builder.build();
     }
 
     @Override
@@ -49,9 +79,9 @@ public class BundleConfigHandler extends PrimitiveHandler {
         super.onCreation(instance);
 
         try {
-            ((BundleConfigDefault) instance).init(instanceManager.getContext().getBundle().getSymbolicName(), instanceManager.getClassName(), store, clr);
+            ((BundleConfigDefault) instance).init(instanceManager.getContext().getBundle().getSymbolicName(), instanceManager.getClassName(), store, clr, category, properties);
         } catch (IOException ex) {
-            LOGGER.getLogger().error("The component instance {} failed", instance, ex);
+            LOGGER.error("The component instance {} failed", instance, ex);
             this.stop();
         }
     }

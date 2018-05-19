@@ -11,10 +11,15 @@ import de.ii.xsf.core.api.firstrun.FirstRunPage;
 import de.ii.xsf.core.api.permission.Organization;
 import de.ii.xsf.core.firstrun.views.FirstRunView;
 import de.ii.xsf.dropwizard.api.Dropwizard;
-import de.ii.xsf.logging.XSFLogger;
 import io.dropwizard.views.mustache.MustacheViewRenderer;
-import org.apache.felix.ipojo.annotations.*;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.apache.felix.ipojo.annotations.Component;
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
+import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.annotations.StaticServiceProperty;
+import org.eclipse.jetty.http.HttpHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -29,13 +34,13 @@ import java.util.List;
  */
 @Component
 @Provides(properties = {
-    @StaticServiceProperty(name = "alias", type = "java.lang.String", value = "/")
+    @StaticServiceProperty(name = "osgi.http.whiteboard.servlet.pattern", type = "java.lang.String", value = "")
 })
 @Instantiate
 
 public class FirstRunServlet extends HttpServlet {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(FirstRunServlet.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FirstRunServlet.class);
     private static final String MANAGER_PATH = "manager/";
 
     @Requires
@@ -117,18 +122,18 @@ public class FirstRunServlet extends HttpServlet {
         int pageId = Integer.parseInt(request.getParameter("PAGEID"));
         int pageCount = this.pagesEnabled.size();
 
-        LOGGER.getLogger().info("FIRSTRUN: {} {}", pageId, pageCount);
+        LOGGER.info("FIRSTRUN: {} {}", pageId, pageCount);
 
         // handle previous input
         if (pageId - 1 < pageCount && pageId > 0) {
 
             FirstRunPage frp = this.pagesEnabled.get(pageId - 1);
 
-            LOGGER.getLogger().info("FIRSTRUN: {} {}", frp.getTitle(), request.getParameterMap());
+            LOGGER.info("FIRSTRUN: {} {}", frp.getTitle(), request.getParameterMap());
             try {
                 frp.setResult(request.getParameterMap());
             } catch (Exception ex) {
-                LOGGER.getLogger().error("FIRSTRUN ERROR: {} {}", frp.getTitle(), request.getParameterMap(), ex);
+                LOGGER.error("FIRSTRUN ERROR: {} {}", frp.getTitle(), request.getParameterMap(), ex);
 
                 // TODO: set error page as view
             }
@@ -166,7 +171,11 @@ public class FirstRunServlet extends HttpServlet {
         }
         path = externalPath + path;
 
-        response.sendRedirect(path);
+        //response.sendRedirect(path);
+
+        response.setHeader(HttpHeader.LOCATION.asString(), path);
+        response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+        response.getOutputStream().close();
     }
 
     private void doResponse(HttpServletResponse response) throws IOException {

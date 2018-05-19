@@ -8,7 +8,11 @@
 package de.ii.xsf.core.rest;
 
 import com.fasterxml.jackson.databind.util.JSONPObject;
-import de.ii.xsf.core.api.*;
+import de.ii.xsf.core.api.ArcGisServiceCatalog;
+import de.ii.xsf.core.api.MediaTypeCharset;
+import de.ii.xsf.core.api.Service;
+import de.ii.xsf.core.api.ServiceCatalog;
+import de.ii.xsf.core.api.ServiceRegistry;
 import de.ii.xsf.core.api.exceptions.ResourceNotFound;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
@@ -17,7 +21,7 @@ import de.ii.xsf.core.api.rest.ServiceResource;
 import de.ii.xsf.core.api.rest.ServiceResourceFactory;
 import de.ii.xsf.core.views.GenericView;
 import de.ii.xsf.dropwizard.api.Dropwizard;
-import de.ii.xsf.logging.XSFLogger;
+import io.dropwizard.jersey.caching.CacheControl;
 import io.dropwizard.views.View;
 import io.swagger.oas.annotations.Operation;
 import org.apache.felix.ipojo.annotations.Component;
@@ -25,14 +29,19 @@ import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.glassfish.jersey.server.ExtendedResourceContext;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -56,7 +65,7 @@ import java.util.Map;
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
 public class ServicesResource {
 
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(ServicesResource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServicesResource.class);
     @Context
     ExtendedResourceContext rc;
     @Context
@@ -140,6 +149,21 @@ public class ServicesResource {
             }
         }
         return Response.ok(new GenericView("services", uriInfo.getRequestUri(), serviceRegistry.getServices(authUser))).build();
+    }
+
+    @GET
+    @Path("/___static___/{file: .+}")
+    @Produces(MediaType.WILDCARD)
+    @Operation
+    @CacheControl(maxAge = 3600)
+    public Response getFile(@PathParam("file") String file) {
+        //LOGGER.debug("FILE {})", file);
+
+        if (serviceResourceFactories.size() == 1) {
+            return serviceResourceFactories.values().iterator().next().getFile(file);
+        }
+
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 
     @Path("/{service}/")

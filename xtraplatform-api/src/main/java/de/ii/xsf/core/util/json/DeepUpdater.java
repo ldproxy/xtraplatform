@@ -13,9 +13,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.io.Files;
-import de.ii.xsf.logging.XSFLogger;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +31,7 @@ import java.util.Map;
  * @author fischer
  */
 public class DeepUpdater<T> {
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(DeepUpdater.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeepUpdater.class);
 
     protected final ObjectMapper jsonMapper;
 
@@ -45,7 +45,7 @@ public class DeepUpdater<T> {
     }
 
     public T applyUpdate(T orig, String json) throws IOException {
-        LOGGER.getLogger().debug("APPLY UPDATE {}", json);
+        LOGGER.debug("APPLY UPDATE {}", json);
         ObjectNode update = (ObjectNode) jsonMapper.readTree(json);
         applyUpdate(orig, update);
 
@@ -66,7 +66,7 @@ public class DeepUpdater<T> {
     }
 
     // recursion
-    protected void applyUpdate(Object original, ObjectNode updateRoot) throws IOException {
+    public void applyUpdate(Object original, ObjectNode updateRoot) throws IOException {
         for (Iterator<Map.Entry<String, JsonNode>> i = updateRoot.fields(); i.hasNext(); ) {
             Map.Entry<String, JsonNode> fieldEntry = i.next();
             JsonNode child = fieldEntry.getValue();

@@ -11,7 +11,7 @@ buildscript {
         }
     } 
     dependencies {
-        classpath group: 'de.interactive_instruments', name: 'gradle-plugin-osgi-ipojo', version: '1.12.1.27'
+        classpath group: 'de.interactive_instruments', name: 'gradle-plugin-osgi-ipojo', version: '1.12.1.29'
         classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.14.0"
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
     } 
@@ -20,9 +20,8 @@ buildscript {
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
-version = '1.1.1'
-
-version += '-SNAPSHOT'
+version = '1.1.5'
+//version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
 
@@ -44,7 +43,7 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'osgi-ipojo'
     apply plugin: 'maven-publish'
-    apply plugin: 'com.jfrog.bintray'
+//    apply plugin: 'com.jfrog.bintray'
     apply plugin: "license"
 
     version = '1.1.0'
@@ -75,9 +74,6 @@ subprojects {
         mavenLocal()
         mavenCentral()
         jcenter()
-        maven {
-            url "http://maven.forgerock.org/repo/repo"
-        }
         maven {
             url 'http://oss.sonatype.org/content/repositories/snapshots'
         }
@@ -169,8 +165,8 @@ subprojects {
         }
     }
     afterEvaluate { project ->
-    project.version += '-SNAPSHOT'
-    bintray {
+    //project.version += '-SNAPSHOT'
+/*    bintray {
         user = project.bintrayUser
         key = project.bintrayApiKey
         publications = ['maven']
@@ -189,7 +185,7 @@ subprojects {
                 name = project.version
             }
         }
-    }
+    }*/
     }
 
 configurations {
@@ -256,13 +252,13 @@ task osgiDocs {
 }
 
 
-configure(subprojects.findAll {it.name != 'xtraplatform-api' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-logging-i18n' && it.name != 'xtraplatform-runtime'}) {
+configure(subprojects.findAll {it.name != 'xtraplatform-api' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-runtime'}) {
     dependencies {
         compile project(':xtraplatform-api')
     }
 }
 
-configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-runtime'}) {
+configure(subprojects.findAll {it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-runtime'}) {
     dependencies {
         compile project(':xtraplatform-dropwizard')
     }
@@ -272,12 +268,6 @@ configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n' && it.name
      instruction 'Import-Package', 'com.fasterxml.jackson.module.afterburner.ser'   
      instruction 'Import-Package', '*'   
     }
-    }
-}
-
-configure(subprojects.findAll {it.name != 'xtraplatform-logging-i18n'}) {
-    dependencies {
-        compile project(':xtraplatform-logging-i18n')
     }
 }
 

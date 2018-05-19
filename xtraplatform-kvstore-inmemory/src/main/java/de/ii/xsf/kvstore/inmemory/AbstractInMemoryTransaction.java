@@ -8,8 +8,8 @@
 package de.ii.xsf.kvstore.inmemory;
 
 import de.ii.xsf.configstore.api.Transaction;
-import de.ii.xsf.logging.XSFLogger;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -17,7 +17,8 @@ import java.util.Map;
  * Created by zahnen on 21.11.15.
  */
 public abstract class AbstractInMemoryTransaction implements Transaction {
-    private static final LocalizedLogger LOGGER = XSFLogger.getLogger(AbstractInMemoryTransaction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractInMemoryTransaction.class);
+
     protected final Map<String, String> resources;
     protected final String key;
     private final String backup;

@@ -8,13 +8,17 @@
 package de.ii.xsf.cfgstore.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.collect.ImmutableMap;
 import de.ii.xsf.configstore.api.rest.ResourceStore;
-import de.ii.xsf.logging.XSFLogger;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  *
@@ -22,57 +26,74 @@ import java.io.IOException;
  */
 public abstract class BundleConfigDefault implements BundleConfig /*implements Resource*/ {
 
-    protected static final LocalizedLogger LOGGER = XSFLogger.getLogger(BundleConfigDefault.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BundleConfigDefault.class);
 
     private String configId;
     private String bundleId;
-    private ResourceStore<JsonBundleConfig> store;
+    private BundleConfigStore store;
     private ObjectMapper jsonMapper;
     private ConfigurationListenerRegistry listeners;
+    private String category;
+    protected Map<String, String> properties;
 
-    public void init(String bundleId, String configId, ResourceStore<JsonBundleConfig> store, ConfigurationListenerRegistry listeners) throws IOException {
+    public void init(String bundleId, String configId, BundleConfigStore store, ConfigurationListenerRegistry listeners, String category, Map<String, Map<String, String>> properties) throws IOException {
         this.bundleId = bundleId;
         this.configId = configId;
         this.store = store;
         this.jsonMapper = createMapper();
         this.listeners = listeners;
+        this.category = category;
 
-        LOGGER.getLogger().debug("BUNDLECONFIG BIND: {} {}", bundleId, configId);
+        LOGGER.debug("BUNDLECONFIG BIND: {} {}", bundleId, configId);
 
-        if (!store.withChild(bundleId).hasResource(configId)) {
+        if (!getStore().hasResource(configId)) {
 
-            LOGGER.getLogger().debug("BUNDLECONFIG ADD");
+            LOGGER.debug("BUNDLECONFIG ADD");
+
+            // TODO: lower case, defaults ignored
+            this.properties = properties.values().stream()
+                      .filter(property -> property.containsKey("name") && property.containsKey("defaultvalue"))
+                      .collect(ImmutableMap.toImmutableMap(property -> property.get("name"), property -> property.get("defaultvalue")));
+
+            //this.properties = ImmutableMap.of("externalUrl", "bla");
 
             JsonBundleConfig json = serialize();
 
-            store.withChild(bundleId).addResource(json);
+            getStore().addResource(json);
         } else {
 
-            JsonBundleConfig json = store.withChild(bundleId).getResource(configId);
+            JsonBundleConfig json = getStore().getResource(configId);
 
             deserialize(json);
 
-            LOGGER.getLogger().debug("BUNDLECONFIG GET {}", json.getCfg());
+            LOGGER.debug("BUNDLECONFIG GET {}", json.getProperties());
         }
+
+        store.addConfigPropertyDescriptors(category, bundleId, configId, properties);
     }
 
     @Override
     public void save() throws IOException {
-        LOGGER.getLogger().debug("BUNDLECONFIG SAVE");
+        LOGGER.debug("BUNDLECONFIG SAVE");
         
         JsonBundleConfig json = serialize();
 
-        store.withChild(bundleId).updateResource(json);
+        getStore().updateResource(json);
         
         listeners.update(this);
     }
 
+    private ResourceStore<JsonBundleConfig> getStore() {
+        return store.withChild(bundleId);
+    }
+
     private JsonBundleConfig serialize() {
-        return new JsonBundleConfig(configId, (ObjectNode) jsonMapper.valueToTree(this));
+        return new JsonBundleConfig(configId, properties);
     }
 
     private void deserialize(JsonBundleConfig json) throws IOException {
-        jsonMapper.readerForUpdating(this).readValue(json.getCfg());
+        //jsonMapper.readerForUpdating(this).readValue(json.getCfg());
+        this.properties = json.getProperties();
     }
 
     private ObjectMapper createMapper() {
