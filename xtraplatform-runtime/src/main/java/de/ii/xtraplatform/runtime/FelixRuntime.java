@@ -40,6 +40,8 @@ public class FelixRuntime {
             .put("javax.net", "0.0")
             .put("sun.misc", "0.0")
             .put("sun.reflect", "0.0")
+            .put("sun.security.util", "0.0")
+            .put("sun.security.x509", "0.0")
 // TODO
             .put("org.apache.felix.main", "0.0")
             .put("org.apache.felix.framework", "0.0")
@@ -125,6 +127,7 @@ public class FelixRuntime {
         felixConfig.put(FelixConstants.FRAMEWORK_STORAGE_CLEAN, FelixConstants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT);
         // Export the host provided service interface package.
         felixConfig.put(FelixConstants.FRAMEWORK_SYSTEMPACKAGES_EXTRA, Joiner.on(',').withKeyValueSeparator(";version=").join(exports));
+        felixConfig.put(FelixConstants.FRAMEWORK_BOOTDELEGATION, "sun.misc");
 
         // Create host activator;
         //List<BundleActivator> list = new ArrayList();

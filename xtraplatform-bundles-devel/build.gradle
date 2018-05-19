@@ -26,6 +26,7 @@ version += '-SNAPSHOT'
 group = 'de.interactive_instruments'
 
 repositories {     
+    mavenLocal()
     mavenCentral()
 }
 

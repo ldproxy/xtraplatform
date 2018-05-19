@@ -20,9 +20,9 @@ buildscript {
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
-version = '1.1.0'
+version = '1.1.1'
 
-//version += '-SNAPSHOT'
+version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
 
@@ -49,7 +49,7 @@ subprojects {
 
     version = '1.1.0'
 
-    //version += '-SNAPSHOT'
+    version += '-SNAPSHOT'
 
     group = 'de.interactive_instruments'
 
@@ -115,7 +115,7 @@ subprojects {
             classpath += project.sourceSets.main.compileClasspath
             source += project.sourceSets.main.allJava
         }
-    }*/   
+    }*/
 
 
     jar {
@@ -169,7 +169,7 @@ subprojects {
         }
     }
     afterEvaluate { project ->
-    //project.version += '-SNAPSHOT'
+    project.version += '-SNAPSHOT'
     bintray {
         user = project.bintrayUser
         key = project.bintrayApiKey
@@ -191,7 +191,70 @@ subprojects {
         }
     }
     }
+
+configurations {
+    doclava
 }
+
+dependencies {
+    doclava files('/home/zahnen/development/javadoc-json-doclet/build/libs/javadoc-json-doclet-all.jar')
+}
+
+javadoc {
+    options.doclet = "com.raidandfade.JsonDoclet.Main"
+//    options.doclet = "com.rga78.javadoc.JsonDoclet"
+    options.docletpath = configurations.doclava.files.asType(List)
+    options.memberLevel = JavadocMemberLevel.PRIVATE
+}
+tasks.javadoc.dependsOn configurations.doclava
+
+task foobar {
+   dependsOn tasks.jar
+   doLast {
+      tasks.javadoc.options.addStringOption("manifest", project.jar.manifest.effectiveManifest.attributes.collect { k,v -> "$k==$v" }.join('&&').replaceAll(/,(?=([^"]*"[^"]*")*[^"]*$)/, '||'))
+   }
+}
+tasks.javadoc.dependsOn tasks.foobar
+
+
+
+}
+
+task osgiDocs {
+   inputs.files subprojects.collect { it.tasks.getByName('javadoc') }
+   doLast {
+      def bundles = inputs.files.files.stream().map({ f ->
+         def bi = new File(f, "bundle-info.json").text
+         new groovy.json.JsonSlurper().parseText(bi)
+      })
+      .collect(java.util.stream.Collectors.toList())
+
+      bundles.forEach {bundle -> 
+        bundle.deps = bundle.imported3Packages.stream()
+        .map({pkg -> bundles.stream().filter({b2 -> b2.providedPackages.contains(pkg)}).findFirst()})
+        .filter({b2 -> b2.isPresent()})
+        .map({b2 -> b2.get()})
+        .map({b2 -> b2.name})
+        .filter({n -> !n.equals('xtraplatform-logging-i18n')})
+        .filter({n -> !n.equals(bundle.name)})
+        .sorted()
+        .distinct()
+        .collect(java.util.stream.Collectors.toList())
+
+        println(bundle.name + ": " + bundle.deps)
+      }
+
+      println()
+      println()
+
+      bundles.forEach { b ->
+         b.deps.forEach { d ->
+            println("${b.name}(${b.name}) --> $d($d)")
+         }
+      }
+   }
+}
+
 
 configure(subprojects.findAll {it.name != 'xtraplatform-api' && it.name != 'xtraplatform-dropwizard' && it.name != 'xtraplatform-logging-i18n' && it.name != 'xtraplatform-runtime'}) {
     dependencies {
@@ -265,3 +328,11 @@ bintray {
 }
 
 apply from: 'license-report.gradle'
+
+//apply plugin: 'java'
+apply plugin: 'xtraplatform-docs'
+
+hello { 
+    message = "Hi"
+    recipient = "Gradle"
+}
