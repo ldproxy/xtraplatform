@@ -1,0 +1,30 @@
+version='1.1.0'
+
+dependencies {    
+    embedded group: 'org.scala-lang', name: 'scala-library', version: '2.12.4'
+    embedded group: 'org.scala-lang', name: 'scala-reflect', version: '2.12.4'
+    embedded group: 'com.typesafe.akka', name: 'akka-actor_2.12', version: '2.5.9'
+    embedded group: 'com.typesafe.akka', name: 'akka-stream_2.12', version: '2.5.9'
+    embedded group: 'com.typesafe.akka', name: 'akka-http_2.12',   version: '10.1.0-RC2'
+}
+ 
+jar {
+    manifest { 
+        instruction 'Embed-Dependency',
+                'scala-library',
+                'scala-reflect',
+                'akka-actor_2.12',
+                'akka-stream_2.12',
+                'akka-http_2.12'
+            
+        instruction 'Embed-Transitive', 'true'
+        instruction 'Embed-Export', 'true'
+        instruction 'Embed-Import', 'true'
+
+        instructionFirst 'Import-Package', 'sun.misc'        
+        instructionFirst 'Import-Package', 'javax.net.ssl'        
+        instructionFirst 'Import-Package', 'sun.security.util'        
+        instructionFirst 'Import-Package', 'sun.security.x509'        
+        instructionFirst 'Import-Package', 'javax.crypto'        
+    }
+}
