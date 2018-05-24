@@ -320,7 +320,7 @@ bintray {
 apply from: 'license-report.gradle'
 
 //apply plugin: 'java'
-apply plugin: 'xtraplatform-docs'
+//apply plugin: 'xtraplatform-docs'
 
 hello { 
     message = "Hi"
