@@ -47,7 +47,7 @@ downloadLicenses {
 }
 version = '1.1.3'
 
-version += '-SNAPSHOT'
+//version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
 
@@ -97,12 +97,6 @@ dependencies {
     //bundles group: 'org.apache.felix', name: 'org.apache.felix.gogo.shell', version: '1.0.0'
     //bundles group: 'org.apache.felix', name: 'org.apache.felix.gogo.runtime', version: '1.0.8'
     //bundles group: 'org.apache.felix', name: 'org.apache.felix.gogo.command', version: '1.0.2'
-
-//    bundlesTr group: 'org.scala-lang', name: 'scala-library', version: '2.12.4'    
-  //  bundlesTr group: 'org.scala-lang', name: 'scala-reflect', version: '2.12.4'    
-    //bundlesTr group: 'com.typesafe.akka', name: 'akka-actor_2.12', version: '2.5.9'    
-    //bundlesTr group: 'com.typesafe.akka', name: 'akka-stream_2.12', version: '2.5.9'
-    //bundlesTr group: 'com.typesafe.akka', name: 'akka-http_2.12',   version: '10.0.11'
 
 }
 

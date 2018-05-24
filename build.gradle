@@ -182,14 +182,14 @@ subprojects {
     }*/
 
     dependencies {
-    provided 'com.google.guava:guava:17.0'
+//    provided 'com.google.guava:guava:17.0'
 
         provided group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
     provided group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
     provided group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'
 
         provided group: 'org.osgi', name: 'org.osgi.compendium', version: '5.0.0'
-        provided group: 'org.apache.felix', name: 'org.apache.felix.framework', version: '5.6.8'
+        provided group: 'org.apache.felix', name: 'org.apache.felix.framework', version: '5.6.10'
         provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
     }
     
