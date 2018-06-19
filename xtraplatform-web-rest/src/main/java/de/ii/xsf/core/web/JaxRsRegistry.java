@@ -9,6 +9,7 @@ package de.ii.xsf.core.web;
 
 import com.google.common.collect.Sets;
 import de.ii.xsf.dropwizard.api.Dropwizard;
+import de.ii.xtraplatform.auth.api.AuthProvider;
 import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.jetty.NonblockingServletHolder;
 import org.apache.felix.ipojo.annotations.Component;
@@ -188,8 +189,16 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
         if (isJerseyAvailable()) {
             if (!providerCache.isEmpty()) {
                 for (Object provider : providerCache) {
-                    jersey.register(provider);
-                    LOGGER.debug("Registered JAX-RS Provider {}", provider.getClass());
+                    if (provider instanceof AuthProvider) {
+                        AuthProvider provider1 = (AuthProvider) provider;
+                        jersey.register(provider1.getAuthDynamicFeature());
+                        jersey.register(provider1.getRolesAllowedDynamicFeature());
+                        jersey.register(provider1.getAuthValueFactoryProvider());
+                        LOGGER.debug("Registered JAX-RS Auth Provider {}", provider.getClass());
+                    } else {
+                        jersey.register(provider);
+                        LOGGER.debug("Registered JAX-RS Provider {}", provider.getClass());
+                    }
                 }
                 providerCache.clear();
             }
@@ -369,7 +378,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     }
 
     private boolean isProvider(Object service) {
-        return service != null && service.getClass().isAnnotationPresent(Provider.class);
+        return service != null && (service.getClass().isAnnotationPresent(Provider.class) || service instanceof AuthProvider);
     }
 
     private boolean isFilter(Object service) {

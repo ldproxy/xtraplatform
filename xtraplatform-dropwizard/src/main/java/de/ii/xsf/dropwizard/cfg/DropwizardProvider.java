@@ -154,7 +154,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
 
         // TODO: enable trailing slashes, #36
         //environment.jersey().enable(ResourceConfig.FEATURE_REDIRECT);
-        this.environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        this.environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
         if (configuration.useFormattedJsonOutput) {
             environment.getObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
