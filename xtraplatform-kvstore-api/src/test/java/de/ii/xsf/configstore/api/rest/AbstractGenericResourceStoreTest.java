@@ -13,14 +13,12 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import de.ii.xsf.configstore.api.KeyValueStore;
-import de.ii.xsf.configstore.api.Transaction;
+
 import static de.ii.xsf.configstore.api.rest.AbstractGenericResourceStore.OVERRIDES_STORE_NAME;
 
 import de.ii.xsf.configstore.api.WriteTransaction;
 import de.ii.xsf.core.api.Resource;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Assert;
@@ -183,7 +181,7 @@ public class AbstractGenericResourceStoreTest {
         }
 
         @Override
-        protected Resource createEmptyResource() {
+        protected Resource createEmptyResource(String id, String... path) {
             return new TestResource("x", "y");
         }
     }

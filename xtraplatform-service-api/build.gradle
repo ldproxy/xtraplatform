@@ -1,0 +1,12 @@
+version = '1.0.0'
+version += '-SNAPSHOT'
+
+dependencies {
+    provided project(':xtraplatform-entity-api')
+}
+
+jar {
+    manifest {
+        instructionFirst 'Import-Package', "!org.immutables.value"
+    }
+}

@@ -71,7 +71,8 @@ import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
  */
 @Component
 @Provides
-@Instantiate
+//@Instantiate
+//TODO move to separate bundle
 public class DropwizardProvider extends Application<XtraServerFrameworkConfiguration> implements Dropwizard, HttpClients {
 
     //private static final Logger ROOT_LOGGER = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
@@ -98,9 +99,14 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
 
     @Validate
     public void start() {
+        String dataDir = context.getProperty(DATA_DIR_KEY);
+        if (dataDir == null) {
+            LOGGER.warn("Not starting dropwizard, no data directory given.");
+            return;
+        }
 
         // TODO: move to config store
-        File cfgFile = new File(new File(context.getProperty(DATA_DIR_KEY)), CFG_FILE_NAME);
+        File cfgFile = new File(new File(dataDir), CFG_FILE_NAME);
 
         try {
             if (!cfgFile.isFile()) {

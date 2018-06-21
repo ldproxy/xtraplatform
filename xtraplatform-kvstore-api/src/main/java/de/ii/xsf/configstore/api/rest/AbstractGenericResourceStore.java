@@ -39,6 +39,28 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
+ * Responsibilities:
+ *   - De/Serialization, delegated
+ *   - Merging, delegated
+ *   - Caching, could be middlewared
+ *   - Persistence, delegated
+ *   - Transactions
+ *   - Overrides layer
+ *   - Multitenancy
+ *   - Concurrency, should move to KeyValueStore
+ *
+ * TODO
+ *   - split up into AcidKeyValueStore and EntityStore
+ *   - AcidKeyValueStore
+ *     - provides transactional layer on top of KeyValueStore
+ *     - maybe use middleware in transactions to add behaviour like de/serialization
+ *   - EntityStore
+ *     - De/Serialization, delegated, maybe via @require, transaction middleware
+ *     - Merging, if not generalizable, delegate via @require, transaction middleware
+ *     - Caching, through instantiation of components
+ *     - Multitenancy, encoded in instance ids TYPE/ORG/ID by wrapper
+ *     - Event Logging (who changed this when and maybe how) might also be a transaction middleware
+ *
  *
  * @author zahnen
  * @param <T>
@@ -87,7 +109,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
         this.serializer = serializer;
     }
 
-    abstract protected T createEmptyResource();
+    abstract protected T createEmptyResource(String id, String... path);
 
     protected String getPathString(String[] path) {
         return Joiner.on('/').skipNulls().join(path);
@@ -169,7 +191,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     }
 
     protected T getResource(String[] path, String id) {
-        T resource = this.createEmptyResource();
+        T resource = this.createEmptyResource(id, path);
 
         getResourceLock(path, id).readLock().lock();
         try {
@@ -246,7 +268,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
 
         // TODO: DELETE_ALL
         if (resourceTransaction.getOperation() != OPERATION.DELETE) {
-            resourceTransaction.setEmptyResource(createEmptyResource());
+            resourceTransaction.setEmptyResource(createEmptyResource(resourceTransaction.getResourceId(), resourceTransaction.getPath()));
         }
         
         List<Transaction> storeTransactions = new ArrayList<>();

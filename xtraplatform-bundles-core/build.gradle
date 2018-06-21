@@ -18,35 +18,128 @@ buildscript {
 }
 
 apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.bintray'
+//apply plugin: 'com.jfrog.bintray'
+apply plugin: 'java'
 
-version = '1.1.12'
-//version += '-SNAPSHOT'
+version = '1.2.0'
+version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
 
-repositories {     
+repositories {
+    jcenter()
     mavenCentral()
+    maven {
+        url "https://dl.bintray.com/iide/maven"
+    }
+    mavenLocal()
 }
 
 configurations {
     bundles {
         transitive = false
     }
+    features
 }
 
 dependencies {
-     bundles subprojects.findAll { it.name != 'xtraplatform-dropwizard' }
+    bundles subprojects.findAll { it.name != 'xtraplatform-dropwizard' }
+    bundles 'com.fasterxml.jackson.module:jackson-module-afterburner:2.9.5'
+    bundles 'com.fasterxml.jackson.core:jackson-core:2.9.5'
+    bundles 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
+    bundles 'com.fasterxml.jackson.core:jackson-annotations:2.9.5'
+    bundles 'com.google.guava:guava:23.5-jre'
+    bundles 'com.google.code.findbugs:jsr305:3.0.2'
+    bundles group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    bundles group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    bundles group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'
+    bundles 'org.ow2.chameleon.testing:osgi-helpers:0.6.2'
+
+    features group: 'de.interactive_instruments', name: 'xtraplatform-bundles-runtime', version: '1.1.4-SNAPSHOT'
+
+    testCompile subprojects.findAll { it.name != 'xtraplatform-dropwizard' }
+
+    testCompile group: 'org.testng', name: 'testng', version: '6.8.5'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '1.9.5'
+    testCompile 'org.ow2.chameleon.testing:osgi-helpers:0.6.2'
+
+    testCompile 'org.ops4j.pax.exam:pax-exam-container-native:4.11.0'
+    testCompile 'org.ops4j.pax.exam:pax-exam-junit4:4.11.0'
+    testCompile 'org.ops4j.pax.exam:pax-exam-link-mvn:4.11.0'
+    testCompile 'org.ops4j.pax.exam:pax-exam-link-assembly:4.11.0'
+    testCompile 'javax.inject:javax.inject:1'
+    testCompile group: 'org.osgi', name: 'org.osgi.compendium', version: '5.0.0'
+    testCompile group: 'org.apache.felix', name: 'org.apache.felix.framework', version: '5.6.8'
+    //testCompile group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
 }
+
+test {
+    //useTestNG()
+    options {
+        //includeGroups 'default'
+        /* if you want to run tests for debugging purposes that are not part
+        of the continuous integration, put them in the "debug"-group and
+        uncomment the following line just in your local working copy
+         */
+        //includeGroups 'debug'
+        //includeGroups 'performance'
+        //includeGroups 'integration'
+    }
+    testLogging.showStandardStreams = true
+    reports.html.enabled = true
+
+}
+
+task generateDependsFile {
+    // This is useful for the org.ops4j.pax.exam.CoreOptions.maven() stuff
+    File outputFileDir = project.file( 'build/classes/test/META-INF/maven/' )
+    File outputFile = new File( outputFileDir, 'dependencies.properties' )
+    outputs.file outputFile
+
+    doFirst {
+        outputFileDir.mkdirs()
+        Properties properties = new Properties();
+        String files = ""
+
+        // then for all our deps
+        project.configurations.bundles.resolvedConfiguration.resolvedArtifacts.each {
+            files += "${it.file.toURI().toString()},"
+        }
+        project.configurations.features.resolvedConfiguration.resolvedArtifacts.each {
+            files += "${it.file.toURI().toString()},"
+        }
+
+        properties.setProperty("bundles", files )
+
+        FileOutputStream outputStream = new FileOutputStream( outputFile );
+        try {
+            properties.store( outputStream, "Generated from Gradle for PaxExam testing" )
+        }
+        finally {
+            outputStream.close()
+        }
+    }
+}
+
+task copyTestResources(type: Copy) {
+    from "${projectDir}/src/test/resources"
+    into "${buildDir}/classes/test"
+}
+
+processTestResources.dependsOn copyTestResources
+tasks.test.dependsOn tasks.generateDependsFile
+
+
 
 subprojects {
     apply plugin: 'java'
     apply plugin: 'osgi-ipojo'
     apply plugin: 'maven-publish'
-//    apply plugin: 'com.jfrog.bintray'
+    apply plugin: 'com.jfrog.bintray'
     apply plugin: "license"
 
-    version = '1.1.0'
+    version = '1.2.0'
 
     version += '-SNAPSHOT'
 
@@ -128,6 +221,9 @@ subprojects {
     }
 
     dependencies {
+        compileOnly         "org.immutables:value:2.6.1:annotations"
+        annotationProcessor "org.immutables:value:2.6.1"
+
         
         // TODO
         provided 'com.google.guava:guava:23.1-jre'
@@ -140,12 +236,28 @@ subprojects {
         provided group: 'org.osgi', name: 'org.osgi.compendium', version: '5.0.0'
         provided group: 'org.apache.felix', name: 'org.apache.felix.framework', version: '5.6.8'
         provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
+        provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.eventadmin', version: '1.8.0'
+    }
+
+    compileJava {
+        String relativePath = "build/generated/src/main/java"
+        sourceSets.main.java { srcDir relativePath }
+        File generatedSourceDir = project.file("build/generated/src/main/java")
+        project.mkdir(generatedSourceDir)
+        options.annotationProcessorGeneratedSourcesDirectory = generatedSourceDir
+        outputs.dir(generatedSourceDir)
+
+        doFirst {
+            // force a clean of generatedSourceDir to prevent java.lang.IllegalStateException: endPosTable already set. This shouldn't be need if using Gradle 4.8+ or Java 9+.
+            project.delete(generatedSourceDir)
+            project.mkdir(generatedSourceDir)
+        }
     }
     
     jar {
         manifest { 
             instruction '-removeheaders', 'Bnd-LastModified'
-            instructionReplace "Bundle-SymbolicName",project.name.replaceAll('-', '.')
+            instructionReplace "Bundle-SymbolicName",project.name
         }
     }
 
@@ -166,7 +278,7 @@ subprojects {
     }
     afterEvaluate { project ->
     //project.version += '-SNAPSHOT'
-/*    bintray {
+    bintray {
         user = project.bintrayUser
         key = project.bintrayApiKey
         publications = ['maven']
@@ -185,7 +297,7 @@ subprojects {
                 name = project.version
             }
         }
-    }*/
+    }
     }
 
 configurations {
@@ -296,7 +408,7 @@ publishing {
     }
 }
 
-bintray {
+/*bintray {
     user = project.bintrayUser
     key = project.bintrayApiKey
     publications = ['mavenRoot']
@@ -315,7 +427,7 @@ bintray {
             name = project.version
         }
     }
-}
+}*/
 
 apply from: 'license-report.gradle'
 

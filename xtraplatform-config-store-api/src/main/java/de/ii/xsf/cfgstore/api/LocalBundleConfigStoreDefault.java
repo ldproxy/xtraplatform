@@ -54,7 +54,7 @@ public class LocalBundleConfigStoreDefault extends AbstractGenericResourceStore<
     }
 
     @Override
-    protected JsonBundleConfig createEmptyResource() {
+    protected JsonBundleConfig createEmptyResource(String id, String... path) {
         return new JsonBundleConfig("",  new HashMap<>());
     }
     
