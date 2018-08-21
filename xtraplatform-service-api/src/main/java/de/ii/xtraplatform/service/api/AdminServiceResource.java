@@ -5,15 +5,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xsf.core.api.rest;
+package de.ii.xtraplatform.service.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.ii.xsf.core.api.Service;
-import de.ii.xsf.core.api.ServiceRegistry;
 import de.ii.xsf.core.api.exceptions.XtraserverFrameworkException;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
+import de.ii.xtraplatform.entity.api.EntityRegistry;
+import de.ii.xtraplatform.entity.api.EntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -41,7 +41,7 @@ abstract public class AdminServiceResource implements ServiceResource {
     protected ObjectMapper jsonMapper;
     protected AuthorizationProvider permissions;
     //private Services services;
-    protected ServiceRegistry serviceRegistry;
+    protected EntityRepository serviceRegistry;
     protected Service service = null;
     @Context
     protected UriInfo uriInfo;
@@ -56,9 +56,9 @@ abstract public class AdminServiceResource implements ServiceResource {
         this.service = service;
     }
 
-    public void init(ObjectMapper jsonMapper, ServiceRegistry serviceRegistry, AuthorizationProvider permissions) {
+    public void init(ObjectMapper jsonMapper, EntityRepository entityRepository, AuthorizationProvider permissions) {
         this.jsonMapper = jsonMapper;
-        this.serviceRegistry = serviceRegistry;
+        this.serviceRegistry = entityRepository;
         this.permissions = permissions;
     }
 
@@ -66,8 +66,11 @@ abstract public class AdminServiceResource implements ServiceResource {
     public Response deleteService(@Auth(required = false) AuthenticatedUser authUser, @PathParam("id") String id) {
         try {
             MDC.put("service", id);
-            serviceRegistry.deleteService(authUser, service);
+            //TODO serviceRegistry.deleteService(authUser, service);
+            serviceRegistry.deleteEntity(id);
             //LOGGER.info(DELETED_SERVICE_WTH_ID, id);
+            return Response.ok().build();
+        } catch (IOException e) {
             return Response.ok().build();
         } finally {
             MDC.remove("service");
@@ -86,9 +89,9 @@ abstract public class AdminServiceResource implements ServiceResource {
                     String operation = req.get(OPERATION_KEY);
                     String parameter = req.containsKey(OPERATION_PARAMETER_KEY) ? req.get(OPERATION_PARAMETER_KEY) : "";
                     if (operation.equals("start")) {
-                        service.start();
+                        //TODO service.start();
                     } else if (operation.equals("stop")) {
-                        service.stop();
+                        //TODO service.stop();
                     } else {
                         callServiceOperation(/*authUser*/new AuthenticatedUser(), operation, parameter);
                     }

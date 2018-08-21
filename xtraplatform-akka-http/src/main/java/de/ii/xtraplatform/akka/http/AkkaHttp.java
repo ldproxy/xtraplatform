@@ -12,8 +12,11 @@ import akka.actor.ActorSystem;
 import akka.http.javadsl.ConnectionContext;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.coding.Coder;
+import akka.http.javadsl.model.ContentType;
+import akka.http.javadsl.model.HttpCharsets;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.MediaTypes;
 import akka.http.javadsl.model.headers.AcceptEncoding;
 import akka.http.javadsl.settings.ConnectionPoolSettings;
 import akka.http.scaladsl.model.headers.HttpEncodings;
@@ -151,6 +154,10 @@ public class AkkaHttp {
         return http.singleRequest(HttpRequest.create(url));
     }
 
+    public CompletionStage<HttpResponse> getResponse(HttpRequest httpRequest) {
+        return http.singleRequest(httpRequest);
+    }
+
     public Source<ByteString, NotUsed> get(String url) {
 
         LOGGER.debug("HTTP GET {}", url);
@@ -159,6 +166,38 @@ public class AkkaHttp {
 //                .mapMaterializedValue(nu -> new Date());
 
         return Source.single(Pair.create(HttpRequest.create(url)
+                                                    .addHeader(AcceptEncoding.create(HttpEncodings.deflate()
+                                                                                                  .toRange(), HttpEncodings.gzip()
+                                                                                                                           .toRange(), HttpEncodings.chunked()
+                                                                                                                                                    .toRange())), null))
+                     .via(pool)
+                     .map(param -> {
+                         //LOGGER.debug("HTTP RESPONSE {}", param.toString());
+                         return param.first()
+                                     .get();
+                     })
+                     .map(decodeResponse::apply)
+                     //.mapMaterializedValue(nu -> new Date())
+                     .flatMapConcat(httpResponse -> {
+                         LOGGER.debug("HTTP RESPONSE {}", httpResponse.status());
+                         return httpResponse.entity()
+                                            .withoutSizeLimit()
+                                            .getDataBytes();
+                     });
+
+
+        //return queryEncoder.encode(query)
+        //                   .map(getFeature -> new WFSRequest(wfsAdapter, getFeature).getResponse());
+    }
+
+    public Source<ByteString, NotUsed> postXml(String url, String body) {
+
+        LOGGER.debug("HTTP POST {}\n{}", url, body);
+        // TODO: measure performance with files to compare processing time only
+//        Source<ByteString, Date> fromFile = FileIO.fromFile(new File("/home/zahnen/development/ldproxy/artillery/flurstueck-" + count.get() + "-" + page.get() + ".xml"))
+//                .mapMaterializedValue(nu -> new Date());
+
+        return Source.single(Pair.create(HttpRequest.POST(url).withEntity(MediaTypes.APPLICATION_XML.toContentType(HttpCharsets.UTF_8), body)
                                                     .addHeader(AcceptEncoding.create(HttpEncodings.deflate()
                                                                                                   .toRange(), HttpEncodings.gzip()
                                                                                                                            .toRange(), HttpEncodings.chunked()

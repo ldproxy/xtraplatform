@@ -23,8 +23,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
     }
 
     @Property(name = "data") // is ignored here, but added by @Entity handler
-    public void setData(EntityData data) {
-        LOGGER.debug("GOT data {}", data);
+    public void setData(T data) {
+        LOGGER.debug("GOT data {}"/*, data*/);
         this.data = dataToImmutable(data);
 
         if (shouldRegister()) {
@@ -39,5 +39,5 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
         return true;
     }
 
-    protected abstract T dataToImmutable(EntityData data);
+    protected abstract T dataToImmutable(T data);
 }

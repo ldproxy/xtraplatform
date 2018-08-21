@@ -26,8 +26,9 @@ public class EntityRepositoryForType extends EntityRepositoryWrapper {
     @Override
     protected List<String> transformIds(List<String> ids) {
         return ids.stream()
-                  .filter(isTransformed())
-                  .map(this::reverseTransformId)
+                  //.filter(isTransformed())
+                  //.map(this::reverseTransformId)
+                  .map(this::transformId)
                   .collect(Collectors.toList());
     }
 

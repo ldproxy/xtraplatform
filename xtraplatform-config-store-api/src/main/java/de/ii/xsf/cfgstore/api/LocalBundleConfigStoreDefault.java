@@ -57,7 +57,12 @@ public class LocalBundleConfigStoreDefault extends AbstractGenericResourceStore<
     protected JsonBundleConfig createEmptyResource(String id, String... path) {
         return new JsonBundleConfig("",  new HashMap<>());
     }
-    
+
+    @Override
+    protected Class<?> getResourceClass(String id, String... path) {
+        return JsonBundleConfig.class;
+    }
+
     @Validate
     public void start() {
         //coi.reconfigure();

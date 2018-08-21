@@ -7,9 +7,6 @@
  */
 package de.ii.xtraplatform.entity.api.handler;
 
-import org.apache.felix.ipojo.annotations.HandlerDeclaration;
-import org.apache.felix.ipojo.annotations.Stereotype;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
@@ -19,5 +16,6 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 public @interface Entity {
+    Class<?> entityType();
     Class<?> dataType();
 }

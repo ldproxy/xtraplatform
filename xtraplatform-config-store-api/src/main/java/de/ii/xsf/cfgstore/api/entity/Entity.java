@@ -5,13 +5,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.jackson.dynamic;
+package de.ii.xsf.cfgstore.api.entity;
 
-import java.util.Map;
+import de.ii.xsf.core.api.Resource;
 
 /**
  * @author zahnen
  */
-public interface JacksonSubTypeIds {
-    Map<Class<?>, String> getMapping();
+public interface Entity<T extends EntityConfiguration> extends Resource {
+    //TODO protected
+    T getData();
 }

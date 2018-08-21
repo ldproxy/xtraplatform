@@ -1,8 +1,8 @@
-version = '1.1.1'
+version = '1.1.2'
 //version += '-SNAPSHOT'
 
 ext {
-    swaggerVersion='2.0.0-rc2'
+    swaggerVersion='2.0.3'
 }
 /*configurations {
     embedded {
@@ -18,11 +18,13 @@ dependencies {
 
     }*/
 
-    embedded group: 'io.swagger', name: 'swagger-jaxrs2', version: swaggerVersion
-    embedded group: 'io.swagger', name: 'swagger-models', version: swaggerVersion
-    embedded group: 'io.swagger', name: 'swagger-annotations', version: swaggerVersion
-    embedded group: 'io.swagger', name: 'swagger-integration', version: swaggerVersion
-    embedded group: 'io.swagger', name: 'swagger-core', version: swaggerVersion
+    embedded (group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: swaggerVersion) {
+        exclude module: 'jersey-server'
+    }
+    embedded group: 'io.swagger.core.v3', name: 'swagger-models', version: swaggerVersion
+    embedded group: 'io.swagger.core.v3', name: 'swagger-annotations', version: swaggerVersion
+    embedded group: 'io.swagger.core.v3', name: 'swagger-integration', version: swaggerVersion
+    embedded group: 'io.swagger.core.v3', name: 'swagger-core', version: swaggerVersion
     embedded 'org.reflections:reflections:0.9.11'
 
     provided project(':xtraplatform-web-rest')

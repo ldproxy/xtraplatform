@@ -13,15 +13,15 @@ import de.ii.xtraplatform.entity.api.EntityData;
 /**
  * @author zahnen
  */
-public abstract class AbstractService extends AbstractPersistentEntity<ImmutableServiceData> {
+public abstract class AbstractService<T extends ServiceData> extends AbstractPersistentEntity<T> implements Service {
 
     @Override
     protected boolean shouldRegister() {
         return getData() != null && getData().getShouldStart();
     }
 
-    @Override
+    /*@Override
     protected ImmutableServiceData dataToImmutable(EntityData data) {
         return ImmutableServiceData.copyOf((ServiceData) data);
-    }
+    }*/
 }

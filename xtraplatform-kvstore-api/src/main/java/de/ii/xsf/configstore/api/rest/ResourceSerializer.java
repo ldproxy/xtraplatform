@@ -12,6 +12,7 @@ import de.ii.xsf.core.api.Resource;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Optional;
 
 /**
  *
@@ -21,6 +22,9 @@ public interface ResourceSerializer<T extends Resource> {
 
     T deserialize(T resource, Reader reader) throws IOException;
 
+    T deserialize(String id, Class<?> clazz, Reader reader) throws IOException;
+
+
     ObjectNode deserializeMerge(Reader reader) throws IOException;
 
     String serializeAdd(T resource) throws IOException;
@@ -28,4 +32,16 @@ public interface ResourceSerializer<T extends Resource> {
     String serializeUpdate(T resource) throws IOException;
 
     String serializeMerge(T resource) throws IOException;
+
+    default Optional<T> deserializePartial(Class<?> clazz, Reader reader) throws IOException {
+        return Optional.empty();
+    }
+
+    default T mergePartial(T resource, String partial) throws IOException {
+        return null;
+    }
+
+    default T mergePartial(T resource, Reader reader) throws IOException {
+        return null;
+    }
 }

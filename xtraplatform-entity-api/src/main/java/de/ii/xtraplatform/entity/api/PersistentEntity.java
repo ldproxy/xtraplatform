@@ -9,5 +9,7 @@ public interface PersistentEntity {
         return getData() != null ? getData().getId() : null;
     }
 
+    String getType();
+
     EntityData getData();
 }

@@ -2,6 +2,7 @@ package de.ii.xtraplatform.entity.api;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * id maybe TYPE/ORG/ID, in that case a multitenant middleware would handle splitting into path and id
@@ -13,19 +14,27 @@ public interface EntityRepository {
     String ID_SEPARATOR = "/";
 
 
-    List<String> getEntityIds();
+    List<String> getEntityTypes();
 
-    boolean hasEntity(String id);
+    List<String> getEntityIds(String... path);
 
-    AbstractEntityData getEntityData(String id);
+    boolean hasEntity(String id, String... path);
+
+    AbstractEntityData getEntityData(String id, String... path);
 
     AbstractEntityData createEntity(AbstractEntityData data, String... path) throws IOException;
 
+    AbstractEntityData generateEntity(Map<String, Object> data, String... path) throws IOException;
+
     AbstractEntityData replaceEntity(AbstractEntityData data) throws IOException;
 
-    AbstractEntityData updateEntity(AbstractEntityData partialData) throws IOException;
+    AbstractEntityData updateEntity(AbstractEntityData partialData, String... path) throws IOException;
+
+    AbstractEntityData updateEntity(String id, String partialData, String... path) throws IOException;
 
     void deleteEntity(String id) throws IOException;
 
     void addChangeListener(EntityRepositoryChangeListener listener);
+
+    void addEntityType(String entityType, String dataType);
 }

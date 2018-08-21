@@ -1,6 +1,6 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -28,7 +28,7 @@ import org.apache.felix.ipojo.annotations.StaticServiceProperty;
  */
 @Component
 @Provides(properties = {@StaticServiceProperty(name = "type", type = "java.lang.String", value = "auth"),
-@StaticServiceProperty(name = "ranking", type = "int", value = "1")})
+        @StaticServiceProperty(name = "ranking", type = "int", value = "1")})
 @Instantiate
 public class ExternalBearerAuthProvider implements AuthProvider<User> {
 
@@ -46,15 +46,27 @@ public class ExternalBearerAuthProvider implements AuthProvider<User> {
         TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig, akkaHttp);
 
         CachingAuthenticator<String, User> cachingAuthenticator = new CachingAuthenticator<String, User>(
-                dropwizard.getEnvironment().metrics(), tokenAuthenticator,
+                dropwizard.getEnvironment()
+                          .metrics(), tokenAuthenticator,
                 CacheBuilderSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
 
-        return new AuthDynamicFeature(
-                new OAuthCredentialAuthFilter.Builder<User>()
-                        .setAuthenticator(cachingAuthenticator)
-                        .setAuthorizer(new UserAuthorizer())
-                        .setPrefix("Bearer")
-                        .buildAuthFilter());
+        //TODO OAuthEdaAuthFIlter extends OAuthCredentialAuthFilter
+        // override filter, get stuff from ContainerRequestContext
+
+        OAuthCredentialAuthFilter<User> authFilter = new OAuthCredentialAuthFilter.Builder<User>()
+                .setAuthenticator(cachingAuthenticator)
+                .setAuthorizer(new UserAuthorizer())
+                .setPrefix("Bearer")
+                .buildAuthFilter();
+
+        if (!authConfig.getExternalDynamicAuthorizationEndpoint()
+                       .isEmpty()) {
+            return new AuthDynamicFeature(
+                    new ExternalDynamicAuthFilter<>(authConfig.getExternalDynamicAuthorizationEndpoint(), authConfig.getPostProcessingEndpoint(), akkaHttp, authFilter)
+            );
+        }
+
+        return new AuthDynamicFeature(authFilter);
     }
 
     @Override

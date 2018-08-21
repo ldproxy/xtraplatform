@@ -22,7 +22,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'java'
 
 version = '1.2.0'
-version += '-SNAPSHOT'
+//version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
 
@@ -39,21 +39,26 @@ configurations {
     bundles {
         transitive = false
     }
+    testBundles {
+        transitive = false
+    }
     features
 }
 
 dependencies {
-    bundles subprojects.findAll { it.name != 'xtraplatform-dropwizard' }
-    bundles 'com.fasterxml.jackson.module:jackson-module-afterburner:2.9.5'
-    bundles 'com.fasterxml.jackson.core:jackson-core:2.9.5'
-    bundles 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
-    bundles 'com.fasterxml.jackson.core:jackson-annotations:2.9.5'
-    bundles 'com.google.guava:guava:23.5-jre'
-    bundles 'com.google.code.findbugs:jsr305:3.0.2'
-    bundles group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
-    bundles group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-    bundles group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'
-    bundles 'org.ow2.chameleon.testing:osgi-helpers:0.6.2'
+    bundles subprojects.findAll { it.name != 'xtraplatform-dropwizard' && !it.name.endsWith("-test") }
+
+    testBundles 'com.fasterxml.jackson.module:jackson-module-afterburner:2.9.5'
+    testBundles 'com.fasterxml.jackson.core:jackson-core:2.9.5'
+    testBundles 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
+    testBundles 'com.fasterxml.jackson.core:jackson-annotations:2.9.5'
+    testBundles 'com.google.guava:guava:23.5-jre'
+    testBundles 'com.google.code.findbugs:jsr305:3.0.2'
+    testBundles group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    testBundles group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    testBundles group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'
+    testBundles 'org.ow2.chameleon.testing:osgi-helpers:0.6.2'
+    testBundles subprojects.findAll { it.name != 'xtraplatform-dropwizard' && it.name.endsWith("-test") }
 
     features group: 'de.interactive_instruments', name: 'xtraplatform-bundles-runtime', version: '1.1.4-SNAPSHOT'
 
@@ -104,6 +109,9 @@ task generateDependsFile {
 
         // then for all our deps
         project.configurations.bundles.resolvedConfiguration.resolvedArtifacts.each {
+            files += "${it.file.toURI().toString()},"
+        }
+        project.configurations.testBundles.resolvedConfiguration.resolvedArtifacts.each {
             files += "${it.file.toURI().toString()},"
         }
         project.configurations.features.resolvedConfiguration.resolvedArtifacts.each {

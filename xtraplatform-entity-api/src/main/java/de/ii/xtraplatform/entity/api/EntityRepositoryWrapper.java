@@ -1,9 +1,8 @@
 package de.ii.xtraplatform.entity.api;
 
-import com.google.common.collect.ObjectArrays;
-
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author zahnen
@@ -32,20 +31,24 @@ public abstract class EntityRepositoryWrapper implements EntityRepository {
         return path;
     }
 
-
     @Override
-    public List<String> getEntityIds() {
-        return transformIds(entityRepository.getEntityIds());
+    public List<String> getEntityTypes() {
+        return entityRepository.getEntityTypes();
     }
 
     @Override
-    public boolean hasEntity(String id) {
-        return entityRepository.hasEntity(transformId(id));
+    public List<String> getEntityIds(String... path) {
+        return entityRepository.getEntityIds(transformPath(null, path));
     }
 
     @Override
-    public AbstractEntityData getEntityData(String id) {
-        return entityRepository.getEntityData(transformId(id));
+    public boolean hasEntity(String id, String... path) {
+        return entityRepository.hasEntity(id, transformPath(id, path));
+    }
+
+    @Override
+    public AbstractEntityData getEntityData(String id, String... path) {
+        return entityRepository.getEntityData(id, transformPath(id, path));
     }
 
     @Override
@@ -54,13 +57,23 @@ public abstract class EntityRepositoryWrapper implements EntityRepository {
     }
 
     @Override
+    public AbstractEntityData generateEntity(Map<String, Object> data, String... path) throws IOException {
+        return entityRepository.generateEntity(data, transformPath((String) data.get("id"), path));
+    }
+
+    @Override
     public AbstractEntityData replaceEntity(AbstractEntityData data) throws IOException {
         return entityRepository.replaceEntity(transformData(data));
     }
 
     @Override
-    public AbstractEntityData updateEntity(AbstractEntityData partialData) throws IOException {
-        return entityRepository.updateEntity(transformData(partialData));
+    public AbstractEntityData updateEntity(AbstractEntityData partialData, String... path) throws IOException {
+        return entityRepository.updateEntity(transformData(partialData), transformPath(partialData.getId(), path));
+    }
+
+    @Override
+    public AbstractEntityData updateEntity(String id, String partialData, String... path) throws IOException {
+        return entityRepository.updateEntity(id, partialData, transformPath(id, path));
     }
 
     @Override
@@ -71,5 +84,10 @@ public abstract class EntityRepositoryWrapper implements EntityRepository {
     @Override
     public void addChangeListener(EntityRepositoryChangeListener listener) {
         entityRepository.addChangeListener(listener);
+    }
+
+    @Override
+    public void addEntityType(String entityType, String dataType) {
+        entityRepository.addEntityType(entityType, dataType);
     }
 }

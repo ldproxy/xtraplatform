@@ -1,5 +1,5 @@
 version = '1.0.0'
-version += '-SNAPSHOT'
+//version += '-SNAPSHOT'
 
 dependencies {
     provided project(':xtraplatform-entity-api')

@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.service.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.entity.api.AbstractEntityData;
 import org.immutables.value.Value;
@@ -17,11 +18,11 @@ import java.util.Optional;
 /**
  * @author zahnen
  */
-@Value.Immutable
-@Value.Modifiable
-@Value.Style(deepImmutablesDetection = true)
+//@Value.Immutable
+//@Value.Modifiable
+//@Value.Style(deepImmutablesDetection = true)
 //@JsonSerialize(as = ImmutableServiceData.class)
-@JsonDeserialize(as = ModifiableServiceData.class)
+//@JsonDeserialize(as = ModifiableServiceData.class)
 public abstract class ServiceData extends AbstractEntityData {
 
     public abstract String getServiceType();
@@ -37,5 +38,14 @@ public abstract class ServiceData extends AbstractEntityData {
 
     public abstract List<Notification> getNotifications();
 
-    public abstract FeatureProviderExample getFeatureProviderData();
+    @Value.Default
+    public boolean getSecured() {
+        return false;
+    }
+
+    @JsonIgnore
+    @Value.Derived
+    public boolean isSecured() {
+        return getSecured();
+    }
 }

@@ -5,10 +5,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xsf.core.api.rest;
+package de.ii.xtraplatform.service.api;
 
-import de.ii.xsf.core.api.Service;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
+import de.ii.xtraplatform.entity.api.EntityRepository;
+import de.ii.xtraplatform.entity.api.EntityRepositoryForType;
 import io.dropwizard.views.ViewRenderer;
 
 /**
@@ -22,7 +24,7 @@ public interface ServiceResource {
 
     public void setService(Service service);
     
-    public void init(AuthorizationProvider permProvider);
+    public void init(ObjectMapper defaultObjectMapper, EntityRepository entityRepository, AuthorizationProvider permProvider);
 
     void setMustacheRenderer(ViewRenderer mustacheRenderer);
 }

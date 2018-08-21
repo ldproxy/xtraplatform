@@ -5,9 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xsf.core.api.rest;
+package de.ii.xtraplatform.service.api;
 
-import de.ii.xsf.core.api.Service;
 import io.dropwizard.views.View;
 
 import javax.ws.rs.core.Response;

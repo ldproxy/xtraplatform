@@ -5,4 +5,22 @@ dependencies {
     provided project(':xtraplatform-auth-api')
     provided project(':xtraplatform-config-store-api')
     provided project(':xtraplatform-akka-http')
-}  
+
+    embedded (group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1') {
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
+    }
+}
+
+jar {
+    manifest {
+        instruction 'Embed-Dependency',
+                'jjwt'
+        instruction 'Embed-Transitive', 'true'
+        instruction 'Embed-Export', 'false'
+        instruction 'Embed-Import', 'false'
+
+        instructionFirst 'Import-Package', 'javax.xml.bind'
+        instructionFirst 'Import-Package', 'javax.crypto'
+        instructionFirst 'Import-Package', 'javax.crypto.spec'
+    }
+}

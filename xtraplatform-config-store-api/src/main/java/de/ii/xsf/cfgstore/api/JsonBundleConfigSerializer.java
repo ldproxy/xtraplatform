@@ -44,6 +44,15 @@ public class JsonBundleConfigSerializer extends GenericResourceSerializer<JsonBu
     }
 
     @Override
+    public JsonBundleConfig deserialize(String id, Class<?> clazz, Reader reader) throws IOException {
+        final Map<String,String> values = jsonMapper.readValue(reader, new TypeReference<LinkedHashMap<String,String>>(){});
+
+        LOGGER.debug("LOCALBUNDLECONFIGSTORE deserialize: {}", id);
+
+        return new JsonBundleConfig(id, values);
+    }
+
+    @Override
     public ObjectNode deserializeMerge(Reader reader) throws IOException {
         ObjectNode object = super.deserializeMerge(reader);
 

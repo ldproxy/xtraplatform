@@ -213,12 +213,12 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
                 for (Object filter : filterCache) {
                     if (filter instanceof ContainerRequestFilter) {
                         // TODO: verify
-                        jersey.register(filter.getClass());
+                        jersey.register(filter);
                         //jersey.getResourceConfig().register() .getContainerRequestFilters().add(filter.getClass());
                         LOGGER.debug("Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
                     } else if (filter instanceof ContainerResponseFilter) {
                         // TODO: verify
-                        jersey.register(filter.getClass());
+                        jersey.register(filter);
                         //jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
                         LOGGER.debug("Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
                     }

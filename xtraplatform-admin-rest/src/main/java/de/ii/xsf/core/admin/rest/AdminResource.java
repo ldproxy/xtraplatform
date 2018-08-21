@@ -8,11 +8,9 @@
 package de.ii.xsf.core.admin.rest;
 
 import de.ii.xsf.cfgstore.api.LocalBundleConfigStore;
-import de.ii.xsf.core.api.AbstractService;
 import de.ii.xsf.core.api.MediaTypeCharset;
 import de.ii.xsf.core.api.Module;
 import de.ii.xsf.core.api.ModulesRegistry;
-import de.ii.xsf.core.api.Service;
 import de.ii.xsf.core.api.ServiceRegistry;
 import de.ii.xsf.core.api.exceptions.ResourceNotFound;
 import de.ii.xsf.core.api.permission.Auth;
@@ -20,11 +18,15 @@ import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
 import de.ii.xsf.core.api.rest.AdminModuleResource;
 import de.ii.xsf.core.api.rest.AdminModuleResourceFactory;
-import de.ii.xsf.core.api.rest.AdminServiceResource;
-import de.ii.xsf.core.api.rest.AdminServiceResourceFactory;
 import de.ii.xsf.core.api.rest.ModuleResource;
-import de.ii.xsf.core.api.rest.ServiceResource;
 import de.ii.xsf.dropwizard.api.Jackson;
+import de.ii.xtraplatform.entity.api.EntityRegistry;
+import de.ii.xtraplatform.entity.api.EntityRepository;
+import de.ii.xtraplatform.entity.api.EntityRepositoryForType;
+import de.ii.xtraplatform.service.api.AdminServiceResource;
+import de.ii.xtraplatform.service.api.AdminServiceResourceFactory;
+import de.ii.xtraplatform.service.api.Service;
+import de.ii.xtraplatform.service.api.ServiceResource;
 import io.dropwizard.jersey.caching.CacheControl;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -39,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotAcceptableException;
@@ -51,13 +54,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -68,7 +71,7 @@ import java.util.Set;
 @Instantiate
 @Whiteboards(whiteboards = {
     @Wbp(
-            filter = "(objectClass=de.ii.xsf.core.api.rest.AdminServiceResourceFactory)",
+            filter = "(objectClass=de.ii.xtraplatform.service.api.AdminServiceResourceFactory)",
             onArrival = "onServiceResourceArrival",
             onDeparture = "onServiceResourceDeparture"),
     @Wbp(
@@ -92,6 +95,13 @@ public class AdminResource {
     // TODO
     @Requires(optional = true)
     private AuthorizationProvider permissions;
+
+    @Requires
+    private EntityRegistry entityRegistry;
+    @Requires
+    private EntityRepository entityRepository;
+
+
 
     private String xsfVersion = "todo";
 
@@ -151,21 +161,10 @@ public class AdminResource {
     @GET
     @CacheControl(noCache = true)
     public List getAdminServices(@Auth AuthenticatedUser authUser) {
-        List<String> resources = new ArrayList<String>();
-
-        List<AbstractService> srvs = new ArrayList<AbstractService>();
-
-        for (Service s : serviceRegistry.getServices(authUser)) {
-            srvs.add((AbstractService) s);
-        }
-
-        Collections.sort(srvs);
-
-        for (AbstractService s : srvs) {
-            resources.add(s.getId());
-        }
-
-        return resources;
+        return entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE)
+                      .stream()
+                      .map(Service::getId)
+                      .collect(Collectors.toList());
     }
 
     @Path("/modules")
@@ -209,11 +208,15 @@ public class AdminResource {
     @Path("/services")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response addService(/*@Auth(minRole = Role.PUBLISHER) AuthenticatedUser authUser,*/ Map<String, String> request) {
+    public Response addService(/*@Auth(minRole = Role.PUBLISHER) AuthenticatedUser authUser,*/ Map<String, Object> request) {
         try {
-            MDC.put("service", request.get("id"));
-            serviceRegistry.addService(/*authUser*/new AuthenticatedUser(), request.get("type"), request.get("id"), request);
+            MDC.put("service", (String) request.get("id"));
+            new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE).generateEntity(request);
+            //serviceRegistry.addService(/*authUser*/new AuthenticatedUser(), request.get("type"), request.get("id"), request);
             return Response.ok().build();
+        } catch (IOException e) {
+            LOGGER.error("Error adding service", e);
+            throw new BadRequestException();
         } finally {
             MDC.remove("service");
         }
@@ -222,13 +225,14 @@ public class AdminResource {
     @Path("/services/{id}")
     public ServiceResource getAdminService(/*@Auth AuthenticatedUser authUser,*/ @PathParam("id") String id) {
 
-        Service s = serviceRegistry.getService(/*authUser*/new AuthenticatedUser(), id);
+        //Service s = serviceRegistry.getService(/*authUser*/new AuthenticatedUser(), id);
+        Optional<Service> service = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, id);
 
-        if (s == null) {
+        if (!service.isPresent()) {
             throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale())*/);
         }
 
-        ServiceResource sr = getAdminServiceResource(s);
+        ServiceResource sr = getAdminServiceResource(service.get());
 
         return sr;
     }
@@ -275,14 +279,14 @@ public class AdminResource {
     // TODO: cache resource object per service
     private AdminServiceResource getAdminServiceResource(Service s) {
 
-        AdminServiceResourceFactory factory = serviceResourceFactories.get(s.getType());
+        AdminServiceResourceFactory factory = serviceResourceFactories.get(s.getServiceType());
         if (factory == null) {
             throw new ResourceNotFound();
         }
 
         AdminServiceResource sr = factory.getAdminServiceResource();//(AdminServiceResource) rc.getResource(factory.getAdminServiceResourceClass());
         sr.setService(s);
-        sr.init(jackson.getDefaultObjectMapper(), serviceRegistry, permissions);
+        sr.init(jackson.getDefaultObjectMapper(), new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE), permissions);
 
         return sr;
     }

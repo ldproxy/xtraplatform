@@ -9,10 +9,9 @@ import de.ii.xtraplatform.entity.api.EntityRepository;
 import de.ii.xtraplatform.entity.api.EntityRepositoryForType;
 import de.ii.xtraplatform.entity.api.PersistentEntity;
 import de.ii.xtraplatform.entity.repository.EntityInstantiator;
-import de.ii.xtraplatform.entity.repository.ServiceTest;
-import de.ii.xtraplatform.service.api.ImmutableFeatureProviderExample;
-import de.ii.xtraplatform.service.api.ImmutableServiceData;
-import org.apache.felix.ipojo.ComponentInstance;
+import de.ii.xtraplatform.service.test.ImmutableFeatureProviderExample;
+import de.ii.xtraplatform.service.test.ImmutableServiceTestData;
+import de.ii.xtraplatform.service.test.ServiceTest;
 import org.apache.felix.ipojo.Factory;
 import org.junit.After;
 import org.junit.Before;
@@ -38,11 +37,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 
@@ -58,8 +54,11 @@ public class TestEntityRepository {
             .add("xtraplatform-api")
             .add("xtraplatform-kvstore-api")
             .add("xtraplatform-kvstore-inmemory")
-            //.add("xtraplatform-config-store-api")
+             .add("xtraplatform-config-store-api")
             .add("xtraplatform-dropwizard")
+            .add("xtraplatform-service-test")
+            .add("xtraplatform-server")
+            .add("xtraplatform-sessions-api")
             .build();
 
     @Inject
@@ -98,7 +97,7 @@ public class TestEntityRepository {
         ;
 
         // for dropwizard
-        defaultCompositeOption.add(CoreOptions.systemPackages("sun.reflect", "sun.misc"));
+        defaultCompositeOption.add(CoreOptions.systemPackages("sun.reflect", "sun.misc", "org.apache.felix.main", "org.apache.felix.framework"));
         defaultCompositeOption.add(CoreOptions.frameworkProperty("de.ii.xtraplatform.directories.data").value("src/test/resources"));
 
         return defaultCompositeOption.getOptions();
@@ -146,7 +145,7 @@ LOGGER.debug("REPO {}", entityRepository);
         createEntity("bar", false);
 
         //TODO instance is either in registry or in factory, but not both
-        osgi.waitForService(PersistentEntity.class.getName(), null, 1000, false);
+        osgi.waitForService(PersistentEntity.class.getName(), null, 1000, true);
 
         Factory factory = ipojo.getFactory(ServiceTest.class.getName());
         LOGGER.debug("INSTANCES {} {} {}", factory.getInstancesNames(), factory.getComponentDescription()
@@ -165,24 +164,37 @@ LOGGER.debug("REPO {}", entityRepository);
 
 
         //assertEquals("It's so hot!", entityInstantiator.getResult());
+
+
+        /*executorService.schedule(() -> {
+            try {
+                entityStore.replaceEntity(ImmutableServiceData.builder().id("foo").label("Foobar").build());
+
+                LOGGER.debug("REPLACED");
+                // TODO: not replaced yet, so how to return data on update? by really returning the data from replaceEntity and not the entity itself?
+                // TODO: another point: retracting the instances for updates will not work in every case as state is lost
+            } catch (IOException e) {
+                //ignore
+            }
+        }, 5, TimeUnit.SECONDS);*/
     }
 
     private void createEntity(String id, boolean shouldStart) {
         try {
-            new EntityRepositoryForType(entityRepository, ServiceTest.class.getName()).createEntity(ImmutableServiceData.builder()
-                                                                                                                        .id(id)
-                                                                                                                        .label(id.toUpperCase())
-                                                                                                                        .createdAt(Instant.now()
+            new EntityRepositoryForType(entityRepository, ServiceTest.class.getName()).createEntity(ImmutableServiceTestData.builder()
+                                                                                                                            .id(id)
+                                                                                                                            .label(id.toUpperCase())
+                                                                                                                            .createdAt(Instant.now()
                                                                                                                                           .toEpochMilli())
-                                                                                                                        .lastModified(Instant.now()
+                                                                                                                            .lastModified(Instant.now()
                                                                                                                                              .toEpochMilli())
-                                                                                                                        .serviceType("WFS3")
-                                                                                                                        .featureProviderData(ImmutableFeatureProviderExample.builder()
-                                                                                                                                                                            .useBasicAuth(false)
-                                                                                                                                                                            .build())
-                                                                                                                        // REGISTRATION
-                                                                                                                        .shouldStart(shouldStart)
-                                                                                                                        .build());
+                                                                                                                            .serviceType("WFS3")
+                                                                                                                            .featureProviderData(ImmutableFeatureProviderExample.builder()
+                                                                                                                                                                                .useBasicAuth(false)
+                                                                                                                                                                                .build())
+                                                                                                                            // REGISTRATION
+                                                                                                                            .shouldStart(shouldStart)
+                                                                                                                            .build());
         } catch (IOException e) {
             LOGGER.debug("CREATE ERROR", e);
         }

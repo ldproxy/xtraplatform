@@ -1,7 +1,6 @@
-package de.ii.xtraplatform.service.api;
+package de.ii.xtraplatform.service.test;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 import java.util.Optional;

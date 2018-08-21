@@ -13,7 +13,7 @@ package de.ii.xtraplatform.auth.api;
 public interface AuthConfig {
     boolean isJwt();
 
-    String getJwtValidationUrl();
+    String getJwtSigningKey();
 
     String getUserInfoUrl();
 
@@ -24,4 +24,8 @@ public interface AuthConfig {
     String getUserNameKey();
 
     String getUserRoleKey();
+
+    String getExternalDynamicAuthorizationEndpoint();
+
+    String getPostProcessingEndpoint();
 }

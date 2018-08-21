@@ -14,12 +14,11 @@ package de.ii.xtraplatform.openapi;
 
 
 import io.dropwizard.jersey.caching.CacheControl;
-import io.swagger.oas.annotations.Operation;
-import io.swagger.oas.annotations.Parameter;
-import io.swagger.oas.annotations.enums.Explode;
-import io.swagger.oas.annotations.media.Content;
-import io.swagger.oas.annotations.media.Schema;
-import io.swagger.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;

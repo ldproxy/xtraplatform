@@ -61,6 +61,11 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         }
         String dataType = bundleConfigElements[0].getAttribute("dataType");
 
+        if (bundleConfigElements == null || bundleConfigElements.length == 0 || !bundleConfigElements[0].containsAttribute("entityType")) {
+            throw new IllegalStateException("EntityType not set for Entity");
+        }
+        String entityType = bundleConfigElements[0].getAttribute("entityType");
+
         // add @ServiceController for field register in class AbstractPersistentEntity
         Element[] providedServices = metadata.getElements("Provides");
         if (providedServices == null || providedServices.length == 0) {
@@ -101,6 +106,7 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         LOGGER.debug("HANDLERS {} {}", typeDesc.getFactory().getRequiredHandlers(), Arrays.stream(metadata.getElements()).map(e -> e.getName()).collect(Collectors.toList()));
 
         typeDesc.addProperty(new PropertyDescription("data", dataType, null));
+        typeDesc.addProperty(new PropertyDescription("type", String.class.getName(), entityType.substring(entityType.lastIndexOf(".")+1).toLowerCase()+"s"));
     }
 
     @Override

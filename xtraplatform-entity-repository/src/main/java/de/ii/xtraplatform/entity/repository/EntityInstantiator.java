@@ -2,10 +2,7 @@ package de.ii.xtraplatform.entity.repository;
 
 import de.ii.xtraplatform.entity.api.AbstractEntityData;
 import de.ii.xtraplatform.entity.api.EntityRepository;
-import de.ii.xtraplatform.entity.api.EntityRepositoryChangeListener;
-import de.ii.xtraplatform.service.api.ImmutableServiceData;
-import de.ii.xtraplatform.service.api.ModifiableServiceData;
-import de.ii.xtraplatform.service.api.ServiceData;
+import de.ii.xtraplatform.entity.api.EntityRepositoryForType;
 import org.apache.felix.ipojo.Factory;
 import org.apache.felix.ipojo.MissingHandlerException;
 import org.apache.felix.ipojo.UnacceptableConfiguration;
@@ -31,6 +28,9 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author zahnen
@@ -53,15 +53,22 @@ public class EntityInstantiator {
     @Requires
     private DeclarationBuilderService declarationBuilderService;
 
+    //@Requires
+    //JacksonSubTypeIds[] jacksonSubTypeIds;
+
+    ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1);
+
     private final EntityRepository entityRepository;
     private final Map<String, DeclarationHandle> instanceHandles;
     private final Map<String, Factory> componentFactories;
+    private final Map<String, String> entityClasses;
     private final Map<String, String> entityTypes;
     private final Map<String, AbstractEntityData> entityBuffer;
 
     public EntityInstantiator(@Requires EntityRepository entityRepository) {
         this.instanceHandles = new LinkedHashMap<>();
         this.componentFactories = new LinkedHashMap<>();
+        this.entityClasses = new LinkedHashMap<>();
         this.entityTypes = new LinkedHashMap<>();
         this.entityBuffer = new LinkedHashMap<>();
         this.entityRepository = entityRepository;
@@ -73,20 +80,32 @@ public class EntityInstantiator {
     }
 
     private synchronized void onFactoryArrival(ServiceReference<Factory> ref) {
-        Optional<String> entityType = Optional.ofNullable((String)ref.getProperty("component.class"));
-        Optional<String> entityDataType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
-                                            .filter(pd -> pd.getName().equals("data"))
-                                            .map(PropertyDescription::getType)
+        Optional<String> entityClass = Optional.ofNullable((String)ref.getProperty("component.class"));
+        Optional<String> entityType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
+                                            .filter(pd -> pd.getName().equals("type"))
+                                            .map(PropertyDescription::getValue)
                                             .findFirst();
+        Optional<String> entityDataType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
+                                                .filter(pd -> pd.getName().equals("data"))
+                                                .map(PropertyDescription::getType)
+                                                .findFirst();
+        Optional<String> entityDataGenerators = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
+                                                .filter(pd -> pd.getName().equals("generators"))
+                                                .map(PropertyDescription::getType)
+                                                .findFirst();
 
-        if (entityType.isPresent() && entityDataType.isPresent()) {
+        if (entityClass.isPresent() && entityDataType.isPresent() && entityType.isPresent()) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("ENTITY FACTORY {} {}", entityDataType.get(), entityType.get());
+                LOGGER.debug("ENTITY FACTORY {} {} {}", entityDataType.get(), entityClass.get(), entityType.get());
             }
             this.componentFactories.put(entityDataType.get(), context.getService(ref));
+            this.entityClasses.put(entityDataType.get(), entityClass.get());
             this.entityTypes.put(entityDataType.get(), entityType.get());
 
-            initInstances(entityType.get());
+            entityRepository.addEntityType(entityType.get(), entityDataType.get());
+
+            //LOGGER.debug("JACKSON SUBTYPES {}", jacksonSubTypeIds);
+            executorService.schedule(() -> initInstances(entityType.get(), entityClass.get()), 5, TimeUnit.SECONDS);
         }
 
 
@@ -104,20 +123,24 @@ public class EntityInstantiator {
                 LOGGER.debug("REMOVE ENTITY FACTORY {} {}", entityDataType.get(), entityType.get());
             }
             this.componentFactories.remove(entityDataType.get());
-            this.entityTypes.remove(entityDataType.get());
+            this.entityClasses.remove(entityDataType.get());
 
             clearInstances(entityType.get());
         }
     }
 
-    private Optional<String> getEntityType(AbstractEntityData data) {
-        return Optional.ofNullable(entityTypes.get(data.getClass().getName().replace(".Immutable", ".")));
+    private Optional<String> getEntityClass(AbstractEntityData data) {
+        return Optional.ofNullable(entityClasses.get(getEntityDataType(data)));
+    }
+
+    private String getEntityDataType(AbstractEntityData data) {
+        return data.getClass().getName().replace(".Immutable", ".").replace(".Modifiable", ".");
     }
 
     @Subscriber(name = "create", topics = "create", dataKey = "data", dataType = "de.ii.xtraplatform.entity.api.AbstractEntityData")
     public void onEntityCreate(AbstractEntityData data) {
-        LOGGER.debug("TYPES {} {}", entityTypes, data.getClass().getName().replace(".Immutable", "."));
-        Optional<String> entityType = getEntityType(data);
+        LOGGER.debug("TYPES {} {}", entityClasses, data.getClass().getName().replace(".Immutable", "."));
+        Optional<String> entityType = getEntityClass(data);
         if (entityType.isPresent()) {
             createInstance(entityType.get(), data.getId(), data);
         } else {
@@ -127,7 +150,7 @@ public class EntityInstantiator {
 
     @Subscriber(name = "update", topics = "update", dataKey = "data", dataType = "de.ii.xtraplatform.entity.api.AbstractEntityData")
     public void onEntityUpdate(AbstractEntityData data) {
-        updateInstance(getEntityType(data).get(), data.getId(), data);
+        updateInstance(getEntityDataType(data), data.getId(), data);
     }
 
     @Subscriber(name = "delete", topics = "delete", dataKey = "data", dataType = "java.lang.String")
@@ -135,11 +158,12 @@ public class EntityInstantiator {
         deleteInstance(id);
     }
 
-    private void initInstances(String type) {
-        LOGGER.debug("INIT ENTITIES {} {}", type, entityRepository.getEntityIds());
+    private void initInstances(String type, String clazz) {
+        EntityRepositoryForType entityRepositoryForType = new EntityRepositoryForType(entityRepository, type);
+        LOGGER.debug("INIT ENTITIES {} {}", type, entityRepositoryForType.getEntityIds());
 
-        for (String id : entityRepository.getEntityIds()) {
-            createInstance(type, id, entityRepository.getEntityData(id));
+        for (String id : entityRepositoryForType.getEntityIds()) {
+            createInstance(clazz, id, entityRepositoryForType.getEntityData(id));
         }
     }
 
@@ -154,7 +178,7 @@ public class EntityInstantiator {
     }
 
     private void createInstance(String type, String id, AbstractEntityData data) {
-        LOGGER.debug("CREATE ENTITY {} {} {}", type, id, data);
+        LOGGER.debug("CREATE ENTITY {} {} {}", type, id/*, data*/);
 
         InstanceBuilder instanceBuilder = declarationBuilderService.newInstance(type);
 
@@ -162,7 +186,8 @@ public class EntityInstantiator {
         DeclarationHandle handle = instanceBuilder.name(type+ "/" + id)
                                                   .configure()
                                                   // simulate deserialization to Modifiable
-                                                  .property("data", ModifiableServiceData.create().from((ServiceData) data))
+                                                  //.property("data", ModifiableServiceData.create().from((ServiceData) data))
+                                                  .property("data", data)
                                                   .property("organization", "ORG")
                                                   .build();
 
@@ -172,18 +197,19 @@ public class EntityInstantiator {
     }
 
     private void updateInstance(String type, String id, AbstractEntityData data) {
-        LOGGER.debug("UPDATE ENTITY {} {} {}", type, id, data);
+        LOGGER.debug("UPDATE ENTITY {} {} {}", type, id/*, data*/);
 
         if (componentFactories.containsKey(type) && instanceHandles.containsKey(id)) {
             Dictionary<String, Object> configuration = new Hashtable<>();
-            configuration.put("instance.name", id);
+            configuration.put("instance.name", getEntityClass(data).get() + '/' + id);
             configuration.put("data", data);
 
             try {
                 componentFactories.get(type)
                                   .reconfigure(configuration);
-            } catch (UnacceptableConfiguration | MissingHandlerException unacceptableConfiguration) {
+            } catch (Throwable e) {
                 //ignore
+                LOGGER.error("ERROR UPDATING", e);
             }
         }
     }

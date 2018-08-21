@@ -1,6 +1,6 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -32,6 +33,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -112,15 +114,22 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     abstract protected T createEmptyResource(String id, String... path);
 
     protected String getPathString(String[] path) {
-        return Joiner.on('/').skipNulls().join(path);
+        return Joiner.on('/')
+                     .skipNulls()
+                     .join(path);
     }
 
     protected String getPathString(String[] path, String id) {
-        return Joiner.on('/').skipNulls().join(getPathString(path), id);
+        return Joiner.on('/')
+                     .skipNulls()
+                     .join(getPathString(path), id);
     }
 
     protected String[] getPathArray(String path) {
-        return Iterables.toArray(Splitter.on('/').omitEmptyStrings().trimResults().split(path), String.class);
+        return Iterables.toArray(Splitter.on('/')
+                                         .omitEmptyStrings()
+                                         .trimResults()
+                                         .split(path), String.class);
     }
 
     protected ReadWriteLock getResourceLock(String[] path, String id) {
@@ -172,7 +181,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     }
 
     protected void fillCache() {
-        for (String[] path: getAllPaths()) {
+        for (String[] path : getAllPaths()) {
             List<String> resourceIds = getResourceIds(path);
             if (fullCache) {
                 for (String id : resourceIds) {
@@ -193,7 +202,8 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     protected T getResource(String[] path, String id) {
         T resource = this.createEmptyResource(id, path);
 
-        getResourceLock(path, id).readLock().lock();
+        getResourceLock(path, id).readLock()
+                                 .lock();
         try {
             if (fullCache && getResourceCache(path).hasResource(id)) {
                 return getResourceCache(path).get(id);
@@ -210,7 +220,8 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
             // TODO ...
             LOGGER.error("Error deserializing resource with id {}", id, ex);
         } finally {
-            getResourceLock(path, id).readLock().unlock();
+            getResourceLock(path, id).readLock()
+                                     .unlock();
         }
 
         return resource;
@@ -219,20 +230,39 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     protected T readResource(String[] path, String id, T resource) throws IOException, KeyNotFoundException {
         Reader resourceReader = getResourceStore(path).getValueReader(id);
         LOGGER.debug("deserializing resource with id {}", id);
-        serializer.deserialize(resource, resourceReader);
+        resource = serializer.deserialize(id,/*resource*/ getResourceClass(id, path), resourceReader);
 
         try {
-            Reader customReader = getResourceStore(path).getChildStore(OVERRIDES_STORE_NAME).getValueReader(id);
-            deepUpdater.applyUpdate(resource, serializer.deserializeMerge(customReader));
+            Reader customReader = getResourceStore(path).getChildStore(OVERRIDES_STORE_NAME)
+                                                        .getValueReader(id);
+            //deepUpdater.applyUpdate(resource, serializer.deserializeMerge(customReader));
+            serializer.mergePartial(resource, customReader);
         } catch (KeyNotFoundException ex) {
             // no override when not found
         }
 
-        return resource;
+            return resource;
+    }
+
+    private Optional<T> readOverrideResource(String[] path, String id) throws IOException {
+        try {
+            Reader resourceReader = getResourceStore(path).getChildStore(OVERRIDES_STORE_NAME)
+                                                          .getValueReader(id);
+            LOGGER.debug("deserializing override resource with id {}", id);
+            return serializer.deserializePartial(getResourceClass(id, path), resourceReader);
+        } catch (KeyNotFoundException ex) {
+            // no override when not found
+        }
+
+        return Optional.empty();
     }
 
     protected void writeResource(String[] path, String resourceId, OPERATION operation) throws IOException {
         writeResource(path, resourceId, operation, null);
+    }
+
+    protected void writeResourceFromString(String[] path, String resourceId, OPERATION operation, String resource) throws IOException {
+        writeResource(path, resourceId, operation, serializer.deserializePartial(getResourceClass(resourceId, path), new StringReader(resource)).get());
     }
 
     protected void writeResource(String[] path, String resourceId, OPERATION operation, T resource) throws IOException {
@@ -242,22 +272,51 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
             if (operation == OPERATION.UPDATE_OVERRIDE) {
                 // create clone of resource to be updated (needed for cache rollbacks)
                 // TODO
-                T merged = getResource(path, resourceId);//deepUpdater.applyUpdate(createEmptyResource(), getResource(path, resourceId));
+                T merged;
+                Optional<T> override = readOverrideResource(path, resourceId);//deepUpdater.applyUpdate(createEmptyResource(), getResource(path, resourceId));
                 // merge changes to cloned object
-                merged = deepUpdater.applyUpdate(merged, serializer.serializeMerge(resource));
+                if (override.isPresent()) {
+                    //merged = deepUpdater.applyUpdate(merged, serializer.serializeMerge(resource));
+                    merged = serializer.mergePartial(override.get(), serializer.serializeUpdate(resource));
+                } else {
+                    merged = resource;
+                }
 
                 resourceTransaction.write(merged);
             } else {
-            resourceTransaction.write(resource);
-        }
+                resourceTransaction.write(resource);
+            }
         }
         executeTransaction(resourceTransaction);
     }
-    
+
+    protected void writeResourceOverride(String[] path, String resourceId, OPERATION operation, String resource) throws IOException {
+
+        if (resource != null) {
+            if (operation == OPERATION.UPDATE_OVERRIDE) {
+                ResourceTransaction<T> resourceTransaction = openTransaction(path, resourceId, operation);
+                // create clone of resource to be updated (needed for cache rollbacks)
+                // TODO
+                T merged;
+                Optional<T> override = readOverrideResource(path, resourceId);//deepUpdater.applyUpdate(createEmptyResource(), getResource(path, resourceId));
+                // merge changes to cloned object
+                if (override.isPresent()) {
+                    //merged = deepUpdater.applyUpdate(merged, serializer.serializeMerge(resource));
+                    merged = serializer.mergePartial(override.get(), resource);
+                } else {
+                    merged = serializer.deserializePartial(getResourceClass(resourceId, path), new StringReader(resource)).get();
+                }
+
+                resourceTransaction.write(merged);
+                executeTransaction(resourceTransaction);
+            }
+        }
+    }
+
     protected ResourceTransaction<T> openTransaction(String[] path, String resourceId, OPERATION operation) {
         return openTransaction(new ResourceTransaction<T>(path, resourceId, operation));
     }
-    
+
     // create all the sub-transactions that do the actual io
     protected ResourceTransaction<T> openTransaction(ResourceTransaction<T> resourceTransaction) {
         LOGGER.debug("OPEN RT {} {} {}", resourceTransaction.getPath(), resourceTransaction.getResourceId(), getResourceLock(resourceTransaction.getPath(), resourceTransaction.getResourceId()));
@@ -270,16 +329,18 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
         if (resourceTransaction.getOperation() != OPERATION.DELETE) {
             resourceTransaction.setEmptyResource(createEmptyResource(resourceTransaction.getResourceId(), resourceTransaction.getPath()));
         }
-        
+
         List<Transaction> storeTransactions = new ArrayList<>();
         switch (resourceTransaction.getOperation()) {
             case DELETE:
-                storeTransactions.add(getResourceStore(resourceTransaction.getPath()).getChildStore(OVERRIDES_STORE_NAME).openDeleteTransaction(resourceTransaction.getResourceId()));
+                storeTransactions.add(getResourceStore(resourceTransaction.getPath()).getChildStore(OVERRIDES_STORE_NAME)
+                                                                                     .openDeleteTransaction(resourceTransaction.getResourceId()));
             case DELETE_ALL:
                 storeTransactions.add(getResourceStore(resourceTransaction.getPath()).openDeleteTransaction(resourceTransaction.getResourceId()));
                 break;
             case UPDATE_OVERRIDE:
-                storeTransactions.add(getResourceStore(resourceTransaction.getPath()).getChildStore(OVERRIDES_STORE_NAME).openWriteTransaction(resourceTransaction.getResourceId()));
+                storeTransactions.add(getResourceStore(resourceTransaction.getPath()).getChildStore(OVERRIDES_STORE_NAME)
+                                                                                     .openWriteTransaction(resourceTransaction.getResourceId()));
                 break;
             case ADD:
             case UPDATE:
@@ -306,7 +367,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
 
         resourceTransaction.addTransactions(storeTransactions);
         resourceTransaction.addTransaction(cacheTransaction);
-        
+
         return resourceTransaction;
     }
 
@@ -314,13 +375,13 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
 
         try {
             resourceTransaction.execute();
-            
+
             LOGGER.debug("COMMIT SRT");
-            
+
             resourceTransaction.commit();
-            
+
             LOGGER.debug("COMMITTED SRT");
-            
+
         } catch (IOException | WriteError ex) {
             resourceTransaction.rollback();
 
@@ -329,7 +390,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
             resourceTransaction.close();
         }
     }
-    
+
     @Override
     public List<String> getResourceIds() {
         return getPathProxy(this, defaultPath).getResourceIds();
@@ -359,6 +420,8 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     public void updateResource(T resource) throws IOException {
         getPathProxy(this, defaultPath).updateResource(resource);
     }
+
+    protected abstract Class<?> getResourceClass(String id, String... path);
 
     @Override
     public void updateResourceOverrides(String id, T resource) throws IOException {
@@ -404,13 +467,15 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
 
     private U getPathProxy(final AbstractGenericResourceStore store, final String[] path) {
         //LOGGER.getLogger().debug("PROXY {} {}", path, proxies.size());
-        String p = Joiner.on('/').join(path);
+        String p = Joiner.on('/')
+                         .join(path);
         if (!proxies.containsKey(p)) {
             ProxyAdapter proxy = new ProxyAdapter(store, path);
             proxies.put(p, proxy);
         }
 
-        return (U) proxies.get(p).getProxy();
+        return (U) proxies.get(p)
+                          .getProxy();
     }
 
     private class ProxyAdapter implements ResourceStore<T> {
@@ -424,11 +489,13 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
             this.store = store;
             this.path = path;
             //Class[] interfaces = ObjectArrays.concat(store.getClass().getInterfaces(), ResourceStore.class);
-            Class[] interfaces = store.getClass().getInterfaces();
+            Class[] interfaces = store.getClass()
+                                      .getInterfaces();
             //LOGGER.getLogger().debug("PROXY {} {}", path, (Object)interfaces);
 
             this.proxy = Proxy.newProxyInstance(
-                    store.getClass().getClassLoader(),
+                    store.getClass()
+                         .getClassLoader(),
                     interfaces,
                     new InvocationHandler() {
 

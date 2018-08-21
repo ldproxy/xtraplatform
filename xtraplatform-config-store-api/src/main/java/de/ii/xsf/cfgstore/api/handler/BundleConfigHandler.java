@@ -65,7 +65,7 @@ public class BundleConfigHandler extends PrimitiveHandler {
             final ImmutableMap.Builder<String, String> builder1 = ImmutableMap.builder();
 
             for (Attribute attribute: property.getAttributes()) {
-                builder1.put(attribute.getName(), attribute.getValue());
+                builder1.put(attribute.getName(), attribute.getValue().replaceAll("''", "\""));
             }
 
             builder.put(property.getAttribute("name"), builder1.build());

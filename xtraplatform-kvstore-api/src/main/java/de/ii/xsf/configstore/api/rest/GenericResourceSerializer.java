@@ -32,6 +32,11 @@ public class GenericResourceSerializer<T extends Resource> implements ResourceSe
     }
 
     @Override
+    public T deserialize(String id, Class<?> clazz, Reader reader) throws IOException {
+        return (T) jsonMapper.readValue(reader, clazz);
+    }
+
+    @Override
     public ObjectNode deserializeMerge(Reader reader) throws IOException {
         return (ObjectNode) jsonMapper.readTree(reader);
     }

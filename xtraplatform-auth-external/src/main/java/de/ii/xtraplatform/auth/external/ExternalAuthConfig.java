@@ -18,6 +18,7 @@ import org.apache.felix.ipojo.annotations.Provides;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Objects;
 
 import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.*;
 
@@ -28,44 +29,46 @@ import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.*;
 @Provides(specifications = {ExternalAuthConfig.class, AuthConfig.class})
 @Instantiate
 @LocalBundleConfig(category = "HTML Views", properties = {
-        @ConfigPropertyDescriptor(name = IS_JWT, label = "Is the provided token a JSON Web Token?", defaultValue = "false"),
-        @ConfigPropertyDescriptor(name = JWT_VALIDATION_ENDPOINT, label = "The URL for JWT validation"),
+        @ConfigPropertyDescriptor(name = JWT_SIGNING_KEY, label = "The signing key for JWT validation"),
         @ConfigPropertyDescriptor(name = USER_INFO_ENDPOINT, label = "The URL to get the user info for a simple token"),
         @ConfigPropertyDescriptor(name = CONNECTION_INFO_ENDPOINT, label = "The URL to get the OpenID Connect Infos"),
         @ConfigPropertyDescriptor(name = USER_NAME_KEY, label = "The JSON key of the user name", defaultValue = "name"),
-        @ConfigPropertyDescriptor(name = USER_ROLE_KEY, label = "The JSON key of the user role", defaultValue = "role")
+        @ConfigPropertyDescriptor(name = USER_ROLE_KEY, label = "The JSON key of the user role", defaultValue = "role"),
+        @ConfigPropertyDescriptor(name = EXTERNAL_DYNAMIC_AUTHORIZATION_ENDPOINT, label = "The URL of an authorization decider"),
+        @ConfigPropertyDescriptor(name = POST_PROCESSING_ENDPOINT, label = "The URL of an authorization decider")
 })
 class ExternalAuthConfig extends BundleConfigDefault implements AuthConfig {
 
-    static final String IS_JWT = "isJwt";
-    static final String JWT_VALIDATION_ENDPOINT = "jwtValidationEndpoint";
+    static final String JWT_SIGNING_KEY = "jwtSigningKey";
     static final String USER_INFO_ENDPOINT = "userInfoEndpoint";
     static final String CONNECTION_INFO_ENDPOINT = "openIdConnectEndpoint";
     static final String USER_NAME_KEY = "userNameKey";
     static final String USER_ROLE_KEY = "userRoleKey";
+    static final String EXTERNAL_DYNAMIC_AUTHORIZATION_ENDPOINT = "externalDynamicAuthorizationEndpoint";
+    static final String POST_PROCESSING_ENDPOINT = "postProcessingEndpoint";
 
     @Override
     public boolean isJwt() {
-        return Boolean.valueOf(Strings.nullToEmpty(properties.get(IS_JWT)));
-    }
-
-    @Override
-    public String getJwtValidationUrl() {
-        return Strings.nullToEmpty(properties.get(JWT_VALIDATION_ENDPOINT));
-    }
-
-    @Override
-    public String getUserInfoUrl() {
-        return Strings.nullToEmpty(properties.get(USER_INFO_ENDPOINT));
+        return Objects.nonNull(Strings.emptyToNull(properties.get(JWT_SIGNING_KEY)));
     }
 
     @Override
     public boolean isActive() {
         try {
-            return (isJwt() && new URI(getJwtValidationUrl()).isAbsolute()) || new URI(getUserInfoUrl().replace("{{token}}", "token")).isAbsolute();
+            return isJwt() || new URI(getUserInfoUrl().replace("{{token}}", "token")).isAbsolute();
         } catch (URISyntaxException e) {
             return false;
         }
+    }
+
+    @Override
+    public String getJwtSigningKey() {
+        return Strings.nullToEmpty(properties.get(JWT_SIGNING_KEY));
+    }
+
+    @Override
+    public String getUserInfoUrl() {
+        return Strings.nullToEmpty(properties.get(USER_INFO_ENDPOINT));
     }
 
     @Override
@@ -81,5 +84,15 @@ class ExternalAuthConfig extends BundleConfigDefault implements AuthConfig {
     @Override
     public String getUserRoleKey() {
         return Strings.nullToEmpty(properties.get(USER_ROLE_KEY));
+    }
+
+    @Override
+    public String getExternalDynamicAuthorizationEndpoint() {
+        return Strings.nullToEmpty(properties.get(EXTERNAL_DYNAMIC_AUTHORIZATION_ENDPOINT));
+    }
+
+    @Override
+    public String getPostProcessingEndpoint() {
+        return Strings.nullToEmpty(properties.get(POST_PROCESSING_ENDPOINT));
     }
 }

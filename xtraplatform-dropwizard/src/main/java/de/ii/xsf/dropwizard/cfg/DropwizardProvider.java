@@ -71,7 +71,7 @@ import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
  */
 @Component
 @Provides
-//@Instantiate
+@Instantiate
 //TODO move to separate bundle
 public class DropwizardProvider extends Application<XtraServerFrameworkConfiguration> implements Dropwizard, HttpClients {
 
@@ -134,7 +134,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
         final Cli cli = new Cli(new JarLocation(getClass()), bootstrap, System.out, System.err);
         String[] arguments = {DW_CMD, cfgFile.getAbsolutePath()};
         if (!cli.run(arguments)) {
-            throw new Exception("CLI ERROR");
+            LOGGER.error("Error initializing Dropwizard with configuration file {}", cfgFile.getAbsolutePath());
         }
     }
 
