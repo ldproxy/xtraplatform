@@ -28,9 +28,12 @@ import java.util.Map;
 public class JsonBundleConfigSerializer extends GenericResourceSerializer<JsonBundleConfig> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonBundleConfigSerializer.class);
+
+    private ObjectMapper jsonMerge;
     
     public JsonBundleConfigSerializer(ObjectMapper jsonMapper) {
         super(jsonMapper);
+        this.jsonMerge = jsonMapper.copy().setDefaultMergeable(true);
     }
 
     @Override
@@ -79,5 +82,13 @@ public class JsonBundleConfigSerializer extends GenericResourceSerializer<JsonBu
         LOGGER.debug("LOCALBUNDLECONFIGSTORE serializeMerge: {}", values);
 
         return values;
+    }
+
+    @Override
+    public JsonBundleConfig mergePartial(JsonBundleConfig resource, Reader reader) throws IOException {
+        final Map<String,String> values = jsonMapper.readValue(reader, new TypeReference<LinkedHashMap<String,String>>(){});
+        resource.getProperties().putAll(values);
+
+        return resource;
     }
 }

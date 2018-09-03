@@ -7,6 +7,7 @@
  */
 package de.ii.xsf.cfgstore.api.handler;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xsf.cfgstore.api.BundleConfigDefault;
 import de.ii.xsf.cfgstore.api.BundleConfigStore;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Dictionary;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  *
@@ -38,6 +40,7 @@ public class BundleConfigHandler extends PrimitiveHandler {
     private InstanceManager instanceManager;
     private String category;
     private Map<String, Map<String, String>> properties;
+    private Optional<String> bundleId;
 
 
     @Override
@@ -54,6 +57,7 @@ public class BundleConfigHandler extends PrimitiveHandler {
         if (bundleConfigElements[0].containsElement("configpropertydescriptor", "de.ii.xsf.cfgstore.api")) {
             parseProperties(bundleConfigElements[0].getElements("configpropertydescriptor", "de.ii.xsf.cfgstore.api"));
         }
+        this.bundleId = Optional.ofNullable(Strings.emptyToNull(bundleConfigElements[0].getAttribute("bundleId")));
 
         instanceManager = getInstanceManager();
     }
@@ -79,7 +83,7 @@ public class BundleConfigHandler extends PrimitiveHandler {
         super.onCreation(instance);
 
         try {
-            ((BundleConfigDefault) instance).init(instanceManager.getContext().getBundle().getSymbolicName(), instanceManager.getClassName(), store, clr, category, properties);
+            ((BundleConfigDefault) instance).init(bundleId.orElse(instanceManager.getContext().getBundle().getSymbolicName()), instanceManager.getClazz().getSimpleName(), store, clr, category, properties);
         } catch (IOException ex) {
             LOGGER.error("The component instance {} failed", instance, ex);
             this.stop();

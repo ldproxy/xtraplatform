@@ -20,12 +20,16 @@ import de.ii.xsf.core.api.rest.AdminModuleResource;
 import de.ii.xsf.core.api.rest.AdminModuleResourceFactory;
 import de.ii.xsf.core.api.rest.ModuleResource;
 import de.ii.xsf.dropwizard.api.Jackson;
+import de.ii.xtraplatform.entity.api.AbstractEntityData;
 import de.ii.xtraplatform.entity.api.EntityRegistry;
 import de.ii.xtraplatform.entity.api.EntityRepository;
 import de.ii.xtraplatform.entity.api.EntityRepositoryForType;
 import de.ii.xtraplatform.service.api.AdminServiceResource;
 import de.ii.xtraplatform.service.api.AdminServiceResourceFactory;
+import de.ii.xtraplatform.service.api.ImmutableServiceDataWithStatus;
 import de.ii.xtraplatform.service.api.Service;
+import de.ii.xtraplatform.service.api.ServiceData;
+import de.ii.xtraplatform.service.api.ServiceDataWithStatus;
 import de.ii.xtraplatform.service.api.ServiceResource;
 import io.dropwizard.jersey.caching.CacheControl;
 import org.apache.felix.ipojo.annotations.Component;
@@ -58,6 +62,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -161,10 +166,11 @@ public class AdminResource {
     @GET
     @CacheControl(noCache = true)
     public List getAdminServices(@Auth AuthenticatedUser authUser) {
-        return entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE)
+        return new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE).getEntityIds();
+        /*return entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE)
                       .stream()
                       .map(Service::getId)
-                      .collect(Collectors.toList());
+                      .collect(Collectors.toList());*/
     }
 
     @Path("/modules")
@@ -226,13 +232,14 @@ public class AdminResource {
     public ServiceResource getAdminService(/*@Auth AuthenticatedUser authUser,*/ @PathParam("id") String id) {
 
         //Service s = serviceRegistry.getService(/*authUser*/new AuthenticatedUser(), id);
-        Optional<Service> service = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, id);
+        //Optional<Service> service = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, id);
+        ServiceData serviceData = (ServiceData) new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE).getEntityData(id);
 
-        if (!service.isPresent()) {
+        if (Objects.isNull(serviceData)) {
             throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale())*/);
         }
 
-        ServiceResource sr = getAdminServiceResource(service.get());
+        ServiceResource sr = getAdminServiceResource(serviceData);
 
         return sr;
     }
@@ -277,16 +284,21 @@ public class AdminResource {
 
     // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory
     // TODO: cache resource object per service
-    private AdminServiceResource getAdminServiceResource(Service s) {
+    private AdminServiceResource getAdminServiceResource(ServiceData s) {
 
         AdminServiceResourceFactory factory = serviceResourceFactories.get(s.getServiceType());
         if (factory == null) {
             throw new ResourceNotFound();
         }
 
+        boolean started = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, s.getId())
+                                        .isPresent();
+
+        ServiceDataWithStatus serviceDataWithStatus = ImmutableServiceDataWithStatus.builder().from(s).status(started ? ServiceDataWithStatus.STATUS.STARTED : ServiceDataWithStatus.STATUS.STOPPED).build();
+
         AdminServiceResource sr = factory.getAdminServiceResource();//(AdminServiceResource) rc.getResource(factory.getAdminServiceResourceClass());
         sr.setService(s);
-        sr.init(jackson.getDefaultObjectMapper(), new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE), permissions);
+        sr.init(jackson.getDefaultObjectMapper(), new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE), permissions, serviceDataWithStatus);
 
         return sr;
     }

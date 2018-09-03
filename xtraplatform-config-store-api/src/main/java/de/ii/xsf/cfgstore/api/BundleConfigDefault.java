@@ -1,6 +1,6 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -51,23 +51,23 @@ public abstract class BundleConfigDefault implements BundleConfig /*implements R
             LOGGER.debug("BUNDLECONFIG ADD");
 
             // TODO: lower case, defaults ignored
-            this.properties = properties.values().stream()
-                      .filter(property -> property.containsKey("name") && property.containsKey("defaultvalue"))
-                      .collect(ImmutableMap.toImmutableMap(property -> property.get("name"), property -> property.get("defaultvalue")));
+            this.properties = properties.values()
+                                        .stream()
+                                        .filter(property -> property.containsKey("name") && property.containsKey("defaultvalue"))
+                                        .collect(ImmutableMap.toImmutableMap(property -> property.get("name"), property -> property.get("defaultvalue")));
 
             //this.properties = ImmutableMap.of("externalUrl", "bla");
 
             JsonBundleConfig json = serialize();
 
             getStore().addResource(json);
-        } else {
-
-            JsonBundleConfig json = getStore().getResource(configId);
-
-            deserialize(json);
-
-            LOGGER.debug("BUNDLECONFIG GET {}", json.getProperties());
         }
+
+        JsonBundleConfig json = getStore().getResource(configId);
+
+        deserialize(json);
+
+        LOGGER.debug("BUNDLECONFIG GET {}", json.getProperties());
 
         store.addConfigPropertyDescriptors(category, bundleId, configId, properties);
     }
@@ -75,11 +75,11 @@ public abstract class BundleConfigDefault implements BundleConfig /*implements R
     @Override
     public void save() throws IOException {
         LOGGER.debug("BUNDLECONFIG SAVE");
-        
+
         JsonBundleConfig json = serialize();
 
         getStore().updateResource(json);
-        
+
         listeners.update(this);
     }
 

@@ -124,7 +124,8 @@ public class FileConfigStore implements KeyValueStore {
                     && !f.getAbsolutePath().endsWith(INDEX_FILE_NAME)
                     && !f.getAbsolutePath().endsWith("-custom")
                     && !f.getAbsolutePath().endsWith("-config")
-                    && !f.getAbsolutePath().endsWith("-backup")) {
+                    && !f.getAbsolutePath().endsWith("-backup")
+                    && !f.getName().startsWith(".")) {
 
                 if (!props.isEmpty()) {
                     files.add(props.getProperty(f.getName()));

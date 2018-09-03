@@ -17,4 +17,8 @@ public @interface LocalBundleConfig {
     String category() default "SINGLETON";
 
     ConfigPropertyDescriptor[] properties() default {};
+
+    String bundleId() default "";
+
+    boolean hidden() default false;
 }

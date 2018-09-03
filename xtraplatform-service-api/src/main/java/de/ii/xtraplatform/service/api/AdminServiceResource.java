@@ -12,7 +12,6 @@ import de.ii.xsf.core.api.exceptions.XtraserverFrameworkException;
 import de.ii.xsf.core.api.permission.Auth;
 import de.ii.xsf.core.api.permission.AuthenticatedUser;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
-import de.ii.xtraplatform.entity.api.EntityRegistry;
 import de.ii.xtraplatform.entity.api.EntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,24 +41,27 @@ abstract public class AdminServiceResource implements ServiceResource {
     protected AuthorizationProvider permissions;
     //private Services services;
     protected EntityRepository serviceRegistry;
-    protected Service service = null;
+    protected ServiceData serviceData = null;
+    protected ServiceDataWithStatus serviceDataWithStatus = null;
     @Context
     protected UriInfo uriInfo;
 
     @Override
-    public Service getService() {
-        return service;
+    public ServiceData getService() {
+        return serviceData;
     }
 
     @Override
-    public void setService(Service service) {
-        this.service = service;
+    public void setService(ServiceData service) {
+        this.serviceData = service;
     }
 
-    public void init(ObjectMapper jsonMapper, EntityRepository entityRepository, AuthorizationProvider permissions) {
+    @Override
+    public void init(ObjectMapper jsonMapper, EntityRepository entityRepository, AuthorizationProvider permissions, ServiceDataWithStatus serviceDataWithStatus) {
         this.jsonMapper = jsonMapper;
         this.serviceRegistry = entityRepository;
         this.permissions = permissions;
+        this.serviceDataWithStatus = serviceDataWithStatus;
     }
 
     @DELETE

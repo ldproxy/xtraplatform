@@ -23,4 +23,6 @@ public @interface ConfigPropertyDescriptor {
     String description() default "";
 
     String validator() default "";
+
+    boolean hidden() default false;
 }

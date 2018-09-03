@@ -39,7 +39,7 @@ public class LocalBundleConfigStoreDefault extends AbstractGenericResourceStore<
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalBundleConfigStoreDefault.class);
     
-    public static final String STORE_ID = "local-bundle-config-store";
+    public static final String STORE_ID = "settings";
 
     private final Map<String, List<Map<String, Object>>> properties;
     private final Map<String, String> categories;

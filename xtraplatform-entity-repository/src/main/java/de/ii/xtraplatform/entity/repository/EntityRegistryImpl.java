@@ -80,6 +80,12 @@ public class EntityRegistryImpl implements EntityRegistry {
     private synchronized void onStoreDeparture(ServiceReference<PersistentEntity> ref) {
         final PersistentEntity entity = context.getService(ref);
 
+        if (entity != null && entity.getData() != null) {
+            LOGGER.debug("REMOVE ENTITY {} {} {}", entity.getType(), entity.getId()/*, entity.getData()*/);
+
+            deregisterEntity(entity);
+        }
+
         LOGGER.debug("ENTITY REMOVED {}", entity != null ? entity.getId() : null);
     }
 

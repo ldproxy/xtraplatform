@@ -10,7 +10,6 @@ package de.ii.xtraplatform.service.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xsf.core.api.permission.AuthorizationProvider;
 import de.ii.xtraplatform.entity.api.EntityRepository;
-import de.ii.xtraplatform.entity.api.EntityRepositoryForType;
 import io.dropwizard.views.ViewRenderer;
 
 /**
@@ -20,11 +19,11 @@ import io.dropwizard.views.ViewRenderer;
 public interface ServiceResource {
     public static final String SERVICE_TYPE_KEY = "serviceType";
     
-    public Service getService();
+    public ServiceData getService();
 
-    public void setService(Service service);
+    public void setService(ServiceData service);
     
-    public void init(ObjectMapper defaultObjectMapper, EntityRepository entityRepository, AuthorizationProvider permProvider);
+    public void init(ObjectMapper defaultObjectMapper, EntityRepository entityRepository, AuthorizationProvider permProvider, ServiceDataWithStatus serviceDataWithStatus);
 
     void setMustacheRenderer(ViewRenderer mustacheRenderer);
 }

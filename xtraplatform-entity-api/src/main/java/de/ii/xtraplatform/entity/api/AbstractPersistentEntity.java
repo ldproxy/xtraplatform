@@ -39,6 +39,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
             this.register = true;
             //this.__IM.onSet(this, "register", true);
 
+        } else {
+            LOGGER.debug("DEREGISTERED {}", data.getId());
+            this.register = false;
         }
     }
 

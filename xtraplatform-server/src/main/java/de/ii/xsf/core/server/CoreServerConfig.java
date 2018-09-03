@@ -24,16 +24,22 @@ import java.io.IOException;
 @Component
 @Provides(specifications = {CoreServerConfig.class})
 @Instantiate
-@LocalBundleConfig(category = "Webserver Sett-ings", properties = {
-        @ConfigPropertyDescriptor(name = CoreServerConfig.EXTERNAL_URL, label = "External URL", defaultValue = "http://hostname/rest/services"),
-        @ConfigPropertyDescriptor(name = "port", label = "Port", defaultValue = "7080")
+@LocalBundleConfig(category = "Webserver Settings", properties = {
+        @ConfigPropertyDescriptor(name = CoreServerConfig.EXTERNAL_URL, label = "External URL path", defaultValue = "/rest/services"),
+        @ConfigPropertyDescriptor(name = "port", label = "Port", defaultValue = "7080", hidden = true)
 })
 public class CoreServerConfig extends BundleConfigDefault {
 
     static final String EXTERNAL_URL = "externalUrl";
 
     public String getExternalUrl() {
-        return Strings.nullToEmpty(properties.get(EXTERNAL_URL));
+        String path =  Strings.nullToEmpty(properties.get(EXTERNAL_URL));
+
+        if (!path.isEmpty()) {
+            return "http://hostname" + path;
+        }
+
+        return path;
     }
 
     public void setExternalUrl(String externalUrl) {
