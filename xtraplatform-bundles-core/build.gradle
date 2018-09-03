@@ -60,7 +60,7 @@ dependencies {
     testBundles 'org.ow2.chameleon.testing:osgi-helpers:0.6.2'
     testBundles subprojects.findAll { it.name != 'xtraplatform-dropwizard' && it.name.endsWith("-test") }
 
-    features group: 'de.interactive_instruments', name: 'xtraplatform-bundles-runtime', version: '1.1.4'
+    features group: 'de.interactive_instruments', name: 'xtraplatform-bundles-runtime', version: '1.1.5'
 
     testCompile subprojects.findAll { it.name != 'xtraplatform-dropwizard' }
 
