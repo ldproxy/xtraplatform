@@ -1,3 +1,5 @@
+version = '1.1.0'
+
 dependencies {
 	
 	// TODO: move to console bundle

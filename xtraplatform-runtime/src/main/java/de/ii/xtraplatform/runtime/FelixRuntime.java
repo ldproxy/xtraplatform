@@ -110,15 +110,29 @@ public class FelixRuntime {
             }
         }
 
+        File platformBundleDir = new File(bundlesDir, PLATFORM_BUNDLES_DIR_NAME);
+        String levelThree = "";
+        String levelFour = "";
+        for (File f : platformBundleDir.listFiles()) {
+            if (f.getName().endsWith(".jar")) {
+                if (f.getName().startsWith("ldproxy-wfs3-geojson") || f.getName().startsWith("ldproxy-wfs3-html") || f.getName().startsWith("ldproxy-wfs3-jsonld") || f.getName().startsWith("xtraplatform-feature-provider-pgis") || f.getName().startsWith("xtraplatform-feature-query-wfs")) {
+                    levelThree += "reference:file:" + f.getAbsolutePath().replaceAll(" ", "%20") + " ";
+                } else {
+                    levelFour += "reference:file:" + f.getAbsolutePath().replaceAll(" ", "%20") + " ";
+                }
+            }
+        }
+
         felixConfig.put(AutoProcessor.AUTO_START_PROP + ".1", levelOne);
         felixConfig.put(AutoProcessor.AUTO_START_PROP + ".2", levelTwo);
-        felixConfig.put(FelixConstants.FRAMEWORK_BEGINNING_STARTLEVEL, "3");
+        felixConfig.put(AutoProcessor.AUTO_START_PROP + ".3", levelThree);
+        felixConfig.put(AutoProcessor.AUTO_START_PROP + ".4", levelFour);
+        felixConfig.put(FelixConstants.FRAMEWORK_BEGINNING_STARTLEVEL, "5");
         
-        felixConfig.put("felix.fileinstall.dir", new File(bundlesDir, PLATFORM_BUNDLES_DIR_NAME).getAbsolutePath());
-        felixConfig.put("felix.fileinstall.active.level", "1");
-        felixConfig.put("felix.fileinstall.start.level", "3");
-        //felixConfig.put("felix.fileinstall.filter", "^xsf-.*");
-        felixConfig.put("felix.fileinstall.filter", "^.*");
+        //felixConfig.put("felix.fileinstall.dir", new File(bundlesDir, PLATFORM_BUNDLES_DIR_NAME).getAbsolutePath());
+        //felixConfig.put("felix.fileinstall.active.level", "1");
+        //felixConfig.put("felix.fileinstall.start.level", "5");
+        //felixConfig.put("felix.fileinstall.filter", "^.*");
         
         //felixConfig.put(AutoProcessor.AUTO_DEPLOY_DIR_PROPERY, bundleDir);
         //felixConfig.put(AutoProcessor.AUTO_DEPLOY_ACTION_PROPERY, "install,start");
