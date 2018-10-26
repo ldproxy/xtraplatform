@@ -13,5 +13,5 @@ package de.ii.xtraplatform.service.api;
  */
 public interface AdminServiceResourceFactory {
     public Class getAdminServiceResourceClass();
-    AdminServiceResource getAdminServiceResource();
+    AbstractAdminServiceResource getAdminServiceResource();
 }

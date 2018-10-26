@@ -23,7 +23,6 @@ import de.ii.xtraplatform.entity.api.AbstractEntityData;
 import de.ii.xtraplatform.entity.api.EntityDataGenerator;
 import de.ii.xtraplatform.entity.api.EntityRepository;
 import de.ii.xtraplatform.entity.api.EntityRepositoryChangeListener;
-import de.ii.xtraplatform.entity.api.PersistentEntity;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -165,11 +164,12 @@ public class EntityRepositoryImpl implements EntityRepository {
             throw new IOException("no generator found for type " + entityDataClass.getName());
         }
 
+        String[] path2 = ObjectArrays.concat("entities", path);
+
         AbstractEntityData data2 = entitySerializer.deserializePartial(entityDataClass, new StringReader(mapper.writeValueAsString(data))).get();
 
         AbstractEntityData data3 = entityDataGenerators.get(entityDataClass.getName()).generate(data2);
 
-        String[] path2 = ObjectArrays.concat("entities", path);
         LOGGER.debug("CREATE {} {}", id, path2);
         store.addResource(data3, path2);
 
@@ -181,12 +181,16 @@ public class EntityRepositoryImpl implements EntityRepository {
     }
 
     @Override
-    public AbstractEntityData replaceEntity(AbstractEntityData data) throws IOException {
+    public AbstractEntityData replaceEntity(AbstractEntityData data, String... path) throws IOException {
         validate(data);
 
-        store.updateResource(data);
+        String[] path2 = ObjectArrays.concat("entities", path);
 
-        updateListeners.sendData(data);
+        store.updateResource(data, path2);
+
+        //TODO
+        AbstractEntityData data2 = getEntityData(data.getId(), path);
+        updateListeners.sendData(data2);
 
         return data;
     }
@@ -323,6 +327,10 @@ public class EntityRepositoryImpl implements EntityRepository {
 
         public void addResource(String id, Map<String,Object> resource, String... path) throws IOException {
             super.writeResourceFromString(path, id, ResourceTransaction.OPERATION.ADD, mapper.writeValueAsString(resource));
+        }
+
+        public void updateResource(AbstractEntityData resource, String... path) throws IOException {
+            super.writeResource(path, resource.getResourceId(), ResourceTransaction.OPERATION.UPDATE, resource);
         }
 
         //@Override

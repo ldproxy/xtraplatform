@@ -23,11 +23,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyMetadata;
 import com.fasterxml.jackson.databind.PropertyName;
 import com.fasterxml.jackson.databind.SerializationConfig;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.deser.BeanDeserializer;
-import com.fasterxml.jackson.databind.deser.BeanDeserializerBase;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
 import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
 import com.fasterxml.jackson.databind.deser.impl.BeanPropertyMap;
@@ -51,8 +49,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -165,8 +163,8 @@ public class EntitySerializer implements ResourceSerializer<AbstractEntityData> 
                                                          if (isSet) {
                                                              super.serializeAsField(bean, gen, prov);
                                                          } else {
-                                                             System.out.println(String.format("ignoring unset field '%s' of %s instance", this.getName(), bean.getClass()
-                                                                                                                                                              .getName()));
+                                                             LOGGER.trace("ignoring unset field '{}' of {} instance", this.getName(), bean.getClass()
+                                                                                                                                                              .getName());
                                                          }
 
                                                      } catch (Throwable e) {
@@ -189,7 +187,7 @@ public class EntitySerializer implements ResourceSerializer<AbstractEntityData> 
                     if (deserializer instanceof BeanDeserializer && beanDesc.getBeanClass()
                                                                             .getSimpleName()
                                                                             .startsWith("Modifiable")) {
-                        LOGGER.debug("catch getter exceptions for {}", beanDesc.getBeanClass());
+                        LOGGER.trace("catch getter exceptions for {}", beanDesc.getBeanClass());
                         Iterable<SettableBeanProperty> iterable = ((BeanDeserializer) deserializer)::properties;
                         return new BeanDeserializer((BeanDeserializer) deserializer, new BeanPropertyMap(true, StreamSupport.stream(iterable.spliterator(), false)
                                                                                                                             .map(settableBeanProperty -> {
@@ -211,9 +209,9 @@ public class EntitySerializer implements ResourceSerializer<AbstractEntityData> 
                                             try {
                                                 oldValue = _accessor.getValue(instance);
                                             } catch (Throwable e) {
-                                                System.out.println(String.format("ignoring unset field '%s' of %s instance", this.getName(), this.getDeclaringClass()
+                                                LOGGER.trace("ignoring unset field '{}' of {} instance", this.getName(), this.getDeclaringClass()
                                                                                                                                                  .getClass()
-                                                                                                                                                 .getName()));
+                                                                                                                                                 .getName());
                                             }
 
                                             Object newValue;
@@ -327,7 +325,7 @@ public class EntitySerializer implements ResourceSerializer<AbstractEntityData> 
                     if (setter1.getDeclaringClass()
                                .getSimpleName()
                                .startsWith("Modifiable")) {
-                        LOGGER.debug("resolving setter conflict for Modifiable {} {}", setter1, setter2);
+                        LOGGER.trace("resolving setter conflict for Modifiable {} {}", setter1, setter2);
                         if (setter1.getRawParameterType(0)
                                    .equals(Optional.class)) {
                             return setter1;

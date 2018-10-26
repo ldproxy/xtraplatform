@@ -20,12 +20,10 @@ import de.ii.xsf.core.api.rest.AdminModuleResource;
 import de.ii.xsf.core.api.rest.AdminModuleResourceFactory;
 import de.ii.xsf.core.api.rest.ModuleResource;
 import de.ii.xsf.dropwizard.api.Jackson;
-import de.ii.xtraplatform.entity.api.AbstractEntityData;
 import de.ii.xtraplatform.entity.api.EntityRegistry;
 import de.ii.xtraplatform.entity.api.EntityRepository;
 import de.ii.xtraplatform.entity.api.EntityRepositoryForType;
 import de.ii.xtraplatform.service.api.AdminServiceResource;
-import de.ii.xtraplatform.service.api.AdminServiceResourceFactory;
 import de.ii.xtraplatform.service.api.ImmutableServiceDataWithStatus;
 import de.ii.xtraplatform.service.api.Service;
 import de.ii.xtraplatform.service.api.ServiceData;
@@ -53,6 +51,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -65,7 +64,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -75,10 +73,10 @@ import java.util.stream.Collectors;
 @Provides(specifications = {AdminResource.class})
 @Instantiate
 @Whiteboards(whiteboards = {
-    @Wbp(
-            filter = "(objectClass=de.ii.xtraplatform.service.api.AdminServiceResourceFactory)",
-            onArrival = "onServiceResourceArrival",
-            onDeparture = "onServiceResourceDeparture"),
+        @Wbp(
+                filter = "(objectClass=de.ii.xtraplatform.service.api.AdminServiceResource)",
+                onArrival = "onServiceResourceArrival",
+                onDeparture = "onServiceResourceDeparture"),
     @Wbp(
             filter = "(objectClass=de.ii.xsf.core.api.rest.AdminModuleResourceFactory)",
             onArrival = "onModuleResourceArrival",
@@ -106,6 +104,9 @@ public class AdminResource {
     @Requires
     private EntityRepository entityRepository;
 
+    @Requires
+    private ServiceDataInjectableContext serviceDataContext;
+
 
 
     private String xsfVersion = "todo";
@@ -113,25 +114,25 @@ public class AdminResource {
     @Context
     ExtendedResourceContext rc;
 
-    Map<String, AdminServiceResourceFactory> serviceResourceFactories;
+    Map<String, AdminServiceResource> serviceResources;
     Map<String, AdminModuleResourceFactory> moduleResourceFactories;
 
     @org.apache.felix.ipojo.annotations.Context
     private BundleContext context;
 
-    public synchronized void onServiceResourceArrival(ServiceReference<AdminServiceResourceFactory> ref) {
-        AdminServiceResourceFactory sr = context.getService(ref);
+    public synchronized void onServiceResourceArrival(ServiceReference<AdminServiceResource> ref) {
+        AdminServiceResource sr = context.getService(ref);
         String type = (String) ref.getProperty(ServiceResource.SERVICE_TYPE_KEY);
         if (sr != null && type != null) {
-            serviceResourceFactories.put(type, sr);
+            serviceResources.put(type, sr);
         }
     }
 
-    public synchronized void onServiceResourceDeparture(ServiceReference<AdminServiceResourceFactory> ref) {
-        AdminServiceResourceFactory sr = context.getService(ref);
+    public synchronized void onServiceResourceDeparture(ServiceReference<AdminServiceResource> ref) {
+        AdminServiceResource sr = context.getService(ref);
         String type = (String) ref.getProperty(ServiceResource.SERVICE_TYPE_KEY);
         if (sr != null && type != null) {
-            serviceResourceFactories.remove(type);
+            serviceResources.remove(type);
         }
     }
 
@@ -152,7 +153,7 @@ public class AdminResource {
     }
 
     public AdminResource() {
-        this.serviceResourceFactories = new HashMap<>();
+        this.serviceResources = new HashMap<>();
         this.moduleResourceFactories = new HashMap<>();
     }
 
@@ -229,17 +230,20 @@ public class AdminResource {
     }
 
     @Path("/services/{id}")
-    public ServiceResource getAdminService(/*@Auth AuthenticatedUser authUser,*/ @PathParam("id") String id) {
+    public AdminServiceResource getAdminService(/*@Auth AuthenticatedUser authUser,*/ @PathParam("id") String id, @Context ContainerRequestContext containerRequestContext) {
 
         //Service s = serviceRegistry.getService(/*authUser*/new AuthenticatedUser(), id);
         //Optional<Service> service = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, id);
         ServiceData serviceData = (ServiceData) new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE).getEntityData(id);
 
+        //Service service = getService(new AuthenticatedUser(), id);
+        serviceDataContext.inject(containerRequestContext, serviceData);
+
         if (Objects.isNull(serviceData)) {
             throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale())*/);
         }
 
-        ServiceResource sr = getAdminServiceResource(serviceData);
+        AdminServiceResource sr = getAdminServiceResource(serviceData);
 
         return sr;
     }
@@ -286,21 +290,32 @@ public class AdminResource {
     // TODO: cache resource object per service
     private AdminServiceResource getAdminServiceResource(ServiceData s) {
 
-        AdminServiceResourceFactory factory = serviceResourceFactories.get(s.getServiceType());
-        if (factory == null) {
+        AdminServiceResource sr = serviceResources.get(s.getServiceType());
+        if (sr == null) {
             throw new ResourceNotFound();
         }
 
-        boolean started = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, s.getId())
+        /*boolean started = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, s.getId())
                                         .isPresent();
 
-        ServiceDataWithStatus serviceDataWithStatus = ImmutableServiceDataWithStatus.builder().from(s).status(started ? ServiceDataWithStatus.STATUS.STARTED : ServiceDataWithStatus.STATUS.STOPPED).build();
+        ServiceDataWithStatus serviceDataWithStatus = ImmutableServiceDataWithStatus.builder().from(s).status(started ? ServiceDataWithStatus.STATUS.STARTED : ServiceDataWithStatus.STATUS.STOPPED).build();*/
 
-        AdminServiceResource sr = factory.getAdminServiceResource();//(AdminServiceResource) rc.getResource(factory.getAdminServiceResourceClass());
-        sr.setService(s);
-        sr.init(jackson.getDefaultObjectMapper(), new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE), permissions, serviceDataWithStatus);
+        //AbstractAdminServiceResource sr = factory.getAdminServiceResource();//(AdminServiceResource) rc.getResource(factory.getAdminServiceResourceClass());
+        //sr.setService(s);
+        //sr.init(jackson.getDefaultObjectMapper(), new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE), permissions, serviceDataWithStatus);
 
         return sr;
+    }
+
+    private Service getService(AuthenticatedUser authUser, String id) {
+        //Service s = serviceRegistry.getService(authUser, id);
+        Optional<Service> s = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, id);
+
+        if (!s.isPresent() /*|| !s.isStarted()*/) {
+            throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale()),*/);
+        }
+
+        return s.get();
     }
 
     private Map<String, String> flattenMultiMap(MultivaluedMap<String, String> multiMap) {

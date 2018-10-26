@@ -1,0 +1,21 @@
+version = '1.0.0'
+
+dependencies {
+    compile project(':xtraplatform-scheduler-api')
+    embedded group: 'it.sauronsoftware.cron4j', name: 'cron4j', version: '2.2.5'    
+}
+
+jar {
+    manifest { 
+        instruction 'Export-Package'
+        instruction 'Private-Package', 
+            'de.ii.xsf.scheduler'
+            
+        instruction 'Embed-Dependency',
+            'cron4j'
+            
+        instruction 'Embed-Transitive', 'true'
+        instruction 'Embed-Export', 'false'
+        
+    }
+}

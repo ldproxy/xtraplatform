@@ -23,7 +23,7 @@ public interface ServiceResource {
 
     public void setService(ServiceData service);
     
-    public void init(ObjectMapper defaultObjectMapper, EntityRepository entityRepository, AuthorizationProvider permProvider, ServiceDataWithStatus serviceDataWithStatus);
+    public void init(ObjectMapper defaultObjectMapper, EntityRepository entityRepository, AuthorizationProvider permProvider);
 
     void setMustacheRenderer(ViewRenderer mustacheRenderer);
 }

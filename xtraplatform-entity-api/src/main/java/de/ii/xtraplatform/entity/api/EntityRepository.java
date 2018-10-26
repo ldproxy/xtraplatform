@@ -33,7 +33,7 @@ public interface EntityRepository {
 
     AbstractEntityData generateEntity(Map<String, Object> data, String... path) throws IOException;
 
-    AbstractEntityData replaceEntity(AbstractEntityData data) throws IOException;
+    AbstractEntityData replaceEntity(AbstractEntityData data, String... path) throws IOException;
 
     AbstractEntityData updateEntity(AbstractEntityData partialData, String... path) throws IOException;
 

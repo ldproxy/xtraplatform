@@ -69,8 +69,8 @@ public abstract class EntityRepositoryWrapper implements EntityRepository {
     }
 
     @Override
-    public AbstractEntityData replaceEntity(AbstractEntityData data) throws IOException {
-        return entityRepository.replaceEntity(transformData(data));
+    public AbstractEntityData replaceEntity(AbstractEntityData data, String... path) throws IOException {
+        return entityRepository.replaceEntity(transformData(data), transformPath(data.getId(), path));
     }
 
     @Override

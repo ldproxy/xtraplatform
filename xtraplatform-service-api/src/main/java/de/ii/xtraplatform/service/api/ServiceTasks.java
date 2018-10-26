@@ -7,13 +7,14 @@
  */
 package de.ii.xtraplatform.service.api;
 
-import de.ii.xsf.core.api.permission.AuthenticatedUser;
+import de.ii.xtraplatform.scheduler.api.TaskStatus;
+
+import java.util.Optional;
 
 /**
  * @author zahnen
  */
-public interface AdminServiceResource {
-    void callServiceOperation(AuthenticatedUser authUser, String operation, String parameter);
-
-    void updateService(AuthenticatedUser authUser, String id, String request);
+public interface ServiceTasks {
+    Optional<TaskStatus> getCurrentTask();
+    Optional<TaskStatus> getCurrentTaskForService(String id);
 }
