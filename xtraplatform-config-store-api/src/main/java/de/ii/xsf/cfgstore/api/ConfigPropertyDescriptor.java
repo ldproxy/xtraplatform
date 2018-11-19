@@ -14,6 +14,8 @@ import java.lang.annotation.Target;
  */
 @Target({})
 public @interface ConfigPropertyDescriptor {
+    enum UI_TYPE {CHECKBOX, TEXT, URL, SELECT}
+
     String name();
 
     String label();
@@ -22,7 +24,9 @@ public @interface ConfigPropertyDescriptor {
 
     String description() default "";
 
-    String validator() default "";
+    UI_TYPE uiType() default UI_TYPE.TEXT;
+
+    String allowedValues() default "";
 
     boolean hidden() default false;
 }

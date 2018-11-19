@@ -29,13 +29,13 @@ import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.*;
 @Provides(specifications = {ExternalAuthConfig.class, AuthConfig.class})
 @Instantiate
 @LocalBundleConfig(category = "Security", properties = {
-        @ConfigPropertyDescriptor(name = JWT_SIGNING_KEY, label = "The signing key for JWT validation"),
-        @ConfigPropertyDescriptor(name = USER_INFO_ENDPOINT, label = "The URL to get the user info for a simple token"),
+        @ConfigPropertyDescriptor(name = JWT_SIGNING_KEY, label = "The signing key for JWT validation", uiType = ConfigPropertyDescriptor.UI_TYPE.TEXT),
+        @ConfigPropertyDescriptor(name = USER_INFO_ENDPOINT, label = "The URL to get the user info for a simple token", uiType = ConfigPropertyDescriptor.UI_TYPE.URL),
         @ConfigPropertyDescriptor(name = CONNECTION_INFO_ENDPOINT, label = "The URL to get the OpenID Connect Infos", hidden = true),
         @ConfigPropertyDescriptor(name = USER_NAME_KEY, label = "The JSON key of the user name", defaultValue = "name", hidden = true),
         @ConfigPropertyDescriptor(name = USER_ROLE_KEY, label = "The JSON key of the user role", defaultValue = "role", hidden = true),
-        @ConfigPropertyDescriptor(name = EXTERNAL_DYNAMIC_AUTHORIZATION_ENDPOINT, label = "The URL of an authorization decider"),
-        @ConfigPropertyDescriptor(name = POST_PROCESSING_ENDPOINT, label = "The URL of a postprocessing endpoint")
+        @ConfigPropertyDescriptor(name = EXTERNAL_DYNAMIC_AUTHORIZATION_ENDPOINT, label = "The URL of an authorization decider", uiType = ConfigPropertyDescriptor.UI_TYPE.URL),
+        @ConfigPropertyDescriptor(name = POST_PROCESSING_ENDPOINT, label = "The URL of a postprocessing endpoint", uiType = ConfigPropertyDescriptor.UI_TYPE.URL)
 })
 class ExternalAuthConfig extends BundleConfigDefault implements AuthConfig {
 

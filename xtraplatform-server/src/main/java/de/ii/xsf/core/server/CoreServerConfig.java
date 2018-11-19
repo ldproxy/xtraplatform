@@ -15,8 +15,6 @@ import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 
-import java.io.IOException;
-
 /**
  *
  * @author zahnen
@@ -25,7 +23,7 @@ import java.io.IOException;
 @Provides(specifications = {CoreServerConfig.class})
 @Instantiate
 @LocalBundleConfig(category = "Webserver", properties = {
-        @ConfigPropertyDescriptor(name = CoreServerConfig.EXTERNAL_URL, label = "External URL path", defaultValue = "/rest/services"),
+        @ConfigPropertyDescriptor(name = CoreServerConfig.EXTERNAL_URL, label = "External URL", defaultValue = "http://localhost:7080/rest/services", uiType = ConfigPropertyDescriptor.UI_TYPE.URL),
         @ConfigPropertyDescriptor(name = "port", label = "Port", defaultValue = "7080", hidden = true)
 })
 public class CoreServerConfig extends BundleConfigDefault {
