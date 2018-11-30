@@ -1,10 +1,12 @@
-version='1.1.6'
+version='1.1.7'
 //version += '-SNAPSHOT'
 
 dependencies {
     provided project(":xtraplatform-akka")
 
-    embedded group: 'com.typesafe.akka', name: 'akka-osgi_2.12',   version: '2.5.9'
+    embedded (group: 'com.typesafe.akka', name: 'akka-osgi_2.12',   version: '2.5.18') {
+        transitive = false
+    }
 }
  
 jar {

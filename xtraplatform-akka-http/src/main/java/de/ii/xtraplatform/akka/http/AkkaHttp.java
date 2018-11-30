@@ -25,6 +25,7 @@ import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -43,6 +44,7 @@ import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.util.Try;
+import akka.event.slf4j.Slf4jLoggingFilter;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -65,11 +67,17 @@ public class AkkaHttp {
     private static final Logger LOGGER = LoggerFactory.getLogger(AkkaHttp.class);
 
     private static final Config config = ConfigFactory.parseMap(new ImmutableMap.Builder<String, Object>()
-            .put("akka.loglevel", "INFO")
+            .put("akka.stdout-loglevel", "OFF")
+            .put("akka.loglevel", "DEBUG")
+            .put("akka.loggers", ImmutableList.of("akka.event.slf4j.Slf4jLogger"))
+            .put("akka.logging-filter", "akka.event.slf4j.Slf4jLoggingFilter")
             //.put("akka.log-config-on-start", true)
             .put("akka.http.host-connection-pool.max-connections", 32)
+            .put("akka.http.host-connection-pool.min-connections", 0)
+            .put("akka.http.host-connection-pool.idle-timeout", "infinite")
             .put("akka.http.host-connection-pool.pool-implementation", "new")
             .put("akka.http.parsing.max-chunk-size", "16m")
+            .put("akka.http.parsing.illegal-header-warnings", "off")
             .build());
 
     private static final Function<HttpResponse, HttpResponse> decodeResponse = response -> {
@@ -173,6 +181,10 @@ public class AkkaHttp {
                      .via(pool)
                      .map(param -> {
                          //LOGGER.debug("HTTP RESPONSE {}", param.toString());
+
+                         if (param.first().isFailure()) {
+                             throw param.first().failed().getOrElse(() -> new IllegalStateException("Unknown HTTP client error"));
+                         }
                          return param.first()
                                      .get();
                      })

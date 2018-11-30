@@ -1,12 +1,13 @@
-version='1.1.4'
+version='1.1.5'
 //version += '-SNAPSHOT'
 
 dependencies {    
-    embedded group: 'org.scala-lang', name: 'scala-library', version: '2.12.4'
-    embedded group: 'org.scala-lang', name: 'scala-reflect', version: '2.12.4'
-    embedded group: 'com.typesafe.akka', name: 'akka-actor_2.12', version: '2.5.9'
-    embedded group: 'com.typesafe.akka', name: 'akka-stream_2.12', version: '2.5.9'
-    embedded group: 'com.typesafe.akka', name: 'akka-http_2.12',   version: '10.1.0-RC2'
+    embedded group: 'org.scala-lang', name: 'scala-library', version: '2.12.7'
+    embedded group: 'org.scala-lang', name: 'scala-reflect', version: '2.12.7'
+    embedded group: 'com.typesafe.akka', name: 'akka-actor_2.12', version: '2.5.18'
+    embedded group: 'com.typesafe.akka', name: 'akka-stream_2.12', version: '2.5.18'
+    embedded group: 'com.typesafe.akka', name: 'akka-http_2.12',   version: '10.1.5'
+    embedded group: 'com.typesafe.akka', name: 'akka-slf4j_2.12', version: '2.5.18'
 }
  
 jar {
@@ -16,7 +17,8 @@ jar {
                 'scala-reflect',
                 'akka-actor_2.12',
                 'akka-stream_2.12',
-                'akka-http_2.12'
+                'akka-http_2.12',
+                'akka-slf4j_2.12'
             
         instruction 'Embed-Transitive', 'true'
         instruction 'Embed-Export', 'true'
