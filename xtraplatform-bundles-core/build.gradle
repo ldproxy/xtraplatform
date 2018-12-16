@@ -18,10 +18,10 @@ buildscript {
 }
 
 apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.bintray'
+//apply plugin: 'com.jfrog.bintray'
 apply plugin: 'java'
 
-version = '1.2.5'
+version = '1.2.6'
 //version += '-SNAPSHOT'
 
 group = 'de.interactive_instruments'
@@ -144,7 +144,7 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'osgi-ipojo'
     apply plugin: 'maven-publish'
-//    apply plugin: 'com.jfrog.bintray'
+    apply plugin: 'com.jfrog.bintray'
     apply plugin: "license"
 
     version = '1.2.0'
@@ -286,7 +286,7 @@ subprojects {
     }
     afterEvaluate { project ->
     //project.version += '-SNAPSHOT'
-    /*bintray {
+    bintray {
         user = project.bintrayUser
         key = project.bintrayApiKey
         publications = ['maven']
@@ -305,7 +305,7 @@ subprojects {
                 name = project.version
             }
         }
-    }*/
+    }
     }
 
 configurations {
@@ -416,7 +416,7 @@ publishing {
     }
 }
 
-bintray {
+/*bintray {
     user = project.bintrayUser
     key = project.bintrayApiKey
     publications = ['mavenRoot']
@@ -435,10 +435,13 @@ bintray {
             name = project.version
         }
     }
-}
+}*/
 
 apply from: 'license-report.gradle'
 
 //apply plugin: 'java'
 //apply plugin: 'xtraplatform-docs'
 
+task allDependencies {
+    dependsOn allprojects.collect { "$it.path:dependencies" }
+}

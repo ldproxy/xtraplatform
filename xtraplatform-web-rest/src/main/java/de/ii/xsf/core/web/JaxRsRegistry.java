@@ -85,6 +85,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
 
         if (server.isAvailable()) {
             isJerseyAvailable = true;
+            clearConfig();
         }
         server.addLifeCycleListener(this);
 
@@ -92,8 +93,6 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
 
         // TODO
         this.isAuthProviderAvailable = true;
-
-        clearConfig();
     }
 
     public synchronized void addingService(ServiceReference reference) {
@@ -408,6 +407,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     @Override
     public void lifeCycleStarted(LifeCycle event) {
         isJerseyAvailable = true;
+        clearConfig();
         jerseyChanged();
     }
 
