@@ -1,6 +1,6 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -138,7 +138,7 @@ public class ServicesResource {
     //TODO
     @GET
     public Response getServices(@Auth(required = false) AuthenticatedUser authUser, @QueryParam("callback") String callback, @Context UriInfo uriInfo) {
-        if (serviceResourceFactories.size() == 1) {
+        /*if (serviceResourceFactories.size() == 1) {
             //Response response = serviceResourceFactories.values().iterator().next().getResponseForParams(serviceRegistry.getServices(authUser), uriInfo);
             Response response = serviceResourceFactories.values()
                                                         .iterator()
@@ -147,7 +147,14 @@ public class ServicesResource {
             if (response != null) {
                 return response;
             }
-        }
+        }*/
+
+        return Response.ok()
+                       .entity(entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE)
+                                             .stream()
+                                             .map(Service::getId)
+                                             .collect(Collectors.toList()))
+                       .build();
 
         /*ServiceCatalog catalog = new ArcGisServiceCatalog(serviceRegistry.getServices(authUser));
 
@@ -155,8 +162,8 @@ public class ServicesResource {
             return Response.ok(new JSONPObject(callback, catalog), MediaType.APPLICATION_JSON).build();
         }
         return Response.ok(catalog, MediaType.APPLICATION_JSON).build();*/
-        return Response.serverError()
-                       .build();
+        //return Response.serverError()
+        //               .build();
     }
 
     /*@POST
