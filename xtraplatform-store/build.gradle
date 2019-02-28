@@ -1,0 +1,29 @@
+plugins {
+    id 'de.interactive_instruments.xtraplatform-feature'
+    id "com.jfrog.bintray" version "1.8.4" apply false
+    id "com.github.hierynomus.license-report" version "0.15.0" apply false
+}
+
+allprojects {
+    group = 'de.interactive_instruments'
+}
+
+version = '2.0.0'
+
+
+dependencies {
+    feature group: 'de.interactive_instruments', name: 'xtraplatform-base', version: '2.0.0'
+
+    bundle subprojects
+}
+
+subprojects {
+    dependencies {
+        compileOnly "org.immutables:value:2.7.5:annotations"
+        annotationProcessor "org.immutables:value:2.7.5"
+    }
+}
+
+apply from: '../bintray.gradle'
+
+apply from: '../license-report.gradle'

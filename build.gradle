@@ -1,6 +1,6 @@
 
-task jar {
+task bintrayUpload {
     gradle.includedBuilds.each {
-        dependsOn it.task(':assemble')
+        dependsOn it.task(':bintrayUpload')
     }
 }

@@ -2,7 +2,7 @@ version = '1.0.2'
 //version += '-SNAPSHOT'
 
 dependencies {
-    provided project(':xtraplatform-core')
+//    provided project(':xtraplatform-core')
     provided project(':xtraplatform-entity-api')
     provided project(':xtraplatform-kvstore-api')
 

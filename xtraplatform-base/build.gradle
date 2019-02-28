@@ -12,7 +12,7 @@ version = '2.0.0'
 
 
 dependencies {
-    bundle project(':xtraplatform-dropwizard')
+    bundle subprojects
 
     //TODO: where are these packages included???
     // logging
@@ -38,9 +38,18 @@ dependencies {
 
     //felix ipojo
     bundle group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.eventadmin', version: '1.8.0'
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.whiteboard', version: '1.6.0'
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.extender', version: '1.4.0'
+    bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.eventadmin', version: '1.8.0') {
+        exclude group: 'org.osgi', module: 'org.osgi.core'
+        exclude group: 'org.osgi', module: 'org.osgi.compendium'
+    }
+    bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.whiteboard', version: '1.6.0') {
+        exclude group: 'org.osgi', module: 'org.osgi.core'
+        exclude group: 'org.osgi', module: 'org.osgi.compendium'
+    }
+    bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.extender', version: '1.4.0') {
+        exclude group: 'org.apache.felix', module: 'org.osgi.core'
+        exclude group: 'org.osgi', module: 'org.osgi.compendium'
+    }
 
     //TODO: to devel?
     //felix gogo
@@ -51,4 +60,4 @@ dependencies {
 
 apply from: '../bintray.gradle'
 
-apply from: 'license-report.gradle'
+apply from: '../license-report.gradle'

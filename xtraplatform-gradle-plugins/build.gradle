@@ -1,7 +1,13 @@
 plugins {
     id 'java-gradle-plugin'
     id 'groovy'
+    id 'maven-publish'
+    id "com.jfrog.bintray" version "1.8.4" apply false
 }
+
+group = 'de.interactive_instruments'
+
+version = '2.0.0'
 
 repositories {
     jcenter()
@@ -22,8 +28,10 @@ gradlePlugin {
             implementationClass = 'de.interactive_instruments.xtraplatform.ApplicationPlugin'
         }
         osgiPlugin {
-            id = 'de.interactive_instruments.xtraplatform-osgi'
+            id = 'de.interactive_instruments.xtraplatform-bundle'
             implementationClass = 'de.interactive_instruments.xtraplatform.IpojoPlugin'
         }
     }
 }
+
+apply from: '../bintray.gradle'

@@ -44,7 +44,7 @@ class FeaturePlugin implements Plugin<Project> {
             subproject.plugins.apply('java-library')
             subproject.plugins.apply('maven-publish')
             //TODO: does it work?, move to bnd plugin
-            subproject.plugins.apply('de.interactive_instruments.xtraplatform-osgi')
+            subproject.plugins.apply('de.interactive_instruments.xtraplatform-bundle')
 
             subproject.repositories {
                 jcenter()
@@ -58,6 +58,12 @@ class FeaturePlugin implements Plugin<Project> {
                     println 'enforcedPlatform: ' + it
                     //TODO: does this work as intended?
                     subproject.dependencies.add('implementation', subproject.dependencies.enforcedPlatform(it))
+
+                    //TODO: does it work?, only for base or for all features?
+                    if (it.name == 'xtraplatform-base') {
+                        println 'base: ' + it
+                        subproject.dependencies.add('implementation', it)
+                    }
                 }
             }
 

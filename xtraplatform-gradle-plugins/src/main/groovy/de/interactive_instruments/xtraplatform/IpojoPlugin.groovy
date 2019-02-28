@@ -21,9 +21,10 @@ class IpojoPlugin implements Plugin<Project> {
         project.configurations.create('embedded')
         project.configurations.create('embeddedFlat')
         project.configurations.embeddedFlat.transitive = false
-        project.configurations.compileOnly.extendsFrom(project.configurations.provided)
-        project.configurations.compileOnly.extendsFrom(project.configurations.embedded)
-        project.configurations.compileOnly.extendsFrom(project.configurations.embeddedFlat)
+        //TODO: api is needed, check if poms are as intended
+        project.configurations.api.extendsFrom(project.configurations.provided)
+        project.configurations.api.extendsFrom(project.configurations.embedded)
+        project.configurations.api.extendsFrom(project.configurations.embeddedFlat)
 
         def osgiClassesDir = new File(project.buildDir, 'osgi-classes/')
         project.task('noOsgiClasses') {
@@ -97,6 +98,9 @@ class IpojoPlugin implements Plugin<Project> {
                         }
                     }
                 }
+
+            //TODO: required?
+                //project.jar.manifest.instruction('Import-Package', "!org.immutables.value")
 
                 project.jar.manifest.instruction("Export-Package", "*")
                 project.jar.manifest.instruction("Import-Package", "*")

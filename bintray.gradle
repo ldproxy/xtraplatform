@@ -6,7 +6,7 @@ allprojects { p ->
         p.bintray.with {
             user = project.bintrayUser
             key = project.bintrayApiKey
-            publications = ['default']
+            publications = p.extensions.publishing.publications.collect { it.name }
             publish = true
             dryRun = true
             pkg {
