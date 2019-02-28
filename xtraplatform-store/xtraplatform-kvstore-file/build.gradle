@@ -1,0 +1,18 @@
+version = '1.1.2'
+//version += '-SNAPSHOT'
+
+dependencies {
+    // TODO: DATA_DIR_KEY
+    implementation group: 'de.interactive_instruments', name: 'xtraplatform-runtime', version: '1.1.1'
+    
+    provided project(':xtraplatform-kvstore-api')
+    provided project(':xtraplatform-util')
+}
+
+jar {
+    manifest { 
+        instruction 'Export-Package'
+        instruction 'Private-Package', 
+            'de.ii.xsf.configstore.file'
+    }
+}

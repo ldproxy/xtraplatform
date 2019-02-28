@@ -1,7 +1,21 @@
+
+pluginManagement {
+	resolutionStrategy {
+		eachPlugin {
+			if (requested.id.namespace == 'de.interactive_instruments.xtraplatform') {
+				useModule("${requested.id.namespace}:${requested.id.name}:${requested.version}")
+			}
+		}
+	}
+}
+
+
 def excludes = [
 	'xtraplatform-bundles',
 	'xtraplatform-runtime',
-	'xtraplatform-devel'
+	'xtraplatform-devel',
+	'xtraplatform-gradle-plugins',
+	//'xtraplatform-dropwizard'
 ]
 
 rootDir.parentFile.listFiles().each { file ->

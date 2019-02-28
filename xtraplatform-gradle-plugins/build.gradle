@@ -1,0 +1,29 @@
+plugins {
+    id 'java-gradle-plugin'
+    id 'groovy'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    implementation group: 'org.apache.felix', name: 'org.apache.felix.ipojo.manipulator', version: '1.12.1'
+}
+
+gradlePlugin {
+    plugins {
+        featurePlugin {
+            id = 'de.interactive_instruments.xtraplatform-feature'
+            implementationClass = 'de.interactive_instruments.xtraplatform.FeaturePlugin'
+        }
+        applicationPlugin {
+            id = 'de.interactive_instruments.xtraplatform-application'
+            implementationClass = 'de.interactive_instruments.xtraplatform.ApplicationPlugin'
+        }
+        osgiPlugin {
+            id = 'de.interactive_instruments.xtraplatform-osgi'
+            implementationClass = 'de.interactive_instruments.xtraplatform.IpojoPlugin'
+        }
+    }
+}
