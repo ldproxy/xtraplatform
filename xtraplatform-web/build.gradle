@@ -18,6 +18,8 @@ dependencies {
     bundle subprojects
 }
 
+apply from: '../unit-tests.gradle'
+
 apply from: '../bintray.gradle'
 
 apply from: '../license-report.gradle'

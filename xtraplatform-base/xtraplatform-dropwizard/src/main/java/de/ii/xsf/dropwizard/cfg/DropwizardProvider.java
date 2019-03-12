@@ -8,7 +8,6 @@
 package de.ii.xsf.dropwizard.cfg;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.core.Appender;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -19,7 +18,6 @@ import de.ii.xsf.dropwizard.api.Dropwizard;
 import de.ii.xsf.dropwizard.api.HttpClients;
 import de.ii.xtraplatform.dropwizard.views.FallbackMustacheViewRenderer;
 import io.dropwizard.Application;
-import io.dropwizard.Configuration;
 import io.dropwizard.cli.Cli;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
@@ -32,7 +30,6 @@ import io.dropwizard.setup.Environment;
 import io.dropwizard.util.JarLocation;
 import io.dropwizard.views.ViewBundle;
 import io.dropwizard.views.ViewRenderer;
-import io.dropwizard.views.mustache.MustacheViewRenderer;
 import org.apache.felix.ipojo.annotations.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.config.Registry;
@@ -63,7 +60,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
+import static de.ii.xtraplatform.osgi.FelixRuntime.DATA_DIR_KEY;
 
 /**
  *

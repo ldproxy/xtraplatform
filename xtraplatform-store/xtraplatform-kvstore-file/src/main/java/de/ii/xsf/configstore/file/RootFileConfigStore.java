@@ -8,7 +8,7 @@
 package de.ii.xsf.configstore.file;
 
 import de.ii.xsf.configstore.api.KeyValueStore;
-import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
+import static de.ii.xtraplatform.osgi.FelixRuntime.DATA_DIR_KEY;
 import java.io.File;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;

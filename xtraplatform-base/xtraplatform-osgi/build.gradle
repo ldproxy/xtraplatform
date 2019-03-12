@@ -1,0 +1,8 @@
+
+version = '2.0.0'
+
+dependencies {
+    provided group: 'org.apache.felix', name: 'org.apache.felix.main', version: '6.0.2'
+    provided group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
+    provided(group: 'io.dropwizard', name: 'dropwizard-logging', version: rootProject.findProject('xtraplatform-dropwizard').dropwizardVersion)
+}

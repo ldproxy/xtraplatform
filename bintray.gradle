@@ -1,5 +1,7 @@
 
 allprojects { p ->
+  if (project.hasProperty('bintrayUser')) {
+
     apply plugin: 'com.jfrog.bintray'
 
     p.afterEvaluate {
@@ -25,4 +27,5 @@ allprojects { p ->
             }
         }
     }
+  }
 }

@@ -14,15 +14,12 @@ version = '2.0.0'
 dependencies {
     feature group: 'de.interactive_instruments', name: 'xtraplatform-base', version: '2.0.0'
 
-    bundle subprojects
+    bundle subprojects.findAll {!it.name.endsWith("-test") && !it.name.endsWith("-inmemory")}
 }
 
-subprojects {
-    dependencies {
-        compileOnly "org.immutables:value:2.7.5:annotations"
-        annotationProcessor "org.immutables:value:2.7.5"
-    }
-}
+apply from: '../immutables.gradle'
+
+apply from: '../unit-tests.gradle'
 
 apply from: '../bintray.gradle'
 

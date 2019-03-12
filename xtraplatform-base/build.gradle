@@ -14,26 +14,17 @@ version = '2.0.0'
 dependencies {
     bundle subprojects
 
-    //TODO: where are these packages included???
-    // logging
-    //bundles group: 'org.slf4j', name: 'slf4j-api', version: '1.7.6'
-    //bundles group: 'org.slf4j', name: 'log4j-over-slf4j', version: '1.7.6'
-    //bundles group: 'org.slf4j', name: 'jul-to-slf4j', version: '1.7.6'
+    //TODO: only in devel???
     bundle group: 'org.slf4j', name: 'osgi-over-slf4j', version: '1.7.25'
-    //bundles group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.3'
-    //bundles group: 'ch.qos.logback', name: 'logback-core', version: '1.1.3'
-
-    // servlet
-    //bundles group: 'org.eclipse.jetty.orbit', name: 'javax.servlet', version: '3.0.0.v201112011016'
 
     // felix
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.8.16'
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.eventadmin', version: '1.4.10'
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.2'
+    //bundle group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.12'
+    bundle group: 'org.apache.felix', name: 'org.apache.felix.eventadmin', version: '1.5.0'
+    //bundle group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.4'
 
     //TODO: to web?
     // felix http
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '4.0.0'
+    bundle group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '4.0.4'
     bundle group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '4.0.0'
 
     //felix ipojo
@@ -53,9 +44,9 @@ dependencies {
 
     //TODO: to devel?
     //felix gogo
-    //bundles group: 'org.apache.felix', name: 'org.apache.felix.gogo.shell', version: '1.0.0'
-    //bundles group: 'org.apache.felix', name: 'org.apache.felix.gogo.runtime', version: '1.0.8'
-    //bundles group: 'org.apache.felix', name: 'org.apache.felix.gogo.command', version: '1.0.2'
+    //bundle group: 'org.apache.felix', name: 'org.apache.felix.gogo.shell', version: '1.0.0'
+    //bundle group: 'org.apache.felix', name: 'org.apache.felix.gogo.runtime', version: '1.0.8'
+    //bundle group: 'org.apache.felix', name: 'org.apache.felix.gogo.command', version: '1.0.2'
 }
 
 apply from: '../bintray.gradle'

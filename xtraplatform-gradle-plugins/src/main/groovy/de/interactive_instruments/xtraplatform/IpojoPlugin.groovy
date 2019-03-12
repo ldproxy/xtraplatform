@@ -6,6 +6,8 @@ import org.gradle.api.plugins.osgi.OsgiPlugin
 import org.gradle.api.InvalidUserDataException
 import org.apache.felix.ipojo.manipulator.Pojoization
 import org.apache.felix.ipojo.manipulator.reporter.EmptyReporter
+import org.slf4j.LoggerFactory
+
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 import java.util.zip.ZipEntry;
@@ -13,6 +15,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 class IpojoPlugin implements Plugin<Project> {
+
+    static LOGGER = LoggerFactory.getLogger(IpojoPlugin.class)
 
     void apply(Project project) {
         project.plugins.apply(OsgiPlugin.class);
@@ -36,80 +40,82 @@ class IpojoPlugin implements Plugin<Project> {
         project.tasks.osgiClasses.finalizedBy project.tasks.noOsgiClasses
 
         project.tasks.jar.doFirst {
-            def embedInstruction = null;//project.jar.manifest.instructions.get("Embed-Dependency")
-            def transitive = null;//project.jar.manifest.instructions.get("Embed-Transitive") != null && project.jar.manifest.instructions.get("Embed-Transitive")[0] == "true";
-            def export = project.jar.manifest.instructions.get("Embed-Export") != null && project.jar.manifest.instructions.get("Embed-Export")[0] == "true";
-            def doimport = project.jar.manifest.instructions.get("Embed-Import") != null && project.jar.manifest.instructions.get("Embed-Import")[0] == "true";
+            def doExport = project.jar.manifest.instructions.get("Embed-Export") == null || project.jar.manifest.instructions.get("Embed-Export")[0] != "false";
+            def doImport = project.jar.manifest.instructions.get("Embed-Import") == null || project.jar.manifest.instructions.get("Embed-Import")[0] != "false";
+            def excludes = project.jar.manifest.instructions.get("Embed-Excludes")
 
             //if (embedInstruction != null) {
-                def includedArtifacts = [] as Set
+            def includedArtifacts = [] as Set
 
-                // determine artifacts that should be included in the bundle, might be transitive or not
-                def deps = getDependencies(project, embedInstruction, transitive)
+            // determine artifacts that should be included in the bundle, might be transitive or not
+            def deps = getDependencies(project, excludes, true)
 
-                deps.each { dependency ->
+            deps.each { dependency ->
+                dependency.moduleArtifacts.each { artifact ->
+                    includedArtifacts.add(artifact.file)
+                }
+            }
+
+            project.jar.manifest.instruction("Bundle-ClassPath", '.') //add the default classpath
+
+            includedArtifacts.each { artifact ->
+                        project.jar.from(artifact)
+                        project.jar.manifest.instruction("Bundle-ClassPath", artifact.name)
+                    }
+
+            // determine all dependent artifacts to analyze packages to be imported
+            if (doImport) {
+                def requiredArtifacts = [] as Set
+                def deps2 = getDependencies(project, [], true, true)
+
+                deps2.each { dependency ->
                     dependency.moduleArtifacts.each { artifact ->
-                        includedArtifacts.add(artifact.file)
+                        requiredArtifacts.add(artifact.file)
                     }
                 }
 
-                project.jar.manifest.instruction("Bundle-ClassPath", '.') //add the default classpath
-                includedArtifacts.each { artifact ->
-                    project.jar.from(artifact)
-                    project.jar.manifest.instruction("Bundle-ClassPath", artifact.name)
-                }
-
-                // determine all dependent artifacts to analyze packages to be imported
-                if (doimport) {
-                    def requiredArtifacts = [] as Set
-                    def deps2 = getDependencies(project, embedInstruction, true)
-
-                    deps2.each { dependency ->
-                        dependency.moduleArtifacts.each { artifact ->
-                            requiredArtifacts.add(artifact.file)
-                        }
-                    }
-
-                    requiredArtifacts.each { artifact ->
-                        // for bnd analysis
-                        project.copy {
-                            from artifact
-                            into project.jar.manifest.classesDir
-                        }
+                requiredArtifacts.each { artifact ->
+                    // for bnd analysis
+                    project.copy {
+                        from artifact
+                        into project.jar.manifest.classesDir
                     }
                 }
+            }
 
-                // determine packages for export
-                def pkgs = getPackages(deps)
+            // determine packages for export
+            def pkgs = getPackages(deps)
 
-                if (export) {
-                    // export only direct dependencies
-                    // pkgs = getPackages(getDependencies(project, embedInstruction, false))
-                    pkgs.each { pkg ->
-                        project.jar.manifest.instruction("Export-Package", "${pkg.name};version=${pkg.version.replaceAll('(-[\\w]+)+$', '')}")
-                        project.jar.manifest.instruction("Import-Package", "${pkg.name};version=${pkg.version.replaceAll('(-[\\w]+)+$', '')}")
-                    }
-                } else {
-                    pkgs.each { pkg ->
-                        project.jar.manifest.instructionFirst("Export-Package", "!${pkg.name}")
-                        project.jar.manifest.instructionFirst("Private-Package", "${pkg.name}")
-                        if (!doimport) {
-                            project.jar.manifest.instructionFirst("Import-Package", "!${pkg.name}")
-                        }
+            if (doExport) {
+                // export only direct dependencies
+                // pkgs = getPackages(getDependencies(project, embedInstruction, false))
+                pkgs.each { pkg ->
+                    project.jar.manifest.instruction("Export-Package", "${pkg.name};version=${pkg.version.replaceAll('(-[\\w]+)+$', '')}")
+                    project.jar.manifest.instruction("Import-Package", "${pkg.name};version=${pkg.version.replaceAll('(-[\\w]+)+$', '')}")
+                }
+            } else {
+                pkgs.each { pkg ->
+                    project.jar.manifest.instructionFirst("Export-Package", "!${pkg.name}")
+                    project.jar.manifest.instructionFirst("Private-Package", "${pkg.name}")
+                    if (!doImport) {
+                        project.jar.manifest.instructionFirst("Import-Package", "!${pkg.name}")
                     }
                 }
+            }
 
             //TODO: required?
-                //project.jar.manifest.instruction('Import-Package', "!org.immutables.value")
+            //project.jar.manifest.instruction('Import-Package', "!org.immutables.value")
 
-                project.jar.manifest.instruction("Export-Package", "*")
-                project.jar.manifest.instruction("Import-Package", "*")
+            project.jar.manifest.instruction("Export-Package", "*")
+            project.jar.manifest.instruction("Import-Package", "*")
 
-                //println project.jar.manifest.instructions
+            //println project.jar.manifest.instructions
             //}
         }
 
         project.tasks.jar.doLast {
+            def excludes = project.jar.manifest.instructions.get("Embed-Excludes")
+
             Pojoization pojo = new Pojoization(new EmptyReporter())
 
             File jarfile = project.file(project.jar.archivePath)
@@ -121,7 +127,7 @@ class IpojoPlugin implements Plugin<Project> {
 
             def dependencies = [] as Set
             project.configurations.runtimeClasspath.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
-                dependencies.addAll(getDependenciesRecursive(dependency, true))
+                dependencies.addAll(getDependenciesRecursive(dependency, true, excludes))
             }
             dependencies.each { dependency ->
                 dependency.moduleArtifacts.each { art ->
@@ -133,7 +139,7 @@ class IpojoPlugin implements Plugin<Project> {
             pojo.pojoization(jarfile, targetJarFile, (File) null, urlClassLoader)
 
             pojo.getWarnings().each { s ->
-                println s
+                LOGGER.warn(s)
             }
 
             pojo = null;
@@ -157,7 +163,7 @@ class IpojoPlugin implements Plugin<Project> {
      * @param recursive The embed transitive state
      * @return the list of dependencies. An empty Set if none
      */
-    def getDependencies(project, embededList, recursive) {
+    def getDependencies(project, excludes, recursive, noLog = false) {
         def dependencies = [] as Set //resolved Dependencies
         //def dependencyMap = [:];
         // This only considers top level resolved dependencies, but other should 
@@ -174,32 +180,31 @@ class IpojoPlugin implements Plugin<Project> {
 			}
 		}*/
 
-        project.configurations.runtime.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
-            println "runtime: ${dependency.moduleName}"
-        }
         project.configurations.embedded.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
-            println "embedded: ${dependency.moduleName}"
-            dependencies.addAll(getDependenciesRecursive(dependency, true))
+            if (!noLog) LOGGER.info('embedding dependency: {}', dependency.moduleName)
+            dependencies.addAll(getDependenciesRecursive(dependency, true, excludes))
 
         }
         project.configurations.embeddedFlat.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
-            println "embeddedFlat: ${dependency.moduleName}"
-            dependencies.addAll(getDependenciesRecursive(dependency, false))
+            if (!noLog) LOGGER.info('embedding dependency (flat): {}', dependency.moduleName)
+            dependencies.addAll(getDependenciesRecursive(dependency, false, excludes))
 
         }
         return dependencies
     }
 
-    def getDependenciesRecursive(dependency, recursive) {
+    def getDependenciesRecursive(dependency, recursive, excludes) {
         def dependencies = [] as Set
         //println "dependency "+dependency.name
         if (recursive) {
             dependency.children.each { child ->
                 //println "  child "+child.name+" Parents: "+child.parents
-                dependencies.addAll(getDependenciesRecursive(child, recursive))
+                    dependencies.addAll(getDependenciesRecursive(child, recursive, excludes))
             }
         }
-        dependencies.add(dependency)
+
+        if (!(dependency.moduleName in excludes))
+            dependencies.add(dependency)
 
         return dependencies
     }

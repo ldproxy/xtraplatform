@@ -1,9 +1,15 @@
 package de.interactive_instruments.xtraplatform
 
+import org.gradle.api.Action
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.bundling.Jar
+import org.gradle.internal.impldep.com.google.common.base.Strings
 
 /**
  * @author zahnen
@@ -35,6 +41,17 @@ class FeaturePlugin implements Plugin<Project> {
 
         //TODO: apply bundles.gradle
 
+        // needed for composite builds in intellij
+        /*project.task('jar') {
+            dependsOn(getSubprojectTasksByName(project, 'jar'))
+        }
+        project.task('classes') {
+            dependsOn(getSubprojectTasksByName(project, 'classes'))
+        }
+        project.task('testClasses') {
+            dependsOn(getSubprojectTasksByName(project, 'testClasses'))
+        }*/
+
 
     }
 
@@ -43,8 +60,8 @@ class FeaturePlugin implements Plugin<Project> {
 
             subproject.plugins.apply('java-library')
             subproject.plugins.apply('maven-publish')
-            //TODO: does it work?, move to bnd plugin
-            subproject.plugins.apply('de.interactive_instruments.xtraplatform-bundle')
+            //TODO: does it work?, move to bnd plugin, version?
+            subproject.plugins.apply(IpojoPlugin.class) //.apply('de.interactive_instruments.xtraplatform-bundle')
 
             subproject.repositories {
                 jcenter()
@@ -55,27 +72,52 @@ class FeaturePlugin implements Plugin<Project> {
 
             project.afterEvaluate {
                 project.configurations.feature.dependencies.each {
-                    println 'enforcedPlatform: ' + it
+                    //println 'enforcedPlatform: ' + it
                     //TODO: does this work as intended?
+                    //TODO: this adds all transitive dependencies, i think we have to split bom and bundles
                     subproject.dependencies.add('implementation', subproject.dependencies.enforcedPlatform(it))
 
                     //TODO: does it work?, only for base or for all features?
                     if (it.name == 'xtraplatform-base') {
-                        println 'base: ' + it
+                        //println 'base: ' + it
                         subproject.dependencies.add('implementation', it)
                     }
                 }
+            }
+
+            subproject.task('sourceJar', type: Jar) {
+                from sourceSets.main.allSource
             }
 
             subproject.extensions.publishing.with {
                 publications {
                     'default'(MavenPublication) {
                         from subproject.components.java
+
+                        artifact sourceJar {
+                            classifier "sources"
+                        }
+
+                        /*pom.withXml{
+                            asNode().remove(asNode().get('dependencies'))
+                            def dependenciesNode = asNode().appendNode('dependencies')
+
+                            subproject.configurations.provided.allDependencies.each {
+                                def dependencyNode = dependenciesNode.appendNode('dependency')
+                                dependencyNode.appendNode('groupId', it.group)
+                                dependencyNode.appendNode('artifactId', it.name)
+                                dependencyNode.appendNode('version', it.version)
+                                dependencyNode.appendNode('scope', 'runtime')
+
+                                def exclusionsNode = dependencyNode.appendNode('exclusions')
+                                def exclusionNode = exclusionsNode.appendNode('exclusion')
+                                exclusionNode.appendNode('groupId', '*')
+                                exclusionNode.appendNode('artifactId', '*')
+                            }
+                        }*/
                     }
                 }
             }
-
-
         }
     }
 
@@ -134,5 +176,19 @@ class FeaturePlugin implements Plugin<Project> {
                 }
             }
         }
+    }
+
+    Set<Task> getSubprojectTasksByName(Project project, String name) {
+            final Set<Task> foundTasks = new HashSet();
+
+            project.subprojects({ subproject ->
+                ((ProjectInternal)subproject).evaluate();
+                Task task = (Task)subproject.getTasks().findByName(name);
+                if (task != null) {
+                    foundTasks.add(task);
+                }
+            });
+
+            return foundTasks;
     }
 }

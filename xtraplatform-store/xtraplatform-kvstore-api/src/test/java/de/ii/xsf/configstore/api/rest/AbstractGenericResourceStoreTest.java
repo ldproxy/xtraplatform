@@ -184,5 +184,10 @@ public class AbstractGenericResourceStoreTest {
         protected Resource createEmptyResource(String id, String... path) {
             return new TestResource("x", "y");
         }
+
+        @Override
+        protected Class<?> getResourceClass(String id, String... path) {
+            return TestResource.class;
+        }
     }
 }

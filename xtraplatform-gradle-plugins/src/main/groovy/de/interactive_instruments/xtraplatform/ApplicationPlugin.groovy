@@ -2,7 +2,10 @@ package de.interactive_instruments.xtraplatform
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ExternalModuleDependency
+import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.tasks.Delete
+import org.gradle.internal.impldep.org.bouncycastle.math.raw.Mod
 
 import java.util.regex.Pattern
 
@@ -12,13 +15,37 @@ import java.util.regex.Pattern
 class ApplicationPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
+        project.plugins.apply(FeaturePlugin.class)
         project.plugins.apply("application")
 
-        project.getConfigurations().create("feature")
-        //project.configurations.runtimeOnly.extendsFrom(project.configurations.feature)
+        project.getConfigurations().create("app")
+        //project.configurations.app.setTransitive(false)
+        project.configurations.implementation.extendsFrom(project.configurations.app)
+        project.getConfigurations().create("platform")
+        project.configurations.platform.setTransitive(false)
+        project.configurations.compileOnly.extendsFrom(project.configurations.platform)
 
-        // TODO: add version to base feature, enforcePlatform(feature-base)
-        project.dependencies.add('implementation', 'de.interactive_instruments:xtraplatform-runtime')
+        project.afterEvaluate {
+            def baseFound = false
+            project.configurations.feature.dependencies.each {
+                if (it.name == 'xtraplatform-base') {
+                    //TODO: does this actually enforce the version when using from repo?
+                    project.dependencies.add('platform', project.dependencies.enforcedPlatform(it))
+                    project.dependencies.add('app', 'de.interactive_instruments:xtraplatform-osgi')
+                    baseFound = true
+                }
+            }
+            if (!baseFound) {
+                throw new IllegalStateException("You have to add 'xtraplatform-base' to configuration 'feature'")
+            }
+        }
+
+        project.repositories {
+            jcenter()
+            maven {
+                url "https://dl.bintray.com/iide/maven"
+            }
+        }
 
         addCreateRuntimeClassTask(project)
 
@@ -51,19 +78,21 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     void addDistribution(Project project) {
-        project.distributions.with {
-            main {
-                contents {
-                    from(project.configurations.feature) {
-                        into "bundles"
-                    }
-                    into('') {
-                        //create an empty 'data/log' directory in distribution root
-                        def appDirBase = new File(project.buildDir, 'tmp/app-dummy-dir')
-                        def logDir = new File(appDirBase, 'data/log')
-                        logDir.mkdirs()
+        project.afterEvaluate {
+            project.distributions.with {
+                main {
+                    contents {
+                        from(getBundleFiles(project)) {
+                            into "bundles"
+                        }
+                        into('') {
+                            //create an empty 'data/log' directory in distribution root
+                            def appDirBase = new File(project.buildDir, 'tmp/app-dummy-dir')
+                            def logDir = new File(appDirBase, 'data/log')
+                            logDir.mkdirs()
 
-                        from { appDirBase }
+                            from { appDirBase }
+                        }
                     }
                 }
             }
@@ -75,8 +104,21 @@ class ApplicationPlugin implements Plugin<Project> {
         project.tasks.distTar.version = ''
     }
 
+    List<File> getBundleFiles(Project project) {
+        def bundlesFromFeatures = project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
+            it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != 'xtraplatform-osgi' }).collect({
+                it.file
+            })
+        })
+        def bundlesFromApplication = project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
+            it.moduleArtifacts
+        }).collect({ it.file })
+
+        return bundlesFromFeatures + bundlesFromApplication
+    }
+
     void addCreateRuntimeClassTask(Project project) {
-        project.mainClassName = "de.ii.xtraplatform.Runtime"
+        project.mainClassName = "de.ii.xtraplatform.application.Launcher"
 
         File generatedSourceDir = new File(project.buildDir, 'generated/src/main/java/')
         project.mkdir(generatedSourceDir)
@@ -91,29 +133,37 @@ class ApplicationPlugin implements Plugin<Project> {
                 def bundles = createBundleTree(project)
 
                 def mainClass = """
-                    package de.ii.xtraplatform;
+                    package de.ii.xtraplatform.application;
 
+                    import de.ii.xtraplatform.osgi.FelixRuntime;
                     import com.google.common.collect.ImmutableList;
-                    import java.util.ArrayList;
+                    import java.lang.Runtime;
                     import java.util.List;
         
-                    public class Runtime {
+                    public class Launcher {
                     
                         private static final List<List<String>> BUNDLES = ${bundles};
 
                         public static void main(String[] args) throws Exception {
-                        
+                            final FelixRuntime runtime = new FelixRuntime("${project.name}", "${project.version}");
+                            
+                            runtime.init(args, BUNDLES);
+                            runtime.start();
+                            
+                            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                                runtime.stop(5000);
+                            }));
                         }
                     }
                 """
 
-                File packageDir = new File(generatedSourceDir, 'de/ii/xtraplatform/')
+                File packageDir = new File(generatedSourceDir, 'de/ii/xtraplatform/application/')
                 packageDir.mkdirs()
 
-                println packageDir
-                println mainClass
+                //println packageDir
+                //println mainClass
 
-                new File(packageDir, "Runtime.java").write(mainClass)
+                new File(packageDir, "Launcher.java").write(mainClass)
             }
         }
 
@@ -140,7 +190,40 @@ class ApplicationPlugin implements Plugin<Project> {
         def delayedBundles = []
 
         sortedFeatures.eachWithIndex { feature, index ->
-            def bundles = feature.children.findAll({ bundle -> !(bundle in features) }).collect({bundle -> bundle.moduleArtifacts.collect({it.file}).head()})
+            if (index == 0) {
+                //base
+                def level0 = ['xtraplatform-dropwizard', 'osgi-over-slf4j', 'org.apache.felix.ipojo']
+
+                def bundles0 = feature.children.findAll({ bundle -> !(bundle in features) }).collectMany({ bundle ->
+                    bundle.moduleArtifacts
+                }).findAll({ it.name != 'xtraplatform-osgi' && it.name in level0 }).collect({
+                    it.file
+                })
+
+                bundleTree += createBundleList(bundles0)
+                bundleTree += ','
+
+                def bundles1 = feature.children.findAll({ bundle -> !(bundle in features) }).collectMany({ bundle ->
+                    bundle.moduleArtifacts
+                }).findAll({ it.name != 'xtraplatform-osgi' && !(it.name in level0) }).collect({
+                    it.file
+                })
+
+                bundleTree += createBundleList(bundles1)
+
+                if (index < sortedFeatures.size() - 1) {
+                    bundleTree += ','
+                }
+
+                return;
+            }
+
+
+            def bundles = feature.children.findAll({ bundle -> !(bundle in features) }).collectMany({ bundle ->
+                bundle.moduleArtifacts
+            }).findAll({ it.name != 'xtraplatform-osgi' }).collect({
+                it.file
+            })//.head()
 
             delayedBundles += bundles.findAll({ bundle -> manifestContains(project, bundle, lateStartManifestPattern) })
 
@@ -164,7 +247,7 @@ class ApplicationPlugin implements Plugin<Project> {
         def bundleList = '\nImmutableList.of('
 
         bundles.eachWithIndex { bundle, index2 ->
-            println "- " + bundle.name
+            //println "- " + bundle.name
 
             bundleList += '"' + bundle.name + '"'
 

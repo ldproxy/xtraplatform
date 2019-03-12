@@ -4,3 +4,18 @@ task bintrayUpload {
         dependsOn it.task(':bintrayUpload')
     }
 }
+task jar {
+    gradle.includedBuilds.each {
+        dependsOn it.task(':jar')
+    }
+}
+task classes {
+    gradle.includedBuilds.each {
+        dependsOn it.task(':classes')
+    }
+}
+task testClasses {
+    gradle.includedBuilds.each {
+        dependsOn it.task(':testClasses')
+    }
+}

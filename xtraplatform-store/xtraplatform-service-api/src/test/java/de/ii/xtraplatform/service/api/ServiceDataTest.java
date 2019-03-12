@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 public class ServiceDataTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceDataTest.class);
+    /*private static final Logger LOGGER = LoggerFactory.getLogger(ServiceDataTest.class);
 
     private static final ServiceData SERVICE_DATA = ImmutableServiceData.builder()
                                                                         .id("xyz")
@@ -170,5 +170,5 @@ public class ServiceDataTest {
         LOGGER.info("\nMERGED {}", serviceData.toImmutable());
 
         Assert.assertEquals(serviceData.toImmutable(), SERVICE_DATA_MERGED);
-    }
+    }*/
 }

@@ -18,32 +18,20 @@ dependencies {
 
     }*/
 
-    embedded (group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: swaggerVersion) {
+    embeddedFlat (group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: swaggerVersion) {
         exclude module: 'jersey-server'
     }
-    embedded group: 'io.swagger.core.v3', name: 'swagger-models', version: swaggerVersion
-    embedded group: 'io.swagger.core.v3', name: 'swagger-annotations', version: swaggerVersion
-    embedded group: 'io.swagger.core.v3', name: 'swagger-integration', version: swaggerVersion
-    embedded group: 'io.swagger.core.v3', name: 'swagger-core', version: swaggerVersion
-    embedded 'org.reflections:reflections:0.9.11'
+    embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-models', version: swaggerVersion
+    embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-annotations', version: swaggerVersion
+    embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-integration', version: swaggerVersion
+    embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-core', version: swaggerVersion
+    embeddedFlat 'org.reflections:reflections:0.9.11'
 
     provided project(':xtraplatform-web-rest')
 } 
 
 jar {
     manifest { 
-        instruction 'Embed-Dependency',
-            'swagger-jaxrs2',
-                'swagger-models',
-                'swagger-annotations',
-                'swagger-integration',
-                'swagger-core',
-                'reflections'
-        
-        instruction 'Embed-Transitive', 'false'
-        instruction 'Embed-Export', 'true'
-        instruction 'Embed-Import', 'true'
-
         instruction 'Import-Package', 'javax.ws.rs'
         instruction 'Import-Package', 'javax.ws.rs.ext'
         instruction 'Import-Package', 'javax.ws.rs.core'
