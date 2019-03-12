@@ -2,8 +2,6 @@ version = '1.1.2'
 //version += '-SNAPSHOT'
 
 dependencies {
-    provided 'de.interactive_instruments:xtraplatform-util'
-    //provided project(':xtraplatform-runtime')
 }
 
 jar {

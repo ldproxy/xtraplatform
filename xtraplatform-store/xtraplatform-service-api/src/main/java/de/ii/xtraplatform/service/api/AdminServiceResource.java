@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.service.api;
 
-import de.ii.xsf.core.api.permission.AuthenticatedUser;
+import de.ii.xtraplatform.api.permission.AuthenticatedUser;
 
 /**
  * @author zahnen

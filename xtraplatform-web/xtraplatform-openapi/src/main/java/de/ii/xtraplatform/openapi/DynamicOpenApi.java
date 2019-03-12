@@ -7,10 +7,8 @@
  */
 package de.ii.xtraplatform.openapi;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import de.ii.xsf.core.web.JaxRsChangeListener;
-import de.ii.xsf.core.web.JaxRsReg;
+import de.ii.xtraplatform.web.rest.JaxRsChangeListener;
+import de.ii.xtraplatform.web.rest.JaxRsReg;
 import io.swagger.v3.core.filter.OpenAPISpecFilter;
 import io.swagger.v3.core.filter.SpecFilter;
 import io.swagger.v3.core.util.Json;
@@ -26,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.core.*;
 import javax.ws.rs.core.MediaType;
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.auth.external;
 
 import com.google.common.cache.CacheBuilderSpec;
-import de.ii.xsf.dropwizard.api.Dropwizard;
+import de.ii.xtraplatform.dropwizard.api.Dropwizard;
 import de.ii.xtraplatform.akka.http.AkkaHttp;
 import de.ii.xtraplatform.auth.api.AuthProvider;
 import de.ii.xtraplatform.auth.api.User;

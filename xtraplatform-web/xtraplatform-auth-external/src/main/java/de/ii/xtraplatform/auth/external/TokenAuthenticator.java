@@ -18,19 +18,14 @@ import de.ii.xtraplatform.auth.api.User;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static de.ii.xtraplatform.util.functional.LambdaWithException.mayThrow;
+import static de.ii.xtraplatform.api.functional.LambdaWithException.mayThrow;
 
 /**
  * @author zahnen

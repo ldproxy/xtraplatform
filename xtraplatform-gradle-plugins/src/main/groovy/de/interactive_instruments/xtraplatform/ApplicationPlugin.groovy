@@ -31,7 +31,7 @@ class ApplicationPlugin implements Plugin<Project> {
                 if (it.name == 'xtraplatform-base') {
                     //TODO: does this actually enforce the version when using from repo?
                     project.dependencies.add('platform', project.dependencies.enforcedPlatform(it))
-                    project.dependencies.add('app', 'de.interactive_instruments:xtraplatform-osgi')
+                    project.dependencies.add('app', 'de.interactive_instruments:xtraplatform-runtime')
                     baseFound = true
                 }
             }
@@ -106,7 +106,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
     List<File> getBundleFiles(Project project) {
         def bundlesFromFeatures = project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
-            it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != 'xtraplatform-osgi' }).collect({
+            it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != 'xtraplatform-runtime' }).collect({
                 it.file
             })
         })
@@ -135,7 +135,7 @@ class ApplicationPlugin implements Plugin<Project> {
                 def mainClass = """
                     package de.ii.xtraplatform.application;
 
-                    import de.ii.xtraplatform.osgi.FelixRuntime;
+                    import de.ii.xtraplatform.runtime.FelixRuntime;
                     import com.google.common.collect.ImmutableList;
                     import java.lang.Runtime;
                     import java.util.List;
@@ -196,7 +196,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
                 def bundles0 = feature.children.findAll({ bundle -> !(bundle in features) }).collectMany({ bundle ->
                     bundle.moduleArtifacts
-                }).findAll({ it.name != 'xtraplatform-osgi' && it.name in level0 }).collect({
+                }).findAll({ it.name != 'xtraplatform-runtime' && it.name in level0 }).collect({
                     it.file
                 })
 
@@ -205,7 +205,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
                 def bundles1 = feature.children.findAll({ bundle -> !(bundle in features) }).collectMany({ bundle ->
                     bundle.moduleArtifacts
-                }).findAll({ it.name != 'xtraplatform-osgi' && !(it.name in level0) }).collect({
+                }).findAll({ it.name != 'xtraplatform-runtime' && !(it.name in level0) }).collect({
                     it.file
                 })
 
@@ -221,7 +221,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
             def bundles = feature.children.findAll({ bundle -> !(bundle in features) }).collectMany({ bundle ->
                 bundle.moduleArtifacts
-            }).findAll({ it.name != 'xtraplatform-osgi' }).collect({
+            }).findAll({ it.name != 'xtraplatform-runtime' }).collect({
                 it.file
             })//.head()
 

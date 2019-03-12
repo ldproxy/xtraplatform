@@ -34,11 +34,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.List;
 
-import static de.ii.xtraplatform.util.functional.LambdaWithException.mayThrow;
+import static de.ii.xtraplatform.api.functional.LambdaWithException.mayThrow;
 
 /**
  * @author zahnen

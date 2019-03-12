@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.service.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.ii.xsf.core.api.permission.AuthorizationProvider;
+import de.ii.xtraplatform.api.permission.AuthorizationProvider;
 import de.ii.xtraplatform.entity.api.EntityRepository;
 import io.dropwizard.views.ViewRenderer;
 

@@ -2,11 +2,12 @@
 version = '2.0.0'
 
 ext {
-    dropwizardVersion = '1.2.9'
+    dropwizardVersion = '1.3.9'
 }
 
 dependencies {
-    provided project(':xtraplatform-osgi')
+    provided project(':xtraplatform-runtime')
+    provided rootProject.configurations.getByName('bundle').dependencies.find {it.name == 'org.apache.felix.ipojo'}
 
     embedded(group: 'io.dropwizard', name: 'dropwizard-core', version: dropwizardVersion)
     embedded group: 'io.dropwizard', name: 'dropwizard-views-mustache', version: dropwizardVersion
@@ -87,5 +88,20 @@ jar {
         instructionFirst 'Import-Package', 'javax.xml.transform.dom'
         instructionFirst 'Import-Package', 'javax.xml.bind'
         instructionFirst 'Import-Package', 'javax.xml.bind.annotation'
+
+        instructionFirst 'Import-Package', '!org.checkerframework.framework.qual'
+        instructionFirst 'Import-Package', '!afu.org.checkerframework.framework.qual'
+        instructionFirst 'Import-Package', '!afu.org.checkerframework.checker.formatter.qual'
+        instructionFirst 'Import-Package', '!afu.org.checkerframework.checker.nullness.qual'
+        instructionFirst 'Import-Package', '!afu.org.checkerframework.checker.units.qual'
+        instructionFirst 'Import-Package', '!afu.org.checkerframework.dataflow.qual'
+        instructionFirst 'Import-Package', '!afu.org.checkerframework.checker.regex.qual'
+        instructionFirst 'Import-Package', '!org.checkerframework.dataflow.qual'
+        instructionFirst 'Import-Package', '!org.checkerframework.checker.regex.qual'
+        instructionFirst 'Import-Package', '!org.checkerframework.checker.nullness.qual'
+        instructionFirst 'Import-Package', '!org.checkerframework.checker.formatter.qual'
+        instructionFirst 'Import-Package', '!org.checkerframework.checker.units.qual'
+        instructionFirst 'Import-Package', '!com.sun.tools.attach'
+        instructionFirst 'Import-Package', '!com.sun.management'
     }
 }

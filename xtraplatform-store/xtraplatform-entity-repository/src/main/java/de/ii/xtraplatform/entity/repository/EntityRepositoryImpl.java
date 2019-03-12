@@ -12,22 +12,17 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ObjectArrays;
-import de.ii.xsf.configstore.api.KeyValueStore;
-import de.ii.xsf.configstore.api.rest.AbstractGenericResourceStore;
-import de.ii.xsf.configstore.api.rest.ResourceSerializer;
-import de.ii.xsf.configstore.api.rest.ResourceStore;
-import de.ii.xsf.configstore.api.rest.ResourceTransaction;
-import de.ii.xsf.core.util.json.DeepUpdater;
-import de.ii.xsf.dropwizard.api.Jackson;
+import de.ii.xtraplatform.kvstore.api.KeyValueStore;
+import de.ii.xtraplatform.kvstore.api.rest.AbstractGenericResourceStore;
+import de.ii.xtraplatform.kvstore.api.rest.ResourceSerializer;
+import de.ii.xtraplatform.kvstore.api.rest.ResourceStore;
+import de.ii.xtraplatform.kvstore.api.rest.ResourceTransaction;
+import de.ii.xtraplatform.dropwizard.api.Jackson;
 import de.ii.xtraplatform.entity.api.AbstractEntityData;
 import de.ii.xtraplatform.entity.api.EntityDataGenerator;
 import de.ii.xtraplatform.entity.api.EntityRepository;
 import de.ii.xtraplatform.entity.api.EntityRepositoryChangeListener;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.annotations.*;
 import org.apache.felix.ipojo.handlers.event.Publishes;
 import org.apache.felix.ipojo.handlers.event.publisher.Publisher;
 import org.apache.felix.ipojo.whiteboard.Wbp;
@@ -39,12 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -91,7 +81,7 @@ public class EntityRepositoryImpl implements EntityRepository {
         this.entityDataGenerators = new LinkedHashMap<>();
         this.entityBuffer = new LinkedHashMap<>();
         this.entitySerializer = new EntitySerializer(jackson.getDefaultObjectMapper());
-        this.store = new EntityStore(rootConfigStore, "entities", false, new DeepUpdater<>(jackson.getDefaultObjectMapper()), entitySerializer);
+        this.store = new EntityStore(rootConfigStore, "entities", false, /*new DeepUpdater<>(jackson.getDefaultObjectMapper()),*/ entitySerializer);
         this.kvStore = rootConfigStore;
         this.mapper = jackson.getDefaultObjectMapper();
     }
@@ -294,8 +284,8 @@ public class EntityRepositoryImpl implements EntityRepository {
             super(rootConfigStore, resourceType, jsonMapper, fullCache);
         }
 // TODO: DeepUpdater and Serializer with JsonMerge, see ...
-        public EntityStore(KeyValueStore rootConfigStore, String resourceType, boolean fullCache, DeepUpdater<AbstractEntityData> deepUpdater, ResourceSerializer<AbstractEntityData> serializer) {
-            super(rootConfigStore, resourceType, fullCache, deepUpdater, serializer);
+        public EntityStore(KeyValueStore rootConfigStore, String resourceType, boolean fullCache, /*DeepUpdater<AbstractEntityData> deepUpdater,*/ ResourceSerializer<AbstractEntityData> serializer) {
+            super(rootConfigStore, resourceType, fullCache, /*deepUpdater,*/ serializer);
         }
 
         @Override

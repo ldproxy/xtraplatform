@@ -45,10 +45,10 @@ public class FallbackMustacheViewRenderer extends MustacheViewRenderer {
         });
     }
 
-    @Override
+    /*@Override
     public boolean isRenderable(View view) {
         return view.getTemplateName().endsWith(getSuffix());
-    }
+    }*/
 
     @Override
     public void render(View view, Locale locale, OutputStream output) throws IOException {
@@ -85,10 +85,10 @@ public class FallbackMustacheViewRenderer extends MustacheViewRenderer {
         return useCache;
     }
 
-    @Override
+    /*@Override
     public String getSuffix() {
         return ".mustache";
-    }
+    }*/
 
     private MustacheFactory createNewMustacheFactory(Class<? extends View> key) {
         return new DefaultMustacheFactory(

@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.entity.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.ii.xsf.core.api.Resource;
+import de.ii.xtraplatform.api.Resource;
 
 /**
  * @author zahnen
