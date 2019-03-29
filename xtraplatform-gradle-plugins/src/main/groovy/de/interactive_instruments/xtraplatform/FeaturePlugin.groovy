@@ -1,15 +1,11 @@
 package de.interactive_instruments.xtraplatform
 
-import org.gradle.api.Action
-import org.gradle.api.InvalidUserDataException
+
+import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.artifacts.ProjectDependency
-import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
-import org.gradle.internal.impldep.com.google.common.base.Strings
 
 /**
  * @author zahnen
@@ -24,35 +20,29 @@ class FeaturePlugin implements Plugin<Project> {
         project.configurations.create("feature")
         project.configurations.create("bundle")
         project.configurations.create("default")
-        //TODO: api or runtime
+
         project.configurations.default.extendsFrom(project.configurations.feature)
         project.configurations.default.extendsFrom(project.configurations.bundle)
+        project.configurations.default.setTransitive(false)
+        project.configurations.bundle.setTransitive(false)
+        project.configurations.feature.setTransitive(true)
 
         /*project.extensions.javaPlatform.with {
             allowDependencies()
         }*/
 
+        project.repositories {
+            jcenter()
+            maven {
+                url "https://dl.bintray.com/iide/maven"
+            }
+        }
+
         addPublication(project)
 
         configureSubprojects(project)
 
-
-        //TODO: enforcePlatform here or in build.gradle
-
-        //TODO: apply bundles.gradle
-
-        // needed for composite builds in intellij
-        /*project.task('jar') {
-            dependsOn(getSubprojectTasksByName(project, 'jar'))
-        }
-        project.task('classes') {
-            dependsOn(getSubprojectTasksByName(project, 'classes'))
-        }
-        project.task('testClasses') {
-            dependsOn(getSubprojectTasksByName(project, 'testClasses'))
-        }*/
-
-
+        project.plugins.apply(DocPlugin.class)
     }
 
     void configureSubprojects(Project project) {
@@ -60,8 +50,10 @@ class FeaturePlugin implements Plugin<Project> {
 
             subproject.plugins.apply('java-library')
             subproject.plugins.apply('maven-publish')
-            //TODO: does it work?, move to bnd plugin, version?
-            subproject.plugins.apply(IpojoPlugin.class) //.apply('de.interactive_instruments.xtraplatform-bundle')
+            subproject.plugins.apply(BundlePlugin.class)
+
+            // stay java 8 compatible
+            subproject.setSourceCompatibility(JavaVersion.VERSION_1_8)
 
             subproject.repositories {
                 jcenter()
@@ -71,18 +63,27 @@ class FeaturePlugin implements Plugin<Project> {
             }
 
             project.afterEvaluate {
+                // add every feature as enforcedPlatform to provided
+                // this allows to add bundles as dependencies without version
                 project.configurations.feature.dependencies.each {
                     //println 'enforcedPlatform: ' + it
                     //TODO: does this work as intended?
                     //TODO: this adds all transitive dependencies, i think we have to split bom and bundles
-                    subproject.dependencies.add('implementation', subproject.dependencies.enforcedPlatform(it))
-
-                    //TODO: does it work?, only for base or for all features?
-                    if (it.name == 'xtraplatform-base') {
-                        //println 'base: ' + it
-                        subproject.dependencies.add('implementation', it)
-                    }
+                    subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(it))
                 }
+
+                // add all bundles from xtraplatform-base with all transitive dependencies to compileOnly
+                project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.each({
+                    if (it.moduleName == 'xtraplatform-base') {
+                        it.children.each { bundle ->
+                            //TODO
+                            if (bundle.moduleGroup == 'de.interactive_instruments' || bundle.moduleName == 'org.apache.felix.ipojo') {
+                                subproject.dependencies.add('compileOnly', bundle.name)
+                                subproject.dependencies.add('testImplementation', bundle.name)
+                            }
+                        }
+                    }
+                })
             }
 
             subproject.task('sourceJar', type: Jar) {
@@ -124,16 +125,25 @@ class FeaturePlugin implements Plugin<Project> {
     void addPublication(Project project) {
         project.extensions.publishing.with {
             publications {
-                /*feature(MavenPublication) {
-                from project.components.javaPlatform
+                /*bom(MavenPublication) {
+                    //from project.components.javaPlatform
 
-                artifactId "${project.name}-bom"
+                    artifactId "${project.name}-bom"
 
-                pom.withXml {
+                    pom.withXml {
 
-                    println asString()
-                }
-            }*/
+                        def dependencyManagementNode = asNode().appendNode('dependencyManagement').appendNode('dependencies')
+
+                        project.configurations.bundle.dependencies.each {
+                            def dependencyNode = dependencyManagementNode.appendNode('dependency')
+                            dependencyNode.appendNode('groupId', it.group)
+                            dependencyNode.appendNode('artifactId', it.name)
+                            dependencyNode.appendNode('version', it.version)
+                            dependencyNode.appendNode('scope', 'compile')
+                        }
+                        //println asString()
+                    }
+                }*/
                 'default'(MavenPublication) {
 
                     //artifactId "${project.name}-bundles"
@@ -158,6 +168,11 @@ class FeaturePlugin implements Plugin<Project> {
                             dependencyNode.appendNode('artifactId', it.name)
                             dependencyNode.appendNode('version', it.version)
                             dependencyNode.appendNode('scope', 'runtime')
+
+                            /*def exclusionsNode = dependencyNode.appendNode('exclusions')
+                            def exclusionNode = exclusionsNode.appendNode('exclusion')
+                            exclusionNode.appendNode('groupId', '*')
+                            exclusionNode.appendNode('artifactId', '*')*/
                         }
 
                         project.configurations.bundle.dependencies.each {
@@ -166,6 +181,11 @@ class FeaturePlugin implements Plugin<Project> {
                             dependencyNode.appendNode('artifactId', it.name)
                             dependencyNode.appendNode('version', it.version)
                             dependencyNode.appendNode('scope', 'runtime')
+
+                            /*def exclusionsNode = dependencyNode.appendNode('exclusions')
+                            def exclusionNode = exclusionsNode.appendNode('exclusion')
+                            exclusionNode.appendNode('groupId', '*')
+                            exclusionNode.appendNode('artifactId', '*')*/
                         }
 
                         //asNode().appendNode('properties').appendNode('startLevel', '1')
@@ -176,19 +196,5 @@ class FeaturePlugin implements Plugin<Project> {
                 }
             }
         }
-    }
-
-    Set<Task> getSubprojectTasksByName(Project project, String name) {
-            final Set<Task> foundTasks = new HashSet();
-
-            project.subprojects({ subproject ->
-                ((ProjectInternal)subproject).evaluate();
-                Task task = (Task)subproject.getTasks().findByName(name);
-                if (task != null) {
-                    foundTasks.add(task);
-                }
-            });
-
-            return foundTasks;
     }
 }

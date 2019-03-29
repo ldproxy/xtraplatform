@@ -1,14 +1,10 @@
-version = '1.1.2'
-//version += '-SNAPSHOT'
+
+version = '2.0.0'
 
 ext {
     swaggerVersion='2.0.3'
 }
-/*configurations {
-    embedded {
-        transitive=false
-    }
-}*/
+
 dependencies {
     /*embedded (group: 'io.openapi', name: 'openapi-jaxrs2', version: '2.0.0-rc2') {
         exclude group: 'org.slf4j', module: 'slf4j-api'
@@ -18,6 +14,8 @@ dependencies {
 
     }*/
 
+    provided project(':xtraplatform-web-rest')
+
     embeddedFlat (group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: swaggerVersion) {
         exclude module: 'jersey-server'
     }
@@ -26,17 +24,18 @@ dependencies {
     embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-integration', version: swaggerVersion
     embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-core', version: swaggerVersion
     embeddedFlat 'org.reflections:reflections:0.9.11'
-
-    provided project(':xtraplatform-web-rest')
 } 
 
 jar {
     manifest { 
+        /*
         instruction 'Import-Package', 'javax.ws.rs'
         instruction 'Import-Package', 'javax.ws.rs.ext'
         instruction 'Import-Package', 'javax.ws.rs.core'
         instruction 'Import-Package', 'javax.servlet'
         instruction 'Import-Package', 'javax.xml.bind.annotation'
+        
+         */
         instructionFirst 'Import-Package', '!com.google.gson'
         instructionFirst 'Import-Package', '!org.dom4j'
         instructionFirst 'Import-Package', '!org.dom4j.io'

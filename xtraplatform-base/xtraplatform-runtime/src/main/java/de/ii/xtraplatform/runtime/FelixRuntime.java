@@ -15,10 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -29,8 +26,8 @@ public class FelixRuntime {
     private static final Logger LOGGER = LoggerFactory.getLogger(FelixRuntime.class);
 
     public enum ENV {
-        DEVELOPMENT,
         PRODUCTION,
+        DEVELOPMENT,
         CONTAINER
     }
 
@@ -138,28 +135,30 @@ public class FelixRuntime {
         this.version = version;
     }
 
-    public void init(String[] args, List<List<String>> bundles) {
-
+    public void init(String[] args, List<List<String>> bundles, List<List<String>> devBundles) {
+        Map<String, String> felixConfig = new HashMap<>();
         File dataDir = getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
         File bundlesDir = getBundlesDir(args).orElseThrow(() -> new IllegalArgumentException("No bundles directory found"));
+        ENV env = parseEnvironment();
 
         preloadLoggingConfiguration(new File(dataDir, CONFIG_FILE_NAME));
 
         LOGGER.info("--------------------------------------------------");
         LOGGER.info("Starting {} {}", name, version);
+
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Data directory: {}", dataDir);
             LOGGER.debug("Bundles directory: {}", bundlesDir);
+            LOGGER.debug("Environment: {}", env);
         }
 
-        Map<String, String> felixConfig = new HashMap<>();
         String bundlePrefix = "reference:file:" + bundlesDir.getAbsolutePath()
                 .replaceAll(" ", "%20") + "/";
         int startLevel = 1;
 
         for (List<String> level : bundles) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Level: {}, Bundles: {}", startLevel, level);
+                LOGGER.debug("Level {} Bundles: {}", startLevel, level);
             }
 
             String levelBundles = level.stream()
@@ -170,6 +169,23 @@ public class FelixRuntime {
 
             startLevel++;
         }
+
+        if (env == ENV.DEVELOPMENT) {
+            for (List<String> level : devBundles) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Level {} Bundles: {}", startLevel, level);
+                }
+
+                String levelBundles = level.stream()
+                        .map(bundle -> bundlePrefix + bundle)
+                        .collect(Collectors.joining(" "));
+
+                felixConfig.put(AutoProcessor.AUTO_START_PROP + "." + startLevel, levelBundles);
+
+                startLevel++;
+            }
+        }
+
         felixConfig.put(FelixConstants.FRAMEWORK_BEGINNING_STARTLEVEL, Integer.toString(startLevel));
 
         felixConfig.put(FelixConstants.FRAMEWORK_STORAGE, new File(dataDir, FELIX_CACHE_DIR_NAME).getAbsolutePath());
@@ -181,8 +197,7 @@ public class FelixRuntime {
         felixConfig.put(FelixConstants.FRAMEWORK_BOOTDELEGATION, "sun.misc");
 
         felixConfig.put(DATA_DIR_KEY, dataDir.getAbsolutePath());
-        felixConfig.put(ENV_KEY, Optional.ofNullable(System.getenv(ENV_VAR))
-                .orElse(ENV.DEVELOPMENT.name()));
+        felixConfig.put(ENV_KEY, env.name());
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Felix config: {}", felixConfig);
@@ -285,4 +300,12 @@ public class FelixRuntime {
         loggingFactory.configure(new MetricRegistry(), "xtraplatform");
     }
 
+    private ENV parseEnvironment() {
+        return Optional.ofNullable(System.getenv(ENV_VAR))
+                .filter(e -> Arrays.stream(ENV.values())
+                        .map(Enum::name)
+                        .anyMatch(v -> Objects.equals(e, v)))
+                .map(ENV::valueOf)
+                .orElse(ENV.PRODUCTION);
+    }
 }

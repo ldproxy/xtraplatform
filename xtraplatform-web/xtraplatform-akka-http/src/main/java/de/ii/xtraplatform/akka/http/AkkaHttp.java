@@ -21,17 +21,17 @@ import akka.http.javadsl.model.headers.AcceptEncoding;
 import akka.http.javadsl.settings.ConnectionPoolSettings;
 import akka.http.scaladsl.model.headers.HttpEncodings;
 import akka.japi.Pair;
+import akka.japi.function.Function2;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
+import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
+import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import com.typesafe.sslconfig.akka.AkkaSSLConfig;
-import com.typesafe.sslconfig.ssl.TrustManagerConfig;
-import com.typesafe.sslconfig.ssl.TrustStoreConfig;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Controller;
@@ -44,12 +44,12 @@ import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.util.Try;
-import akka.event.slf4j.Slf4jLoggingFilter;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.InputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
@@ -66,7 +66,7 @@ public class AkkaHttp {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AkkaHttp.class);
 
-    private static final Config config = ConfigFactory.parseMap(new ImmutableMap.Builder<String, Object>()
+    public static final Config config = ConfigFactory.parseMap(new ImmutableMap.Builder<String, Object>()
             .put("akka.stdout-loglevel", "OFF")
             .put("akka.loglevel", "DEBUG")
             .put("akka.loggers", ImmutableList.of("akka.event.slf4j.Slf4jLogger"))
@@ -166,6 +166,21 @@ public class AkkaHttp {
         return http.singleRequest(httpRequest);
     }
 
+    public InputStream getAsInputStream(String url) {
+        return get(url).runWith(StreamConverters.asInputStream(), materializer);
+    }
+
+    public String getAsString(String url) {
+        StringBuilder response = new StringBuilder();
+        Source<ByteString, NotUsed> source = get(url);
+
+        source.runWith(Sink.fold(response, (Function2<StringBuilder, ByteString, StringBuilder>) (stringBuilder, byteString) -> stringBuilder.append(byteString.utf8String())), materializer)
+                .toCompletableFuture()
+                .join();
+
+        return response.toString();
+    }
+
     public Source<ByteString, NotUsed> get(String url) {
 
         LOGGER.debug("HTTP GET {}", url);
@@ -203,13 +218,17 @@ public class AkkaHttp {
     }
 
     public Source<ByteString, NotUsed> postXml(String url, String body) {
+        return post(url, body, MediaTypes.APPLICATION_XML.toContentType(HttpCharsets.UTF_8));
+    }
+
+    public Source<ByteString, NotUsed> post(String url, String body, ContentType.NonBinary contentType) {
 
         LOGGER.debug("HTTP POST {}\n{}", url, body);
         // TODO: measure performance with files to compare processing time only
 //        Source<ByteString, Date> fromFile = FileIO.fromFile(new File("/home/zahnen/development/ldproxy/artillery/flurstueck-" + count.get() + "-" + page.get() + ".xml"))
 //                .mapMaterializedValue(nu -> new Date());
 
-        return Source.single(Pair.create(HttpRequest.POST(url).withEntity(MediaTypes.APPLICATION_XML.toContentType(HttpCharsets.UTF_8), body)
+        return Source.single(Pair.create(HttpRequest.POST(url).withEntity(contentType, body)
                                                     .addHeader(AcceptEncoding.create(HttpEncodings.deflate()
                                                                                                   .toRange(), HttpEncodings.gzip()
                                                                                                                            .toRange(), HttpEncodings.chunked()

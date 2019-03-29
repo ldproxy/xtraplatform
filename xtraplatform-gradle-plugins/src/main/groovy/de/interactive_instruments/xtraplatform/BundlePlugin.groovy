@@ -1,22 +1,20 @@
 package de.interactive_instruments.xtraplatform
 
-import org.gradle.api.Project
-import org.gradle.api.Plugin
-import org.gradle.api.plugins.osgi.OsgiPlugin
-import org.gradle.api.InvalidUserDataException
 import org.apache.felix.ipojo.manipulator.Pojoization
 import org.apache.felix.ipojo.manipulator.reporter.EmptyReporter
+import org.gradle.api.InvalidUserDataException
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.api.plugins.osgi.OsgiPlugin
 import org.slf4j.LoggerFactory
 
-import java.util.jar.JarFile;
-import java.util.jar.JarEntry;
-import java.util.zip.ZipEntry;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
+import java.util.zip.ZipEntry
 
-class IpojoPlugin implements Plugin<Project> {
+class BundlePlugin implements Plugin<Project> {
 
-    static LOGGER = LoggerFactory.getLogger(IpojoPlugin.class)
+    static LOGGER = LoggerFactory.getLogger(BundlePlugin.class)
 
     void apply(Project project) {
         project.plugins.apply(OsgiPlugin.class);
@@ -24,21 +22,31 @@ class IpojoPlugin implements Plugin<Project> {
         project.configurations.create('provided')
         project.configurations.create('embedded')
         project.configurations.create('embeddedFlat')
-        project.configurations.embeddedFlat.transitive = false
-        //TODO: api is needed, check if poms are as intended
-        project.configurations.api.extendsFrom(project.configurations.provided)
-        project.configurations.api.extendsFrom(project.configurations.embedded)
-        project.configurations.api.extendsFrom(project.configurations.embeddedFlat)
 
-        def osgiClassesDir = new File(project.buildDir, 'osgi-classes/')
-        project.task('noOsgiClasses') {
-            outputs.dir osgiClassesDir
-            doLast {
-                project.mkdir(osgiClassesDir)
+        project.configurations.provided.setTransitive(false)
+        project.configurations.embeddedFlat.setTransitive(false)
+
+        project.configurations.api.extendsFrom(project.configurations.embedded)
+
+        project.afterEvaluate {
+            project.configurations.provided.dependencies.each {
+                project.dependencies.add('compileOnly', it)
+                project.dependencies.add('testImplementation', it)
+            }
+            project.configurations.embeddedFlat.dependencies.each {
+                project.dependencies.add('api', it, { transitive = false })
             }
         }
-        project.tasks.osgiClasses.finalizedBy project.tasks.noOsgiClasses
 
+        addNoClassesWorkaround(project);
+
+        addEmbeddingToJarTask(project);
+
+        addIpojoManipulatorToJarTask(project);
+
+    }
+
+    void addEmbeddingToJarTask(Project project) {
         project.tasks.jar.doFirst {
             def doExport = project.jar.manifest.instructions.get("Embed-Export") == null || project.jar.manifest.instructions.get("Embed-Export")[0] != "false";
             def doImport = project.jar.manifest.instructions.get("Embed-Import") == null || project.jar.manifest.instructions.get("Embed-Import")[0] != "false";
@@ -59,9 +67,9 @@ class IpojoPlugin implements Plugin<Project> {
             project.jar.manifest.instruction("Bundle-ClassPath", '.') //add the default classpath
 
             includedArtifacts.each { artifact ->
-                        project.jar.from(artifact)
-                        project.jar.manifest.instruction("Bundle-ClassPath", artifact.name)
-                    }
+                project.jar.from(artifact)
+                project.jar.manifest.instruction("Bundle-ClassPath", artifact.name)
+            }
 
             // determine all dependent artifacts to analyze packages to be imported
             if (doImport) {
@@ -103,8 +111,7 @@ class IpojoPlugin implements Plugin<Project> {
                 }
             }
 
-            //TODO: required?
-            //project.jar.manifest.instruction('Import-Package', "!org.immutables.value")
+            project.jar.manifest.instruction('Import-Package', "com.fasterxml.jackson.module.afterburner.ser")
 
             project.jar.manifest.instruction("Export-Package", "*")
             project.jar.manifest.instruction("Import-Package", "*")
@@ -112,7 +119,9 @@ class IpojoPlugin implements Plugin<Project> {
             //println project.jar.manifest.instructions
             //}
         }
+    }
 
+    void addIpojoManipulatorToJarTask(Project project) {
         project.tasks.jar.doLast {
             def excludes = project.jar.manifest.instructions.get("Embed-Excludes")
 
@@ -126,7 +135,7 @@ class IpojoPlugin implements Plugin<Project> {
             def classLoaderUrls = [jarfile.toURI().toURL()];
 
             def dependencies = [] as Set
-            project.configurations.runtimeClasspath.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
+            project.configurations.compileClasspath.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
                 dependencies.addAll(getDependenciesRecursive(dependency, true, excludes))
             }
             dependencies.each { dependency ->
@@ -155,6 +164,17 @@ class IpojoPlugin implements Plugin<Project> {
                 throw new InvalidUserDataException("Cannot delete the input jar file ${jarfile}")
             }
         }
+    }
+
+    void addNoClassesWorkaround(Project project) {
+        def osgiClassesDir = new File(project.buildDir, 'osgi-classes/')
+        project.task('noOsgiClasses') {
+            outputs.dir osgiClassesDir
+            doLast {
+                project.mkdir(osgiClassesDir)
+            }
+        }
+        project.tasks.osgiClasses.finalizedBy project.tasks.noOsgiClasses
     }
 
     /**
@@ -199,7 +219,7 @@ class IpojoPlugin implements Plugin<Project> {
         if (recursive) {
             dependency.children.each { child ->
                 //println "  child "+child.name+" Parents: "+child.parents
-                    dependencies.addAll(getDependenciesRecursive(child, recursive, excludes))
+                dependencies.addAll(getDependenciesRecursive(child, recursive, excludes))
             }
         }
 

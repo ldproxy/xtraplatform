@@ -1,12 +1,16 @@
 package de.interactive_instruments.xtraplatform
 
+import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
+import org.gradle.api.artifacts.ResolvedDependency
+import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.internal.impldep.org.bouncycastle.math.raw.Mod
 
+import java.util.logging.FileHandler
 import java.util.regex.Pattern
 
 /**
@@ -18,19 +22,18 @@ class ApplicationPlugin implements Plugin<Project> {
         project.plugins.apply(FeaturePlugin.class)
         project.plugins.apply("application")
 
+        project.configurations.create("featureDevOnly")
         project.getConfigurations().create("app")
         //project.configurations.app.setTransitive(false)
         project.configurations.implementation.extendsFrom(project.configurations.app)
-        project.getConfigurations().create("platform")
-        project.configurations.platform.setTransitive(false)
-        project.configurations.compileOnly.extendsFrom(project.configurations.platform)
+        //project.getConfigurations().create("platform")
+        //project.configurations.platform.setTransitive(false)
+        //project.configurations.compileOnly.extendsFrom(project.configurations.platform)
 
         project.afterEvaluate {
             def baseFound = false
             project.configurations.feature.dependencies.each {
                 if (it.name == 'xtraplatform-base') {
-                    //TODO: does this actually enforce the version when using from repo?
-                    project.dependencies.add('platform', project.dependencies.enforcedPlatform(it))
                     project.dependencies.add('app', 'de.interactive_instruments:xtraplatform-runtime')
                     baseFound = true
                 }
@@ -67,13 +70,29 @@ class ApplicationPlugin implements Plugin<Project> {
             delete new File(dataDir, 'felix-cache')
         }
 
+        project.task('addDevBundles', type: Copy) {
+            dependsOn project.tasks.installDist
+            into project.tasks.installDist.destinationDir
+            project.afterEvaluate {
+                from(getDevBundleFiles(project)) {
+                    into "bundles"
+                }
+            }
+        }
+
         project.tasks.run.with {
             dependsOn project.tasks.installDist
+            dependsOn project.tasks.addDevBundles
             dependsOn project.tasks.initData
             dependsOn project.tasks.cleanFelixCache
             workingDir = project.tasks.installDist.destinationDir
             args dataDir.absolutePath
             standardInput = System.in
+            environment 'XTRAPLATFORM_ENV', 'DEVELOPMENT'
+            //suppress java 9+ illegal access warnings for felix and jackson afterburner
+            if (JavaVersion.current().isJava9Compatible()) {
+                jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED'
+            }
         }
     }
 
@@ -117,6 +136,14 @@ class ApplicationPlugin implements Plugin<Project> {
         return bundlesFromFeatures + bundlesFromApplication
     }
 
+    List<File> getDevBundleFiles(Project project) {
+        return project.configurations.featureDevOnly.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
+            it.children.collectMany({ it.moduleArtifacts }).collect({
+                it.file
+            })
+        })
+    }
+
     void addCreateRuntimeClassTask(Project project) {
         project.mainClassName = "de.ii.xtraplatform.application.Launcher"
 
@@ -127,10 +154,14 @@ class ApplicationPlugin implements Plugin<Project> {
 
         project.task('createRuntimeClass') {
             inputs.files project.configurations.feature
+            inputs.files project.configurations.featureDevOnly
+            inputs.files project.configurations.bundle
             outputs.dir(generatedSourceDir)
 
             doLast {
+
                 def bundles = createBundleTree(project)
+                def devBundles = createDevBundleTree(project)
 
                 def mainClass = """
                     package de.ii.xtraplatform.application;
@@ -143,11 +174,12 @@ class ApplicationPlugin implements Plugin<Project> {
                     public class Launcher {
                     
                         private static final List<List<String>> BUNDLES = ${bundles};
+                        private static final List<List<String>> DEV_BUNDLES = ${devBundles};
 
                         public static void main(String[] args) throws Exception {
                             final FelixRuntime runtime = new FelixRuntime("${project.name}", "${project.version}");
                             
-                            runtime.init(args, BUNDLES);
+                            runtime.init(args, BUNDLES, DEV_BUNDLES);
                             runtime.start();
                             
                             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -175,69 +207,69 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     String createBundleTree(Project project) {
-        def features = project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies
+        def features = sortByDependencyGraph(project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies)
+        def bundles = features.collect({ it.children.findAll({ bundle -> !(bundle in features) }) })
 
-        def sortedFeatures = features.toSorted { featureA, featureB ->
+        bundles.add(project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies)
+
+        return createBundleFileTree(project, bundles, ['xtraplatform-runtime'], 'de.ii.xtraplatform.entity.api.handler:entity', ['xtraplatform-server'], ['xtraplatform-dropwizard', 'osgi-over-slf4j', 'org.apache.felix.ipojo'])
+    }
+
+    String createDevBundleTree(Project project) {
+        def devFeatures = sortByDependencyGraph(project.configurations.featureDevOnly.resolvedConfiguration.firstLevelModuleDependencies)
+        def devBundles = devFeatures.collect({ it.children.findAll({ bundle -> !(bundle in devFeatures) }) })
+
+        return createBundleFileTree(project, devBundles)
+    }
+
+    Set<ResolvedDependency> sortByDependencyGraph(Set<ResolvedDependency> features) {
+        return features.toSorted { featureA, featureB ->
             if (featureA == featureB) return 0
             def dependsOn = featureA.children.stream().anyMatch({ child -> child == featureB })
             return dependsOn ? 1 : -1
         }
+    }
 
-        def lateStartManifestPattern = 'de.ii.xtraplatform.entity.api.handler:entity'
+    String createBundleFileTree(Project project, List<Set<ResolvedDependency>> features, List<String> excludeNames = [], String lateStartManifestPattern = "", List<String> lateStartNames = [], List<String> earlyStartNames = []) {
 
-        def bundleTree = 'ImmutableList.of('
+        String bundleTree = 'ImmutableList.of('
+        String featureBundles = ''
+        List<File> delayedBundles = []
+        List<File> lastBundles = []
+        List<File> firstBundles = []
 
-        def delayedBundles = []
+        features.eachWithIndex { feature, index ->
 
-        sortedFeatures.eachWithIndex { feature, index ->
-            if (index == 0) {
-                //base
-                def level0 = ['xtraplatform-dropwizard', 'osgi-over-slf4j', 'org.apache.felix.ipojo']
-
-                def bundles0 = feature.children.findAll({ bundle -> !(bundle in features) }).collectMany({ bundle ->
-                    bundle.moduleArtifacts
-                }).findAll({ it.name != 'xtraplatform-runtime' && it.name in level0 }).collect({
-                    it.file
-                })
-
-                bundleTree += createBundleList(bundles0)
-                bundleTree += ','
-
-                def bundles1 = feature.children.findAll({ bundle -> !(bundle in features) }).collectMany({ bundle ->
-                    bundle.moduleArtifacts
-                }).findAll({ it.name != 'xtraplatform-runtime' && !(it.name in level0) }).collect({
-                    it.file
-                })
-
-                bundleTree += createBundleList(bundles1)
-
-                if (index < sortedFeatures.size() - 1) {
-                    bundleTree += ','
-                }
-
-                return;
-            }
-
-
-            def bundles = feature.children.findAll({ bundle -> !(bundle in features) }).collectMany({ bundle ->
+            def bundles = feature.collectMany({ bundle ->
                 bundle.moduleArtifacts
-            }).findAll({ it.name != 'xtraplatform-runtime' }).collect({
+            }).findAll({ !(it.name in excludeNames) }).collect({
                 it.file
-            })//.head()
+            })
 
             delayedBundles += bundles.findAll({ bundle -> manifestContains(project, bundle, lateStartManifestPattern) })
+            lastBundles += bundles.findAll({ bundle -> lateStartNames.any({ bundle.name.startsWith(it) }) })
+            firstBundles += bundles.findAll({ bundle -> earlyStartNames.any({ bundle.name.startsWith(it) }) })
 
-            bundleTree += createBundleList(bundles.findAll({ bundle -> !(bundle in delayedBundles) }))
+            featureBundles += createBundleList(bundles.findAll({ bundle -> !(bundle in delayedBundles) && !(bundle in lastBundles) && !(bundle in firstBundles) }))
 
-            if (index < sortedFeatures.size() - 1) {
-                bundleTree += ','
+            if (index < features.size() - 1) {
+                featureBundles += ','
             }
         }
 
+        if (!firstBundles.isEmpty()) {
+            bundleTree += createBundleList(firstBundles) + ','
+        }
+        bundleTree += featureBundles
         if (!delayedBundles.isEmpty()) {
             bundleTree += ','
 
             bundleTree += createBundleList(delayedBundles)
+        }
+        if (!lastBundles.isEmpty()) {
+            bundleTree += ','
+
+            bundleTree += createBundleList(lastBundles)
         }
 
         bundleTree += ')'
@@ -260,6 +292,8 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     boolean manifestContains(Project project, File jar, String value) {
+        if (value == null || value.isEmpty()) return false;
+
         Pattern pattern = stringToRegex(value)
 
         return project

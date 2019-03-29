@@ -9,7 +9,6 @@ package de.ii.xtraplatform.dropwizard.api;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Appender;
-import de.ii.xtraplatform.dropwizard.cfg.XtraServerFrameworkConfiguration;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.jetty.setup.ServletEnvironment;

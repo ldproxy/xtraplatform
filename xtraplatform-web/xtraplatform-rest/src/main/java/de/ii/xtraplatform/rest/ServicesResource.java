@@ -87,7 +87,7 @@ public class ServicesResource {
     private AuthorizationProvider permProvider;
 
     //TODO: is not null
-    //@Requires(optional = true)
+    @Requires(optional = true)
     private ServiceListingProvider serviceListingProvider;
 
     @Requires

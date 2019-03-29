@@ -263,7 +263,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
         //TODO: maybe get bundle by name from type
         try {
-            Optional<Bundle> b2 = Arrays.stream(context.getBundles()).filter(bundle1 -> bundle1.getSymbolicName().equals(bundle)).findFirst();
+            Optional<Bundle> b2 = Arrays.stream(context.getBundles()).filter(bundle1 -> bundle1.getSymbolicName().endsWith(bundle)).findFirst();
             Bundle b = context.getBundle(bundle);
             return b2.get().loadClass(type);
         } catch (ClassNotFoundException e) {

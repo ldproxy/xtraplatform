@@ -13,15 +13,12 @@ version = '2.0.0'
 dependencies {
     bundle subprojects
 
-    //TODO: only in devel???
     bundle group: 'org.slf4j', name: 'osgi-over-slf4j', version: '1.7.25'
 
     // felix
     //bundle group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.12'
     bundle group: 'org.apache.felix', name: 'org.apache.felix.eventadmin', version: '1.5.0'
-    //bundle group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.4'
 
-    //TODO: to web?
     // felix http
     bundle group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '4.0.4'
     bundle group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '4.0.0'
@@ -40,12 +37,6 @@ dependencies {
         exclude group: 'org.apache.felix', module: 'org.osgi.core'
         exclude group: 'org.osgi', module: 'org.osgi.compendium'
     }
-
-    //TODO: to devel?
-    //felix gogo
-    //bundle group: 'org.apache.felix', name: 'org.apache.felix.gogo.shell', version: '1.0.0'
-    //bundle group: 'org.apache.felix', name: 'org.apache.felix.gogo.runtime', version: '1.0.8'
-    //bundle group: 'org.apache.felix', name: 'org.apache.felix.gogo.command', version: '1.0.2'
 }
 
 apply from: '../bintray.gradle'

@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
+import de.ii.xtraplatform.dropwizard.api.XtraServerFrameworkConfiguration;
 import de.ii.xtraplatform.dropwizard.views.FallbackMustacheViewRenderer;
 import io.dropwizard.Application;
 import io.dropwizard.cli.Cli;

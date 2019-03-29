@@ -54,7 +54,7 @@ import java.util.Map;
 @Provides
 @Instantiate
 @Wbp(
-        filter="(objectClass=de.ii.xsf.dropwizard.api.JacksonSubTypeIds)",
+        filter="(objectClass=de.ii.xtraplatform.dropwizard.api.JacksonSubTypeIds)",
         onArrival="onArrival",
         onDeparture="onDeparture")
 public class JacksonProvider implements Jackson {

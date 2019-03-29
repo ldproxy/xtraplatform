@@ -8,7 +8,6 @@
 package de.ii.xtraplatform.kvstore.inmemory;
 
 import com.google.common.collect.Lists;
-import de.ii.xsf.configstore.api.*;
 import de.ii.xtraplatform.kvstore.api.KeyNotFoundException;
 import de.ii.xtraplatform.kvstore.api.KeyValueStore;
 import de.ii.xtraplatform.kvstore.api.Transaction;
