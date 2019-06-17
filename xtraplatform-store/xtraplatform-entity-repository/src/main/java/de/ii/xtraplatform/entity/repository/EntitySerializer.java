@@ -321,7 +321,16 @@ public class EntitySerializer implements ResourceSerializer<AbstractEntityData> 
             context.appendAnnotationIntrospector(new NopAnnotationIntrospector() {
                 @Override
                 public AnnotatedMethod resolveSetterConflict(MapperConfig<?> config, AnnotatedMethod setter1, AnnotatedMethod setter2) {
-                    if (setter1.getDeclaringClass()
+                    if (isImmutableBuilder(setter1.getDeclaringClass())) {
+                        LOGGER.trace("resolving setter conflict for Immutables Builder {} {}", setter1, setter2);
+                        if (isImmutableBuilder(setter1.getRawParameterType(0))) {
+                            return setter1;
+                        }
+                        if (isImmutableBuilder(setter2.getRawParameterType(0))) {
+                            return setter2;
+                        }
+                    }
+                    else if (setter1.getDeclaringClass()
                                .getSimpleName()
                                .startsWith("Modifiable")) {
                         LOGGER.trace("resolving setter conflict for Modifiable {} {}", setter1, setter2);
@@ -337,6 +346,14 @@ public class EntitySerializer implements ResourceSerializer<AbstractEntityData> 
                     return super.resolveSetterConflict(config, setter1, setter2);
                 }
             });
+        }
+
+        private boolean isImmutableBuilder(Class<?> clazz) {
+            return clazz.getSimpleName()
+                        .equals("Builder");
+            //TODO: annotations not retained
+            //&& Objects.nonNull(clazz.getAnnotation(Generated.class))
+            //&& clazz.getAnnotation(Generated.class).generator().equals("Immutables");
         }
     };
 }

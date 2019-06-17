@@ -1,10 +1,10 @@
-try {
-    if (compositeBuild == 'true') {
-        println 'Composite Build enabled'
-        includeBuild '../xtraplatform-gradle-plugins'
+pluginManagement {
+    repositories {
+        maven {
+            url 'https://dl.bintray.com/iide/maven'
+        }
+        gradlePluginPortal()
     }
-} catch (Throwable t) {
-    //ignore
 }
 
 rootDir.listFiles().each { file ->
