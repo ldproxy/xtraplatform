@@ -34,6 +34,7 @@ class ApplicationPlugin implements Plugin<Project> {
             def baseFound = false
             project.configurations.feature.dependencies.each {
                 if (it.name == 'xtraplatform-base') {
+                    project.dependencies.add('app', project.dependencies.enforcedPlatform(it.copy()))
                     project.dependencies.add('app', 'de.interactive_instruments:xtraplatform-runtime')
                     baseFound = true
                 }

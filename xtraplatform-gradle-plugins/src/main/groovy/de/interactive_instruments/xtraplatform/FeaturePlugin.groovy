@@ -66,16 +66,17 @@ class FeaturePlugin implements Plugin<Project> {
                 // add every feature as enforcedPlatform to provided
                 // this allows to add bundles as dependencies without version
                 project.configurations.feature.dependencies.each {
-                    //println 'enforcedPlatform: ' + it
+            	    //println 'enforcedPlatform: ' + it
                     //TODO: does this work as intended?
                     //TODO: this adds all transitive dependencies, i think we have to split bom and bundles
-                    subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(it))
+                    subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(it.copy()))
                 }
-
+                
                 // add all bundles from xtraplatform-base with all transitive dependencies to compileOnly
                 project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.each({
+                    
                     if (it.moduleName == 'xtraplatform-base') {
-                        it.children.each { bundle ->
+                    	it.children.each { bundle ->
                             //TODO
                             if (bundle.moduleGroup == 'de.interactive_instruments' || bundle.moduleName == 'org.apache.felix.ipojo') {
                                 subproject.dependencies.add('compileOnly', bundle.name)
