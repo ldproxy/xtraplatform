@@ -8,7 +8,7 @@ pluginManagement {
 }
 
 rootDir.listFiles().each { file ->
-    if (file.isDirectory() && file.name.startsWith('xtraplatform-')) {
+    if (file.isDirectory() && file.name.startsWith('xtraplatform-') && !file.name.endsWith("-test")) {
         include file.name
     }
 }
