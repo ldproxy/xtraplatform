@@ -279,11 +279,7 @@ public class WebServerDropwizard {
 
     public String getUrl() {
         if (url.isEmpty()) {
-            if (dw.hasExternalUrl()) {
-                this.url = dw.getExternalUrl();
-            } else {
-                this.url = "http://" + dw.getHostName() + ":" + String.valueOf(dw.getApplicationPort()) + "/";
-            }
+            this.url = dw.getUrl();
         }
         return url;
     }

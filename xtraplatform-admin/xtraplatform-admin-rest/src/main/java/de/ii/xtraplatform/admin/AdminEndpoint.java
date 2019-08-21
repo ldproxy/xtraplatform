@@ -11,17 +11,16 @@ import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.cfgstore.api.LocalBundleConfigStore;
 import de.ii.xtraplatform.api.MediaTypeCharset;
 import de.ii.xtraplatform.api.exceptions.ResourceNotFound;
-import de.ii.xtraplatform.api.permission.Auth;
 import de.ii.xtraplatform.api.permission.AuthenticatedUser;
 import de.ii.xtraplatform.api.permission.AuthorizationProvider;
 import de.ii.xtraplatform.dropwizard.api.Jackson;
 import de.ii.xtraplatform.entity.api.EntityRegistry;
 import de.ii.xtraplatform.entity.api.EntityRepository;
-import de.ii.xtraplatform.entity.api.EntityRepositoryForType;
 import de.ii.xtraplatform.service.api.AdminServiceResource;
 import de.ii.xtraplatform.service.api.Service;
 import de.ii.xtraplatform.service.api.ServiceData;
 import de.ii.xtraplatform.service.api.ServiceResource;
+import de.ii.xtraplatform.web.api.Endpoint;
 import io.dropwizard.jersey.caching.CacheControl;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -34,14 +33,10 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 import javax.ws.rs.*;
-import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.*;
 
@@ -50,7 +45,7 @@ import java.util.*;
  * @author zahnen
  */
 @Component
-@Provides(specifications = {AdminResource.class})
+@Provides
 @Instantiate
 @Whiteboards(whiteboards = {
         @Wbp(
@@ -61,9 +56,9 @@ import java.util.*;
 
 @Path("/admin/")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
-public class AdminResource {
+public class AdminEndpoint implements Endpoint {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdminResource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminEndpoint.class);
 
     @Requires
     private Jackson jackson;
@@ -107,7 +102,7 @@ public class AdminResource {
         }
     }
 
-    public AdminResource() {
+    public AdminEndpoint() {
         this.serviceResources = new HashMap<>();
     }
 
@@ -117,16 +112,12 @@ public class AdminResource {
         return new AdminRoot(xsfVersion);
     }
 
-    @Path("/services")
+    /*@Path("/services")
     @GET
     @CacheControl(noCache = true)
     public List getAdminServices(@Auth AuthenticatedUser authUser) {
         return new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE).getEntityIds();
-        /*return entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE)
-                      .stream()
-                      .map(Service::getId)
-                      .collect(Collectors.toList());*/
-    }
+    }*/
 
     /*@Path("/modules")
     @GET
@@ -166,14 +157,18 @@ public class AdminResource {
         return ImmutableList.of();//TODO serviceRegistry.getServiceTypes();
     }
 
-    @Path("/services")
+    /*@Path("/services")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response addService(/*@Auth(minRole = Role.PUBLISHER) AuthenticatedUser authUser,*/ Map<String, Object> request) {
+    public Response addService(@Auth(minRole = Role.PUBLISHER) AuthenticatedUser authUser, Map<String, Object> request) {
+        if (!request.containsKey("id") || new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE).hasEntity((String) request.get("id"))) {
+            throw new BadRequest("A service with id '" + request.get("id") + "' already exists");
+        }
+
         try {
             MDC.put("service", (String) request.get("id"));
             new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE).generateEntity(request);
-            //serviceRegistry.addService(/*authUser*/new AuthenticatedUser(), request.get("type"), request.get("id"), request);
+            //serviceRegistry.addService(authUsernew AuthenticatedUser(), request.get("type"), request.get("id"), request);
             return Response.ok().build();
         } catch (IOException e) {
             LOGGER.error("Error adding service", e);
@@ -184,9 +179,9 @@ public class AdminResource {
     }
 
     @Path("/services/{id}")
-    public AdminServiceResource getAdminService(/*@Auth AuthenticatedUser authUser,*/ @PathParam("id") String id, @Context ContainerRequestContext containerRequestContext) {
+    public AdminServiceResource getAdminService(@Auth AuthenticatedUser authUser, @PathParam("id") String id, @Context ContainerRequestContext containerRequestContext) {
 
-        //Service s = serviceRegistry.getService(/*authUser*/new AuthenticatedUser(), id);
+        //Service s = serviceRegistry.getService(authUsernew AuthenticatedUser(), id);
         //Optional<Service> service = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, id);
         ServiceData serviceData = (ServiceData) new EntityRepositoryForType(entityRepository, Service.ENTITY_TYPE).getEntityData(id);
 
@@ -194,13 +189,13 @@ public class AdminResource {
         serviceDataContext.inject(containerRequestContext, serviceData);
 
         if (Objects.isNull(serviceData)) {
-            throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale())*/);
+            throw new ResourceNotFound();
         }
 
         AdminServiceResource sr = getAdminServiceResource(serviceData);
 
         return sr;
-    }
+    }*/
 
     @Requires
     LocalBundleConfigStore localBundleConfigStore;
@@ -263,7 +258,7 @@ public class AdminResource {
 
     private Service getService(AuthenticatedUser authUser, String id) {
         //Service s = serviceRegistry.getService(authUser, id);
-        Optional<Service> s = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, id);
+        Optional<Service> s = entityRegistry.getEntity(Service.class, id);
 
         if (!s.isPresent() /*|| !s.isStarted()*/) {
             throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale()),*/);

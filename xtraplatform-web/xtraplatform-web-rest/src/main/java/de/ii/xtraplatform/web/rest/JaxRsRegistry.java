@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.container.DynamicFeature;
 import javax.ws.rs.ext.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -220,6 +221,11 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
                         jersey.register(filter);
                         //jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
                         LOGGER.debug("Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
+                    } else if (filter instanceof DynamicFeature) {
+                        // TODO: verify
+                        jersey.register(filter);
+                        //jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
+                        LOGGER.debug("Registered JAX-RS DynamicFeature {})", filter.getClass());
                     }
                 }
                 filterCache.clear();
@@ -381,7 +387,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     }
 
     private boolean isFilter(Object service) {
-        return service != null && (service instanceof ContainerRequestFilter || service instanceof ContainerResponseFilter);
+        return service != null && (service instanceof ContainerRequestFilter || service instanceof ContainerResponseFilter || service instanceof DynamicFeature);
     }
 
     private boolean hasRegisterableAnnotation(Object service) {

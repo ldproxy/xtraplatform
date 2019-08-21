@@ -14,26 +14,34 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 //TODO: cleanup
-public class XtraServerFrameworkConfiguration extends Configuration {
-    //@NotEmpty
-    //@JsonProperty
-    //public String configDir;
-    
+public class XtraPlatformConfiguration extends Configuration {
+
+
+    //TODO: not used anymore, but removing breaks backwards compatibility
     @JsonProperty
     public boolean useFormattedJsonOutput;
 
     @JsonProperty
     public boolean allowServiceReAdding;
-    
+    /*
     @JsonProperty
     public String externalURL;
     
     @JsonProperty
     public int maxDebugLogDurationMinutes = 60;
-    
+    */
     @Valid
     @NotNull
     @JsonProperty
     public HttpClientConfiguration httpClient = new HttpClientConfiguration();
+
+    @Valid
+    @NotNull
+    @JsonProperty
+    public StoreConfiguration store = new StoreConfiguration();
+
+    @Valid
+    @JsonProperty
+    public ClusterConfiguration cluster;
     
 }

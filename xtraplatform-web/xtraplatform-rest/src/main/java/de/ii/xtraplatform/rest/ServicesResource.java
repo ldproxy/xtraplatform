@@ -12,9 +12,9 @@ import de.ii.xtraplatform.api.exceptions.ResourceNotFound;
 import de.ii.xtraplatform.api.permission.Auth;
 import de.ii.xtraplatform.api.permission.AuthenticatedUser;
 import de.ii.xtraplatform.api.permission.AuthorizationProvider;
-import de.ii.xtraplatform.rest.views.GenericView;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
 import de.ii.xtraplatform.entity.api.EntityRegistry;
+import de.ii.xtraplatform.rest.views.GenericView;
 import de.ii.xtraplatform.service.api.Service;
 import de.ii.xtraplatform.service.api.ServiceData;
 import de.ii.xtraplatform.service.api.ServiceListingProvider;
@@ -65,7 +65,11 @@ import java.util.stream.Collectors;
         @Wbp(
                 filter = "(objectClass=de.ii.xtraplatform.service.api.ServiceResourceFactory)",
                 onArrival = "onServiceResourceFactoryArrival",
-                onDeparture = "onServiceResourceFactoryDeparture")
+                onDeparture = "onServiceResourceFactoryDeparture"),
+        @Wbp(
+                filter = "(objectClass=de.ii.xtraplatform.service.api.ServiceListingProvider)",
+                onArrival = "onServiceListingProviderArrival",
+                onDeparture = "onServiceListingProviderDeparture")
 })
 @Path("/services/")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
@@ -87,14 +91,15 @@ public class ServicesResource {
     private AuthorizationProvider permProvider;
 
     //TODO: is not null
-    @Requires(optional = true)
-    private ServiceListingProvider serviceListingProvider;
+    //@Requires(optional = true)
+    //private ServiceListingProvider serviceListingProvider;
 
     @Requires
     Dropwizard dropwizard;
 
     private Map<String, ServiceResourceFactory> serviceResourceFactories;
     private Map<String, ServiceResource> serviceResources;
+    private Map<MediaType, ServiceListingProvider> serviceListingProviders;
 
     @org.apache.felix.ipojo.annotations.Context
     private BundleContext context;
@@ -131,14 +136,36 @@ public class ServicesResource {
         }
     }
 
+    public synchronized void onServiceListingProviderArrival(ServiceReference<ServiceListingProvider> ref) {
+        ServiceListingProvider serviceListingProvider = context.getService(ref);
+        MediaType type = serviceListingProvider.getMediaType();
+        if (serviceListingProvider != null && type != null) {
+            serviceListingProviders.put(type, serviceListingProvider);
+        }
+    }
+
+    public synchronized void onServiceListingProviderDeparture(ServiceReference<ServiceListingProvider> ref) {
+        ServiceListingProvider serviceListingProvider = context.getService(ref);
+        if (serviceListingProvider != null) {
+            MediaType type = serviceListingProvider.getMediaType();
+            if (type != null) {
+                serviceListingProviders.remove(type);
+            }
+        }
+    }
+
     public ServicesResource() {
         this.serviceResourceFactories = new HashMap<>();
         this.serviceResources = new LinkedHashMap<>();
+        this.serviceListingProviders = new LinkedHashMap<>();
     }
 
     //TODO
     @GET
-    public Response getServices(@Auth(required = false) AuthenticatedUser authUser, @QueryParam("callback") String callback, @Context UriInfo uriInfo) {
+    @Produces(MediaType.WILDCARD)
+    public Response getServices(@Auth(required = false) AuthenticatedUser authUser,
+                                @QueryParam("callback") String callback, @QueryParam("f") String f,
+                                @Context UriInfo uriInfo, @Context ContainerRequestContext containerRequestContext) {
         /*if (serviceResourceFactories.size() == 1) {
             //Response response = serviceResourceFactories.values().iterator().next().getResponseForParams(serviceRegistry.getServices(authUser), uriInfo);
             Response response = serviceResourceFactories.values()
@@ -150,11 +177,32 @@ public class ServicesResource {
             }
         }*/
 
+        List<ServiceData> services = entityRegistry.getEntitiesForType(Service.class)
+                                                   .stream()
+                                                   .map(Service::getData)
+                                                   .collect(Collectors.toList());
+
+        MediaType mediaType = Objects.equals(f, "json") ? MediaType.APPLICATION_JSON_TYPE :
+                Objects.equals(f, "html") ? MediaType.TEXT_HTML_TYPE :
+                        Objects.nonNull(containerRequestContext.getMediaType()) ? containerRequestContext.getMediaType() :
+                                (containerRequestContext.getAcceptableMediaTypes()
+                                                       .size() > 0 && !containerRequestContext.getAcceptableMediaTypes()
+                                                                                             .get(0).equals(MediaType.WILDCARD_TYPE)) ? containerRequestContext.getAcceptableMediaTypes()
+                                                                                            .get(0) :
+                                        MediaType.APPLICATION_JSON_TYPE;
+
+        if (serviceListingProviders.containsKey(mediaType)) {
+            Response serviceListing = serviceListingProviders.get(mediaType)
+                                                             .getServiceListing(services, uriInfo.getRequestUri());
+            return Response.ok()
+                           .entity(serviceListing.getEntity())
+                           .type(mediaType)
+                           .build();
+        }
+
+
         return Response.ok()
-                       .entity(entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE)
-                                             .stream()
-                                             .map(Service::getId)
-                                             .collect(Collectors.toList()))
+                       .entity(services)
                        .build();
 
         /*ServiceCatalog catalog = new ArcGisServiceCatalog(serviceRegistry.getServices(authUser));
@@ -176,9 +224,10 @@ public class ServicesResource {
     }*/
 
     //TODO
-    @GET
-    @Produces(MediaTypeCharset.TEXT_HTML_UTF8)
-    public Response getServicesHtml(@Auth(required = false) AuthenticatedUser authUser, @QueryParam("token") String token, @Context UriInfo uriInfo) {
+    //@GET
+    //@Produces(MediaTypeCharset.TEXT_HTML_UTF8)
+    public Response getServicesHtml(@Auth(required = false) AuthenticatedUser authUser,
+                                    @QueryParam("token") String token, @Context UriInfo uriInfo) {
         /*if (serviceResourceFactories.size() == 1) {
             Response response = serviceResourceFactories.values()
                                                         .iterator()
@@ -200,16 +249,17 @@ public class ServicesResource {
             }
         }*/
 
-        List<ServiceData> services = entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE)
+        List<ServiceData> services = entityRegistry.getEntitiesForType(Service.class)
                                                    .stream()
                                                    .map(Service::getData)
                                                    .collect(Collectors.toList());
 
-        if (Objects.nonNull(serviceListingProvider)) {
-            return serviceListingProvider.getServiceListing(services, uriInfo.getRequestUri());
+        if (serviceListingProviders.containsKey(MediaType.TEXT_HTML_TYPE)) {
+            return serviceListingProviders.get(MediaType.TEXT_HTML_TYPE)
+                                          .getServiceListing(services, uriInfo.getRequestUri());
         }
 
-        return Response.ok(new GenericView("services", uriInfo.getRequestUri(), entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE)))
+        return Response.ok(new GenericView("services", uriInfo.getRequestUri(), entityRegistry.getEntitiesForType(Service.class)))
                        .build();
         //return Response.ok(new GenericView("services", uriInfo.getRequestUri(), serviceRegistry.getServices(authUser))).build();
     }
@@ -222,8 +272,9 @@ public class ServicesResource {
     public Response getFile(@PathParam("file") String file) {
         //LOGGER.debug("FILE {})", file);
 
-        if (Objects.nonNull(serviceListingProvider)) {
-            return serviceListingProvider.getStaticAsset(file);
+        if (serviceListingProviders.containsKey(MediaType.TEXT_HTML_TYPE)) {
+            return serviceListingProviders.get(MediaType.TEXT_HTML_TYPE)
+                                          .getStaticAsset(file);
         }
 
         return Response.status(Response.Status.NOT_FOUND)
@@ -231,7 +282,9 @@ public class ServicesResource {
     }
 
     @Path("/{service}/")
-    public ServiceResource getServiceResource(/*@Auth(protectedResource = true, exceptions = "arcgis") AuthenticatedUser authUser,*/ @PathParam("service") String id, @QueryParam("callback") String callback, @Context ContainerRequestContext containerRequestContext) {
+    public ServiceResource getServiceResource(/*@Auth(protectedResource = true, exceptions = "arcgis") AuthenticatedUser authUser,*/
+            @PathParam("service") String id, @QueryParam("callback") String callback,
+            @Context ContainerRequestContext containerRequestContext) {
         try {
             MDC.put("service", id);
 
@@ -259,7 +312,7 @@ public class ServicesResource {
 
     private Service getService(AuthenticatedUser authUser, String id, String callback) {
         //Service s = serviceRegistry.getService(authUser, id);
-        Optional<Service> s = entityRegistry.getEntity(Service.class, Service.ENTITY_TYPE, id);
+        Optional<Service> s = entityRegistry.getEntity(Service.class, id);
 
         if (!s.isPresent() /*|| !s.isStarted()*/) {
             throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale()),*/ callback);

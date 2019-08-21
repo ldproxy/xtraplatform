@@ -1,4 +1,4 @@
-version = '2.0.0'
+version = '2.0.1'
 
 dependencies {
     provided "de.interactive_instruments:xtraplatform-config-store-api"
@@ -6,4 +6,5 @@ dependencies {
     provided "de.interactive_instruments:xtraplatform-kvstore-api"
     provided "de.interactive_instruments:xtraplatform-service-api"
     provided "de.interactive_instruments:xtraplatform-rest"
+    provided "de.interactive_instruments:xtraplatform-web-api"
 }

@@ -14,7 +14,8 @@ public enum Role {
     NONE,
     USER,
     EDITOR,
-    ADMIN;
+    ADMIN,
+    SUPERADMIN;
 
     public static Role fromString(String role) {
         for (Role v : Role.values()) {

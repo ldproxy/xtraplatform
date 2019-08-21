@@ -41,8 +41,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
+import de.ii.xtraplatform.entity.api.RemoveEntityData;
 import de.ii.xtraplatform.kvstore.api.rest.ResourceSerializer;
-import de.ii.xtraplatform.entity.api.AbstractEntityData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +57,7 @@ import java.util.stream.StreamSupport;
 /**
  * @author zahnen
  */
-public class EntitySerializer implements ResourceSerializer<AbstractEntityData> {
+public class EntitySerializer implements ResourceSerializer<RemoveEntityData> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntitySerializer.class);
 
@@ -83,15 +83,15 @@ public class EntitySerializer implements ResourceSerializer<AbstractEntityData> 
     }
 
     @Override
-    public AbstractEntityData deserialize(AbstractEntityData resource, Reader reader) throws IOException {
+    public RemoveEntityData deserialize(RemoveEntityData resource, Reader reader) throws IOException {
         jsonMapper.readerForUpdating(resource)
                   .readValue(reader);
         return resource;
     }
 
     @Override
-    public AbstractEntityData deserialize(String id, Class<?> clazz, Reader reader) throws IOException {
-        return (AbstractEntityData) jsonMapper.readValue(reader, clazz);
+    public RemoveEntityData deserialize(String id, Class<?> clazz, Reader reader) throws IOException {
+        return (RemoveEntityData) jsonMapper.readValue(reader, clazz);
     }
 
     @Override
@@ -100,35 +100,35 @@ public class EntitySerializer implements ResourceSerializer<AbstractEntityData> 
     }
 
     @Override
-    public String serializeAdd(AbstractEntityData resource) throws IOException {
+    public String serializeAdd(RemoveEntityData resource) throws IOException {
         return jsonMapperPartial.writer()
                                 .writeValueAsString(resource);
     }
 
     @Override
-    public String serializeUpdate(AbstractEntityData resource) throws IOException {
+    public String serializeUpdate(RemoveEntityData resource) throws IOException {
         return jsonMapperPartial.writeValueAsString(resource);
     }
 
     @Override
-    public String serializeMerge(AbstractEntityData resource) throws IOException {
+    public String serializeMerge(RemoveEntityData resource) throws IOException {
         return jsonMapperPartial.writer()
                                 .writeValueAsString(resource);
     }
 
     @Override
-    public Optional<AbstractEntityData> deserializePartial(Class<?> clazz, Reader reader) throws IOException {
-        return Optional.of((AbstractEntityData) jsonMapperPartial.readValue(reader, clazz));
+    public Optional<RemoveEntityData> deserializePartial(Class<?> clazz, Reader reader) throws IOException {
+        return Optional.of((RemoveEntityData) jsonMapperPartial.readValue(reader, clazz));
     }
 
     @Override
-    public AbstractEntityData mergePartial(AbstractEntityData resource, String partial) throws IOException {
+    public RemoveEntityData mergePartial(RemoveEntityData resource, String partial) throws IOException {
         return jsonMapperMerge.readerForUpdating(resource)
                               .readValue(partial);
     }
 
     @Override
-    public AbstractEntityData mergePartial(AbstractEntityData resource, Reader reader) throws IOException {
+    public RemoveEntityData mergePartial(RemoveEntityData resource, Reader reader) throws IOException {
         return jsonMapperMerge.readerForUpdating(resource)
                               .readValue(reader);
     }

@@ -1,6 +1,6 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 /**
  * Created by zahnen on 27.11.15.
- *
+ * <p>
  * level has to be smaller than the ones of ConfigurationHandler and ProvidedServiceHandler
  */
 @Handler(name = "Entity", namespace = EntityHandler.NAMESPACE, level = 0)
@@ -45,17 +45,20 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
     private ProvidedServiceHandler providedServiceHandler;
 
     @Override
-    public void initializeComponentFactory(ComponentTypeDescription typeDesc, Element metadata) throws ConfigurationException {
-        super.initializeComponentFactory(typeDesc, metadata);
+    public void initializeComponentFactory(ComponentTypeDescription typeDesc,
+                                           Element metadata) throws ConfigurationException {
 
         // check if class implements PersistentEntity
-        Element[] inherited = typeDesc.getDescription().getElements("inherited");
-        if (inherited == null || inherited.length == 0 || !inherited[0].containsAttribute("interfaces") || !inherited[0].getAttribute("interfaces").contains(PersistentEntity.class.getName())) {
+        Element[] inherited = typeDesc.getDescription()
+                                      .getElements("inherited");
+        if (inherited == null || inherited.length == 0 || !inherited[0].containsAttribute("interfaces") || !inherited[0].getAttribute("interfaces")
+                                                                                                                        .contains(PersistentEntity.class.getName())) {
             throw new IllegalStateException("The class " + getPojoMetadata().getClassName() + " does not extend " + PersistentEntity.class.getName());
         }
 
         // read dataType from annotation
-        Element[] bundleConfigElements = metadata.getElements(Entity.class.getSimpleName().toLowerCase(), NAMESPACE);
+        Element[] bundleConfigElements = metadata.getElements(Entity.class.getSimpleName()
+                                                                          .toLowerCase(), NAMESPACE);
         if (bundleConfigElements == null || bundleConfigElements.length == 0 || !bundleConfigElements[0].containsAttribute("dataType")) {
             throw new IllegalStateException("DataType not set for Entity");
         }
@@ -93,20 +96,17 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         data.addAttribute(new Attribute("method", "setData"));
         data.addAttribute(new Attribute("type", EntityData.class.getName()));
 
-        // TODO
-        /*Element[] mani = metadata.getElements("Manipulation", "");
-        Element register = new Element("field", null);
-        mani[0].addElement(register);
-        register.addAttribute(new Attribute("name", "register"));
-        register.addAttribute(new Attribute("type", "boolean"));
-*/
-        //MethodMetadata mm2 = metadata..getMethod("getData");
-        LOGGER.debug("DATATYPE2 {}", metadata);
-
-        LOGGER.debug("HANDLERS {} {}", typeDesc.getFactory().getRequiredHandlers(), Arrays.stream(metadata.getElements()).map(e -> e.getName()).collect(Collectors.toList()));
-
         typeDesc.addProperty(new PropertyDescription("data", dataType, null));
-        typeDesc.addProperty(new PropertyDescription("type", String.class.getName(), entityType.substring(entityType.lastIndexOf(".")+1).toLowerCase()+"s"));
+        typeDesc.addProperty(new PropertyDescription("type", String.class.getName(), entityType.substring(entityType.lastIndexOf(".") + 1)
+                                                                                               .toLowerCase() + "s", true));
+
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("ENTITY {}", metadata);
+            LOGGER.trace("HANDLERS {} {}", typeDesc.getFactory()
+                                                   .getRequiredHandlers(), Arrays.stream(metadata.getElements())
+                                                                                 .map(Element::getName)
+                                                                                 .collect(Collectors.toList()));
+        }
     }
 
     @Override
@@ -130,16 +130,18 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
     public void configurationChanged(ComponentInstance instance, Map<String, Object> configuration) {
         // TODO: could directly ask shouldRegister()
         try {
-            Field field = getInstanceManager().getPojoObject().getClass().getField("register");
+            Field field = getInstanceManager().getPojoObject()
+                                              .getClass()
+                                              .getField("register");
             if (!field.isAccessible()) {
                 field.setAccessible(true);
             }
             boolean register = (boolean) field.get(getInstanceManager().getPojoObject());
-            LOGGER.debug("UPDATE {}",  register);
+            //LOGGER.debug("UPDATE {}", register);
 
             providedServiceHandler.onSet(null, "register", register);
         } catch (SecurityException | IllegalAccessException | IllegalArgumentException | NoSuchFieldException e) {
-            LOGGER.error("ERR", e);
+            //LOGGER.error("ERR", e);
         }
 
     }

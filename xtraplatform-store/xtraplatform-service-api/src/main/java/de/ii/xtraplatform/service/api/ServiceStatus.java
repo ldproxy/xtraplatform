@@ -9,14 +9,29 @@ package de.ii.xtraplatform.service.api;
 
 import org.immutables.value.Value;
 
+import javax.annotation.Nullable;
+
 /**
  * @author zahnen
  */
 @Value.Immutable
 @Value.Style(deepImmutablesDetection = true)
-public abstract class ServiceDataWithStatus extends ServiceData {
+public interface ServiceStatus extends ServiceData {
 
-    public enum STATUS {STARTED,STOPPED}
+    enum STATUS {STARTED,STOPPED}
 
-    public abstract STATUS getStatus();
+    STATUS getStatus();
+
+    @Value.Default
+    default boolean getHasBackgroundTask() {
+        return false;
+    }
+
+    @Value.Default
+    default int getProgress() {
+        return 0;
+    }
+
+    @Nullable
+    String getMessage();
 }

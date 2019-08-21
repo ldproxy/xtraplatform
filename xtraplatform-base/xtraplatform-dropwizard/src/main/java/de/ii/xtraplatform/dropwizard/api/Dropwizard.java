@@ -17,33 +17,27 @@ import io.dropwizard.views.ViewRenderer;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import javax.servlet.ServletContext;
-import java.util.Map;
 
 /**
  *
  * @author zahnen
  */
-public interface Dropwizard {
-    public static final String FLAG_ALLOW_SERVICE_READDING = "allowServiceReAdding";
-    public static final String FLAG_USE_FORMATTED_JSON_OUTPUT = "useFormattedJsonOutput";
+public interface Dropwizard extends XtraPlatform {
+    //public static final String FLAG_ALLOW_SERVICE_READDING = "allowServiceReAdding";
+    //public static final String FLAG_USE_FORMATTED_JSON_OUTPUT = "useFormattedJsonOutput";
     
-    public Map<String,Boolean> getFlags();
-    public ServletEnvironment getServlets();
-    public ServletContext getServletContext();
-    public MutableServletContextHandler getApplicationContext();
-    public JerseyEnvironment getJersey();
-    public ServletContainer getJerseyContainer();
-    public String getExternalUrl();
-    public boolean hasExternalUrl();
-    public int getApplicationPort();
-    public String getHostName();
-    public int getDebugLogMaxMinutes();
-    public void attachLoggerAppender(Appender appender);
-    public void detachLoggerAppender(Appender appender);
-    public void setLoggingLevel(Level level);
-    public XtraServerFrameworkConfiguration getConfiguration();
-    public Environment getEnvironment();
-    public void resetServer();
+    //public Map<String,Boolean> getFlags();
+    ServletEnvironment getServlets();
+    ServletContext getServletContext();
+    MutableServletContextHandler getApplicationContext();
+    JerseyEnvironment getJersey();
+    ServletContainer getJerseyContainer();
+    //public int getDebugLogMaxMinutes();
+    void attachLoggerAppender(Appender appender);
+    void detachLoggerAppender(Appender appender);
+    void setLoggingLevel(Level level);
+    Environment getEnvironment();
+    void resetServer();
 
     ViewRenderer getMustacheRenderer();
 }

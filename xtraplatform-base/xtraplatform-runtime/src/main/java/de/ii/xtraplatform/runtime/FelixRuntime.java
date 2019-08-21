@@ -4,6 +4,7 @@ package de.ii.xtraplatform.runtime;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import io.dropwizard.jackson.Jackson;
@@ -14,8 +15,15 @@ import org.apache.felix.main.AutoProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -33,12 +41,13 @@ public class FelixRuntime {
 
     public static final String DATA_DIR_KEY = "de.ii.xtraplatform.directories.data";
     public static final String ENV_KEY = "de.ii.xtraplatform.environment";
+    public static final String CONFIG_FILE_NAME = "cfg.yml";
+    public static final String CONFIG_FILE_NAME_LEGACY = "xtraplatform.json";
 
     private static final String ENV_VAR = "XTRAPLATFORM_ENV";
     private static final String DATA_DIR_NAME = "data";
     private static final String BUNDLES_DIR_NAME = "bundles";
     private static final String FELIX_CACHE_DIR_NAME = "felix-cache";
-    private static final String CONFIG_FILE_NAME = "xtraplatform.json";
 
     private static final Map<String, String> EXPORTS = new ImmutableMap.Builder<String, String>()
             //.put("javax.xml.bind", "0.0")
@@ -137,11 +146,11 @@ public class FelixRuntime {
 
     public void init(String[] args, List<List<String>> bundles, List<List<String>> devBundles) {
         Map<String, String> felixConfig = new HashMap<>();
-        File dataDir = getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
-        File bundlesDir = getBundlesDir(args).orElseThrow(() -> new IllegalArgumentException("No bundles directory found"));
+        Path dataDir = getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
+        Path bundlesDir = getBundlesDir(args).orElseThrow(() -> new IllegalArgumentException("No bundles directory found"));
         ENV env = parseEnvironment();
 
-        preloadLoggingConfiguration(new File(dataDir, CONFIG_FILE_NAME));
+        preloadLoggingConfiguration(dataDir.resolve(CONFIG_FILE_NAME), dataDir.resolve(CONFIG_FILE_NAME_LEGACY));
 
         LOGGER.info("--------------------------------------------------");
         LOGGER.info("Starting {} {}", name, version);
@@ -152,8 +161,9 @@ public class FelixRuntime {
             LOGGER.debug("Environment: {}", env);
         }
 
-        String bundlePrefix = "reference:file:" + bundlesDir.getAbsolutePath()
-                .replaceAll(" ", "%20") + "/";
+        String bundlePrefix = "reference:file:" + bundlesDir.toAbsolutePath()
+                                                            .toString()
+                                                            .replaceAll(" ", "%20") + "/";
         int startLevel = 1;
 
         for (List<String> level : bundles) {
@@ -162,8 +172,8 @@ public class FelixRuntime {
             }
 
             String levelBundles = level.stream()
-                    .map(bundle -> bundlePrefix + bundle)
-                    .collect(Collectors.joining(" "));
+                                       .map(bundle -> bundlePrefix + bundle)
+                                       .collect(Collectors.joining(" "));
 
             felixConfig.put(AutoProcessor.AUTO_START_PROP + "." + startLevel, levelBundles);
 
@@ -177,8 +187,8 @@ public class FelixRuntime {
                 }
 
                 String levelBundles = level.stream()
-                        .map(bundle -> bundlePrefix + bundle)
-                        .collect(Collectors.joining(" "));
+                                           .map(bundle -> bundlePrefix + bundle)
+                                           .collect(Collectors.joining(" "));
 
                 felixConfig.put(AutoProcessor.AUTO_START_PROP + "." + startLevel, levelBundles);
 
@@ -188,15 +198,18 @@ public class FelixRuntime {
 
         felixConfig.put(FelixConstants.FRAMEWORK_BEGINNING_STARTLEVEL, Integer.toString(startLevel));
 
-        felixConfig.put(FelixConstants.FRAMEWORK_STORAGE, new File(dataDir, FELIX_CACHE_DIR_NAME).getAbsolutePath());
+        felixConfig.put(FelixConstants.FRAMEWORK_STORAGE, dataDir.resolve(FELIX_CACHE_DIR_NAME)
+                                                                 .toAbsolutePath()
+                                                                 .toString());
         felixConfig.put(FelixConstants.FRAMEWORK_STORAGE_CLEAN, FelixConstants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT);
         // Export the host provided service interface package.
         felixConfig.put(FelixConstants.FRAMEWORK_SYSTEMPACKAGES_EXTRA, Joiner.on(',')
-                .withKeyValueSeparator(";version=")
-                .join(EXPORTS));
+                                                                             .withKeyValueSeparator(";version=")
+                                                                             .join(EXPORTS));
         felixConfig.put(FelixConstants.FRAMEWORK_BOOTDELEGATION, "sun.misc");
 
-        felixConfig.put(DATA_DIR_KEY, dataDir.getAbsolutePath());
+        felixConfig.put(DATA_DIR_KEY, dataDir.toAbsolutePath()
+                                             .toString());
         felixConfig.put(ENV_KEY, env.name());
 
         if (LOGGER.isTraceEnabled()) {
@@ -248,52 +261,67 @@ public class FelixRuntime {
         }
     }
 
-    private Optional<File> getDataDir(String[] args) {
-        File dataDir;
+    private Optional<Path> getDataDir(String[] args) {
+        Path dataDir;
 
         if (args.length >= 1) {
-            dataDir = new File(args[0]);
+            dataDir = Paths.get(args[0]);
         } else {
-            dataDir = new File(DATA_DIR_NAME).getAbsoluteFile();
-            if (!dataDir.exists()) {
-                dataDir = new File("../" + DATA_DIR_NAME).getAbsoluteFile();
+            dataDir = Paths.get(DATA_DIR_NAME)
+                           .toAbsolutePath();
+            if (!Files.isDirectory(dataDir)) {
+                dataDir = Paths.get("../", DATA_DIR_NAME)
+                               .toAbsolutePath();
             }
         }
-        if (!dataDir.exists()) {
+        if (!Files.isDirectory(dataDir)) {
             return Optional.empty();
         }
 
         return Optional.of(dataDir);
     }
 
-    private Optional<File> getBundlesDir(String[] args) {
-        File bundlesDir;
+    private Optional<Path> getBundlesDir(String[] args) {
+        Path bundlesDir;
 
         if (args.length >= 2) {
-            bundlesDir = new File(args[1]);
+            bundlesDir = Paths.get(args[0]);
         } else {
-            bundlesDir = new File(BUNDLES_DIR_NAME).getAbsoluteFile();
-            if (!bundlesDir.exists()) {
-                bundlesDir = new File("../" + BUNDLES_DIR_NAME).getAbsoluteFile();
+            bundlesDir = Paths.get(BUNDLES_DIR_NAME)
+                              .toAbsolutePath();
+            if (!Files.isDirectory(bundlesDir)) {
+                bundlesDir = Paths.get("../" + BUNDLES_DIR_NAME)
+                                  .toAbsolutePath();
             }
         }
-        if (!bundlesDir.exists()) {
+        if (!Files.isDirectory(bundlesDir)) {
             return Optional.empty();
         }
 
         return Optional.of(bundlesDir);
     }
 
-    private void preloadLoggingConfiguration(File configFile) {
+    private void preloadLoggingConfiguration(Path configFile, Path fallbackConfigFile) {
 
         DefaultLoggingFactory loggingFactory;
 
         try {
-            ObjectMapper objectMapper = Jackson.newObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(configFile).at("/logging");
-            loggingFactory = objectMapper.readerFor(DefaultLoggingFactory.class).readValue(jsonNode);
+            ObjectMapper objectMapper = null;
+            JsonNode jsonNode = null;
+
+            if (Files.isReadable(configFile)) {
+                objectMapper = Jackson.newObjectMapper(new YAMLFactory());
+                jsonNode = objectMapper.readTree(configFile.toFile());
+            } else if (Files.isReadable(fallbackConfigFile)) {
+                objectMapper = Jackson.newObjectMapper();
+                jsonNode = objectMapper.readTree(fallbackConfigFile.toFile());
+            }
+
+            loggingFactory = Objects.requireNonNull(objectMapper)
+                                    .readerFor(DefaultLoggingFactory.class)
+                                    .readValue(jsonNode.at("/logging"));
         } catch (Throwable e) {
-            //ignore
+            // use defaults
             loggingFactory = new DefaultLoggingFactory();
         }
 
@@ -302,10 +330,10 @@ public class FelixRuntime {
 
     private ENV parseEnvironment() {
         return Optional.ofNullable(System.getenv(ENV_VAR))
-                .filter(e -> Arrays.stream(ENV.values())
-                        .map(Enum::name)
-                        .anyMatch(v -> Objects.equals(e, v)))
-                .map(ENV::valueOf)
-                .orElse(ENV.PRODUCTION);
+                       .filter(e -> Arrays.stream(ENV.values())
+                                          .map(Enum::name)
+                                          .anyMatch(v -> Objects.equals(e, v)))
+                       .map(ENV::valueOf)
+                       .orElse(ENV.PRODUCTION);
     }
 }

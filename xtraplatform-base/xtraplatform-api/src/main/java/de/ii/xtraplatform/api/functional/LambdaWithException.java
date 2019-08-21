@@ -9,6 +9,7 @@ package de.ii.xtraplatform.api.functional;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author zahnen
@@ -25,6 +26,11 @@ public class LambdaWithException {
         void apply(T t) throws E;
     }
 
+    @FunctionalInterface
+    public interface SupplierWithException<T, E extends Exception> {
+        T get() throws E;
+    }
+
     public static <T, R, E extends Exception> Function<T, R> mayThrow(FunctionWithException<T, R, E> fe) {
         return arg -> {
             try {
@@ -39,6 +45,16 @@ public class LambdaWithException {
         return arg -> {
             try {
                 ce.apply(arg);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    public static <T, E extends Exception> Supplier<T> supplierMayThrow(SupplierWithException<T, E> se) {
+        return () -> {
+            try {
+                return se.get();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

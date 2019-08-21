@@ -1,6 +1,6 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -15,7 +15,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
-import de.ii.xtraplatform.dropwizard.api.XtraServerFrameworkConfiguration;
+import de.ii.xtraplatform.dropwizard.api.XtraPlatformConfiguration;
 import de.ii.xtraplatform.dropwizard.views.FallbackMustacheViewRenderer;
 import io.dropwizard.Application;
 import io.dropwizard.cli.Cli;
@@ -40,10 +40,16 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Objects;
 
+import static de.ii.xtraplatform.runtime.FelixRuntime.CONFIG_FILE_NAME;
+import static de.ii.xtraplatform.runtime.FelixRuntime.CONFIG_FILE_NAME_LEGACY;
 import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
+import static de.ii.xtraplatform.runtime.FelixRuntime.ENV_KEY;
 
 /**
  *
@@ -53,11 +59,11 @@ import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
 @Provides
 @Instantiate
 //TODO move to separate bundle
-public class DropwizardProvider extends Application<XtraServerFrameworkConfiguration> implements Dropwizard {
+public class DropwizardProvider extends Application<XtraPlatformConfiguration> implements Dropwizard {
 
     //private static final Logger ROOT_LOGGER = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
-    public static final String CFG_FILE_NAME = "xtraplatform.json";
+
     public static final String CFG_FILE_TEMPLATE_NAME = "/xtraplatform.default.json";
     public static final String TEMPLATE_DIR_NAME = "templates";
     public static final String DW_CMD = "server";
@@ -69,7 +75,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     @Context
     private BundleContext context;
 
-    private XtraServerFrameworkConfiguration configuration;
+    private XtraPlatformConfiguration configuration;
     private Environment environment;
     private ServletContainer jerseyContainer;
     private ViewRenderer mustacheRenderer;
@@ -79,59 +85,70 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
 
     @Validate
     public void start() {
+        String environment = context.getProperty(ENV_KEY).toLowerCase();
+        String cfgFileTemplateName = String.format("/cfg.%s.yml", environment);
         String dataDir = context.getProperty(DATA_DIR_KEY);
         if (dataDir == null) {
-            LOGGER.warn("Not starting dropwizard, no data directory given.");
-            return;
+            LOGGER.error("Could not start XtraPlatform, no data directory given.");
+            System.exit(1);
         }
 
         // TODO: move to config store
-        File cfgFile = new File(new File(dataDir), CFG_FILE_NAME);
+        Path cfgFile = null;
 
         try {
-            if (!cfgFile.isFile()) {
-                Resources.asByteSource(Resources.getResource(DropwizardProvider.class, CFG_FILE_TEMPLATE_NAME)).copyTo(new FileOutputStream(cfgFile));
+            if (Files.exists(Paths.get(dataDir, CONFIG_FILE_NAME))) {
+                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME).toAbsolutePath();
+            } else if (Files.exists(Paths.get(dataDir, CONFIG_FILE_NAME_LEGACY))) {
+                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME_LEGACY).toAbsolutePath();
+            } else {
+                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME).toAbsolutePath();
+
+                Resources.asByteSource(Resources.getResource(DropwizardProvider.class, cfgFileTemplateName))
+                         .copyTo(new FileOutputStream(cfgFile.toFile()));
             }
 
-            init(cfgFile);
+            init(cfgFile.toString());
 
             // publish the service once the initialization
             // is completed.
             controller = true;
 
-            LOGGER.debug("Initialized Dropwizard with configuration file {}", cfgFile.getAbsolutePath());
+            LOGGER.debug("Initialized XtraPlatform with configuration file {}", cfgFile);
 
         } catch (Exception ex) {
-            LOGGER.error("Error initializing Dropwizard with configuration file {}", cfgFile.getAbsolutePath(), ex);
+            LOGGER.error("Error initializing XtraPlatform with configuration file {}", cfgFile, ex);
+            System.exit(1);
         }
     }
 
-    public void init(File cfgFile) throws Exception {
-        final Bootstrap<XtraServerFrameworkConfiguration> bootstrap = new Bootstrap<>(this);
+    public void init(String cfgFilePath) throws Exception {
+        final Bootstrap<XtraPlatformConfiguration> bootstrap = new Bootstrap<>(this);
         bootstrap.addCommand(new XtraServerFrameworkCommand<>(this));
         initialize(bootstrap);
 
         final Cli cli = new Cli(new JarLocation(getClass()), bootstrap, System.out, System.err);
-        String[] arguments = {DW_CMD, cfgFile.getAbsolutePath()};
+        String[] arguments = {DW_CMD, cfgFilePath};
         if (!cli.run(arguments)) {
-            LOGGER.error("Error initializing Dropwizard with configuration file {}", cfgFile.getAbsolutePath());
+            LOGGER.error("Error initializing XtraPlatform with configuration file {}", cfgFilePath);
+            System.exit(1);
         }
     }
 
     @Override
-    public void initialize(Bootstrap<XtraServerFrameworkConfiguration> bootstrap) {
+    public void initialize(Bootstrap<XtraPlatformConfiguration> bootstrap) {
         this.mustacheRenderer = new FallbackMustacheViewRenderer();
 
-        bootstrap.addBundle(new ViewBundle<XtraServerFrameworkConfiguration>(ImmutableSet.of(mustacheRenderer)) {
+        bootstrap.addBundle(new ViewBundle<XtraPlatformConfiguration>(ImmutableSet.of(mustacheRenderer)) {
             @Override
-            public Map<String, Map<String, String>> getViewConfiguration(XtraServerFrameworkConfiguration configuration) {
+            public Map<String, Map<String, String>> getViewConfiguration(XtraPlatformConfiguration configuration) {
                 return ImmutableMap.of(".mustache", ImmutableMap.of("fileRoot", new File(new File(context.getProperty(DATA_DIR_KEY)), TEMPLATE_DIR_NAME).getAbsolutePath()));
             }
         });
     }
 
     @Override
-    public void run(XtraServerFrameworkConfiguration configuration, Environment environment) throws Exception {
+    public void run(XtraPlatformConfiguration configuration, Environment environment) throws Exception {
         this.configuration = configuration;
         this.environment = environment;
         this.jerseyContainer = (ServletContainer) environment.getJerseyServletContainer();
@@ -140,16 +157,21 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
 
         // TODO: enable trailing slashes, #36
         //environment.jersey().enable(ResourceConfig.FEATURE_REDIRECT);
-        this.environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+        this.environment.getObjectMapper()
+                        .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
-        if (configuration.useFormattedJsonOutput) {
-            environment.getObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+        //TODO: per parameter
+        //if (configuration.useFormattedJsonOutput) {
+            environment.getObjectMapper()
+                       .enable(SerializationFeature.INDENT_OUTPUT);
             //LOGGER.warn(FrameworkMessages.GLOBALLY_ENABLED_JSON_PRETTY_PRINTING);
-        }
+        //}
+
+        LOGGER.info("Store mode: {}", configuration.store.mode);
     }
 
     @Override
-    public XtraServerFrameworkConfiguration getConfiguration() {
+    public XtraPlatformConfiguration getConfiguration() {
         return configuration;
     }
 
@@ -159,8 +181,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     }
 
 
-
-    @Override
+    /*@Override
     public Map<String, Boolean> getFlags() {
         Map<String, Boolean> flags = new HashMap<>();
 
@@ -168,7 +189,7 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
         flags.put(FLAG_USE_FORMATTED_JSON_OUTPUT, getConfiguration().useFormattedJsonOutput);
 
         return flags;
-    }
+    }*/
 
     @Override
     public ServletEnvironment getServlets() {
@@ -177,7 +198,8 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
 
     @Override
     public ServletContext getServletContext() {
-        return getEnvironment().getApplicationContext().getServletContext();
+        return getEnvironment().getApplicationContext()
+                               .getServletContext();
     }
 
     @Override
@@ -196,56 +218,46 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     }
 
     @Override
-    public String getExternalUrl() {
-        if (!hasExternalUrl()) {
-                    return "http://" + getHostName() + ":" + String.valueOf(getApplicationPort()) + "/";
-        }
-
-        return getConfiguration().externalURL.endsWith("/") ? getConfiguration().externalURL : getConfiguration().externalURL + "/";
+    public String getUrl() {
+        return "http://" + getHostName() + ":" + String.valueOf(getApplicationPort()) + "/";
     }
 
-    @Override
-    public boolean hasExternalUrl() {
-        return getConfiguration().externalURL != null && !getConfiguration().externalURL.isEmpty();
+    private int getApplicationPort() {
+        return ((HttpConnectorFactory) ((DefaultServerFactory) getConfiguration().getServerFactory()).getApplicationConnectors()
+                                                                                                     .get(0)).getPort();
     }
 
-    @Override
-    public int getApplicationPort() {
-        return ((HttpConnectorFactory) ((DefaultServerFactory) getConfiguration().getServerFactory()).getApplicationConnectors().get(0)).getPort();
-    }
-
-    @Override
-    public String getHostName() {
+    private String getHostName() {
         String hostName = "";
         try {
             InetAddress iAddress = InetAddress.getLocalHost();
             hostName = iAddress.getCanonicalHostName();
-            if (hostName == null || hostName.isEmpty()) {
+            if (Objects.isNull(hostName) || hostName.isEmpty()) {
                 hostName = iAddress.getHostName();
             }
         } catch (UnknownHostException e) {
             // failed;  try alternate means.
         }
         // windows environment variable
-        if (hostName == null || hostName.isEmpty()) {
+        if (Objects.isNull(hostName) || hostName.isEmpty()) {
             hostName = System.getenv("COMPUTERNAME");
         }
         // linux environment variable
-        if (hostName == null || hostName.isEmpty()) {
+        if (Objects.isNull(hostName) || hostName.isEmpty()) {
             hostName = System.getenv("HOSTNAME");
         }
         // last option
-        if (hostName == null || hostName.isEmpty()) {
+        if (Objects.isNull(hostName) || hostName.isEmpty()) {
             hostName = "localhost";
         }
 
         return hostName;
     }
 
-    @Override
+    /*@Override
     public int getDebugLogMaxMinutes() {
         return getConfiguration().maxDebugLogDurationMinutes;
-    }
+    }*/
 
     @Override
     public void attachLoggerAppender(Appender appender) {
@@ -271,12 +283,14 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
     @Override
     public void resetServer() {
         // cleanup metrics
-        for (String name : environment.metrics().getNames()) {
+        for (String name : environment.metrics()
+                                      .getNames()) {
             if (name.contains("jetty")) {
-                environment.metrics().remove(name);
+                environment.metrics()
+                           .remove(name);
             }
         }
-        
+
         // cleanup jersey
         // still not sure why this is needed and why it works
         // if we don't do this, we get exceptions from the jersey thread local stack
@@ -285,12 +299,15 @@ public class DropwizardProvider extends Application<XtraServerFrameworkConfigura
         // we create a new instance of ServletContainer and replace the old one in the jetty config
         // BUT: if we destroy the old one and/or replace the reference that JaxRsRegistry uses for reloads,
         // we get exceptions again
-        for (ServletHolder sh : getApplicationContext().getServletHandler().getServlets()) {
-            if (sh.getName().contains("jersey")) {
+        for (ServletHolder sh : getApplicationContext().getServletHandler()
+                                                       .getServlets()) {
+            if (sh.getName()
+                  .contains("jersey")) {
                 LOGGER.debug("JERSEY CLEANUP");
-                ServletContainer sc = new ServletContainer(environment.jersey().getResourceConfig());
+                ServletContainer sc = new ServletContainer(environment.jersey()
+                                                                      .getResourceConfig());
                 sh.setServlet(sc);
-                
+
                 //this.jerseyContainer.reload();
                 //this.jerseyContainer.destroy();
                 //this.jerseyContainer = sc;                

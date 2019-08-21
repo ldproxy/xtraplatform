@@ -1,0 +1,21 @@
+---
+server:
+  applicationConnectors:
+    - type: http
+      port: '7080'
+  adminConnectors:
+    - type: http
+      port: '7081'
+  gzip:
+    enabled: true
+  shutdownGracePeriod: 5s
+httpClient:
+  timeout: 100000ms
+  connectionTimeout: 100000ms
+logging:
+  level: WARN
+  appenders:
+    - type: console
+      timeZone: Europe/Berlin
+  loggers:
+    de.ii: DEBUG

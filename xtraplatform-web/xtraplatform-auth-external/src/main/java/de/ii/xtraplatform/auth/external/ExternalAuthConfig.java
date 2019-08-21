@@ -8,10 +8,10 @@
 package de.ii.xtraplatform.auth.external;
 
 import com.google.common.base.Strings;
+import de.ii.xtraplatform.auth.api.AuthConfig;
 import de.ii.xtraplatform.cfgstore.api.BundleConfigDefault;
 import de.ii.xtraplatform.cfgstore.api.ConfigPropertyDescriptor;
 import de.ii.xtraplatform.cfgstore.api.handler.LocalBundleConfig;
-import de.ii.xtraplatform.auth.api.AuthConfig;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -20,14 +20,20 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
 
-import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.*;
+import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.CONNECTION_INFO_ENDPOINT;
+import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.EXTERNAL_DYNAMIC_AUTHORIZATION_ENDPOINT;
+import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.JWT_SIGNING_KEY;
+import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.POST_PROCESSING_ENDPOINT;
+import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.USER_INFO_ENDPOINT;
+import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.USER_NAME_KEY;
+import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.USER_ROLE_KEY;
 
 /**
  * @author zahnen
  */
 @Component
 @Provides(specifications = {ExternalAuthConfig.class, AuthConfig.class})
-@Instantiate
+//TODO @Instantiate
 @LocalBundleConfig(category = "Security", properties = {
         @ConfigPropertyDescriptor(name = JWT_SIGNING_KEY, label = "The signing key for JWT validation", uiType = ConfigPropertyDescriptor.UI_TYPE.TEXT),
         @ConfigPropertyDescriptor(name = USER_INFO_ENDPOINT, label = "The URL to get the user info for a simple token", uiType = ConfigPropertyDescriptor.UI_TYPE.URL),
@@ -39,11 +45,8 @@ import static de.ii.xtraplatform.auth.external.ExternalAuthConfig.*;
 })
 class ExternalAuthConfig extends BundleConfigDefault implements AuthConfig {
 
-    static final String JWT_SIGNING_KEY = "jwtSigningKey";
     static final String USER_INFO_ENDPOINT = "userInfoEndpoint";
     static final String CONNECTION_INFO_ENDPOINT = "openIdConnectEndpoint";
-    static final String USER_NAME_KEY = "userNameKey";
-    static final String USER_ROLE_KEY = "userRoleKey";
     static final String EXTERNAL_DYNAMIC_AUTHORIZATION_ENDPOINT = "externalDynamicAuthorizationEndpoint";
     static final String POST_PROCESSING_ENDPOINT = "postProcessingEndpoint";
 
@@ -66,12 +69,12 @@ class ExternalAuthConfig extends BundleConfigDefault implements AuthConfig {
         return Strings.nullToEmpty(properties.get(JWT_SIGNING_KEY));
     }
 
-    @Override
+    //@Override
     public String getUserInfoUrl() {
         return Strings.nullToEmpty(properties.get(USER_INFO_ENDPOINT));
     }
 
-    @Override
+    //@Override
     public String getConnectionInfoEndpoint() {
         return Strings.nullToEmpty(properties.get(CONNECTION_INFO_ENDPOINT));
     }
@@ -86,12 +89,12 @@ class ExternalAuthConfig extends BundleConfigDefault implements AuthConfig {
         return Strings.nullToEmpty(properties.get(USER_ROLE_KEY));
     }
 
-    @Override
+    //@Override
     public String getExternalDynamicAuthorizationEndpoint() {
         return Strings.nullToEmpty(properties.get(EXTERNAL_DYNAMIC_AUTHORIZATION_ENDPOINT));
     }
 
-    @Override
+    //@Override
     public String getPostProcessingEndpoint() {
         return Strings.nullToEmpty(properties.get(POST_PROCESSING_ENDPOINT));
     }

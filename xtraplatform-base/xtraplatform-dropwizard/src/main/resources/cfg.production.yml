@@ -1,0 +1,34 @@
+---
+server:
+  applicationConnectors:
+    - type: http
+      port: '7080'
+  adminConnectors:
+    - type: http
+      port: '7081'
+  gzip:
+    enabled: true
+  requestLog:
+    type: classic
+    timeZone: Europe/Berlin
+    appenders:
+      - type: file
+        currentLogFilename: "./data/log/requests.log"
+        archive: true
+        archivedLogFilenamePattern: "./data/log/requests-%d.log.gz"
+        archivedFileCount: 7
+  shutdownGracePeriod: 30s
+httpClient:
+  timeout: 30000ms
+  connectionTimeout: 30000ms
+logging:
+  level: 'OFF'
+  appenders:
+    - type: file
+      timeZone: Europe/Berlin
+      currentLogFilename: "./data/log/xtraplatform.log"
+      archive: true
+      archivedLogFilenamePattern: "./data/log/xtraplatform-%d.log.gz"
+      archivedFileCount: 7
+  loggers:
+    de.ii: INFO

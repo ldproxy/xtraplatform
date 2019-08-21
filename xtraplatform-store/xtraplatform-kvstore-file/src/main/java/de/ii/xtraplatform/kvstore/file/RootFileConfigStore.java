@@ -25,13 +25,13 @@ import org.osgi.framework.BundleContext;
 @Instantiate
 public class RootFileConfigStore extends FileConfigStore implements KeyValueStore {
 
-    private static final String ROOT_DIR_NAME = "config-store";
+    private static final String ROOT_DIR_NAME = "store";
 
     public RootFileConfigStore(@Context BundleContext bc) {
         super(new File(new File(bc.getProperty(DATA_DIR_KEY)), ROOT_DIR_NAME));
         
         if (!rootDir.exists()) {
-            rootDir.mkdirs();
+            //rootDir.mkdirs();
         }
         if (!rootDir.isDirectory()) {
             // TODO 

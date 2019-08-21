@@ -67,6 +67,9 @@ public class FileConfigStore implements KeyValueStore {
     private static final HashFunction hashFunction = Hashing.goodFastHash(128);
 
     private File getFile(String id) {
+        if (!rootDir.exists()) {
+            rootDir.mkdirs();
+        }
 
         if (id.contains("/") || id.contains("\\") || id.contains(":")) {
             String hash = hashFunction.hashString(id, StandardCharsets.UTF_8).toString();
@@ -143,9 +146,9 @@ public class FileConfigStore implements KeyValueStore {
             configStore = new File(configStore, path[i]);
         }
         
-        if (!configStore.exists()) {
+        /*if (!configStore.exists()) {
             configStore.mkdirs();
-        }
+        }*/
         return new FileConfigStore(configStore);
     }
 

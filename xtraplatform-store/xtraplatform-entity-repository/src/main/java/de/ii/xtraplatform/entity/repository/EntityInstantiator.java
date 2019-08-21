@@ -7,15 +7,12 @@
  */
 package de.ii.xtraplatform.entity.repository;
 
-import de.ii.xtraplatform.entity.api.AbstractEntityData;
+import de.ii.xtraplatform.entity.api.EntityData;
 import de.ii.xtraplatform.entity.api.EntityRepository;
 import de.ii.xtraplatform.entity.api.EntityRepositoryForType;
 import org.apache.felix.ipojo.Factory;
-import org.apache.felix.ipojo.MissingHandlerException;
-import org.apache.felix.ipojo.UnacceptableConfiguration;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.architecture.PropertyDescription;
@@ -45,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component(publicFactory = false)
 @Provides(specifications = {EntityInstantiator.class})
-@Instantiate
+//@Instantiate
 @Wbp(
         filter = "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=de.ii.xtraplatform.entity.api.PersistentEntity))",
         onArrival = "onFactoryArrival",
@@ -70,7 +67,7 @@ public class EntityInstantiator {
     private final Map<String, Factory> componentFactories;
     private final Map<String, String> entityClasses;
     private final Map<String, String> entityTypes;
-    private final Map<String, AbstractEntityData> entityBuffer;
+    private final Map<String, EntityData> entityBuffer;
 
     public EntityInstantiator(@Requires EntityRepository entityRepository) {
         this.instanceHandles = new LinkedHashMap<>();
@@ -112,7 +109,7 @@ public class EntityInstantiator {
             entityRepository.addEntityType(entityType.get(), entityDataType.get());
 
             //LOGGER.debug("JACKSON SUBTYPES {}", jacksonSubTypeIds);
-            executorService.schedule(() -> initInstances(entityType.get(), entityClass.get()), 5, TimeUnit.SECONDS);
+            executorService.schedule(() -> initInstances(entityType.get(), entityClass.get()), 10, TimeUnit.SECONDS);
         }
 
 
@@ -136,16 +133,16 @@ public class EntityInstantiator {
         }
     }
 
-    private Optional<String> getEntityClass(AbstractEntityData data) {
+    private Optional<String> getEntityClass(EntityData data) {
         return Optional.ofNullable(entityClasses.get(getEntityDataType(data)));
     }
 
-    private String getEntityDataType(AbstractEntityData data) {
+    private String getEntityDataType(EntityData data) {
         return data.getClass().getName().replace(".Immutable", ".").replace(".Modifiable", ".");
     }
 
     @Subscriber(name = "create", topics = "create", dataKey = "data", dataType = "de.ii.xtraplatform.entity.api.AbstractEntityData")
-    public void onEntityCreate(AbstractEntityData data) {
+    public void onEntityCreate(EntityData data) {
         LOGGER.debug("TYPES {} {}", entityClasses, data.getClass().getName().replace(".Immutable", "."));
         Optional<String> entityType = getEntityClass(data);
         if (entityType.isPresent()) {
@@ -156,7 +153,7 @@ public class EntityInstantiator {
     }
 
     @Subscriber(name = "update", topics = "update", dataKey = "data", dataType = "de.ii.xtraplatform.entity.api.AbstractEntityData")
-    public void onEntityUpdate(AbstractEntityData data) {
+    public void onEntityUpdate(EntityData data) {
         updateInstance(getEntityDataType(data), data.getId(), data);
     }
 
@@ -184,7 +181,7 @@ public class EntityInstantiator {
         }
     }
 
-    private void createInstance(String type, String id, AbstractEntityData data) {
+    private void createInstance(String type, String id, EntityData data) {
         LOGGER.debug("CREATE ENTITY {} {} {}", type, id/*, data*/);
 
         InstanceBuilder instanceBuilder = declarationBuilderService.newInstance(type);
@@ -203,7 +200,7 @@ public class EntityInstantiator {
         this.instanceHandles.put(id, handle);
     }
 
-    private void updateInstance(String type, String id, AbstractEntityData data) {
+    private void updateInstance(String type, String id, EntityData data) {
         LOGGER.debug("UPDATE ENTITY {} {} {}", type, id/*, data*/);
 
         if (componentFactories.containsKey(type) && instanceHandles.containsKey(id)) {

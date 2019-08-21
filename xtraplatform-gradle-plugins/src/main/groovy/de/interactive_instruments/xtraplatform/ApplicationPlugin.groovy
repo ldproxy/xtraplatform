@@ -105,6 +105,9 @@ class ApplicationPlugin implements Plugin<Project> {
                         from(getBundleFiles(project)) {
                             into "bundles"
                         }
+                        from(getDevBundleFiles(project)) {
+                            into "bundles"
+                        }
                         into('') {
                             //create an empty 'data/log' directory in distribution root
                             def appDirBase = new File(project.buildDir, 'tmp/app-dummy-dir')

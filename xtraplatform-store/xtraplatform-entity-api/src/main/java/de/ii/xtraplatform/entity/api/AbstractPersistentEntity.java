@@ -1,6 +1,6 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -9,6 +9,7 @@ package de.ii.xtraplatform.entity.api;
 
 import org.apache.felix.ipojo.annotations.Property;
 import org.apache.felix.ipojo.annotations.ServiceController;
+import org.apache.felix.ipojo.annotations.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,10 +20,19 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPersistentEntity.class);
 
-    @ServiceController(value=false) // is ignored here, but added by @Entity handler
+    @ServiceController(value = false) // is ignored here, but added by @Entity handler
     public boolean register;
 
     private T data;
+
+    @Validate// is ignored here, but added by @EntityComponent stereotype
+    public final void onValidate() {
+        onStart();
+        LOGGER.debug("STARTED {} {} {}", getId(), shouldRegister(), register);
+    }
+
+    protected void onStart() {
+    }
 
     @Override
     public T getData() {
@@ -30,14 +40,13 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
     }
 
     @Property(name = "data") // is ignored here, but added by @Entity handler
-    public void setData(T data) {
+    public final void setData(T data) {
         LOGGER.debug("GOT data {}"/*, data*/);
-        this.data = dataToImmutable(data);
+        this.data = data;
 
         if (shouldRegister()) {
             LOGGER.debug("REGISTERED {}", data.getId());
             this.register = true;
-            //this.__IM.onSet(this, "register", true);
 
         } else {
             LOGGER.debug("DEREGISTERED {}", data.getId());
@@ -46,8 +55,6 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
     }
 
     protected boolean shouldRegister() {
-        return true;
+        return false;
     }
-
-    protected abstract T dataToImmutable(T data);
 }

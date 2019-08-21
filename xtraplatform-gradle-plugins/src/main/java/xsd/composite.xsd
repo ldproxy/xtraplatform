@@ -91,7 +91,7 @@
 				<xs:attribute name="specification" type="xs:string"
 					use="required">
 				</xs:attribute>
-				<xs:attribute name="context-source" type="xs:string"
+				<xs:attribute name="bundleContext-source" type="xs:string"
 					use="optional">
 				</xs:attribute>
 				<xs:attribute name="scope">

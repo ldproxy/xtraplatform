@@ -37,6 +37,7 @@ abstract public class AbstractAdminServiceResource implements AdminServiceResour
     private static final String OPERATION_KEY = "_operation_";
     private static final String OPERATION_PARAMETER_KEY = "_parameter_";
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAdminServiceResource.class);
+
     protected ObjectMapper jsonMapper;
     protected AuthorizationProvider permissions;
     //private Services services;

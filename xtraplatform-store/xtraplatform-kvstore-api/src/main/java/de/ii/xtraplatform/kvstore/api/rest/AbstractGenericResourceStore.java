@@ -406,7 +406,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     }
 
     @Override
-    public void deleteResource(String id) throws IOException {
+    public void deleteResource(String id, String... path) throws IOException {
         getPathProxy(this, defaultPath).deleteResource(id);
     }
 
@@ -548,8 +548,8 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
         }
 
         @Override
-        public void deleteResource(String id) throws IOException {
-            AbstractGenericResourceStore.this.writeResource(path, id, OPERATION.DELETE);
+        public void deleteResource(String id, String... path) throws IOException {
+            AbstractGenericResourceStore.this.writeResource(this.path, id, OPERATION.DELETE);
         }
 
         @Override

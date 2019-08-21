@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.service.api;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.List;
  */
 public interface ServiceListingProvider {
     //TODO: one provider per mime type
-
+    MediaType getMediaType();
     Response getServiceListing(List<ServiceData> services, URI uri);
     Response getStaticAsset(String path);
 }

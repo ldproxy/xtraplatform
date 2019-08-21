@@ -30,7 +30,7 @@ public abstract class EntityRepositoryWrapper implements EntityRepository {
         return ids;
     }
 
-    protected AbstractEntityData transformData(AbstractEntityData data) {
+    protected RemoveEntityData transformData(RemoveEntityData data) {
         return data;
     }
 
@@ -54,38 +54,38 @@ public abstract class EntityRepositoryWrapper implements EntityRepository {
     }
 
     @Override
-    public AbstractEntityData getEntityData(String id, String... path) {
+    public RemoveEntityData getEntityData(String id, String... path) {
         return entityRepository.getEntityData(id, transformPath(id, path));
     }
 
     @Override
-    public AbstractEntityData createEntity(AbstractEntityData data, String... path) throws IOException {
+    public RemoveEntityData createEntity(RemoveEntityData data, String... path) throws IOException {
         return entityRepository.createEntity(transformData(data), transformPath(data.getId(), path));
     }
 
     @Override
-    public AbstractEntityData generateEntity(Map<String, Object> data, String... path) throws IOException {
+    public RemoveEntityData generateEntity(Map<String, Object> data, String... path) throws IOException {
         return entityRepository.generateEntity(data, transformPath((String) data.get("id"), path));
     }
 
     @Override
-    public AbstractEntityData replaceEntity(AbstractEntityData data, String... path) throws IOException {
+    public RemoveEntityData replaceEntity(RemoveEntityData data, String... path) throws IOException {
         return entityRepository.replaceEntity(transformData(data), transformPath(data.getId(), path));
     }
 
     @Override
-    public AbstractEntityData updateEntity(AbstractEntityData partialData, String... path) throws IOException {
+    public RemoveEntityData updateEntity(RemoveEntityData partialData, String... path) throws IOException {
         return entityRepository.updateEntity(transformData(partialData), transformPath(partialData.getId(), path));
     }
 
     @Override
-    public AbstractEntityData updateEntity(String id, String partialData, String... path) throws IOException {
+    public RemoveEntityData updateEntity(String id, String partialData, String... path) throws IOException {
         return entityRepository.updateEntity(id, partialData, transformPath(id, path));
     }
 
     @Override
-    public void deleteEntity(String id) throws IOException {
-        entityRepository.deleteEntity(transformId(id));
+    public void deleteEntity(String id, String... path) throws IOException {
+        entityRepository.deleteEntity(id, transformPath(id, path));
     }
 
     @Override

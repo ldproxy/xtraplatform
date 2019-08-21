@@ -12,17 +12,22 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ObjectArrays;
+import de.ii.xtraplatform.dropwizard.api.Jackson;
+import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entity.api.EntityDataGenerator;
+import de.ii.xtraplatform.entity.api.EntityRepository;
+import de.ii.xtraplatform.entity.api.EntityRepositoryChangeListener;
+import de.ii.xtraplatform.entity.api.RemoveEntityData;
 import de.ii.xtraplatform.kvstore.api.KeyValueStore;
 import de.ii.xtraplatform.kvstore.api.rest.AbstractGenericResourceStore;
 import de.ii.xtraplatform.kvstore.api.rest.ResourceSerializer;
 import de.ii.xtraplatform.kvstore.api.rest.ResourceStore;
 import de.ii.xtraplatform.kvstore.api.rest.ResourceTransaction;
-import de.ii.xtraplatform.dropwizard.api.Jackson;
-import de.ii.xtraplatform.entity.api.AbstractEntityData;
-import de.ii.xtraplatform.entity.api.EntityDataGenerator;
-import de.ii.xtraplatform.entity.api.EntityRepository;
-import de.ii.xtraplatform.entity.api.EntityRepositoryChangeListener;
-import org.apache.felix.ipojo.annotations.*;
+import org.apache.felix.ipojo.annotations.Component;
+import org.apache.felix.ipojo.annotations.Context;
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
+import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.handlers.event.Publishes;
 import org.apache.felix.ipojo.handlers.event.publisher.Publisher;
 import org.apache.felix.ipojo.whiteboard.Wbp;
@@ -34,7 +39,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -65,7 +75,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     private final Map<String,String> entityTypes;
     private final Map<String,EntityDataGenerator> entityDataGenerators;
-    private final Map<String, AbstractEntityData> entityBuffer;
+    private final Map<String, EntityData> entityBuffer;
 
     //private final List<EntityRepositoryChangeListener> changeListeners;
 
@@ -124,12 +134,12 @@ public class EntityRepositoryImpl implements EntityRepository {
     }
 
     @Override
-    public AbstractEntityData getEntityData(String id, String... path) {
-        return store.getResource(id, path);
+    public RemoveEntityData getEntityData(String id, String... path) {
+        return (RemoveEntityData) store.getResource(id, path);
     }
 
     @Override
-    public AbstractEntityData createEntity(AbstractEntityData data, String... path) throws IOException {
+    public RemoveEntityData createEntity(RemoveEntityData data, String... path) throws IOException {
         validate(data);
 
         String[] path2 = ObjectArrays.concat("entities", path);
@@ -142,7 +152,7 @@ public class EntityRepositoryImpl implements EntityRepository {
     }
 
     @Override
-    public AbstractEntityData generateEntity(Map<String, Object> data, String... path) throws IOException {
+    public RemoveEntityData generateEntity(Map<String, Object> data, String... path) throws IOException {
         //validate(data);
         if (Objects.isNull(data) || !data.containsKey("id")) {
             throw new IOException("data map invalid");
@@ -156,22 +166,22 @@ public class EntityRepositoryImpl implements EntityRepository {
 
         String[] path2 = ObjectArrays.concat("entities", path);
 
-        AbstractEntityData data2 = entitySerializer.deserializePartial(entityDataClass, new StringReader(mapper.writeValueAsString(data))).get();
+        RemoveEntityData data2 = entitySerializer.deserializePartial(entityDataClass, new StringReader(mapper.writeValueAsString(data))).get();
 
-        AbstractEntityData data3 = entityDataGenerators.get(entityDataClass.getName()).generate(data2);
+        //RemoveEntityData data3 = (RemoveEntityData) entityDataGenerators.get(entityDataClass.getName()).generate(data2);
 
         LOGGER.debug("CREATE {} {}", id, path2);
-        store.addResource(data3, path2);
+        //store.addResource(data3, path2);
 
         //TODO
-        AbstractEntityData data4 = getEntityData(id, path);
+        RemoveEntityData data4 = getEntityData(id, path);
         createListeners.sendData(data4);
 
         return data4;
     }
 
     @Override
-    public AbstractEntityData replaceEntity(AbstractEntityData data, String... path) throws IOException {
+    public RemoveEntityData replaceEntity(RemoveEntityData data, String... path) throws IOException {
         validate(data);
 
         String[] path2 = ObjectArrays.concat("entities", path);
@@ -179,44 +189,44 @@ public class EntityRepositoryImpl implements EntityRepository {
         store.updateResource(data, path2);
 
         //TODO
-        AbstractEntityData data2 = getEntityData(data.getId(), path);
+        EntityData data2 = getEntityData(data.getId(), path);
         updateListeners.sendData(data2);
 
         return data;
     }
 
     @Override
-    public AbstractEntityData updateEntity(AbstractEntityData partialData, String... path) throws IOException {
+    public RemoveEntityData updateEntity(RemoveEntityData partialData, String... path) throws IOException {
         validate(partialData);
 
 
         store.updateResourceOverrides(partialData.getId(), partialData, path);
 
         //TODO
-        AbstractEntityData data = getEntityData(partialData.getId(), path);
+        RemoveEntityData data = getEntityData(partialData.getId(), path);
         updateListeners.sendData(data);
 
         return data;
     }
 
     @Override
-    public AbstractEntityData updateEntity(String id, String partialData, String... path) throws IOException {
+    public RemoveEntityData updateEntity(String id, String partialData, String... path) throws IOException {
         //validate(partialData);
 
 
         store.updateResourceOverrides(id, partialData, path);
 
         //TODO
-        AbstractEntityData data = getEntityData(id, path);
+        RemoveEntityData data = getEntityData(id, path);
         updateListeners.sendData(data);
 
         return data;
     }
 
     @Override
-    public void deleteEntity(String id) throws IOException {
+    public void deleteEntity(String id, String... path) throws IOException {
 
-        store.deleteResource(id);
+        store.deleteResource(id, path);
 
         deleteListeners.sendData(id);
     }
@@ -233,7 +243,7 @@ public class EntityRepositoryImpl implements EntityRepository {
         LOGGER.debug("ENTITY TYPE {} {}", entityType, dataType);
     }
 
-    private void validate(AbstractEntityData data) {
+    private void validate(EntityData data) {
         Objects.requireNonNull(data, "data may not be null");
         Objects.requireNonNull(data.getId(), "data.getId() may not be null");
     }
@@ -274,7 +284,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
 
 
-    private class EntityStore extends AbstractGenericResourceStore<AbstractEntityData, ResourceStore<AbstractEntityData>> {
+    private class EntityStore extends AbstractGenericResourceStore<RemoveEntityData, ResourceStore<RemoveEntityData>> {
 
         public EntityStore(KeyValueStore rootConfigStore, String resourceType, ObjectMapper jsonMapper) {
             super(rootConfigStore, resourceType, jsonMapper);
@@ -284,12 +294,12 @@ public class EntityRepositoryImpl implements EntityRepository {
             super(rootConfigStore, resourceType, jsonMapper, fullCache);
         }
 // TODO: DeepUpdater and Serializer with JsonMerge, see ...
-        public EntityStore(KeyValueStore rootConfigStore, String resourceType, boolean fullCache, /*DeepUpdater<AbstractEntityData> deepUpdater,*/ ResourceSerializer<AbstractEntityData> serializer) {
+        public EntityStore(KeyValueStore rootConfigStore, String resourceType, boolean fullCache, /*DeepUpdater<AbstractEntityData> deepUpdater,*/ ResourceSerializer<RemoveEntityData> serializer) {
             super(rootConfigStore, resourceType, fullCache, /*deepUpdater,*/ serializer);
         }
 
         @Override
-        protected AbstractEntityData createEmptyResource(String id, String... path) {
+        protected RemoveEntityData createEmptyResource(String id, String... path) {
             LOGGER.debug("EMPTY {} {}", id, path);
 
             //String type = path[path.length-1];
@@ -311,7 +321,7 @@ public class EntityRepositoryImpl implements EntityRepository {
             return getEntityDataClass(id ,path);
         }
 
-        public void addResource(AbstractEntityData resource, String... path) throws IOException {
+        public void addResource(RemoveEntityData resource, String... path) throws IOException {
             super.writeResource(path, resource.getResourceId(), ResourceTransaction.OPERATION.ADD, resource);
         }
 
@@ -319,12 +329,12 @@ public class EntityRepositoryImpl implements EntityRepository {
             super.writeResourceFromString(path, id, ResourceTransaction.OPERATION.ADD, mapper.writeValueAsString(resource));
         }
 
-        public void updateResource(AbstractEntityData resource, String... path) throws IOException {
+        public void updateResource(RemoveEntityData resource, String... path) throws IOException {
             super.writeResource(path, resource.getResourceId(), ResourceTransaction.OPERATION.UPDATE, resource);
         }
 
         //@Override
-        public void updateResourceOverrides(String id, AbstractEntityData resource, String... path) throws IOException {
+        public void updateResourceOverrides(String id, RemoveEntityData resource, String... path) throws IOException {
             String[] path2 = ObjectArrays.concat(resourceType, path);
             super.writeResource(path2, id, ResourceTransaction.OPERATION.UPDATE_OVERRIDE, resource);
         }
@@ -335,9 +345,9 @@ public class EntityRepositoryImpl implements EntityRepository {
         }
 
         @Override
-        public void deleteResource(String id) throws IOException {
-            String[] path = {resourceType};
-            super.writeResource(path, id, ResourceTransaction.OPERATION.DELETE);
+        public void deleteResource(String id, String... path) throws IOException {
+            String[] path2 = ObjectArrays.concat(resourceType, path);
+            super.writeResource(path2, id, ResourceTransaction.OPERATION.DELETE);
         }
 
         @Override
@@ -351,12 +361,12 @@ public class EntityRepositoryImpl implements EntityRepository {
         }
 
         @Override
-        public AbstractEntityData getResource(String id) {
+        public RemoveEntityData getResource(String id) {
             String[] path = {resourceType};
             return super.getResource(path, id);
         }
 
-        public AbstractEntityData getResource(String id, String... path) {
+        public RemoveEntityData getResource(String id, String... path) {
             return super.getResource(ObjectArrays.concat(resourceType, path), id);
         }
     }

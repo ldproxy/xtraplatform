@@ -11,21 +11,28 @@ package de.ii.xtraplatform.auth.api;
  * @author zahnen
  */
 public interface AuthConfig {
+
+    String JWT_SIGNING_KEY = "jwtSigningKey";
+    String USER_NAME_KEY = "userNameKey";
+    String USER_ROLE_KEY = "userRoleKey";
+
     boolean isJwt();
 
     String getJwtSigningKey();
 
-    String getUserInfoUrl();
+    default void setJwtSigningKey(String key) {}
+
+    //String getUserInfoUrl();
 
     boolean isActive();
 
-    String getConnectionInfoEndpoint();
+    //String getConnectionInfoEndpoint();
 
     String getUserNameKey();
 
     String getUserRoleKey();
 
-    String getExternalDynamicAuthorizationEndpoint();
+    //String getExternalDynamicAuthorizationEndpoint();
 
-    String getPostProcessingEndpoint();
+    //String getPostProcessingEndpoint();
 }

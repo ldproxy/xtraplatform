@@ -234,7 +234,7 @@
             <xs:annotation>
                 <xs:documentation>Factory method called to create POJO objects instead of the constructor.
                     The specified method must be a static method of the implementation class returning an
-                    instance of this implementation class. The factory method can receive the bundle context
+                    instance of this implementation class. The factory method can receive the bundle bundleContext
                     in argument.
                 </xs:documentation>
             </xs:annotation>
@@ -410,36 +410,36 @@
     </xs:complexType>
     <xs:complexType name="ContextType">
         <xs:annotation>
-            <xs:documentation>Allows injecting the OSGi bundle context into the component.
+            <xs:documentation>Allows injecting the OSGi bundle bundleContext into the component.
             </xs:documentation>
         </xs:annotation>
         <xs:attribute name="method" type="xs:string" use="optional">
             <xs:annotation>
-                <xs:documentation>Specifies the method receiving the bundle context.</xs:documentation>
+                <xs:documentation>Specifies the method receiving the bundle bundleContext.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="field" type="xs:string" use="optional">
             <xs:annotation>
-                <xs:documentation>Specifies the field receiving the bundle context.</xs:documentation>
+                <xs:documentation>Specifies the field receiving the bundle bundleContext.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="constructor-parameter" type="xs:int" use="optional">
             <xs:annotation>
                 <xs:documentation>Specifies the index of the parameter (0-based) receiving the bundle
-                    context.</xs:documentation>
+                    bundleContext.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
 
-        <xs:attribute name="context" use="optional">
+        <xs:attribute name="bundleContext" use="optional">
             <xs:annotation>
-                <xs:documentation>Specifies the context source.
+                <xs:documentation>Specifies the bundleContext source.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
                 <xs:annotation>
-                    <xs:documentation>iPOJO supports two bundle context 'sources': component and instance. Component
-                        is the bundle context of the bundle declaring the component, while instance is the bundle
-                        context of the bundle declaring the instance. Obviously, they are the same when the instance
+                    <xs:documentation>iPOJO supports two bundle bundleContext 'sources': component and instance. Component
+                        is the bundle bundleContext of the bundle declaring the component, while instance is the bundle
+                        bundleContext of the bundle declaring the instance. Obviously, they are the same when the instance
                         is declared in the same bundle as the component. By default, it uses 'component'.
                     </xs:documentation>
                 </xs:annotation>
@@ -581,7 +581,7 @@
         </xs:attribute>
     </xs:complexType>
     <xs:element name="callback" type="CallbackType" id="callback"/>
-    <xs:element name="context" type="ContextType" id="context"/>
+    <xs:element name="bundleContext" type="ContextType" id="bundleContext"/>
     <xs:element name="controller" type="ControllerType" id="controller">
         <xs:annotation>
             <xs:documentation/>

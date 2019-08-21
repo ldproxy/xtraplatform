@@ -14,7 +14,7 @@ import java.util.Optional;
 /**
  * @author zahnen
  */
-public interface ServiceTasks {
+public interface ServiceBackgroundTasks {
     Optional<TaskStatus> getCurrentTask();
     Optional<TaskStatus> getCurrentTaskForService(String id);
 }

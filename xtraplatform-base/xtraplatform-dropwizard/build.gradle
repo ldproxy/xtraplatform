@@ -1,8 +1,9 @@
 
-version = '2.0.0'
+version = '2.0.1'
 
 ext {
     dropwizardVersion = '1.3.9'
+    jacksonVersion = '2.9.8'
 }
 
 dependencies {
@@ -13,6 +14,7 @@ dependencies {
     embedded group: 'io.dropwizard', name: 'dropwizard-views-mustache', version: dropwizardVersion
     embedded (group: 'io.dropwizard', name: 'dropwizard-client', version: dropwizardVersion)
     embedded (group: 'io.dropwizard', name: 'dropwizard-auth', version: dropwizardVersion)
+    embedded (group: 'io.dropwizard', name: 'dropwizard-json-logging', version: dropwizardVersion)
 
     //only used for xtraproxy online???
     embedded (group: 'com.sun.mail', name: 'javax.mail', version: '1.5.2') {
@@ -21,11 +23,13 @@ dependencies {
     
     embedded group: 'org.threeten', name: 'threeten-extra', version: '1.3.2'
 
-    //java 11
-    embedded group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'
-    embedded group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.12'
-    embedded group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
-    embedded group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
+    if(JavaVersion.current().isJava11Compatible()) {
+        //java >= 11
+        embedded group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'
+        embedded group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.12'
+        embedded group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
+        embedded group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
+    }
 }
 
 jar {

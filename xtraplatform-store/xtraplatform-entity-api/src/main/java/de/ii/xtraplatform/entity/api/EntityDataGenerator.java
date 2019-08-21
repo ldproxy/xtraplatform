@@ -7,10 +7,12 @@
  */
 package de.ii.xtraplatform.entity.api;
 
+import java.util.Map;
+
 /**
  * @author zahnen
  */
-public interface EntityDataGenerator<T extends AbstractEntityData> {
+public interface EntityDataGenerator<T extends EntityData> {
     Class<T> getType();
-    T generate(T partialData);
+    T generate(Map<String, String> partialData);
 }

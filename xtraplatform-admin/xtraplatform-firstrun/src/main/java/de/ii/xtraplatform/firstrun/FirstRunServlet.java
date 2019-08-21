@@ -58,14 +58,15 @@ public class FirstRunServlet extends HttpServlet {
 
         // determine path fragment of external URL
         String extPath = "";
-        if (server.hasExternalUrl()) {
+        //TODO: from CoreServerConfig
+        /*if (server.hasExternalUrl()) {
             String extUrl = server.getExternalUrl();
             extPath = extUrl.substring(extUrl.indexOf("/", extUrl.indexOf("//") + 2) + 1);
 
             if (!extPath.isEmpty() && !extPath.endsWith("/")) {
                 extPath += "/";
             }
-        }
+        }*/
         this.externalPath = extPath;
     }
 

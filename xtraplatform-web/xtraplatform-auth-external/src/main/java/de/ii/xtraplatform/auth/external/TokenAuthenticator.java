@@ -1,6 +1,6 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xtraplatform.akka.http.AkkaHttp;
 import de.ii.xtraplatform.auth.api.AuthConfig;
+import de.ii.xtraplatform.auth.api.ImmutableUser;
 import de.ii.xtraplatform.auth.api.Role;
 import de.ii.xtraplatform.auth.api.User;
 import io.dropwizard.auth.AuthenticationException;
@@ -34,10 +35,10 @@ public class TokenAuthenticator implements Authenticator<String, User> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TokenAuthenticator.class);
 
-    private final AuthConfig authConfig;
+    private final ExternalAuthConfig authConfig;
     private final AkkaHttp akkaHttp;
 
-    TokenAuthenticator(AuthConfig authConfig, AkkaHttp akkaHttp) {
+    TokenAuthenticator(ExternalAuthConfig authConfig, AkkaHttp akkaHttp) {
         this.authConfig = authConfig;
         this.akkaHttp = akkaHttp;
     }
@@ -54,8 +55,11 @@ public class TokenAuthenticator implements Authenticator<String, User> {
                                            .parseClaimsJws(token)
                                            .getBody();
 
-                    return Optional.of(new User(claimsJws.getSubject(), Role.fromString(Optional.ofNullable(claimsJws.get(authConfig.getUserRoleKey(), String.class))
-                                                                                                .orElse("USER"))));
+                    return Optional.of(ImmutableUser.builder()
+                                                    .name(claimsJws.getSubject())
+                                                    .role(Role.fromString(Optional.ofNullable(claimsJws.get(authConfig.getUserRoleKey(), String.class))
+                                                                                  .orElse("USER")))
+                                                    .build());
                 } else {
                     // validate/exchange
                     // parse
@@ -75,8 +79,11 @@ public class TokenAuthenticator implements Authenticator<String, User> {
                                                                    .toCompletableFuture()
                                                                    .join();
 
-                        return Optional.of(new User(userInfo.get(authConfig.getUserNameKey()), Role.fromString(Optional.ofNullable(userInfo.get(authConfig.getUserRoleKey()))
-                                                                                                                       .orElse("USER"))));
+                        return Optional.of(ImmutableUser.builder()
+                                                        .name(userInfo.get(authConfig.getUserNameKey()))
+                                                        .role(Role.fromString(Optional.ofNullable(userInfo.get(authConfig.getUserRoleKey()))
+                                                                                      .orElse("USER")))
+                                                        .build());
                     }
                 }
             } catch (Throwable e) {

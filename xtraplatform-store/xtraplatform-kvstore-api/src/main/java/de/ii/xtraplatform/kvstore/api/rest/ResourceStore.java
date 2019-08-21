@@ -26,7 +26,7 @@ public interface ResourceStore<T extends Resource> {
 
     void addResource(T resource) throws IOException;
 
-    void deleteResource(String id) throws IOException;
+    void deleteResource(String id, String... path) throws IOException;
 
     void updateResource(T resource) throws IOException;
 

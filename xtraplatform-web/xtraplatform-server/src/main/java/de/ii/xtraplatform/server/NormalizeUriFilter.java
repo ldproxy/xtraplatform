@@ -34,23 +34,9 @@ public class NormalizeUriFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        /*URI requestUri = requestContext.getUriInfo().getRequestUri();
-        URI normalized = requestUri.normalize();
-        String normalizedPath = normalized.getPath().replace("[^/]$", "/");
-
-        if (!normalized.getPath().equals(normalizedPath)) {
-            try {
-                normalized = new URI(normalized.getScheme(), normalized.getAuthority(), normalizedPath, normalized.getQuery(), normalized.getFragment());
-            } catch (URISyntaxException e) {
-                // ignore
-            }
-        }
-
-        if (!requestUri.equals(normalized))
-            requestContext.setRequestUri(normalized);*/
-
+        /*
         String path = requestContext.getUriInfo().getAbsolutePath().getPath();
-        //if (path == null || !path.endsWith("/")) {
+
         if (path.endsWith("api")) {
             if (dropwizard.hasExternalUrl()) {
                 requestContext.abortWith(
@@ -69,6 +55,6 @@ public class NormalizeUriFilter implements ContainerRequestFilter {
                             .build()
             );
 
-        }
+        }*/
     }
 }

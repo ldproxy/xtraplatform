@@ -1,11 +1,15 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package de.ii.xtraplatform.entity.api;
+
+import org.immutables.value.Value;
+
+import java.time.Instant;
 
 /**
  * @author zahnen
@@ -13,7 +17,15 @@ package de.ii.xtraplatform.entity.api;
 public interface EntityData {
     String getId();
 
-    long getCreatedAt();
+    @Value.Default
+    default long getCreatedAt() {
+        return Instant.now()
+                      .toEpochMilli();
+    }
 
-    long getLastModified();
+    @Value.Default
+    default long getLastModified() {
+        return Instant.now()
+                      .toEpochMilli();
+    }
 }
