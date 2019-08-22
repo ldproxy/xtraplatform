@@ -195,7 +195,8 @@ public class AkkaHttp {
     }
 
     private Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool> getPool(String url) {
-        String identifier = url.substring(0, url.indexOf("/", 8));
+        int end = url.indexOf("/", 8) > -1 ? url.indexOf("/", 8) : url.indexOf("?") > -1 ? url.indexOf("?") : url.length();
+        String identifier = url.substring(0, end);
 
         return pools.get(identifier);
     }

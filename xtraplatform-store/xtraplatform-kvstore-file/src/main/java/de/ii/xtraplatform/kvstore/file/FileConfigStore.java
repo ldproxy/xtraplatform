@@ -39,6 +39,9 @@ public class FileConfigStore implements KeyValueStore {
 
     @Override
     public WriteTransaction<String> openWriteTransaction(String id) {
+        if (!rootDir.exists()) {
+            rootDir.mkdirs();
+        }
         return new WriteFileTransaction(getFile(id));
     }
 
@@ -120,18 +123,25 @@ public class FileConfigStore implements KeyValueStore {
         }
 
         List<String> files = new ArrayList<>();
-        for (File f : rootDir.listFiles()) {
-            if (f.isFile()
-                    && !f.getAbsolutePath().endsWith(INDEX_FILE_NAME)
-                    && !f.getAbsolutePath().endsWith("-custom")
-                    && !f.getAbsolutePath().endsWith("-config")
-                    && !f.getAbsolutePath().endsWith("-backup")
-                    && !f.getName().startsWith(".")) {
+        if (rootDir.exists()) {
+            for (File f : rootDir.listFiles()) {
+                if (f.isFile()
+                        && !f.getAbsolutePath()
+                             .endsWith(INDEX_FILE_NAME)
+                        && !f.getAbsolutePath()
+                             .endsWith("-custom")
+                        && !f.getAbsolutePath()
+                             .endsWith("-config")
+                        && !f.getAbsolutePath()
+                             .endsWith("-backup")
+                        && !f.getName()
+                             .startsWith(".")) {
 
-                if (!props.isEmpty()) {
-                    files.add(props.getProperty(f.getName()));
-                } else {
-                    files.add(f.getName());
+                    if (!props.isEmpty()) {
+                        files.add(props.getProperty(f.getName()));
+                    } else {
+                        files.add(f.getName());
+                    }
                 }
             }
         }
