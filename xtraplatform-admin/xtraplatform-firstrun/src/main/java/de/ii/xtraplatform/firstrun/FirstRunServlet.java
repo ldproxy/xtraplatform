@@ -36,7 +36,7 @@ import java.util.List;
 @Provides(properties = {
     @StaticServiceProperty(name = "osgi.http.whiteboard.servlet.pattern", type = "java.lang.String", value = "")
 })
-@Instantiate
+//@Instantiate
 
 public class FirstRunServlet extends HttpServlet {
 

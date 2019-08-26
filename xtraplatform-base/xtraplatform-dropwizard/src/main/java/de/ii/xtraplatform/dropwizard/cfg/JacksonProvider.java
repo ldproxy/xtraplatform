@@ -79,14 +79,14 @@ public class JacksonProvider implements Jackson {
         this.mapping = HashBiMap.create();
         this.context = context;
 
-        LOGGER.debug("CREATED JACKSON {}", jsonMapper);
+        //LOGGER.debug("CREATED JACKSON {}", jsonMapper);
 
     }
 
     public synchronized void onArrival(ServiceReference<JacksonSubTypeIds> ref) {
         JacksonSubTypeIds ids = context.getService(ref);
         if (ids != null) {
-            LOGGER.debug("REGISTERING SUBTYPE IDS {}", ids.getMapping());
+            LOGGER.debug("Registered Jackson subtype ids: {}", ids.getMapping());
             mapping.putAll(ids.getMapping());
         }
     }
@@ -199,7 +199,7 @@ public class JacksonProvider implements Jackson {
         public TypeIdResolver typeIdResolverInstance(MapperConfig<?> config, Annotated annotated, Class<?> resolverClass) {
             if (resolverClass.equals(DynamicTypeIdResolver.class)) {
                 typeIdResolvers.putIfAbsent(annotated.getName(), new DynamicTypeIdResolver(annotated.getType()));
-                LOGGER.debug("DynamicHandlerInstantiator typeIdResolverInstance {} {}", annotated.getName(), typeIdResolvers.get(annotated.getName()));
+                //LOGGER.debug("DynamicHandlerInstantiator typeIdResolverInstance {} {}", annotated.getName(), typeIdResolvers.get(annotated.getName()));
                 return typeIdResolvers.get(annotated.getName());
             }
             return null;

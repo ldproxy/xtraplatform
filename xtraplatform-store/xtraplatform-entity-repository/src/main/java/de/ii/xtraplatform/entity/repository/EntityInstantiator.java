@@ -40,13 +40,15 @@ import java.util.concurrent.TimeUnit;
  * @author zahnen
  */
 
-@Component(publicFactory = false)
+/*@Component(publicFactory = false)
 @Provides(specifications = {EntityInstantiator.class})
-//@Instantiate
+@Instantiate
 @Wbp(
         filter = "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=de.ii.xtraplatform.entity.api.PersistentEntity))",
         onArrival = "onFactoryArrival",
         onDeparture = "onFactoryDeparture")
+
+ */
 public class EntityInstantiator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntityInstantiator.class);

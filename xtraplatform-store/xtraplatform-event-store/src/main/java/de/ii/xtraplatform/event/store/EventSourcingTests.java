@@ -165,7 +165,9 @@ public class EventSourcingTests {
                 public AnnotatedMethod resolveSetterConflict(MapperConfig<?> config, AnnotatedMethod setter1,
                                                              AnnotatedMethod setter2) {
                     if (isImmutableBuilder(setter1.getDeclaringClass())) {
-                        LOGGER.debug("resolving setter conflict for Immutables Builder {} {}", setter1, setter2);
+                        if (LOGGER.isTraceEnabled()) {
+                            LOGGER.trace("resolving setter conflict for Immutables Builder {} {}", setter1, setter2);
+                        }
                         if (isImmutableBuilder(setter1.getRawParameterType(0))) {
                             return setter1;
                         }

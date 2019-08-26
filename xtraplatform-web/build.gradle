@@ -8,12 +8,12 @@ allprojects {
     group = 'de.interactive_instruments'
 }
 
-version = '2.0.2'
+version = '2.0.3'
 
 
 dependencies {
-    feature group: 'de.interactive_instruments', name: 'xtraplatform-base', version: '2.0.1'
-    feature group: 'de.interactive_instruments', name: 'xtraplatform-store', version: '2.0.2'
+    feature group: 'de.interactive_instruments', name: 'xtraplatform-base', version: '2.0.2'
+    feature group: 'de.interactive_instruments', name: 'xtraplatform-store', version: '2.0.4'
 
     bundle subprojects
 }

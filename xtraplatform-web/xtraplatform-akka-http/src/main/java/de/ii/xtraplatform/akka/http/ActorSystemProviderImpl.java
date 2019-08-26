@@ -33,10 +33,10 @@ public class ActorSystemProviderImpl implements ActorSystemProvider {
 
     private static final Config DEFAULT_CONFIG = ConfigFactory.parseMap(new ImmutableMap.Builder<String, Object>()
             .put("akka.stdout-loglevel", "OFF")
-            .put("akka.loglevel", "DEBUG")
+            .put("akka.loglevel", "INFO")
             .put("akka.loggers", ImmutableList.of("akka.event.slf4j.Slf4jLogger"))
             .put("akka.logging-filter", "akka.event.slf4j.Slf4jLoggingFilter")
-            .put("akka.log-config-on-start", true)
+            //.put("akka.log-config-on-start", true)
             .build());
 
     @Override
@@ -46,10 +46,10 @@ public class ActorSystemProviderImpl implements ActorSystemProvider {
 
     @Override
     public ActorSystem getActorSystem(final BundleContext context, final Config config) {
-        LOGGER.debug("Starting Akka for bundle {} ...", context.getBundle().getSymbolicName());
+        LOGGER.trace("Starting Akka for bundle {} ...", context.getBundle().getSymbolicName());
         try {
             final ActorSystem system = new OsgiActorSystemFactory(context, scala.Option.empty(), ConfigFactory.load(config)).createActorSystem(scala.Option.empty());
-            LOGGER.debug("... Akka started");
+            LOGGER.trace("... Akka started");
             return system;
         } catch (Throwable e) {
             LOGGER.debug("AKKA START FAILED", e);

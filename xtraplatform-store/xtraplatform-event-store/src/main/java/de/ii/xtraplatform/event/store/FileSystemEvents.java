@@ -52,7 +52,9 @@ public class FileSystemEvents {
                                                              .collect(Collectors.toList());;
         this.savePathPattern = overridePathPatternsWrite.get(overridePathPatternsWrite.size()-1);
 
-        LOGGER.debug("STORE PATH PATTERNS: {}, {}, {}", this.mainPathPatternRead, this.overridePathPatternsRead, savePathPattern);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("STORE PATH PATTERNS: {}, {}, {}", this.mainPathPatternRead, this.overridePathPatternsRead, savePathPattern);
+        }
     }
 
     public Stream<MutationEvent> loadEventStream() {
@@ -126,8 +128,8 @@ public class FileSystemEvents {
 
             if (Objects.nonNull(eventType) && Objects.nonNull(eventPath) && Objects.nonNull(eventId)) {
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Reading event {type: {}, path: {}, id: {}}", eventType, eventPath, eventId);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Reading event {type: {}, path: {}, id: {}}", eventType, eventPath, eventId);
                 }
 
                 byte[] bytes;
@@ -161,7 +163,7 @@ public class FileSystemEvents {
         List<String> names = new ArrayList<>();
 
         while (matcher.find()) {
-            LOGGER.debug("REGEX {} {} {} {} {}", matcher.group(), matcher.groupCount(), matcher.group("name"), matcher.group("separator"), matcher.group("glob"));
+            //LOGGER.debug("REGEX {} {} {} {} {}", matcher.group(), matcher.groupCount(), matcher.group("name"), matcher.group("separator"), matcher.group("glob"));
             if (Objects.isNull(matcher.group("glob"))) {
                 names.add(matcher.group("name"));
                 pattern.append(matcher.group("separator"));

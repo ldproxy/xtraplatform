@@ -1,6 +1,6 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -8,11 +8,12 @@
 package de.ii.xtraplatform.auth.external;
 
 import com.google.common.cache.CacheBuilderSpec;
-import de.ii.xtraplatform.dropwizard.api.Dropwizard;
-import de.ii.xtraplatform.akka.http.AkkaHttp;
+import de.ii.xtraplatform.akka.http.Http;
+import de.ii.xtraplatform.akka.http.HttpClient;
 import de.ii.xtraplatform.auth.api.AuthProvider;
 import de.ii.xtraplatform.auth.api.User;
 import de.ii.xtraplatform.auth.api.UserAuthorizer;
+import de.ii.xtraplatform.dropwizard.api.Dropwizard;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
@@ -32,18 +33,21 @@ import org.apache.felix.ipojo.annotations.StaticServiceProperty;
 @Instantiate
 public class ExternalBearerAuthProvider implements AuthProvider<User> {
 
+    //TODO: interface, to constructor
     @Requires
     ExternalAuthConfig authConfig;
 
-    @Requires
-    Dropwizard dropwizard;
+    private final Dropwizard dropwizard;
+    private final HttpClient httpClient;
 
-    @Requires
-    AkkaHttp akkaHttp;
+    public ExternalBearerAuthProvider(@Requires Dropwizard dropwizard, @Requires Http http) {
+        this.dropwizard = dropwizard;
+        this.httpClient = http.getDefaultClient();
+    }
 
     @Override
     public AuthDynamicFeature getAuthDynamicFeature() {
-        TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig, akkaHttp);
+        TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig, httpClient);
 
         CachingAuthenticator<String, User> cachingAuthenticator = new CachingAuthenticator<String, User>(
                 dropwizard.getEnvironment()
@@ -62,7 +66,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User> {
         if (!authConfig.getExternalDynamicAuthorizationEndpoint()
                        .isEmpty()) {
             return new AuthDynamicFeature(
-                    new ExternalDynamicAuthFilter<>(authConfig.getExternalDynamicAuthorizationEndpoint(), authConfig.getPostProcessingEndpoint(), akkaHttp, authFilter)
+                    new ExternalDynamicAuthFilter<>(authConfig.getExternalDynamicAuthorizationEndpoint(), authConfig.getPostProcessingEndpoint(), httpClient, authFilter)
             );
         }
 

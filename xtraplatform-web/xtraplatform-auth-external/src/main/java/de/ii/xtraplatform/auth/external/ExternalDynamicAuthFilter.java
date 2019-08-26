@@ -1,6 +1,6 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -10,16 +10,12 @@ package de.ii.xtraplatform.auth.external;
 import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpCharsets;
-import akka.http.javadsl.model.HttpMethods;
-import akka.http.javadsl.model.HttpRequest;
-import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.MediaTypes;
-import akka.util.ByteString;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import de.ii.xtraplatform.akka.http.AkkaHttp;
+import de.ii.xtraplatform.akka.http.HttpClient;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.DefaultUnauthorizedHandler;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
@@ -37,8 +33,6 @@ import java.io.InputStream;
 import java.security.Principal;
 import java.util.List;
 
-import static de.ii.xtraplatform.api.functional.LambdaWithException.mayThrow;
-
 /**
  * @author zahnen
  */
@@ -51,11 +45,12 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
 
     private final String edaUrl;
     private final String ppUrl;
-    private final AkkaHttp akkaHttp;
+    private final HttpClient httpClient;
     private final OAuthCredentialAuthFilter<P> delegate;
 
 
-    ExternalDynamicAuthFilter(String edaUrl, String ppUrl, AkkaHttp akkaHttp, OAuthCredentialAuthFilter<P> delegate) {
+    ExternalDynamicAuthFilter(String edaUrl, String ppUrl, HttpClient httpClient,
+                              OAuthCredentialAuthFilter<P> delegate) {
         super();
         this.realm = "realm";
         this.prefix = "Basic";
@@ -63,7 +58,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
 
         this.edaUrl = edaUrl;
         this.ppUrl = ppUrl;
-        this.akkaHttp = akkaHttp;
+        this.httpClient = httpClient;
         this.delegate = delegate;
     }
 
@@ -105,27 +100,15 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     }
 
     private void postProcess(ContainerRequestContext requestContext, byte[] body) {
-        if (requestContext.getMethod().equals("POST") || requestContext.getMethod().equals("PUT")) {
+        if (requestContext.getMethod()
+                          .equals("POST") || requestContext.getMethod()
+                                                           .equals("PUT")) {
             try {
 
-                HttpResponse httpResponse = akkaHttp.getResponse(HttpRequest.create(ppUrl)
-                                                                            .withMethod(HttpMethods.POST)
-                                                                            .withEntity(GEOJSON, body))
-                                                    .toCompletableFuture()
-                                                    .join();
-                if (httpResponse.status()
-                                .isSuccess()) {
+                InputStream processedBody = httpClient.postAsInputStream(ppUrl, body, GEOJSON);
 
-                    ByteString processed = httpResponse.entity()
-                                                  .getDataBytes()
-                                                  .runFold(ByteString.empty(), ByteString::concat, akkaHttp.getMaterializer())
-                                                  .toCompletableFuture()
-                                                  .join();
-                    byte[] array = processed.toArray();
+                putEntityBody(requestContext, processedBody);
 
-                    putEntityBody(requestContext, array);
-
-                }
             } catch (Throwable e) {
                 //ignore
                 boolean stop = true;
@@ -145,23 +128,12 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
             //LOGGER.debug("XACML {}", JSON.writerWithDefaultPrettyPrinter()
             //                             .writeValueAsString(xacmlRequest1));
 
-            HttpResponse httpResponse = akkaHttp.getResponse(HttpRequest.create(edaUrl)
-                                                                        .withMethod(HttpMethods.POST)
-                                                                        .withEntity(XACML, xacmlRequest))
-                                                .toCompletableFuture()
-                                                .join();
-            if (httpResponse.status()
-                            .isSuccess()) {
+            InputStream response = httpClient.postAsInputStream(edaUrl, xacmlRequest, XACML);
 
-                XacmlResponse xacmlResponse = httpResponse.entity()
-                                                          .getDataBytes()
-                                                          .runFold(ByteString.empty(), ByteString::concat, akkaHttp.getMaterializer())
-                                                          .thenApply(mayThrow(byteString -> (XacmlResponse) JSON.readValue(byteString.utf8String(), XacmlResponse.class)))
-                                                          .toCompletableFuture()
-                                                          .join();
+            XacmlResponse xacmlResponse = JSON.readValue(response, XacmlResponse.class);
 
-                return xacmlResponse.isAllowed();
-            }
+            return xacmlResponse.isAllowed();
+
         } catch (Throwable e) {
             //ignore
         }
@@ -195,7 +167,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
         return new byte[0];
     }
 
-    private void putEntityBody(ContainerRequestContext requestContext, byte[] body) {
-        requestContext.setEntityStream(new ByteArrayInputStream(body));
+    private void putEntityBody(ContainerRequestContext requestContext, InputStream body) {
+        requestContext.setEntityStream(body);
     }
 }

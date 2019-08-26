@@ -13,23 +13,14 @@ import akka.http.javadsl.ConnectHttp;
 import akka.http.javadsl.ConnectionContext;
 import akka.http.javadsl.HostConnectionPool;
 import akka.http.javadsl.Http;
-import akka.http.javadsl.coding.Coder;
-import akka.http.javadsl.model.ContentType;
-import akka.http.javadsl.model.HttpCharsets;
+import akka.http.javadsl.HttpsConnectionContext;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.model.MediaTypes;
-import akka.http.javadsl.model.headers.AcceptEncoding;
+import akka.http.javadsl.settings.ClientConnectionSettings;
 import akka.http.javadsl.settings.ConnectionPoolSettings;
-import akka.http.scaladsl.model.headers.HttpEncodings;
 import akka.japi.Pair;
-import akka.japi.function.Function2;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
-import akka.stream.javadsl.Sink;
-import akka.stream.javadsl.Source;
-import akka.stream.javadsl.StreamConverters;
-import akka.util.ByteString;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
@@ -39,7 +30,6 @@ import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Controller;
 import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.Validate;
@@ -53,27 +43,24 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.InputStream;
 import java.net.URI;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletionStage;
-import java.util.function.Function;
 
 /**
  * @author zahnen
  */
 @Component
-@Provides(specifications = {AkkaHttp.class})
+@Provides
 @Instantiate
-public class AkkaHttp {
+public class AkkaHttp implements de.ii.xtraplatform.akka.http.Http {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AkkaHttp.class);
 
-    public static final Config config = ConfigFactory.parseMap(new ImmutableMap.Builder<String, Object>()
+    public static final Config AKKA_HTTP_CONFIG = ConfigFactory.parseMap(new ImmutableMap.Builder<String, Object>()
             .put("akka.stdout-loglevel", "OFF")
             .put("akka.loglevel", "DEBUG")
             .put("akka.loggers", ImmutableList.of("akka.event.slf4j.Slf4jLogger"))
@@ -81,7 +68,7 @@ public class AkkaHttp {
             //.put("akka.log-config-on-start", true)
             .put("akka.http.host-connection-pool.max-connections", 4)
             .put("akka.http.host-connection-pool.max-open-requests", 64)
-            .put("akka.http.host-connection-pool.min-connections", 1)
+            .put("akka.http.host-connection-pool.min-connections", 0)
             .put("akka.http.host-connection-pool.idle-timeout", "infinite")
             .put("akka.http.host-connection-pool.pool-implementation", "new")
             .put("akka.http.client.connecting-timeout", "10s")
@@ -90,221 +77,81 @@ public class AkkaHttp {
             .put("akka.http.parsing.illegal-header-warnings", "off")
             .build());
 
-    private static final Function<HttpResponse, HttpResponse> decodeResponse = response -> {
-        // Pick the right coder
-        final Coder coder;
-        if (HttpEncodings.gzip()
-                         .equals(response.encoding())) {
-            coder = Coder.Gzip;
-        } else if (HttpEncodings.deflate()
-                                .equals(response.encoding())) {
-            coder = Coder.Deflate;
-        } else {
-            coder = Coder.NoCoding;
-        }
-        LOGGER.debug("HTTP Encoding {}", coder);
-
-        // Decode the entity
-        return coder.decodeMessage(response);
-    };
-
-    @Context
-    private BundleContext bundleContext;
-
-    @Requires
-    private ActorSystemProvider actorSystemProvider;
-
     @Controller
     private boolean ready;
 
-    private ActorSystem actorSystem;
+    private final ActorSystem actorSystem;
+    private final ActorMaterializer materializer;
+    private final Http http;
+    private final HttpClient defaultClient;
 
-    private Http http;
-    private ActorMaterializer materializer;
-    private Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, NotUsed> pool;
-    private final Map<String, Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool>> pools;
-
-    public AkkaHttp() {
-        this.pools = new HashMap<>();
+    public AkkaHttp(@Context BundleContext bundleContext, @Requires ActorSystemProvider actorSystemProvider) {
+        this.actorSystem = actorSystemProvider.getActorSystem(bundleContext, AKKA_HTTP_CONFIG);
+        this.materializer = ActorMaterializer.create(actorSystem);
+        this.http = Http.get(actorSystem);
+        this.defaultClient = new HttpHostClientAkka(materializer, createDefaultConnectionPool(actorSystem, http), true);
     }
 
     @Validate
     void onStart() {
-        this.actorSystem = actorSystemProvider.getActorSystem(bundleContext, config);
-
-        if (Objects.isNull(actorSystem)) {
-            throw new IllegalStateException("ActorSystem could not be acquired");
-        }
-
-        this.http = Http.get(actorSystem);
-
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            TrustManager[] trustManagers = {new TrustAll()};
-            sslContext.init(null, trustManagers, new java.security.SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
-
-            this.http.setDefaultClientHttpsContext(ConnectionContext.https(sslContext));
-            /*this.http.setDefaultClientHttpsContext(http.createClientHttpsContext(AkkaSSLConfig.get(actorSystem)
-                                                                                              .convertSettings(s -> s.withLoose(s.loose()
-                                                                                                                                 .withAcceptAnyCertificate(true)
-                                                                                                                                 .withDisableHostnameVerification(true)
-                                                                                                                                 .withDisableSNI(true)))));
-*/
+            this.http.setDefaultClientHttpsContext(createTrustAllHttpsConnectionContext());
         } catch (Throwable e) {
             //ignore
         }
 
-        this.materializer = ActorMaterializer.create(actorSystem);
-        this.pool = http.superPool(ConnectionPoolSettings.create(actorSystem)
-                                                         .withMaxOpenRequests(256)
-                                                         .withIdleTimeout(Duration.create(30, "s"))
-                                                         .withMinConnections(1)
-                                                         .withMaxConnections(64), actorSystem.log());
-
         this.ready = true;
     }
 
-    @Invalidate
-    void onStop() {
-        if (actorSystemProvider != null && actorSystem != null) {
-            //actorSystemProvider.stopActorSystem(actorSystem);
-        }
+    @Override
+    public HttpClient getDefaultClient() {
+        return defaultClient;
     }
 
-    public void registerHost(URI host) {
-        String identifier = host.getScheme() + "://" + host.getHost();
-        int port = host.getPort() > 0 ? host.getPort() : 80;
-        if (port != 80) {
-            identifier += ":" + port;
-        }
+    @Override
+    public HttpClient getHostClient(URI host, int maxParallelRequests, int idleTimeout) {
+        boolean isHttps = Objects.equals(host.getScheme(), "https");
+        int port = host.getPort() > 0 ? host.getPort() : isHttps ? 443 : 80;
+        ConnectHttp connectHttp = isHttps ? ConnectHttp.toHostHttps(host.getHost(), port) : ConnectHttp.toHost(host.getHost(), port);
+        ClientConnectionSettings connectionSettings = ClientConnectionSettings.create(actorSystem)
+                                                                              .withIdleTimeout(Duration.create(idleTimeout, "s"));
+        ConnectionPoolSettings connectionPoolSettings = ConnectionPoolSettings.create(actorSystem)
+                                                                              .withMaxOpenRequests(maxParallelRequests * 2)//???
+                                                                              .withMinConnections(0)//???
+                                                                              .withMaxConnections(maxParallelRequests)
+                                                                              .withConnectionSettings(connectionSettings);
 
-        if (!pools.containsKey(identifier)) {
-            ConnectHttp connectHttp = host.getScheme().equals("https") ? ConnectHttp.toHostHttps(host.getHost(), port) : ConnectHttp.toHost(host.getHost(), port);
-            ConnectionPoolSettings connectionPoolSettings = ConnectionPoolSettings.create(actorSystem)
-                                                             .withMaxOpenRequests(64)
-                                                             .withMinConnections(1)
-                                                             .withMaxConnections(4);
+        //TODO: does it work for http?
+        Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool> pool = isHttps
+                ? http.cachedHostConnectionPoolHttps(connectHttp, connectionPoolSettings, actorSystem.log())
+                : http.cachedHostConnectionPool(connectHttp, connectionPoolSettings, actorSystem.log());
 
-            Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool> pool = host.getScheme().equals("https")
-                    ? http.cachedHostConnectionPoolHttps(connectHttp)
-                    : http.cachedHostConnectionPool(connectHttp);
+        return new HttpHostClientAkka(materializer, pool);
 
-            this.pools.put(identifier, pool);
-        }
     }
 
-    private Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool> getPool(String url) {
-        int end = url.indexOf("/", 8) > -1 ? url.indexOf("/", 8) : url.indexOf("?") > -1 ? url.indexOf("?") : url.length();
-        String identifier = url.substring(0, end);
-
-        return pools.get(identifier);
+    private static Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, NotUsed> createDefaultConnectionPool(
+            ActorSystem actorSystem, Http http) {
+        return http.superPool(createDefaultConnectionPoolSettings(actorSystem), actorSystem.log());
     }
 
-    public ActorMaterializer getMaterializer() {
-        return materializer;
+    private static ConnectionPoolSettings createDefaultConnectionPoolSettings(ActorSystem actorSystem) {
+        return ConnectionPoolSettings.create(actorSystem)
+                                     .withMaxOpenRequests(256)
+                                     .withMinConnections(0)
+                                     .withMaxConnections(64);
     }
 
-    public CompletionStage<HttpResponse> getResponse(String url) {
-        return http.singleRequest(HttpRequest.create(url));
+    private static HttpsConnectionContext createTrustAllHttpsConnectionContext() throws NoSuchAlgorithmException, KeyManagementException {
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        TrustManager[] trustManagers = {new TrustAll()};
+        sslContext.init(null, trustManagers, new java.security.SecureRandom());
+        HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+
+        return ConnectionContext.https(sslContext);
     }
 
-    public CompletionStage<HttpResponse> getResponse(HttpRequest httpRequest) {
-        return http.singleRequest(httpRequest);
-    }
-
-    public InputStream getAsInputStream(String url) {
-        return get(url).runWith(StreamConverters.asInputStream(), materializer);
-    }
-
-    public String getAsString(String url) {
-        StringBuilder response = new StringBuilder();
-        Source<ByteString, NotUsed> source = get(url);
-
-        source.runWith(Sink.fold(response, (Function2<StringBuilder, ByteString, StringBuilder>) (stringBuilder, byteString) -> stringBuilder.append(byteString.utf8String())), materializer)
-              .toCompletableFuture()
-              .join();
-
-        return response.toString();
-    }
-
-    public Source<ByteString, NotUsed> get(String url) {
-
-        LOGGER.debug("HTTP GET {}", url);
-        // TODO: measure performance with files to compare processing time only
-//        Source<ByteString, Date> fromFile = FileIO.fromFile(new File("/home/zahnen/development/ldproxy/artillery/flurstueck-" + count.get() + "-" + page.get() + ".xml"))
-//                .mapMaterializedValue(nu -> new Date());
-
-        return Source.single(Pair.create(HttpRequest.create(url)
-                                                    .addHeader(AcceptEncoding.create(HttpEncodings.deflate()
-                                                                                                  .toRange(), HttpEncodings.gzip()
-                                                                                                                           .toRange(), HttpEncodings.chunked()
-                                                                                                                                                    .toRange())), null))
-                     .via(getPool(url))
-                     .map(param -> {
-                         //LOGGER.debug("HTTP RESPONSE {}", param.toString());
-
-                         if (param.first()
-                                  .isFailure()) {
-                             throw param.first()
-                                        .failed()
-                                        .getOrElse(() -> new IllegalStateException("Unknown HTTP client error"));
-                         }
-                         return param.first()
-                                     .get();
-                     })
-                     .map(decodeResponse::apply)
-                     //.mapMaterializedValue(nu -> new Date())
-                     .flatMapConcat(httpResponse -> {
-                         LOGGER.debug("HTTP RESPONSE {}", httpResponse.status());
-                         return httpResponse.entity()
-                                            .withoutSizeLimit()
-                                            .getDataBytes();
-                     });
-
-
-        //return queryEncoder.encode(query)
-        //                   .map(getFeature -> new WFSRequest(wfsAdapter, getFeature).getResponse());
-    }
-
-    public Source<ByteString, NotUsed> postXml(String url, String body) {
-        return post(url, body, MediaTypes.APPLICATION_XML.toContentType(HttpCharsets.UTF_8));
-    }
-
-    public Source<ByteString, NotUsed> post(String url, String body, ContentType.NonBinary contentType) {
-
-        LOGGER.debug("HTTP POST {}\n{}", url, body);
-        // TODO: measure performance with files to compare processing time only
-//        Source<ByteString, Date> fromFile = FileIO.fromFile(new File("/home/zahnen/development/ldproxy/artillery/flurstueck-" + count.get() + "-" + page.get() + ".xml"))
-//                .mapMaterializedValue(nu -> new Date());
-
-        return Source.single(Pair.create(HttpRequest.POST(url)
-                                                    .withEntity(contentType, body)
-                                                    .addHeader(AcceptEncoding.create(HttpEncodings.deflate()
-                                                                                                  .toRange(), HttpEncodings.gzip()
-                                                                                                                           .toRange(), HttpEncodings.chunked()
-                                                                                                                                                    .toRange())), null))
-                     .via(getPool(url))
-                     .map(param -> {
-                         //LOGGER.debug("HTTP RESPONSE {}", param.toString());
-                         return param.first()
-                                     .get();
-                     })
-                     .map(decodeResponse::apply)
-                     //.mapMaterializedValue(nu -> new Date())
-                     .flatMapConcat(httpResponse -> {
-                         LOGGER.debug("HTTP RESPONSE {}", httpResponse.status());
-                         return httpResponse.entity()
-                                            .withoutSizeLimit()
-                                            .getDataBytes();
-                     });
-
-
-        //return queryEncoder.encode(query)
-        //                   .map(getFeature -> new WFSRequest(wfsAdapter, getFeature).getResponse());
-    }
-
-    static class TrustAll implements X509TrustManager {
+    private static class TrustAll implements X509TrustManager {
 
         @Override
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {

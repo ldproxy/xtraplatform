@@ -86,8 +86,8 @@ public class EventSourcing<T> {
     }
 
     public void onEmit(MutationEvent event) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Adding event: {} {}", event.type(), event.identifier());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Adding event: {} {}", event.type(), event.identifier());
         }
 
         T value = deserializer.apply(event.identifier(), event.payload());

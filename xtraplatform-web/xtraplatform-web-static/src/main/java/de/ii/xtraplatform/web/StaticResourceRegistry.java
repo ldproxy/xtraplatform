@@ -16,18 +16,17 @@ import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.extender.Extender;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
-import org.osgi.service.http.HttpService;
+import org.osgi.service.http.whiteboard.HttpWhiteboardConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -39,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author zahnen
  */
 @Component
-@Provides(specifications=StaticResourceRegistry.class)
+//@Provides(specifications=StaticResourceRegistry.class)
 @Instantiate
 @Extender(
     onArrival="onBundleArrival",
@@ -47,39 +46,36 @@ import java.util.concurrent.ConcurrentHashMap;
     extension= StaticResourceConstants.WEB_RESOURCE_KEY)
 public class StaticResourceRegistry {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StaticResourceServlet.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StaticResourceRegistry.class);
     
-    @Requires
-    HttpService httpService;
-    @Context
-    BundleContext bc;
-    
+
+    private final BundleContext bundleContext;
     private final Map<Long, List<ServiceRegistration>> servlets;
 
-    public StaticResourceRegistry() {
+    public StaticResourceRegistry(@Context BundleContext bundleContext) {
+        this.bundleContext = bundleContext;
         this.servlets = new ConcurrentHashMap<>();
     }
     
     private synchronized void onBundleArrival(Bundle bundle, String header) {
         try {
             Map<String, ResourceEntry> entryMap = ResourceKeyParser.getEntries(header);
-            DefaultPages defaultPages = DefaultPageParser.parseDefaultPages((String)bundle.getHeaders().get(StaticResourceConstants.WEB_RESOURCE_DEFAULT_PAGE));
-            //servlets.put(bundle.getBundleId(), entryMap);
-            List<ServiceRegistration> srs = new ArrayList<>();
+            DefaultPages defaultPages = DefaultPageParser.parseDefaultPages(bundle.getHeaders().get(StaticResourceConstants.WEB_RESOURCE_DEFAULT_PAGE));
+            List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
             
             for (ResourceEntry entry : entryMap.values()) {
-                LOGGER.debug("web static: {} {} {}", entry.getPaths().get(0), entry.getAlias(), defaultPages.getDefaultPageFor(entry.getPaths().get(0)));
-                HttpServlet s = new StaticResourceServlet(entry.getPaths().get(0), entry.getAlias(), Charset.forName("UTF-8"), bundle, defaultPages);
-                //servlets.put(bundle.getBundleId(), entryMap);
-                //httpService.registerServlet(entry.getAlias(), s, null, null);
-                
-                Hashtable props = new Hashtable();
-                props.put("alias", entry.getAlias());
-                ServiceRegistration sr = bc.registerService(Servlet.class.getName(), s, props);
-                
-                srs.add(sr);
+                LOGGER.debug("Registered static web resource: {} {} {}", entry.getPaths().get(0), entry.getAlias(), defaultPages.getDefaultPageFor(entry.getPaths().get(0)));
+
+                HttpServlet staticResourceServlet = new StaticResourceServlet(entry.getPaths().get(0), entry.getAlias(), StandardCharsets.UTF_8, bundle, defaultPages);
+                Hashtable<String, Object> props = new Hashtable<>();
+                props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN, entry.getAlias());
+                props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT,
+                        "(" + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME + "=org.osgi.service.http)");
+
+                ServiceRegistration serviceRegistration = bundleContext.registerService(Servlet.class.getName(), staticResourceServlet, props);
+                serviceRegistrations.add(serviceRegistration);
             }
-            servlets.put(bundle.getBundleId(), srs);
+            servlets.put(bundle.getBundleId(), serviceRegistrations);
             
         } catch (InvalidEntryException ex) {
             //LOGGER.info("STATIC", ex);
@@ -88,8 +84,8 @@ public class StaticResourceRegistry {
 
     private synchronized void onBundleDeparture(Bundle bundle) {
          if (servlets.containsKey(bundle.getBundleId())) {
-             for (ServiceRegistration sr: servlets.get(bundle.getBundleId())) {
-                sr.unregister();
+             for (ServiceRegistration serviceRegistration: servlets.get(bundle.getBundleId())) {
+                serviceRegistration.unregister();
              }
          }
     }

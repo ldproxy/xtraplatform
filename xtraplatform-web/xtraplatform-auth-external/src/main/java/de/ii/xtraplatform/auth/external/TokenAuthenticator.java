@@ -7,12 +7,9 @@
  */
 package de.ii.xtraplatform.auth.external;
 
-import akka.http.javadsl.model.HttpResponse;
-import akka.util.ByteString;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.ii.xtraplatform.akka.http.AkkaHttp;
-import de.ii.xtraplatform.auth.api.AuthConfig;
+import de.ii.xtraplatform.akka.http.HttpClient;
 import de.ii.xtraplatform.auth.api.ImmutableUser;
 import de.ii.xtraplatform.auth.api.Role;
 import de.ii.xtraplatform.auth.api.User;
@@ -23,10 +20,9 @@ import io.jsonwebtoken.Jwts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Optional;
-
-import static de.ii.xtraplatform.api.functional.LambdaWithException.mayThrow;
 
 /**
  * @author zahnen
@@ -34,13 +30,16 @@ import static de.ii.xtraplatform.api.functional.LambdaWithException.mayThrow;
 public class TokenAuthenticator implements Authenticator<String, User> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TokenAuthenticator.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final TypeReference<Map<String, String>> TYPE_REF = new TypeReference<Map<String, String>>() {
+    };
 
     private final ExternalAuthConfig authConfig;
-    private final AkkaHttp akkaHttp;
+    private final HttpClient httpClient;
 
-    TokenAuthenticator(ExternalAuthConfig authConfig, AkkaHttp akkaHttp) {
+    TokenAuthenticator(ExternalAuthConfig authConfig, HttpClient httpClient) {
         this.authConfig = authConfig;
-        this.akkaHttp = akkaHttp;
+        this.httpClient = httpClient;
     }
 
     @Override
@@ -63,28 +62,17 @@ public class TokenAuthenticator implements Authenticator<String, User> {
                 } else {
                     // validate/exchange
                     // parse
-                    HttpResponse httpResponse = akkaHttp.getResponse(authConfig.getUserInfoUrl()
-                                                                               .replace("{{token}}", token))
-                                                        .toCompletableFuture()
-                                                        .join();
-                    if (httpResponse.status()
-                                    .isSuccess()) {
-                        ObjectMapper mapper = new ObjectMapper();
-                        TypeReference<Map<String, String>> typeRef = new TypeReference<Map<String, String>>() {
-                        };
-                        Map<String, String> userInfo = httpResponse.entity()
-                                                                   .getDataBytes()
-                                                                   .runFold(ByteString.empty(), ByteString::concat, akkaHttp.getMaterializer())
-                                                                   .thenApply(mayThrow(byteString -> (Map<String, String>) mapper.readValue(byteString.utf8String(), typeRef)))
-                                                                   .toCompletableFuture()
-                                                                   .join();
+                    String url = authConfig.getUserInfoUrl()
+                                           .replace("{{token}}", token);
+                    InputStream response = httpClient.getAsInputStream(url);
 
-                        return Optional.of(ImmutableUser.builder()
-                                                        .name(userInfo.get(authConfig.getUserNameKey()))
-                                                        .role(Role.fromString(Optional.ofNullable(userInfo.get(authConfig.getUserRoleKey()))
-                                                                                      .orElse("USER")))
-                                                        .build());
-                    }
+                    Map<String, String> userInfo = MAPPER.readValue(response, TYPE_REF);
+
+                    return Optional.of(ImmutableUser.builder()
+                                                    .name(userInfo.get(authConfig.getUserNameKey()))
+                                                    .role(Role.fromString(Optional.ofNullable(userInfo.get(authConfig.getUserRoleKey()))
+                                                                                  .orElse("USER")))
+                                                    .build());
                 }
             } catch (Throwable e) {
                 //ignore

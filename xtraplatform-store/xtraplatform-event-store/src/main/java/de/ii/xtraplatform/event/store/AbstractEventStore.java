@@ -42,8 +42,8 @@ public abstract class AbstractEventStore implements EventStore {
     }
 
     protected final void emit(MutationEvent event) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Emitting event: {} {}", event.type(), event.identifier());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Emitting event: {} {}", event.type(), event.identifier());
         }
         final EventStream eventStream = getEventStream(event.type());
 
