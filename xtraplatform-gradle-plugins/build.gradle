@@ -56,3 +56,6 @@ gradlePlugin {
 }
 
 apply from: '../bintray.gradle'
+
+apply from: '../composite-tasks.gradle'
+

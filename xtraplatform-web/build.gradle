@@ -25,3 +25,6 @@ apply from: '../unit-tests.gradle'
 apply from: '../bintray.gradle'
 
 apply from: '../license-report.gradle'
+
+apply from: '../composite-tasks.gradle'
+

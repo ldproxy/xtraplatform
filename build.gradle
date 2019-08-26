@@ -1,21 +1,9 @@
-
-task bintrayUpload {
-    gradle.includedBuilds.each {
-        dependsOn it.task(':bintrayUpload')
-    }
+task checkAll {
+    dependsOn gradle.includedBuilds*.task(':checkAll')
 }
-task jar {
-    gradle.includedBuilds.each {
-        dependsOn it.task(':jar')
-    }
+task bintrayUploadAll {
+    dependsOn gradle.includedBuilds*.task(':bintrayUploadAll')
 }
-task classes {
-    gradle.includedBuilds.each {
-        dependsOn it.task(':classes')
-    }
-}
-task testClasses {
-    gradle.includedBuilds.each {
-        dependsOn it.task(':testClasses')
-    }
+task publishToMavenLocalAll {
+    dependsOn gradle.includedBuilds*.task(':publishToMavenLocalAll')
 }

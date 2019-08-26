@@ -1,0 +1,3 @@
+task checkAll { dependsOn subprojects*.tasks*.findByPath('check') }
+task bintrayUploadAll { dependsOn allprojects*.tasks*.findByPath('bintrayUpload') }
+task publishToMavenLocalAll { dependsOn allprojects*.tasks*.findByPath('publishToMavenLocal') }
