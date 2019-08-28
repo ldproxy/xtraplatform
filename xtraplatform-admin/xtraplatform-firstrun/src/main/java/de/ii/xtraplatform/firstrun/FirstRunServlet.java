@@ -7,10 +7,10 @@
  */
 package de.ii.xtraplatform.firstrun;
 
-import de.ii.xtraplatform.firstrun.api.FirstRunPage;
 import de.ii.xtraplatform.api.permission.Organization;
-import de.ii.xtraplatform.firstrun.views.FirstRunView;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
+import de.ii.xtraplatform.firstrun.api.FirstRunPage;
+import de.ii.xtraplatform.firstrun.views.FirstRunView;
 import io.dropwizard.views.mustache.MustacheViewRenderer;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -36,15 +36,15 @@ import java.util.List;
 @Provides(properties = {
     @StaticServiceProperty(name = "osgi.http.whiteboard.servlet.pattern", type = "java.lang.String", value = "")
 })
-//@Instantiate
+@Instantiate
 
 public class FirstRunServlet extends HttpServlet {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FirstRunServlet.class);
     private static final String MANAGER_PATH = "manager/";
 
-    @Requires
-    FirstRunPageRegistry reg;
+    //@Requires
+    //FirstRunPageRegistry reg;
 
     private final MustacheViewRenderer renderer;
     private final FirstRunView view;
@@ -83,7 +83,7 @@ public class FirstRunServlet extends HttpServlet {
         }
 
         boolean needsConfig = false;
-        pagesEnabled.clear();
+        /*pagesEnabled.clear();
         for (FirstRunPage p : reg.getPages()) {
             if (p.needsConfig()) {
                 // put a forced firstPage at index 0 in the list
@@ -95,7 +95,7 @@ public class FirstRunServlet extends HttpServlet {
                 }
                 needsConfig = true;
             }
-        }
+        }*/
 
         if (!needsConfig) {
             this.doRedirectToManager(request, response);
