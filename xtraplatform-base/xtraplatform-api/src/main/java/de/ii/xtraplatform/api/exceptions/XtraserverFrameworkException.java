@@ -35,6 +35,10 @@ public class XtraserverFrameworkException extends WebApplicationException {
 
     public XtraserverFrameworkException() {
     }
+
+    public XtraserverFrameworkException(Throwable cause) {
+        super(cause);
+    }
     
     @Override
     public String getMessage() {

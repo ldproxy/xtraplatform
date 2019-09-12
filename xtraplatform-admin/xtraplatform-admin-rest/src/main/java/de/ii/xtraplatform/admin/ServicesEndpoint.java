@@ -3,6 +3,7 @@ package de.ii.xtraplatform.admin;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xtraplatform.api.exceptions.BadRequest;
+import de.ii.xtraplatform.api.exceptions.XtraserverFrameworkException;
 import de.ii.xtraplatform.dropwizard.api.Jackson;
 import de.ii.xtraplatform.entity.api.EntityData;
 import de.ii.xtraplatform.entity.api.EntityDataGenerator;
@@ -92,17 +93,30 @@ public class ServicesEndpoint implements Endpoint {
         try {
             MDC.put("service", id);
 
-            ServiceData serviceData = (ServiceData) entityDataGenerator.generate(request); //= serviceRepository.generateEntity(request);
-            //throw BadRequest
+                ServiceData serviceData = (ServiceData) entityDataGenerator.generate(request); //= serviceRepository.generateEntity(request);
 
-            ServiceData added = serviceRepository.put(id, serviceData)
-                                                 .get();
+                ServiceData added = serviceRepository.put(id, serviceData)
+                                                     .get();
 
-            return Response.ok()
-                           .entity(getServiceStatus(added))
-                           .build();
+                return Response.ok()
+                               .entity(getServiceStatus(added))
+                               .build();
+
+
+
         } catch (InterruptedException | ExecutionException e) {
-            throw new InternalServerErrorException();
+            if (serviceRepository.has(id)) {
+                try {
+                    serviceRepository.delete(id);
+                } catch (Throwable e2) {
+                    //ignore
+                }
+            }
+
+            throw new BadRequest(e.getCause().getMessage());
+            //throw new InternalServerErrorException(e.getCause());
+        } catch (Throwable e) {
+            throw new BadRequest(e.getCause().getMessage());
         } finally {
             MDC.remove("service");
         }

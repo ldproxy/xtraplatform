@@ -209,9 +209,18 @@ public class EntityFactoryDefault implements EntityFactory {
                                                                         .property("data", entityData);
 
         if (entityHydrators.containsKey(entityType)) {
-            entityHydrators.get(entityType)
-                           .getInstanceConfiguration(entityData)
-                           .forEach(instanceBuilder::property);
+            try {
+                entityHydrators.get(entityType)
+                               .getInstanceConfiguration(entityData)
+                               .forEach(instanceBuilder::property);
+            } catch (Throwable e) {
+                LOGGER.error("Entity of type '{}' with id '{}' could not be hydrated: {}", entityType, id, e.getMessage());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Cause:", e);
+                }
+                throw e;
+            }
+
         }
 
         DeclarationHandle handle = instanceBuilder.build();

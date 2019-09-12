@@ -40,4 +40,10 @@ public class BadRequest extends XtraserverFrameworkException {
         this.msg = msg;
         this.callback = callback;
     }
+
+    public BadRequest(Throwable cause) {
+        super(cause);
+        this.init();
+        this.msg = cause.getMessage();
+    }
 }

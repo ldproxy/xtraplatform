@@ -48,7 +48,11 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
     protected void onStart() {
         //TODO: getAllPaths
         identifiers().forEach(identifier -> {
-            onCreate(identifier, get(identifier));
+            try {
+                onCreate(identifier, get(identifier));
+            } catch (Throwable e) {
+
+            }
         });
     }
 
