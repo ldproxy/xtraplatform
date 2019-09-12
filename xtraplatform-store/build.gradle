@@ -8,11 +8,11 @@ allprojects {
     group = 'de.interactive_instruments'
 }
 
-version = '2.0.4'
+version = '2.0.5'
 
 
 dependencies {
-    feature group: 'de.interactive_instruments', name: 'xtraplatform-base', version: '2.0.2'
+    feature group: 'de.interactive_instruments', name: 'xtraplatform-base', version: '2.0.3'
 
     bundle subprojects.findAll {!it.name.endsWith("-test") && !it.name.endsWith("-inmemory")}
 }

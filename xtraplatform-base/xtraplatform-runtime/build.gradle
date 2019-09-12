@@ -1,5 +1,5 @@
 
-version = '2.0.1'
+version = '2.0.2'
 
 dependencies {
     api group: 'org.apache.felix', name: 'org.apache.felix.main', version: '6.0.2'
