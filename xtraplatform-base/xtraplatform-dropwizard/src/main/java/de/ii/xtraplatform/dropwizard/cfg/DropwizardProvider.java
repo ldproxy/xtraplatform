@@ -16,7 +16,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
 import de.ii.xtraplatform.dropwizard.api.XtraPlatformConfiguration;
+import de.ii.xtraplatform.dropwizard.views.MustacheResolverRegistry;
 import de.ii.xtraplatform.dropwizard.views.FallbackMustacheViewRenderer;
+import de.ii.xtraplatform.runtime.FelixRuntime.ENV;
 import io.dropwizard.Application;
 import io.dropwizard.cli.Cli;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
@@ -29,14 +31,19 @@ import io.dropwizard.setup.Environment;
 import io.dropwizard.util.JarLocation;
 import io.dropwizard.views.ViewBundle;
 import io.dropwizard.views.ViewRenderer;
-import org.apache.felix.ipojo.annotations.*;
+import org.apache.felix.ipojo.annotations.Component;
+import org.apache.felix.ipojo.annotations.Context;
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
+import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.annotations.ServiceController;
+import org.apache.felix.ipojo.annotations.Validate;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.osgi.framework.BundleContext;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -49,10 +56,12 @@ import java.util.Objects;
 import static de.ii.xtraplatform.runtime.FelixRuntime.CONFIG_FILE_NAME;
 import static de.ii.xtraplatform.runtime.FelixRuntime.CONFIG_FILE_NAME_LEGACY;
 import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
+import static de.ii.xtraplatform.runtime.FelixRuntime.ENV.DEVELOPMENT;
 import static de.ii.xtraplatform.runtime.FelixRuntime.ENV_KEY;
 
+//import static de.ii.xtraplatform.runtime.FelixRuntime.ENV;
+
 /**
- *
  * @author zahnen
  */
 @Component
@@ -65,7 +74,6 @@ public class DropwizardProvider extends Application<XtraPlatformConfiguration> i
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
 
     public static final String CFG_FILE_TEMPLATE_NAME = "/xtraplatform.default.json";
-    public static final String TEMPLATE_DIR_NAME = "templates";
     public static final String DW_CMD = "server";
 
     // Service not published by default
@@ -74,6 +82,9 @@ public class DropwizardProvider extends Application<XtraPlatformConfiguration> i
 
     @Context
     private BundleContext context;
+
+    @Requires
+    private MustacheResolverRegistry mustacheResolverRegistry;
 
     private XtraPlatformConfiguration configuration;
     private Environment environment;
@@ -85,7 +96,8 @@ public class DropwizardProvider extends Application<XtraPlatformConfiguration> i
 
     @Validate
     public void start() {
-        String environment = context.getProperty(ENV_KEY).toLowerCase();
+        String environment = context.getProperty(ENV_KEY)
+                                    .toLowerCase();
         String cfgFileTemplateName = String.format("/cfg.%s.yml", environment);
         String dataDir = context.getProperty(DATA_DIR_KEY);
         if (dataDir == null) {
@@ -98,11 +110,14 @@ public class DropwizardProvider extends Application<XtraPlatformConfiguration> i
 
         try {
             if (Files.exists(Paths.get(dataDir, CONFIG_FILE_NAME))) {
-                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME).toAbsolutePath();
+                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME)
+                               .toAbsolutePath();
             } else if (Files.exists(Paths.get(dataDir, CONFIG_FILE_NAME_LEGACY))) {
-                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME_LEGACY).toAbsolutePath();
+                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME_LEGACY)
+                               .toAbsolutePath();
             } else {
-                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME).toAbsolutePath();
+                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME)
+                               .toAbsolutePath();
 
                 Resources.asByteSource(Resources.getResource(DropwizardProvider.class, cfgFileTemplateName))
                          .copyTo(new FileOutputStream(cfgFile.toFile()));
@@ -137,12 +152,20 @@ public class DropwizardProvider extends Application<XtraPlatformConfiguration> i
 
     @Override
     public void initialize(Bootstrap<XtraPlatformConfiguration> bootstrap) {
-        this.mustacheRenderer = new FallbackMustacheViewRenderer();
+        this.mustacheRenderer = new FallbackMustacheViewRenderer(mustacheResolverRegistry);
+
+        boolean cacheTemplates = ENV.valueOf(context.getProperty(ENV_KEY)) != DEVELOPMENT;
 
         bootstrap.addBundle(new ViewBundle<XtraPlatformConfiguration>(ImmutableSet.of(mustacheRenderer)) {
             @Override
             public Map<String, Map<String, String>> getViewConfiguration(XtraPlatformConfiguration configuration) {
-                return ImmutableMap.of(".mustache", ImmutableMap.of("fileRoot", new File(new File(context.getProperty(DATA_DIR_KEY)), TEMPLATE_DIR_NAME).getAbsolutePath()));
+                return ImmutableMap.of(
+                        mustacheRenderer.getConfigurationKey(),
+                        ImmutableMap.of(
+                                "cache",
+                                Boolean.toString(cacheTemplates)
+                        )
+                );
             }
         });
     }
@@ -162,9 +185,9 @@ public class DropwizardProvider extends Application<XtraPlatformConfiguration> i
 
         //TODO: per parameter
         //if (configuration.useFormattedJsonOutput) {
-            environment.getObjectMapper()
-                       .enable(SerializationFeature.INDENT_OUTPUT);
-            //LOGGER.warn(FrameworkMessages.GLOBALLY_ENABLED_JSON_PRETTY_PRINTING);
+        environment.getObjectMapper()
+                   .enable(SerializationFeature.INDENT_OUTPUT);
+        //LOGGER.warn(FrameworkMessages.GLOBALLY_ENABLED_JSON_PRETTY_PRINTING);
         //}
 
         LOGGER.info("Store mode: {}", configuration.store.mode);

@@ -133,6 +133,8 @@ public class FelixRuntime {
             .put("ch.qos.logback.core.joran.spi", "1.2.3")
             .put("ch.qos.logback.core.joran.conditional", "1.2.3")
 
+            .put("de.ii.xtraplatform.runtime", "0.0")
+
             .build();
 
     private final String name;
