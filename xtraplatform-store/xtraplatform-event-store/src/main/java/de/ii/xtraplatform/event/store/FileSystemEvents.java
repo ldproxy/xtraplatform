@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -166,7 +167,7 @@ public class FileSystemEvents {
             //LOGGER.debug("REGEX {} {} {} {} {}", matcher.group(), matcher.groupCount(), matcher.group("name"), matcher.group("separator"), matcher.group("glob"));
             if (Objects.isNull(matcher.group("glob"))) {
                 names.add(matcher.group("name"));
-                pattern.append(matcher.group("separator"));
+                pattern.append(matcher.group("separator").replaceAll("/", "\\\\/"));
                 pattern.append("(?<");
                 pattern.append(matcher.group("name"));
                 pattern.append(">[\\w-]+)");
@@ -176,7 +177,7 @@ public class FileSystemEvents {
                 }
                 names.add(matcher.group("name"));
                 pattern.append("(?:");
-                pattern.append(matcher.group("separator"));
+                pattern.append(matcher.group("separator").replaceAll("/", "\\\\/"));
                 pattern.append("(?<");
                 pattern.append(matcher.group("name"));
                 pattern.append(">[\\w-\\/]+)");
@@ -188,6 +189,6 @@ public class FileSystemEvents {
             throw new IllegalArgumentException("store path expression must contain type, path and id");
         }
 
-        return Pattern.compile(pattern.toString());
+        return Pattern.compile(pattern.toString().replaceAll("\\/", "\\" + FileSystems.getDefault().getSeparator()));
     }
 }
