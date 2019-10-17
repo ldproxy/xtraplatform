@@ -166,20 +166,10 @@ public class ServicesResource {
     public Response getServices(@Auth(required = false) AuthenticatedUser authUser,
                                 @QueryParam("callback") String callback, @QueryParam("f") String f,
                                 @Context UriInfo uriInfo, @Context ContainerRequestContext containerRequestContext) {
-        /*if (serviceResourceFactories.size() == 1) {
-            //Response response = serviceResourceFactories.values().iterator().next().getResponseForParams(serviceRegistry.getServices(authUser), uriInfo);
-            Response response = serviceResourceFactories.values()
-                                                        .iterator()
-                                                        .next()
-                                                        .getResponseForParams(entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE), uriInfo);
-            if (response != null) {
-                return response;
-            }
-        }*/
-
         List<ServiceData> services = entityRegistry.getEntitiesForType(Service.class)
                                                    .stream()
                                                    .map(Service::getData)
+                                                   .filter(serviceData -> !serviceData.hasError())
                                                    .collect(Collectors.toList());
 
         MediaType mediaType = Objects.equals(f, "json") ? MediaType.APPLICATION_JSON_TYPE :
@@ -204,64 +194,6 @@ public class ServicesResource {
         return Response.ok()
                        .entity(services)
                        .build();
-
-        /*ServiceCatalog catalog = new ArcGisServiceCatalog(serviceRegistry.getServices(authUser));
-
-        if (callback != null && !callback.isEmpty()) {
-            return Response.ok(new JSONPObject(callback, catalog), MediaType.APPLICATION_JSON).build();
-        }
-        return Response.ok(catalog, MediaType.APPLICATION_JSON).build();*/
-        //return Response.serverError()
-        //               .build();
-    }
-
-    /*@POST
-    //@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Object getServicesPost(@Auth(required = false) AuthenticatedUser user, String body) {
-        LOGGER.debug(FrameworkMessages.POST, body);
-
-        return null;//;services;
-    }*/
-
-    //TODO
-    //@GET
-    //@Produces(MediaTypeCharset.TEXT_HTML_UTF8)
-    public Response getServicesHtml(@Auth(required = false) AuthenticatedUser authUser,
-                                    @QueryParam("token") String token, @Context UriInfo uriInfo) {
-        /*if (serviceResourceFactories.size() == 1) {
-            Response response = serviceResourceFactories.values()
-                                                        .iterator()
-                                                        .next()
-                                                        .getResponseForParams(entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE), uriInfo);
-            //Response response = serviceResourceFactories.values().iterator().next().getResponseForParams(serviceRegistry.getServices(authUser), uriInfo);
-            if (response != null) {
-                return response;
-            }
-
-            View view = serviceResourceFactories.values()
-                                                .iterator()
-                                                .next()
-                                                .getServicesView(entityRegistry.getEntitiesForType(Service.class, Service.ENTITY_TYPE), uriInfo.getRequestUri());
-            //View view = serviceResourceFactories.values().iterator().next().getServicesView(serviceRegistry.getServices(authUser), uriInfo.getRequestUri());
-            if (view != null) {
-                return Response.ok(view)
-                               .build();
-            }
-        }*/
-
-        List<ServiceData> services = entityRegistry.getEntitiesForType(Service.class)
-                                                   .stream()
-                                                   .map(Service::getData)
-                                                   .collect(Collectors.toList());
-
-        if (serviceListingProviders.containsKey(MediaType.TEXT_HTML_TYPE)) {
-            return serviceListingProviders.get(MediaType.TEXT_HTML_TYPE)
-                                          .getServiceListing(services, uriInfo.getRequestUri());
-        }
-
-        return Response.ok(new GenericView("services", uriInfo.getRequestUri(), entityRegistry.getEntitiesForType(Service.class)))
-                       .build();
-        //return Response.ok(new GenericView("services", uriInfo.getRequestUri(), serviceRegistry.getServices(authUser))).build();
     }
 
     //TODO
@@ -300,31 +232,17 @@ public class ServicesResource {
     // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory 
     // TODO: cache resource object per service
     private ServiceResource getServiceResource(Service s) {
-        /*ServiceResourceFactory factory = serviceResourceFactories.get(s.getServiceType());
-        //ServiceResource sr = (ServiceResource) rc.getResource(factory.getServiceResourceClass());
-        ServiceResource sr = rc.initResource(factory.getServiceResource());
-        sr.setService(s);
-        sr.init(permProvider);
-        sr.setMustacheRenderer(dropwizard.getMustacheRenderer());
-        return sr;*/
         return serviceResources.get(s.getServiceType());
     }
 
     private Service getService(AuthenticatedUser authUser, String id, String callback) {
-        //Service s = serviceRegistry.getService(authUser, id);
         Optional<Service> s = entityRegistry.getEntity(Service.class, id);
 
-        if (!s.isPresent() /*|| !s.isStarted()*/) {
+        if (!s.isPresent() || s.get().getData().hasError()) {
             throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale()),*/ callback);
         }
 
         return s.get();
     }
-
-    // TODO: move to XtraProxy
-    /*@Path("/{service}/FeatureServer")
-    public ServiceResource getServiceFS(@Auth(protectedResource = true, exceptions = "arcgis") AuthenticatedUser user, @PathParam("service") String service, @QueryParam("callback") String callback) {
-        return getServiceResource(user, service, callback);
-    }*/
 
 }

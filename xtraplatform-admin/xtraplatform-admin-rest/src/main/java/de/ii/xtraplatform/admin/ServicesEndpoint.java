@@ -200,6 +200,10 @@ public class ServicesEndpoint implements Endpoint {
         boolean started = entityRegistry.getEntity(Service.class, serviceData.getId())
                                         .isPresent();
 
+        if (serviceData.hasError()) {
+            started = false;
+        }
+
         boolean loading = serviceData.isLoading();
 
         Optional<TaskStatus> currentTaskForService = serviceBackgroundTasks.getCurrentTaskForService(serviceData.getId());

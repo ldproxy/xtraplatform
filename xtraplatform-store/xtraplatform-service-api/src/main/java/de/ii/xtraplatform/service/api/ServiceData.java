@@ -41,4 +41,9 @@ public interface ServiceData extends EntityData {
     default boolean isLoading() {
         return false;
     }
+
+    @JsonIgnore
+    default boolean hasError() {
+        return false;
+    }
 }
