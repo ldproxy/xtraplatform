@@ -69,7 +69,7 @@ public abstract class AbstractKeyValueStore<T> implements EventStoreSubscriber, 
 
     @Override
     public boolean has(String id, String... path) {
-        return has(Identifier.from(id, path));
+        return Objects.nonNull(id) && has(Identifier.from(id, path));
     }
 
     @Override

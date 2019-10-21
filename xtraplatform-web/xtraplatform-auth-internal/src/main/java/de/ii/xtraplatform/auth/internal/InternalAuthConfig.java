@@ -21,9 +21,12 @@ import static de.ii.xtraplatform.auth.api.AuthConfig.USER_ROLE_KEY;
 @LocalBundleConfig(category = "Security", properties = {
         @ConfigPropertyDescriptor(name = JWT_SIGNING_KEY, label = "The signing key for JWT validation", uiType = ConfigPropertyDescriptor.UI_TYPE.TEXT),
         @ConfigPropertyDescriptor(name = USER_NAME_KEY, label = "The JSON key of the user name", defaultValue = "name", hidden = true),
-        @ConfigPropertyDescriptor(name = USER_ROLE_KEY, label = "The JSON key of the user role", defaultValue = "role", hidden = true)
+        @ConfigPropertyDescriptor(name = USER_ROLE_KEY, label = "The JSON key of the user role", defaultValue = "role", hidden = true),
+        @ConfigPropertyDescriptor(name = InternalAuthConfig.ALLOW_ANONYMOUS_ACCESS_KEY, label = "The JSON key of the user role", defaultValue = "false", hidden = true)
 })
 public class InternalAuthConfig extends BundleConfigDefault implements AuthConfig {
+
+    static final String ALLOW_ANONYMOUS_ACCESS_KEY = "allowAnonymousAccess";
 
     @Override
     public boolean isJwt() {
@@ -58,5 +61,9 @@ public class InternalAuthConfig extends BundleConfigDefault implements AuthConfi
     @Override
     public String getUserRoleKey() {
         return Strings.nullToEmpty(properties.get(USER_ROLE_KEY));
+    }
+
+    public boolean isAnonymousAccessAllowed() {
+        return Boolean.parseBoolean(properties.get(ALLOW_ANONYMOUS_ACCESS_KEY));
     }
 }

@@ -8,14 +8,17 @@
 package de.ii.xtraplatform.auth.internal;
 
 import com.google.common.cache.CacheBuilderSpec;
+import com.google.common.collect.Lists;
 import de.ii.xtraplatform.auth.api.AuthProvider;
 import de.ii.xtraplatform.auth.api.TokenHandler;
 import de.ii.xtraplatform.auth.api.User;
 import de.ii.xtraplatform.auth.api.UserAuthorizer;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
 import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
+import io.dropwizard.auth.chained.ChainedAuthFilter;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -47,16 +50,19 @@ public class InternalBearerAuthProvider implements AuthProvider<User> {
                           .metrics(), tokenAuthenticator,
                 CacheBuilderSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
 
-        //TODO OAuthEdaAuthFIlter extends OAuthCredentialAuthFilter
-        // override filter, get stuff from ContainerRequestContext
 
-        OAuthCredentialAuthFilter<User> authFilter = new OAuthCredentialAuthFilter.Builder<User>()
+        AuthFilter<String, User> authFilter = new SplitCookieCredentialAuthFilter.Builder<User>()
+                .setAuthenticator(cachingAuthenticator)
+                .setAuthorizer(new UserAuthorizer())
+                .buildAuthFilter();
+
+        AuthFilter<String, User> authFilter2 = new OAuthCredentialAuthFilter.Builder<User>()
                 .setAuthenticator(cachingAuthenticator)
                 .setAuthorizer(new UserAuthorizer())
                 .setPrefix("Bearer")
                 .buildAuthFilter();
 
-        return new AuthDynamicFeature(authFilter);
+        return new AuthDynamicFeature(new ChainedAuthFilter<String, User>(Lists.newArrayList(authFilter, authFilter2)));
     }
 
     @Override

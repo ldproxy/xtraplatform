@@ -33,4 +33,10 @@ public enum Role {
     public boolean isGreater(Role other) {
         return this.compareTo(other) > 0;
     }
+
+    public interface Minimum {
+        String ADMIN = "ADMIN";
+        String EDITOR = "EDITOR";
+        String USER = "USER";
+    }
 }

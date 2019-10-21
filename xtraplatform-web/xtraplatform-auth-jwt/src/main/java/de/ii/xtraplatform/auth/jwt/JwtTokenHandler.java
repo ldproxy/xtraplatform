@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -37,11 +36,12 @@ public class JwtTokenHandler implements TokenHandler {
     private AuthConfig authConfig;
 
     @Override
-    public String generateToken(User user, int expiresIn) {
+    public String generateToken(User user, int expiresIn, boolean rememberMe) {
         return Jwts.builder()
                    .setSubject(user.getName())
                    .claim(authConfig.getUserRoleKey(), user.getRole()
                                                            .toString())
+                   .claim("rememberMe", rememberMe)
                    .setExpiration(Date.from(Instant.now()
                                                    .plus(expiresIn, ChronoUnit.MINUTES)))
                    .signWith(getKey())
@@ -62,6 +62,26 @@ public class JwtTokenHandler implements TokenHandler {
                                                 .role(Role.fromString(Optional.ofNullable(claimsJws.get(authConfig.getUserRoleKey(), String.class))
                                                                               .orElse("USER")))
                                                 .build());
+            } catch (Throwable e) {
+                //ignore
+                LOGGER.debug("Error validating token", e);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
+    public <T> Optional<T> parseTokenClaim(String token, String name, Class<T> type) {
+        if (authConfig.isActive() && authConfig.isJwt()) {
+            try {
+                Claims claimsJws = Jwts.parser()
+                                       .setSigningKey(authConfig.getJwtSigningKey())
+                                       .parseClaimsJws(token)
+                                       .getBody();
+
+                return Optional.ofNullable(claimsJws.get(name, type));
+
             } catch (Throwable e) {
                 //ignore
                 LOGGER.debug("Error validating token", e);

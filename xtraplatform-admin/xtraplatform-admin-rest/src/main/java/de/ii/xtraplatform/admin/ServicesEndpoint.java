@@ -3,7 +3,8 @@ package de.ii.xtraplatform.admin;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xtraplatform.api.exceptions.BadRequest;
-import de.ii.xtraplatform.api.exceptions.XtraserverFrameworkException;
+import de.ii.xtraplatform.auth.api.Role;
+import de.ii.xtraplatform.auth.api.User;
 import de.ii.xtraplatform.dropwizard.api.Jackson;
 import de.ii.xtraplatform.entity.api.EntityData;
 import de.ii.xtraplatform.entity.api.EntityDataGenerator;
@@ -16,6 +17,7 @@ import de.ii.xtraplatform.service.api.ServiceBackgroundTasks;
 import de.ii.xtraplatform.service.api.ServiceData;
 import de.ii.xtraplatform.service.api.ServiceStatus;
 import de.ii.xtraplatform.web.api.Endpoint;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -25,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -45,6 +48,7 @@ import java.util.stream.Collectors;
 @Component
 @Provides
 @Instantiate
+@RolesAllowed({Role.Minimum.EDITOR})
 @Path("/admin/services")
 @Produces(MediaType.APPLICATION_JSON)
 public class ServicesEndpoint implements Endpoint {
@@ -68,7 +72,7 @@ public class ServicesEndpoint implements Endpoint {
 
     @GET
     @CacheControl(noCache = true)
-    public List<ServiceStatus> getServices(/*@Auth AuthenticatedUser authUser*/) {
+    public List<ServiceStatus> getServices(@Auth User user) {
         return serviceRepository.ids()
                                 .stream()
                                 .map(this::getServiceStatus)
@@ -77,8 +81,7 @@ public class ServicesEndpoint implements Endpoint {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response addService(/*@Auth(minRole = Role.PUBLISHER) AuthenticatedUser authUser,*/
-            Map<String, String> request) {
+    public Response addService(@Auth User user, Map<String, String> request) {
 
         if (!request.containsKey("id")) {
             throw new BadRequest("No id given");
@@ -125,7 +128,7 @@ public class ServicesEndpoint implements Endpoint {
     @Path("/{id}")
     @GET
     @CacheControl(noCache = true)
-    public Response getService(/*@Auth AuthenticatedUser user,*/ @PathParam("id") String id) {
+    public Response getService(@Auth User user, @PathParam("id") String id) {
 
         if (!serviceRepository.has(id)) {
             throw new NotFoundException();
@@ -144,7 +147,7 @@ public class ServicesEndpoint implements Endpoint {
 
     @Path("/{id}")
     @POST
-    public Response updateService(/*@Auth AuthenticatedUser authUser,*/ @PathParam("id") String id,
+    public Response updateService(@Auth User user, @PathParam("id") String id,
                                                                         Map<String, Object> request) {
 
         if (!serviceRepository.has(id)) {
@@ -173,7 +176,7 @@ public class ServicesEndpoint implements Endpoint {
 
     @Path("/{id}")
     @DELETE
-    public Response deleteService(/*@Auth AuthenticatedUser authUser,*/ @PathParam("id") String id) {
+    public Response deleteService(@Auth User user, @PathParam("id") String id) {
         try {
             MDC.put("service", id);
 
