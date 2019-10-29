@@ -95,7 +95,7 @@ public class TokenEndpoint implements Endpoint {
                                                                                   .expires_in(expiresIn)
                                                                                   .build());
 
-        String domain = request.getServerName();
+        String domain = null;//request.getServerName();
 
         List<String> authCookies = SplitCookie.writeToken(token, domain, isSecure(), rememberMe);
 

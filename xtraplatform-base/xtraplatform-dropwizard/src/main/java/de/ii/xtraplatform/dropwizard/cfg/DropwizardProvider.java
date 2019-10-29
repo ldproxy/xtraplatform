@@ -13,14 +13,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Resources;
+import com.google.common.io.ByteSource;
+import de.ii.xtraplatform.dropwizard.api.ApplicationProvider;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
 import de.ii.xtraplatform.dropwizard.api.XtraPlatformConfiguration;
-import de.ii.xtraplatform.dropwizard.views.MustacheResolverRegistry;
 import de.ii.xtraplatform.dropwizard.views.FallbackMustacheViewRenderer;
+import de.ii.xtraplatform.dropwizard.views.MustacheResolverRegistry;
 import de.ii.xtraplatform.runtime.FelixRuntime.ENV;
-import io.dropwizard.Application;
-import io.dropwizard.cli.Cli;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.jetty.MutableServletContextHandler;
@@ -28,9 +27,9 @@ import io.dropwizard.jetty.setup.ServletEnvironment;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import io.dropwizard.util.JarLocation;
 import io.dropwizard.views.ViewBundle;
 import io.dropwizard.views.ViewRenderer;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -45,6 +44,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -52,6 +52,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static de.ii.xtraplatform.runtime.FelixRuntime.CONFIG_FILE_NAME;
 import static de.ii.xtraplatform.runtime.FelixRuntime.CONFIG_FILE_NAME_LEGACY;
@@ -68,7 +69,7 @@ import static de.ii.xtraplatform.runtime.FelixRuntime.ENV_KEY;
 @Provides
 @Instantiate
 //TODO move to separate bundle
-public class DropwizardProvider extends Application<XtraPlatformConfiguration> implements Dropwizard {
+public class DropwizardProvider implements Dropwizard {
 
     //private static final Logger ROOT_LOGGER = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
@@ -80,50 +81,38 @@ public class DropwizardProvider extends Application<XtraPlatformConfiguration> i
     @ServiceController(value = false)
     private boolean controller;
 
-    @Context
-    private BundleContext context;
 
-    @Requires
-    private MustacheResolverRegistry mustacheResolverRegistry;
+    private final BundleContext context;
+    private final ApplicationProvider<XtraPlatformConfiguration> applicationProvider;
+    private final MustacheResolverRegistry mustacheResolverRegistry;
 
     private XtraPlatformConfiguration configuration;
     private Environment environment;
     private ServletContainer jerseyContainer;
     private ViewRenderer mustacheRenderer;
 
-    public DropwizardProvider() {
+    public DropwizardProvider(@Context BundleContext context,
+                              @Requires ApplicationProvider<XtraPlatformConfiguration> applicationProvider,
+                              @Requires MustacheResolverRegistry mustacheResolverRegistry) {
+        this.context = context;
+        this.applicationProvider = applicationProvider;
+        this.mustacheResolverRegistry = mustacheResolverRegistry;
     }
 
     @Validate
     public void start() {
         String environment = context.getProperty(ENV_KEY)
                                     .toLowerCase();
-        String cfgFileTemplateName = String.format("/cfg.%s.yml", environment);
         String dataDir = context.getProperty(DATA_DIR_KEY);
         if (dataDir == null) {
             LOGGER.error("Could not start XtraPlatform, no data directory given.");
             System.exit(1);
         }
 
-        // TODO: move to config store
-        Path cfgFile = null;
+        Path cfgFile = getConfigurationFile(dataDir, environment);
 
         try {
-            if (Files.exists(Paths.get(dataDir, CONFIG_FILE_NAME))) {
-                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME)
-                               .toAbsolutePath();
-            } else if (Files.exists(Paths.get(dataDir, CONFIG_FILE_NAME_LEGACY))) {
-                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME_LEGACY)
-                               .toAbsolutePath();
-            } else {
-                cfgFile = Paths.get(dataDir, CONFIG_FILE_NAME)
-                               .toAbsolutePath();
-
-                Resources.asByteSource(Resources.getResource(DropwizardProvider.class, cfgFileTemplateName))
-                         .copyTo(new FileOutputStream(cfgFile.toFile()));
-            }
-
-            init(cfgFile.toString());
+            start(cfgFile);
 
             // publish the service once the initialization
             // is completed.
@@ -131,27 +120,38 @@ public class DropwizardProvider extends Application<XtraPlatformConfiguration> i
 
             LOGGER.debug("Initialized XtraPlatform with configuration file {}", cfgFile);
 
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             LOGGER.error("Error initializing XtraPlatform with configuration file {}", cfgFile, ex);
             System.exit(1);
         }
     }
 
-    public void init(String cfgFilePath) throws Exception {
-        final Bootstrap<XtraPlatformConfiguration> bootstrap = new Bootstrap<>(this);
-        bootstrap.addCommand(new XtraServerFrameworkCommand<>(this));
-        initialize(bootstrap);
+    private void start(Path cfgFilePath) {
+        Pair<XtraPlatformConfiguration, Environment> configurationEnvironmentPair = applicationProvider.startWithFile(cfgFilePath, this::initBootstrap);
 
-        final Cli cli = new Cli(new JarLocation(getClass()), bootstrap, System.out, System.err);
-        String[] arguments = {DW_CMD, cfgFilePath};
-        if (!cli.run(arguments)) {
-            LOGGER.error("Error initializing XtraPlatform with configuration file {}", cfgFilePath);
-            System.exit(1);
-        }
+        this.configuration = configurationEnvironmentPair.getLeft();
+        this.environment = configurationEnvironmentPair.getRight();
+        this.jerseyContainer = (ServletContainer) environment.getJerseyServletContainer();
+
+        //this.environment.healthChecks().register("ModulesHealthCheck", new ModulesHealthCheck());
+
+        // TODO: enable trailing slashes, #36
+        //environment.jersey().enable(ResourceConfig.FEATURE_REDIRECT);
+        this.environment.getObjectMapper()
+                        .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+
+        //TODO: per parameter
+        //if (configuration.useFormattedJsonOutput) {
+        environment.getObjectMapper()
+                   .enable(SerializationFeature.INDENT_OUTPUT);
+        //LOGGER.warn(FrameworkMessages.GLOBALLY_ENABLED_JSON_PRETTY_PRINTING);
+        //}
+
+        LOGGER.info("Store mode: {}", configuration.store.mode);
     }
 
-    @Override
-    public void initialize(Bootstrap<XtraPlatformConfiguration> bootstrap) {
+    //@Override
+    private void initBootstrap(Bootstrap<XtraPlatformConfiguration> bootstrap) {
         this.mustacheRenderer = new FallbackMustacheViewRenderer(mustacheResolverRegistry);
 
         boolean cacheTemplates = ENV.valueOf(context.getProperty(ENV_KEY)) != DEVELOPMENT;
@@ -170,27 +170,28 @@ public class DropwizardProvider extends Application<XtraPlatformConfiguration> i
         });
     }
 
-    @Override
-    public void run(XtraPlatformConfiguration configuration, Environment environment) throws Exception {
-        this.configuration = configuration;
-        this.environment = environment;
-        this.jerseyContainer = (ServletContainer) environment.getJerseyServletContainer();
+    private Path getConfigurationFile(String dataDir, String environment) {
+        Path defaultPath = Paths.get(dataDir, CONFIG_FILE_NAME).toAbsolutePath();
+        Path legacyPath = Paths.get(dataDir, CONFIG_FILE_NAME_LEGACY).toAbsolutePath();
 
-        //this.environment.healthChecks().register("ModulesHealthCheck", new ModulesHealthCheck());
+        if (Files.exists(defaultPath)) {
+            return defaultPath;
+        } else if (Files.exists(legacyPath)) {
+            return legacyPath;
+        } else {
+            Optional<ByteSource> configurationFileTemplate = applicationProvider.getConfigurationFileTemplate(environment);
 
-        // TODO: enable trailing slashes, #36
-        //environment.jersey().enable(ResourceConfig.FEATURE_REDIRECT);
-        this.environment.getObjectMapper()
-                        .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            if (configurationFileTemplate.isPresent()) {
+                try {
+                    configurationFileTemplate.get()
+                                             .copyTo(new FileOutputStream(defaultPath.toFile()));
+                } catch (IOException e) {
+                    //ignore
+                }
+            }
 
-        //TODO: per parameter
-        //if (configuration.useFormattedJsonOutput) {
-        environment.getObjectMapper()
-                   .enable(SerializationFeature.INDENT_OUTPUT);
-        //LOGGER.warn(FrameworkMessages.GLOBALLY_ENABLED_JSON_PRETTY_PRINTING);
-        //}
-
-        LOGGER.info("Store mode: {}", configuration.store.mode);
+            return defaultPath;
+        }
     }
 
     @Override

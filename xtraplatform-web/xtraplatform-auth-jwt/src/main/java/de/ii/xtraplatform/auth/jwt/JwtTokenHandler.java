@@ -7,6 +7,7 @@ import de.ii.xtraplatform.auth.api.Role;
 import de.ii.xtraplatform.auth.api.TokenHandler;
 import de.ii.xtraplatform.auth.api.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -37,15 +38,18 @@ public class JwtTokenHandler implements TokenHandler {
 
     @Override
     public String generateToken(User user, int expiresIn, boolean rememberMe) {
-        return Jwts.builder()
-                   .setSubject(user.getName())
-                   .claim(authConfig.getUserRoleKey(), user.getRole()
-                                                           .toString())
-                   .claim("rememberMe", rememberMe)
-                   .setExpiration(Date.from(Instant.now()
-                                                   .plus(expiresIn, ChronoUnit.MINUTES)))
-                   .signWith(getKey())
-                   .compact();
+        JwtBuilder jwtBuilder = Jwts.builder()
+                                    .setSubject(user.getName())
+                                    .claim(authConfig.getUserRoleKey(), user.getRole()
+                                                                            .toString())
+                                    .claim("rememberMe", rememberMe)
+                                    .setExpiration(Date.from(Instant.now()
+                                                                    .plus(expiresIn, ChronoUnit.MINUTES)));
+        if (user.getForceChangePassword()) {
+            jwtBuilder.claim("forceChangePassword", true);
+        }
+        return jwtBuilder.signWith(getKey())
+                         .compact();
     }
 
     @Override

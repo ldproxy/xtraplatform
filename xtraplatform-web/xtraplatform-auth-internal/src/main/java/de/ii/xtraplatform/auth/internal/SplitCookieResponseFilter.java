@@ -1,6 +1,7 @@
 package de.ii.xtraplatform.auth.internal;
 
 import de.ii.xtraplatform.auth.api.TokenHandler;
+import de.ii.xtraplatform.auth.api.User;
 import de.ii.xtraplatform.server.CoreServerConfig;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 @Component
 @Provides
@@ -52,7 +54,18 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
 
 
         if (status == 200 && isAuthenticated && token.isPresent()) {
+            boolean forceChangePassword = tokenHandler.parseTokenClaim(token.get(), "forceChangePassword", Boolean.class).orElse(false);
             boolean rememberMe = tokenHandler.parseTokenClaim(token.get(), "rememberMe", Boolean.class).orElse(false);
+
+            if (forceChangePassword) {
+                Optional<User> user = tokenHandler.parseToken(token.get());
+                boolean toggleForceChangePassword = !user.map(User::getForceChangePassword).orElse(false);
+
+                if (user.isPresent() && toggleForceChangePassword) {
+                    token = Optional.of(tokenHandler.generateToken(user.get(), 60, rememberMe));
+                }
+            }
+
 
             List<String> authCookies = SplitCookie.writeToken(token.get(), getDomain(), isSecure(), rememberMe);
 

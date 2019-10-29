@@ -124,7 +124,8 @@ class ApplicationPlugin implements Plugin<Project> {
         //project.tasks.startScripts.unixStartScriptGenerator.template = project.resources.text.fromFile('gradle/sh-start-script')
 
         // for docker
-        project.tasks.distTar.version = ''
+        project.tasks.distTar.archiveVersion.set('')
+        project.tasks.distZip.archiveVersion.set('')
     }
 
     List<File> getBundleFiles(Project project) {
@@ -216,7 +217,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
         bundles.add(project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies)
 
-        return createBundleFileTree(project, bundles, ['xtraplatform-runtime'], 'de.ii.xtraplatform.entity.api.handler:entity', ['xtraplatform-server'], ['xtraplatform-dropwizard', 'osgi-over-slf4j', 'org.apache.felix.ipojo'])
+        return createBundleFileTree(project, bundles, ['xtraplatform-runtime'], 'de.ii.xtraplatform.entity.api.handler:entity', ['xtraplatform-server'], ['xtraplatform-dropwizard', 'osgi-over-slf4j', 'org.apache.felix.ipojo', 'xtraproxy-config', 'ldproxy-config'])
     }
 
     String createDevBundleTree(Project project) {

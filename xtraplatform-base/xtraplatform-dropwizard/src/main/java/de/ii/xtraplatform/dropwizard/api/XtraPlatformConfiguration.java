@@ -1,65 +1,48 @@
 /**
  * Copyright 2018 interactive instruments GmbH
- *
+ * <p>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package de.ii.xtraplatform.dropwizard.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
+import de.ii.xtraplatform.dropwizard.cfg.XtraPlatformServerFactory;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
-import io.dropwizard.logging.ConsoleAppenderFactory;
-import io.dropwizard.request.logging.LogbackAccessRequestLogFactory;
-import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.Objects;
 
-//TODO: cleanup
 public class XtraPlatformConfiguration extends Configuration {
+
+    public XtraPlatformConfiguration() {
+
+    }
 
     @Valid
     @NotNull
-    private ServerFactory server;
-
-    public XtraPlatformConfiguration() {
-        DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
-        LogbackAccessRequestLogFactory logbackAccessRequestLogFactory = new LogbackAccessRequestLogFactory();
-        logbackAccessRequestLogFactory.setAppenders(ImmutableList.of());
-        defaultServerFactory.setRequestLogFactory(logbackAccessRequestLogFactory);
-        this.server = defaultServerFactory;
-    }
+    private XtraPlatformServerFactory server = new XtraPlatformServerFactory();
 
     @Override
     @JsonProperty("server")
-    public ServerFactory getServerFactory() {
+    public XtraPlatformServerFactory getServerFactory() {
         return server;
     }
 
     @Override
-    @JsonProperty("server")
+    @JsonIgnore
     public void setServerFactory(ServerFactory factory) {
-        if (factory instanceof DefaultServerFactory) {
-            DefaultServerFactory defaultServerFactory = (DefaultServerFactory) factory;
-            if (defaultServerFactory.getRequestLogFactory() instanceof LogbackAccessRequestLogFactory) {
-                LogbackAccessRequestLogFactory logbackAccessRequestLogFactory = (LogbackAccessRequestLogFactory) defaultServerFactory.getRequestLogFactory();
-                if (logbackAccessRequestLogFactory.getAppenders().size() == 1 && logbackAccessRequestLogFactory.getAppenders().get(0) instanceof ConsoleAppenderFactory) {
 
-                    logbackAccessRequestLogFactory.setAppenders(ImmutableList.of());
-                    //defaultServerFactory.setRequestLogFactory(logbackAccessRequestLogFactory);
-                    //this.server = defaultServerFactory;
-                }
-                //return;
-            }
-        }
-        this.server = factory;
     }
 
+    @JsonProperty("server")
+    public void setServerFactory(XtraPlatformServerFactory factory) {
+        this.server = factory;
+    }
 
     //TODO: not used anymore, but removing breaks backwards compatibility
     @JsonProperty
@@ -76,8 +59,17 @@ public class XtraPlatformConfiguration extends Configuration {
     */
     @Valid
     @NotNull
-    @JsonProperty
-    public HttpClientConfiguration httpClient = new HttpClientConfiguration();
+    private HttpClientConfiguration httpClient;
+
+    @JsonProperty("httpClient")
+    public HttpClientConfiguration getHttpClient() {
+        return httpClient;
+    }
+
+    @JsonProperty("httpClient")
+    public void setHttpClient(HttpClientConfiguration httpClient) {
+        this.httpClient = httpClient;
+    }
 
     @Valid
     @NotNull
@@ -87,5 +79,5 @@ public class XtraPlatformConfiguration extends Configuration {
     @Valid
     @JsonProperty
     public ClusterConfiguration cluster;
-    
+
 }

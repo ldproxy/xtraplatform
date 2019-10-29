@@ -28,12 +28,17 @@ public class ClusterConfiguration {
         @NotNull
         //@Pattern(regexp = "[\\w-]{3,}")
         @JsonProperty
-        public Integer id;
+        public Integer nodeId;
 
         @Valid
         @Pattern(regexp = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}")
         @JsonProperty
-        public String ipAddress;
+        public String host;
+
+        @Valid
+        @NotNull
+        @JsonProperty
+        public Integer port = 7081;
 
     }
 

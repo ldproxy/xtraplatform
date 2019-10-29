@@ -1,0 +1,26 @@
+---
+server:
+  applicationConnectors:
+    - type: http
+      port: '7080'
+  adminConnectors:
+    - type: http
+      port: '7081'
+  gzip:
+    enabled: true
+  requestLog:
+    type: classic
+    timeZone: Europe/Berlin
+    appenders: []
+  shutdownGracePeriod: 5s
+
+httpClient:
+  timeout: 30s
+  connectionTimeout: 10s
+  maxConnectionsPerRoute: 16
+
+logging:
+  level: 'OFF'
+  appenders: []
+  loggers:
+    de.ii: INFO

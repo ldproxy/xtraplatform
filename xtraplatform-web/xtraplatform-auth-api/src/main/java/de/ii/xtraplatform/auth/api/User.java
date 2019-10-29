@@ -20,4 +20,7 @@ public interface User extends Principal {
 
     @Value.Default
     default Role getRole() {return Role.NONE;}
+
+    @Value.Default
+    default boolean getForceChangePassword() {return false;}
 }

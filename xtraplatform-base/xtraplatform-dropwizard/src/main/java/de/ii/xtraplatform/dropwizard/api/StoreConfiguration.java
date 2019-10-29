@@ -22,6 +22,11 @@ public class StoreConfiguration {
     public StoreMode mode = StoreMode.READ_WRITE;
 
     @Valid
+    @NotNull
+    @JsonProperty
+    public boolean secured = false;
+
+    @Valid
     @NotEmpty
     @JsonProperty
     public String instancePathPattern = "{type}/{path:**}/{id}";
