@@ -9,7 +9,7 @@ plugins {
 
 group = 'de.interactive_instruments'
 
-version = '2.0.3'
+version = '2.1.0'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 
@@ -47,6 +47,10 @@ gradlePlugin {
         bundlePlugin {
             id = 'de.interactive_instruments.xtraplatform-bundle'
             implementationClass = 'de.interactive_instruments.xtraplatform.BundlePlugin'
+        }
+        runtimePlugin {
+            id = 'de.interactive_instruments.xtraplatform-runtime'
+            implementationClass = 'de.interactive_instruments.xtraplatform.RuntimePlugin'
         }
         docPlugin {
             id = 'de.interactive_instruments.xtraplatform-doc'

@@ -22,19 +22,23 @@ class ApplicationPlugin implements Plugin<Project> {
         project.plugins.apply(FeaturePlugin.class)
         project.plugins.apply("application")
 
+        def appExtension = project.extensions.create('app', ApplicationExtension, project)
+
         project.configurations.create("featureDevOnly")
-        project.getConfigurations().create("app")
-        //project.configurations.app.setTransitive(false)
+        project.configurations.featureDevOnly.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
+        project.configurations.create("app")
         project.configurations.implementation.extendsFrom(project.configurations.app)
-        //project.getConfigurations().create("platform")
-        //project.configurations.platform.setTransitive(false)
-        //project.configurations.compileOnly.extendsFrom(project.configurations.platform)
+
+        def isIncludedBuild = (project.gradle.parent != null)
 
         project.afterEvaluate {
             def baseFound = false
             project.configurations.feature.dependencies.each {
                 if (it.name == 'xtraplatform-base') {
-                    project.dependencies.add('app', project.dependencies.enforcedPlatform(it.copy()))
+                    if (!isIncludedBuild) {
+                        project.dependencies.add('app', project.dependencies.enforcedPlatform(it.copy()))
+                    }
+
                     project.dependencies.add('app', 'de.interactive_instruments:xtraplatform-runtime')
                     baseFound = true
                 }
@@ -51,7 +55,7 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }
 
-        addCreateRuntimeClassTask(project)
+        addCreateRuntimeClassTask(project, appExtension)
 
         addDistribution(project)
 
@@ -149,7 +153,7 @@ class ApplicationPlugin implements Plugin<Project> {
         })
     }
 
-    void addCreateRuntimeClassTask(Project project) {
+    void addCreateRuntimeClassTask(Project project, appExtension) {
         project.mainClassName = "de.ii.xtraplatform.application.Launcher"
 
         File generatedSourceDir = new File(project.buildDir, 'generated/src/main/java/')
@@ -161,18 +165,24 @@ class ApplicationPlugin implements Plugin<Project> {
             inputs.files project.configurations.feature
             inputs.files project.configurations.featureDevOnly
             inputs.files project.configurations.bundle
+            inputs.property("name", {appExtension.name2})
+            inputs.property("version", {appExtension.version2})
+            inputs.property("baseConfigs", {appExtension.additionalBaseConfigs})
             outputs.dir(generatedSourceDir)
 
             doLast {
 
                 def bundles = createBundleTree(project)
                 def devBundles = createDevBundleTree(project)
+                def baseConfigs = createBaseConfigList(appExtension.additionalBaseConfigs)
 
                 def mainClass = """
                     package de.ii.xtraplatform.application;
 
                     import de.ii.xtraplatform.runtime.FelixRuntime;
                     import com.google.common.collect.ImmutableList;
+                    import com.google.common.io.ByteSource;
+                    import com.google.common.io.Resources;
                     import java.lang.Runtime;
                     import java.util.List;
         
@@ -180,11 +190,12 @@ class ApplicationPlugin implements Plugin<Project> {
                     
                         private static final List<List<String>> BUNDLES = ${bundles};
                         private static final List<List<String>> DEV_BUNDLES = ${devBundles};
+                        private static final List<ByteSource> BASE_CONFIGS = ${baseConfigs}.stream().map(cfgPath -> Resources.asByteSource(Resources.getResource(Launcher.class, cfgPath))).collect(ImmutableList.toImmutableList());
 
                         public static void main(String[] args) throws Exception {
-                            final FelixRuntime runtime = new FelixRuntime("${project.name}", "${project.version}");
+                            final FelixRuntime runtime = new FelixRuntime("${appExtension.name2}", "${appExtension.version2}");
                             
-                            runtime.init(args, BUNDLES, DEV_BUNDLES);
+                            runtime.init(args, BUNDLES, DEV_BUNDLES, BASE_CONFIGS);
                             runtime.start();
                             
                             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -233,6 +244,21 @@ class ApplicationPlugin implements Plugin<Project> {
             def dependsOn = featureA.children.stream().anyMatch({ child -> child == featureB })
             return dependsOn ? 1 : -1
         }
+    }
+
+    String createBaseConfigList(List<String> baseConfigs) {
+        String baseConfigList = 'ImmutableList.<String>of('
+
+        baseConfigs.eachWithIndex { baseConfig, index ->
+
+            baseConfigList += "\"${baseConfig}\""
+
+            if (index < baseConfigs.size() - 1) {
+                baseConfigList += ','
+            }
+        }
+
+        baseConfigList += ')'
     }
 
     String createBundleFileTree(Project project, List<Set<ResolvedDependency>> features, List<String> excludeNames = [], String lateStartManifestPattern = "", List<String> lateStartNames = [], List<String> earlyStartNames = []) {

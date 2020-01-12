@@ -5,6 +5,7 @@ import org.apache.felix.ipojo.manipulator.reporter.EmptyReporter
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.attributes.HasAttributes
 import org.gradle.api.plugins.osgi.OsgiPlugin
 import org.slf4j.LoggerFactory
 
@@ -23,16 +24,16 @@ class BundlePlugin implements Plugin<Project> {
         project.configurations.create('embedded')
         project.configurations.create('embeddedFlat')
 
-        project.configurations.provided.setTransitive(false)
+        project.configurations.provided.setTransitive(true)
         project.configurations.embeddedFlat.setTransitive(false)
 
-        project.configurations.api.extendsFrom(project.configurations.embedded)
+        project.configurations.api.extendsFrom(project.configurations.provided, project.configurations.embedded)
 
         project.afterEvaluate {
-            project.configurations.provided.dependencies.each {
+            /*project.configurations.provided.dependencies.each {
                 project.dependencies.add('compileOnly', it)
                 project.dependencies.add('testImplementation', it)
-            }
+            }*/
             project.configurations.embeddedFlat.dependencies.each {
                 project.dependencies.add('api', it, { transitive = false })
             }
@@ -56,7 +57,7 @@ class BundlePlugin implements Plugin<Project> {
             def includedArtifacts = [] as Set
 
             // determine artifacts that should be included in the bundle, might be transitive or not
-            def deps = getDependencies(project, excludes, true)
+            def deps = Dependencies.getDependencies(project, 'embedded', excludes, true) + Dependencies.getDependencies(project, 'embeddedFlat', excludes, false)
 
             deps.each { dependency ->
                 dependency.moduleArtifacts.each { artifact ->
@@ -74,7 +75,7 @@ class BundlePlugin implements Plugin<Project> {
             // determine all dependent artifacts to analyze packages to be imported
             if (doImport) {
                 def requiredArtifacts = [] as Set
-                def deps2 = getDependencies(project, [], true, true)
+                def deps2 = Dependencies.getDependencies(project, 'embedded', [], true) + Dependencies.getDependencies(project, 'embeddedFlat', [], false)
 
                 deps2.each { dependency ->
                     dependency.moduleArtifacts.each { artifact ->
@@ -92,7 +93,7 @@ class BundlePlugin implements Plugin<Project> {
             }
 
             // determine packages for export
-            def pkgs = getPackages(deps)
+            def pkgs = Dependencies.getPackages(deps)
 
             if (doExport) {
                 // export only direct dependencies
@@ -136,7 +137,7 @@ class BundlePlugin implements Plugin<Project> {
 
             def dependencies = [] as Set
             project.configurations.compileClasspath.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
-                dependencies.addAll(getDependenciesRecursive(dependency, true, excludes))
+                dependencies.addAll(Dependencies.getDependenciesRecursive(dependency, true, excludes))
             }
             dependencies.each { dependency ->
                 dependency.moduleArtifacts.each { art ->
@@ -177,85 +178,5 @@ class BundlePlugin implements Plugin<Project> {
         project.tasks.osgiClasses.finalizedBy project.tasks.noOsgiClasses
     }
 
-    /**
-     * Gets the list of ResolvedDependencies for the list of embeded dependency names
-     * @param embededList the list with the dependencies to embed
-     * @param recursive The embed transitive state
-     * @return the list of dependencies. An empty Set if none
-     */
-    def getDependencies(project, excludes, recursive, noLog = false) {
-        def dependencies = [] as Set //resolved Dependencies
-        //def dependencyMap = [:];
-        // This only considers top level resolved dependencies, but other should 
-        // not be embeded anyway.
-        /*project.configurations.runtime.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
-            dependencyMap.put(dependency.moduleName,dependency)
-        }
-        embededList.each { embeded -> 
-            def dependency = dependencyMap.get(embeded)
-            if(dependency != null){
-                dependencies.addAll(getDependenciesRecursive(dependency, recursive))
-			} else {
-				println "WARNING: dependency "+embeded+" not found"
-			}
-		}*/
 
-        project.configurations.embedded.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
-            if (!noLog) LOGGER.info('embedding dependency: {}', dependency.moduleName)
-            dependencies.addAll(getDependenciesRecursive(dependency, true, excludes))
-
-        }
-        project.configurations.embeddedFlat.resolvedConfiguration.firstLevelModuleDependencies.each { dependency ->
-            if (!noLog) LOGGER.info('embedding dependency (flat): {}', dependency.moduleName)
-            dependencies.addAll(getDependenciesRecursive(dependency, false, excludes))
-
-        }
-        return dependencies
-    }
-
-    def getDependenciesRecursive(dependency, recursive, excludes) {
-        def dependencies = [] as Set
-        //println "dependency "+dependency.name
-        if (recursive) {
-            dependency.children.each { child ->
-                //println "  child "+child.name+" Parents: "+child.parents
-                dependencies.addAll(getDependenciesRecursive(child, recursive, excludes))
-            }
-        }
-
-        if (!(dependency.moduleName in excludes))
-            dependencies.add(dependency)
-
-        return dependencies
-    }
-
-    def getPackages(dependencies) {
-        def packages = [] as Set
-
-        dependencies.each { dep ->
-            dep.moduleArtifacts.each { art ->
-                //println " - artifact " + art.file.absolutePath
-
-                // Your jar file
-                JarFile jar = new JarFile(art.file);
-                // Getting the files into the jar
-                Enumeration<? extends JarEntry> enumeration = jar.entries();
-
-                // Iterates into the files in the jar file
-                while (enumeration.hasMoreElements()) {
-                    ZipEntry zipEntry = enumeration.nextElement();
-
-                    // Is this a class?
-                    if (zipEntry.getName().endsWith(".class") && zipEntry.getName().indexOf('/') > -1) {
-                        packages.add([name: zipEntry.getName().substring(0, zipEntry.getName().lastIndexOf('/')).replace('/', '.'), version: dep.moduleVersion])
-                    }
-                }
-            }
-        }
-        /*packages.each { pkg ->
-            println "package " + pkg
-            }*/
-
-        return packages
-    }
 }
