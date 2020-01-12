@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.entity.repository.handler;
 
+import com.google.common.base.Strings;
 import de.ii.xtraplatform.entity.api.EntityData;
 import de.ii.xtraplatform.entity.api.PersistentEntity;
 import de.ii.xtraplatform.entity.api.handler.Entity;
@@ -22,6 +23,7 @@ import org.apache.felix.ipojo.handlers.configuration.ConfigurationListener;
 import org.apache.felix.ipojo.handlers.providedservice.ProvidedServiceHandler;
 import org.apache.felix.ipojo.metadata.Attribute;
 import org.apache.felix.ipojo.metadata.Element;
+import org.apache.felix.ipojo.util.Property;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +31,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -69,6 +72,8 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         }
         String entityType = bundleConfigElements[0].getAttribute("entityType");
 
+        Optional<String> type = Optional.ofNullable(Strings.emptyToNull(bundleConfigElements[0].getAttribute("type")));
+
         // add @ServiceController for field register in class AbstractPersistentEntity
         Element[] providedServices = metadata.getElements("Provides");
         if (providedServices == null || providedServices.length == 0) {
@@ -97,8 +102,8 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         data.addAttribute(new Attribute("type", EntityData.class.getName()));
 
         typeDesc.addProperty(new PropertyDescription("data", dataType, null));
-        typeDesc.addProperty(new PropertyDescription("type", String.class.getName(), entityType.substring(entityType.lastIndexOf(".") + 1)
-                                                                                               .toLowerCase() + "s", true));
+        typeDesc.addProperty(new PropertyDescription("type", String.class.getName(), type.orElse(entityType.substring(entityType.lastIndexOf(".") + 1)
+                                                                                               .toLowerCase() + "s"), true));
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("ENTITY {}", metadata);

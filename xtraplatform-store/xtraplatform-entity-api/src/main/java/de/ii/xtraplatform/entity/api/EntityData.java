@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.entity.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.immutables.value.Value;
 
 import java.time.Instant;
@@ -27,5 +28,16 @@ public interface EntityData {
     default long getLastModified() {
         return Instant.now()
                       .toEpochMilli();
+    }
+
+    @Value.Default
+    default long getEntityDataVersion() {
+        return getCurrentEntityDataVersion();
+    }
+
+    @JsonIgnore
+    @Value.Default
+    default long getCurrentEntityDataVersion() {
+        return 1;
     }
 }

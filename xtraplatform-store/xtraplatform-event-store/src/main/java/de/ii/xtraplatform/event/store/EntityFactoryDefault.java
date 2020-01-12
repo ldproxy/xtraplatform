@@ -165,17 +165,21 @@ public class EntityFactoryDefault implements EntityFactory {
     }
 
     private synchronized void onHydratorDeparture(ServiceReference<EntityHydrator<EntityData>> ref) {
-        Optional<String> entityType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
-                                            .filter(pd -> pd.getName()
-                                                            .equals("entityType"))
-                                            .map(PropertyDescription::getValue)
-                                            .findFirst();
+        try {
+            Optional<String> entityType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
+                                                .filter(pd -> pd.getName()
+                                                                .equals("entityType"))
+                                                .map(PropertyDescription::getValue)
+                                                .findFirst();
 
-        if (entityType.isPresent()) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("REMOVE ENTITY HYDRATOR {}", entityType.get());
+            if (entityType.isPresent()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("REMOVE ENTITY HYDRATOR {}", entityType.get());
+                }
+                this.entityHydrators.remove(entityType.get());
             }
-            this.entityHydrators.remove(entityType.get());
+        } catch (Throwable w) {
+            //ignore
         }
     }
 
@@ -185,7 +189,7 @@ public class EntityFactoryDefault implements EntityFactory {
         try {
             return entityDataBuilders.get(entityType)
                                      .newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (Throwable e) {
             throw new IllegalStateException("no builder found for entity type " + entityType);
         }
     }
