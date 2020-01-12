@@ -52,8 +52,8 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     ExternalDynamicAuthFilter(String edaUrl, String ppUrl, HttpClient httpClient,
                               OAuthCredentialAuthFilter<P> delegate) {
         super();
-        this.realm = "realm";
-        this.prefix = "Basic";
+        this.realm = "ldproxy";
+        this.prefix = "Bearer";
         this.unauthorizedHandler = new DefaultUnauthorizedHandler();
 
         this.edaUrl = edaUrl;

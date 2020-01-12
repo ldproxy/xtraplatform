@@ -19,7 +19,9 @@ public class SplitCookieCredentialAuthFilter<P extends Principal> extends AuthFi
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitCookieCredentialAuthFilter.class);
 
     private SplitCookieCredentialAuthFilter() {
+        super();
         this.prefix = "Bearer";
+        this.realm = "ldproxy";
     }
 
     @Override

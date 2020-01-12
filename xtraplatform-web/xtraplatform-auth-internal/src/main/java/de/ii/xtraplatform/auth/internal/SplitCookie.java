@@ -48,13 +48,13 @@ public class SplitCookie {
     }
 
     static private String getPayloadCookie(String payload, String domain, boolean secure, int expires) {
-        NewCookie newCookie = new NewCookie(TOKEN_COOKIE_NAME, payload, "/", domain, "", expires, secure, false);
+        NewCookie newCookie = new NewCookie(TOKEN_COOKIE_NAME, payload, "/", null, "", expires, secure, false);
 
         return String.format("%s;SameSite=strict", newCookie);
     }
 
     static private String getSignatureCookie(String signature, String domain, boolean secure, int expires) {
-        NewCookie newCookie = new NewCookie(SIGNATURE_COOKIE_NAME, signature, "/", domain, "", expires, secure, true);
+        NewCookie newCookie = new NewCookie(SIGNATURE_COOKIE_NAME, signature, "/", null, "", expires, secure, true);
 
         return String.format("%s;SameSite=strict", newCookie);
     }
