@@ -37,6 +37,8 @@ public interface ServiceData extends EntityData {
         return false;
     }
 
+    Optional<Integer> getApiVersion();
+
     @JsonIgnore
     default boolean isLoading() {
         return false;

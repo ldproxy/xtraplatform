@@ -103,7 +103,6 @@ public class WebServerDropwizard {
                         started = false;
 
                         LOGGER.info("Stopped web server at {}", u);
-                        Thread.sleep(1000);
 
                     } catch (MultiException ex) {
                         for (Throwable t : ex.getThrowables()) {
@@ -115,6 +114,13 @@ public class WebServerDropwizard {
                     } catch (Exception ex) {
                         LOGGER.error("Error stopping web server: {}", ex.getMessage());
                         LOGGER.debug("Error stopping web server", ex);
+                    }
+
+
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        //ignore
                     }
                 }
                 if (!started && (action == StartStopAction.START || action == StartStopAction.RESTART)) {

@@ -14,7 +14,7 @@ import de.ii.xtraplatform.api.permission.AuthenticatedUser;
 import de.ii.xtraplatform.api.permission.AuthorizationProvider;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
 import de.ii.xtraplatform.entity.api.EntityRegistry;
-import de.ii.xtraplatform.rest.views.GenericView;
+import de.ii.xtraplatform.server.CoreServerConfig;
 import de.ii.xtraplatform.service.api.Service;
 import de.ii.xtraplatform.service.api.ServiceData;
 import de.ii.xtraplatform.service.api.ServiceListingProvider;
@@ -34,15 +34,19 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -96,6 +100,9 @@ public class ServicesResource {
 
     @Requires
     Dropwizard dropwizard;
+
+    @Requires
+    private CoreServerConfig coreServerConfig;
 
     private Map<String, ServiceResourceFactory> serviceResourceFactories;
     private Map<String, ServiceResource> serviceResources;
@@ -176,9 +183,10 @@ public class ServicesResource {
                 Objects.equals(f, "html") ? MediaType.TEXT_HTML_TYPE :
                         Objects.nonNull(containerRequestContext.getMediaType()) ? containerRequestContext.getMediaType() :
                                 (containerRequestContext.getAcceptableMediaTypes()
-                                                       .size() > 0 && !containerRequestContext.getAcceptableMediaTypes()
-                                                                                             .get(0).equals(MediaType.WILDCARD_TYPE)) ? containerRequestContext.getAcceptableMediaTypes()
-                                                                                            .get(0) :
+                                                        .size() > 0 && !containerRequestContext.getAcceptableMediaTypes()
+                                                                                               .get(0)
+                                                                                               .equals(MediaType.WILDCARD_TYPE)) ? containerRequestContext.getAcceptableMediaTypes()
+                                                                                                                                                          .get(0) :
                                         MediaType.APPLICATION_JSON_TYPE;
 
         if (serviceListingProviders.containsKey(mediaType)) {
@@ -214,13 +222,51 @@ public class ServicesResource {
     }
 
     @Path("/{service}/")
-    public ServiceResource getServiceResource(/*@Auth(protectedResource = true, exceptions = "arcgis") AuthenticatedUser authUser,*/
-            @PathParam("service") String id, @QueryParam("callback") String callback,
-            @Context ContainerRequestContext containerRequestContext) {
+    public ServiceResource getServiceResource(@PathParam("service") String id, @QueryParam("callback") String callback,
+                                              @Context ContainerRequestContext containerRequestContext) {
+        return getVersionedServiceResource(id, callback, containerRequestContext, null);
+    }
+
+    @Path("/{service}/v{version}/")
+    public ServiceResource getVersionedServiceResource(@PathParam("service") String id,
+                                                       @QueryParam("callback") String callback,
+                                                       @Context ContainerRequestContext containerRequestContext,
+                                                       @PathParam("version") Integer version) {
         try {
             MDC.put("service", id);
 
             Service service = getService(new AuthenticatedUser(), id, callback);
+
+            if (service.getData()
+                       .getApiVersion()
+                       .isPresent()) {
+                Integer apiVersion = service.getData()
+                                            .getApiVersion()
+                                            .get();
+
+                if (Objects.isNull(version)) {
+                    String redirectPath = containerRequestContext.getUriInfo()
+                                                                 .getAbsolutePath()
+                                                                 .getPath()
+                                                                 .replace(id, String.format("%s/v%d", id, apiVersion));
+                    if (getExternalUri().isPresent()) {
+                        redirectPath = redirectPath.replace("/rest/services", getExternalUri().get()
+                                                                                      .getPath());
+                    }
+                    URI redirectUri = containerRequestContext.getUriInfo()
+                                                             .getRequestUriBuilder()
+                                                             .replacePath(redirectPath)
+                                                             .build();
+
+                    throw new WebApplicationException(Response.temporaryRedirect(redirectUri)
+                                                              .build());
+                } else if (!Objects.equals(apiVersion, version)) {
+                    throw new NotFoundException();
+                }
+            } else if (Objects.nonNull(version)) {
+                throw new NotFoundException();
+            }
+
             serviceContext.inject(containerRequestContext, service);
 
             return getServiceResource(service);
@@ -238,11 +284,24 @@ public class ServicesResource {
     private Service getService(AuthenticatedUser authUser, String id, String callback) {
         Optional<Service> s = entityRegistry.getEntity(Service.class, id);
 
-        if (!s.isPresent() || s.get().getData().hasError()) {
+        if (!s.isPresent() || s.get()
+                               .getData()
+                               .hasError()) {
             throw new ResourceNotFound(/*FrameworkMessages.A_SERVICE_WITH_ID_ID_IS_NOT_AVAILABLE.get(id).toString(LOGGER.getLocale()),*/ callback);
         }
 
         return s.get();
+    }
+
+    private Optional<URI> getExternalUri() {
+        URI externalUri = null;
+        try {
+            externalUri = new URI(coreServerConfig.getExternalUrl());
+        } catch (URISyntaxException e) {
+            // return null
+        }
+
+        return Optional.ofNullable(externalUri);
     }
 
 }
