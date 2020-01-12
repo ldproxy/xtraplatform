@@ -12,6 +12,8 @@ import akka.http.scaladsl.model.headers.HttpEncodings;
 import akka.japi.Pair;
 import akka.japi.function.Function2;
 import akka.japi.function.Procedure;
+import akka.japi.pf.FI;
+import akka.japi.pf.PFBuilder;
 import akka.stream.ActorMaterializer;
 import akka.stream.OverflowStrategy;
 import akka.stream.QueueOfferResult;
@@ -24,6 +26,7 @@ import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.PartialFunction;
 import scala.util.Try;
 
 import java.io.InputStream;
@@ -58,6 +61,12 @@ public class HttpHostClientAkka implements HttpClient {
         CompletionStage<CompletionStage<Done>> result = request(createHttpGet(url), sink);
 
         return result.thenCompose(doneCompletionStage -> doneCompletionStage);
+    }
+
+    //TODO
+    @Override
+    public Source<ByteString, NotUsed> get(String url) {
+        return null;
     }
 
     @Override
@@ -95,6 +104,7 @@ public class HttpHostClientAkka implements HttpClient {
                                                                                                 .join();
     }
 
+    //TODO: next offer is only allowed if previous returned, synchronize (only for OverflowStrategy.backpressure)
     private <T> CompletionStage<T> request(HttpRequest httpRequest, Sink<ByteString, T> sink) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("HTTP {} request: {}", httpRequest.method().name(), httpRequest.getUri());
@@ -105,7 +115,11 @@ public class HttpHostClientAkka implements HttpClient {
 
         offer.whenComplete((queueOfferResult, throwable) -> {
             if (!Objects.equals(queueOfferResult, QueueOfferResult.enqueued())) {
-                LOGGER.warn("Request dropped because queue for target host already has {} requests: {}", MAX_QUEUED_REQUESTS, httpRequest);
+                if (Objects.equals(queueOfferResult, QueueOfferResult.dropped())) {
+                    LOGGER.warn("Request dropped because queue for target host already has {} requests: {}", MAX_QUEUED_REQUESTS, httpRequest);
+                } else {
+                    LOGGER.error("Request queueing failed");
+                }
 
                 Throwable throwable1;
                 if (queueOfferResult instanceof QueueOfferResult.Failure) {
@@ -117,9 +131,9 @@ public class HttpHostClientAkka implements HttpClient {
                 }
                 result.completeExceptionally(throwable1);
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Queuing exception", throwable1);
-                }
+                //if (LOGGER.isDebugEnabled()) {
+                    LOGGER.error("Queuing exception", throwable1);
+                //}
             }
         });
 
@@ -131,6 +145,10 @@ public class HttpHostClientAkka implements HttpClient {
             Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool> connectionPool) {
 
         return createSourceQueue().viaMat(connectionPool, Keep.left())
+                                  .recover(new PFBuilder<Throwable, Pair<Try<HttpResponse>, Object>>().matchAny(throwable -> {
+                                      LOGGER.error("error queuing request: {}", throwable.getStackTrace(), throwable);
+                                      return null;
+                                  }).build())
                                   .toMat(Sink.foreach(handleResponse(materializer)), Keep.left())
                                   .run(materializer);
     }
@@ -140,14 +158,19 @@ public class HttpHostClientAkka implements HttpClient {
             Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, NotUsed> connectionPool) {
 
         return createSourceQueue().viaMat(connectionPool, Keep.left())
+                                  .recover(new PFBuilder<Throwable, Pair<Try<HttpResponse>, Object>>().matchAny(throwable -> {
+                                      LOGGER.error("error queuing request: {}", throwable.getStackTrace(), throwable);
+                                      return null;
+                                  }).build())
                                   .toMat(Sink.foreach(handleResponse(materializer)), Keep.left())
                                   .run(materializer);
     }
 
     private static Source<Pair<HttpRequest, Object>, SourceQueueWithComplete<Pair<HttpRequest, Object>>> createSourceQueue() {
-        return Source.queue(MAX_QUEUED_REQUESTS, OverflowStrategy.backpressure());
+        return Source.queue(MAX_QUEUED_REQUESTS, OverflowStrategy.dropHead());
     }
 
+    //TODO: maybe create a container for httpResponse + sink + result to simplify stream processing???
     private static <T> Procedure<Pair<Try<HttpResponse>, Object>> handleResponse(ActorMaterializer materializer) {
         return httpResponseAndSinkAndResult -> {
             Try<HttpResponse> httpResponse = httpResponseAndSinkAndResult.first();
@@ -167,8 +190,11 @@ public class HttpHostClientAkka implements HttpClient {
         if (httpResponse.isFailure()) {
             result.completeExceptionally(httpResponse.failed()
                                                      .getOrElse(() -> new IllegalStateException("Unknown HTTP client error")));
+            //TODO: do something with sink???
+            return;
         }
 
+        //TODO: can't we handle this in the same stream???
         T t = Source.single(httpResponse.get())
                     .map(HttpHostClientAkka::decodeResponse)
                     .flatMapConcat(httpResponseDecoded -> {
