@@ -5,16 +5,23 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.ByteSource;
+import com.google.common.io.Resources;
+import de.ii.xtraplatform.configuration.ConfigurationReader;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.logging.DefaultLoggingFactory;
+import io.dropwizard.util.Duration;
 import org.apache.felix.framework.Felix;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.main.AutoProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,15 +48,14 @@ public class FelixRuntime {
 
     public static final String DATA_DIR_KEY = "de.ii.xtraplatform.directories.data";
     public static final String ENV_KEY = "de.ii.xtraplatform.environment";
-    public static final String CONFIG_FILE_NAME = "cfg.yml";
-    public static final String CONFIG_FILE_NAME_LEGACY = "xtraplatform.json";
+    public static final String USER_CONFIG_PATH_KEY = "de.ii.xtraplatform.userConfigPath";
 
     private static final String ENV_VAR = "XTRAPLATFORM_ENV";
     private static final String DATA_DIR_NAME = "data";
     private static final String BUNDLES_DIR_NAME = "bundles";
     private static final String FELIX_CACHE_DIR_NAME = "felix-cache";
 
-    private static final Map<String, String> EXPORTS = new ImmutableMap.Builder<String, String>()
+    /*private static final Map<String, String> EXPORTS = new ImmutableMap.Builder<String, String>()
             //.put("javax.xml.bind", "0.0")
             //.put("javax.mail.internet", "0.0")
             .put("javax.management", "0.0")
@@ -135,7 +141,7 @@ public class FelixRuntime {
 
             .put("de.ii.xtraplatform.runtime", "0.0")
 
-            .build();
+            .build();*/
 
     private final String name;
     private final String version;
@@ -146,13 +152,17 @@ public class FelixRuntime {
         this.version = version;
     }
 
-    public void init(String[] args, List<List<String>> bundles, List<List<String>> devBundles) {
+    public void init(String[] args, List<List<String>> bundles, List<List<String>> devBundles, List<ByteSource> baseConfigs) {
         Map<String, String> felixConfig = new HashMap<>();
         Path dataDir = getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
         Path bundlesDir = getBundlesDir(args).orElseThrow(() -> new IllegalArgumentException("No bundles directory found"));
         ENV env = parseEnvironment();
+        ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
+        Path configurationFile = configurationReader.getConfigurationFile(dataDir, env);
 
-        preloadLoggingConfiguration(dataDir.resolve(CONFIG_FILE_NAME), dataDir.resolve(CONFIG_FILE_NAME_LEGACY));
+        configurationReader.loadMergedLogging(configurationFile, env);
+
+        //preloadLoggingConfiguration(dataDir.resolve(CONFIG_FILE_NAME), dataDir.resolve(CONFIG_FILE_NAME_LEGACY));
 
         LOGGER.info("--------------------------------------------------");
         LOGGER.info("Starting {} {}", name, version);
@@ -161,6 +171,20 @@ public class FelixRuntime {
             LOGGER.debug("Data directory: {}", dataDir);
             LOGGER.debug("Bundles directory: {}", bundlesDir);
             LOGGER.debug("Environment: {}", env);
+        }
+
+        //trace
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Base configs: {}", baseConfigs);
+            try {
+                String cfg = configurationReader.loadMergedConfig(configurationFile, env)
+                                                 .asCharSource(Charsets.UTF_8)
+                                                 .read();
+                LOGGER.debug("Application configuration: {}", cfg);
+
+            } catch (IOException e) {
+                //ignore
+            }
         }
 
         String bundlePrefix = "reference:file:" + bundlesDir.toAbsolutePath()
@@ -207,12 +231,13 @@ public class FelixRuntime {
         // Export the host provided service interface package.
         felixConfig.put(FelixConstants.FRAMEWORK_SYSTEMPACKAGES_EXTRA, Joiner.on(',')
                                                                              .withKeyValueSeparator(";version=")
-                                                                             .join(EXPORTS));
+                                                                             .join(Exports.EXPORTS));
         felixConfig.put(FelixConstants.FRAMEWORK_BOOTDELEGATION, "sun.misc");
 
         felixConfig.put(DATA_DIR_KEY, dataDir.toAbsolutePath()
                                              .toString());
         felixConfig.put(ENV_KEY, env.name());
+        felixConfig.put(USER_CONFIG_PATH_KEY, configurationFile.toAbsolutePath().toString());
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Felix config: {}", felixConfig);
@@ -287,7 +312,7 @@ public class FelixRuntime {
         Path bundlesDir;
 
         if (args.length >= 2) {
-            bundlesDir = Paths.get(args[0]);
+            bundlesDir = Paths.get(args[1]);
         } else {
             bundlesDir = Paths.get(BUNDLES_DIR_NAME)
                               .toAbsolutePath();
@@ -309,19 +334,42 @@ public class FelixRuntime {
 
         try {
             ObjectMapper objectMapper = null;
+            ObjectMapper mergeMapper = null;
+            JsonNode jsonNodeBase = null;
             JsonNode jsonNode = null;
 
+            //TODO: refactor MergingSourceProvider etc into ConfigurationReader, use here
             if (Files.isReadable(configFile)) {
                 objectMapper = Jackson.newObjectMapper(new YAMLFactory());
+
+                mergeMapper = objectMapper.copy()
+                                    .setDefaultMergeable(true);
+                mergeMapper.configOverride(List.class)
+                           .setMergeable(false);
+                mergeMapper.configOverride(Map.class)
+                           .setMergeable(false);
+                mergeMapper.configOverride(Duration.class)
+                           .setMergeable(false);
+
+                ByteSource byteSource = Resources.asByteSource(Resources.getResource(getClass(), "/cfg.base.yml"));
+                jsonNodeBase = objectMapper.readTree(byteSource.openStream());
                 jsonNode = objectMapper.readTree(configFile.toFile());
             } else if (Files.isReadable(fallbackConfigFile)) {
                 objectMapper = Jackson.newObjectMapper();
                 jsonNode = objectMapper.readTree(fallbackConfigFile.toFile());
             }
 
-            loggingFactory = Objects.requireNonNull(objectMapper)
-                                    .readerFor(DefaultLoggingFactory.class)
-                                    .readValue(jsonNode.at("/logging"));
+            if (jsonNodeBase != null) {
+                loggingFactory = Objects.requireNonNull(objectMapper)
+                                        .readerFor(DefaultLoggingFactory.class)
+                                        .readValue(jsonNodeBase.at("/logging"));
+
+                mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNode.at("/logging"));
+            } else {
+                loggingFactory = Objects.requireNonNull(objectMapper)
+                                        .readerFor(DefaultLoggingFactory.class)
+                                        .readValue(jsonNode.at("/logging"));
+            }
         } catch (Throwable e) {
             // use defaults
             loggingFactory = new DefaultLoggingFactory();

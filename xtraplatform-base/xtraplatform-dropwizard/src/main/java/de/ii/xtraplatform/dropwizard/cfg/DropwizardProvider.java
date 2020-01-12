@@ -13,7 +13,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.ByteSource;
 import de.ii.xtraplatform.dropwizard.api.ApplicationProvider;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
 import de.ii.xtraplatform.dropwizard.api.XtraPlatformConfiguration;
@@ -43,24 +42,17 @@ import org.osgi.framework.BundleContext;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
-import static de.ii.xtraplatform.runtime.FelixRuntime.CONFIG_FILE_NAME;
-import static de.ii.xtraplatform.runtime.FelixRuntime.CONFIG_FILE_NAME_LEGACY;
-import static de.ii.xtraplatform.runtime.FelixRuntime.DATA_DIR_KEY;
 import static de.ii.xtraplatform.runtime.FelixRuntime.ENV.DEVELOPMENT;
 import static de.ii.xtraplatform.runtime.FelixRuntime.ENV_KEY;
+import static de.ii.xtraplatform.runtime.FelixRuntime.USER_CONFIG_PATH_KEY;
 
-//import static de.ii.xtraplatform.runtime.FelixRuntime.ENV;
 
 /**
  * @author zahnen
@@ -68,14 +60,9 @@ import static de.ii.xtraplatform.runtime.FelixRuntime.ENV_KEY;
 @Component
 @Provides
 @Instantiate
-//TODO move to separate bundle
 public class DropwizardProvider implements Dropwizard {
 
-    //private static final Logger ROOT_LOGGER = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
-
-    public static final String CFG_FILE_TEMPLATE_NAME = "/xtraplatform.default.json";
-    public static final String DW_CMD = "server";
 
     // Service not published by default
     @ServiceController(value = false)
@@ -101,18 +88,11 @@ public class DropwizardProvider implements Dropwizard {
 
     @Validate
     public void start() {
-        String environment = context.getProperty(ENV_KEY)
-                                    .toLowerCase();
-        String dataDir = context.getProperty(DATA_DIR_KEY);
-        if (dataDir == null) {
-            LOGGER.error("Could not start XtraPlatform, no data directory given.");
-            System.exit(1);
-        }
-
-        Path cfgFile = getConfigurationFile(dataDir, environment);
+        Path cfgFile = Paths.get(context.getProperty(USER_CONFIG_PATH_KEY));
+        ENV env = ENV.valueOf(context.getProperty(ENV_KEY));
 
         try {
-            start(cfgFile);
+            start(cfgFile, env);
 
             // publish the service once the initialization
             // is completed.
@@ -126,8 +106,8 @@ public class DropwizardProvider implements Dropwizard {
         }
     }
 
-    private void start(Path cfgFilePath) {
-        Pair<XtraPlatformConfiguration, Environment> configurationEnvironmentPair = applicationProvider.startWithFile(cfgFilePath, this::initBootstrap);
+    private void start(Path cfgFilePath, ENV env) {
+        Pair<XtraPlatformConfiguration, Environment> configurationEnvironmentPair = applicationProvider.startWithFile(cfgFilePath, env, this::initBootstrap);
 
         this.configuration = configurationEnvironmentPair.getLeft();
         this.environment = configurationEnvironmentPair.getRight();
@@ -168,30 +148,6 @@ public class DropwizardProvider implements Dropwizard {
                 );
             }
         });
-    }
-
-    private Path getConfigurationFile(String dataDir, String environment) {
-        Path defaultPath = Paths.get(dataDir, CONFIG_FILE_NAME).toAbsolutePath();
-        Path legacyPath = Paths.get(dataDir, CONFIG_FILE_NAME_LEGACY).toAbsolutePath();
-
-        if (Files.exists(defaultPath)) {
-            return defaultPath;
-        } else if (Files.exists(legacyPath)) {
-            return legacyPath;
-        } else {
-            Optional<ByteSource> configurationFileTemplate = applicationProvider.getConfigurationFileTemplate(environment);
-
-            if (configurationFileTemplate.isPresent()) {
-                try {
-                    configurationFileTemplate.get()
-                                             .copyTo(new FileOutputStream(defaultPath.toFile()));
-                } catch (IOException e) {
-                    //ignore
-                }
-            }
-
-            return defaultPath;
-        }
     }
 
     @Override

@@ -1,8 +1,38 @@
 
-version = '2.0.2'
+version = '2.0.4'
+
+ext {
+    dropwizardVersion = '1.3.17'
+    jacksonVersion = '2.9.10'
+}
 
 dependencies {
-    api group: 'org.apache.felix', name: 'org.apache.felix.main', version: '6.0.2'
-    api group: 'io.dropwizard', name: 'dropwizard-logging', version: rootProject.findProject('xtraplatform-dropwizard').dropwizardVersion
-    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: rootProject.findProject('xtraplatform-dropwizard').jacksonVersion
+    systemBundle group: 'org.apache.felix', name: 'org.apache.felix.main', version: '6.0.2'
+    systemBundle(group: 'io.dropwizard', name: 'dropwizard-core', version: dropwizardVersion)
+    systemBundle group: 'io.dropwizard', name: 'dropwizard-views-mustache', version: dropwizardVersion
+    systemBundle (group: 'io.dropwizard', name: 'dropwizard-client', version: dropwizardVersion)
+    systemBundle (group: 'io.dropwizard', name: 'dropwizard-auth', version: dropwizardVersion)
+    systemBundle (group: 'io.dropwizard', name: 'dropwizard-json-logging', version: dropwizardVersion)
+    systemBundle group: 'org.threeten', name: 'threeten-extra', version: '1.3.2'
+
+    if(JavaVersion.current().isJava11Compatible()) {
+        //java >= 11
+        systemBundle group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'
+        systemBundle group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.12'
+        systemBundle group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
+        systemBundle group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
+    }
+}
+
+systemBundle {
+    exports  = [
+            'javax.management': '0.0',
+            'javax.naming': '0.0',
+            'javax.net.ssl': '0.0',
+            'javax.net': '0.0',
+            'sun.misc': '0.0',
+            'sun.reflect': '0.0',
+            'sun.security.util': '0.0',
+            'sun.security.x509': '0.0',
+    ]
 }

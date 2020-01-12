@@ -1,48 +1,30 @@
 
-version = '2.0.4'
+version = '2.0.5'
 
 ext {
-    dropwizardVersion = '1.3.9'
-    jacksonVersion = '2.9.8'
+    dropwizardVersion = '1.3.17'
+    jacksonVersion = '2.9.10'
 }
 
 dependencies {
-    implementation project(':xtraplatform-runtime')
-    implementation rootProject.configurations.getByName('bundle').dependencies.find {it.name == 'org.apache.felix.ipojo'}
-
-    embedded(group: 'io.dropwizard', name: 'dropwizard-core', version: dropwizardVersion)
-    embedded group: 'io.dropwizard', name: 'dropwizard-views-mustache', version: dropwizardVersion
-    embedded (group: 'io.dropwizard', name: 'dropwizard-client', version: dropwizardVersion)
-    embedded (group: 'io.dropwizard', name: 'dropwizard-auth', version: dropwizardVersion)
-    embedded (group: 'io.dropwizard', name: 'dropwizard-json-logging', version: dropwizardVersion)
-
-    //only used for xtraproxy online???
-    embedded (group: 'com.sun.mail', name: 'javax.mail', version: '1.5.2') {
-        exclude module: 'activation'
-    }
-    
-    embedded group: 'org.threeten', name: 'threeten-extra', version: '1.3.2'
-
-    if(JavaVersion.current().isJava11Compatible()) {
-        //java >= 11
-        embedded group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'
-        embedded group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.12'
-        embedded group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
-        embedded group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
-    }
+    //implementation project(':xtraplatform-runtime')
+    //implementation rootProject.configurations.getByName('bundle').dependencies.find {it.name == 'org.apache.felix.ipojo'}
 }
 
+//TODO: is this still needed
 jar {
     manifest {
-	    instructionReplace 'Require-Capability', 'osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"'
+        instructionFirst 'Import-Package', 'io.dropwizard.metrics'
+
+        /*instructionReplace 'Require-Capability', 'osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"'
 
         // added via system bundle in xtraplatform-runtime, exclude here
         instruction 'Embed-Excludes', 'slf4j-api' , 'logback-classic', 'logback-core'
-        
+
         //java 11
         instructionFirst 'Import-Package', '!com.sun.xml.fastinfoset.*'
         instructionFirst 'Import-Package', '!org.jvnet.*'
-        
+
         instructionFirst 'Import-Package', '!org.yaml.*'
         instructionFirst 'Import-Package', '!javax.persistence'
         instructionFirst 'Import-Package', '!javax.interceptor'
@@ -60,7 +42,7 @@ jar {
         instructionFirst 'Import-Package', '!org.eclipse.jetty.jmx'
         instructionFirst 'Import-Package', '!com.sun.net.httpserver'
         instructionFirst 'Import-Package', '!org.joda.convert'
-        
+
         //instructionFirst 'Import-Package', '!javax.mail.*'
         instructionFirst 'Import-Package', '!javax.sql.*'
         instructionFirst 'Import-Package', '!javax.jms.*'
@@ -87,24 +69,7 @@ jar {
         instructionFirst 'Import-Package', '!org.apache.coyote.*'
         instructionFirst 'Import-Package', '!afu.org.checkerframework.framework.type'
         instructionFirst 'Import-Package', '!afu.com.sun.source.tree'
-        
-        /*
-        instructionFirst 'Import-Package', 'javax.xml.stream'
-        instructionFirst 'Import-Package', 'org.w3c.dom'
-        instructionFirst 'Import-Package', 'javax.management'
-        instruction 'Import-Package', 'javax.annotation;version="[1.2,2)"'
-        instructionFirst 'Import-Package', 'javax.naming'
-        instructionFirst 'Import-Package', 'javax.net'
-        instructionFirst 'Import-Package', 'javax.activation'
-        instructionFirst 'Import-Package', 'org.xml.sax'
-        instructionFirst 'Import-Package', 'javax.xml.parsers'
-        instructionFirst 'Import-Package', 'javax.xml.transform'
-        instructionFirst 'Import-Package', 'javax.xml.transform.stream'
-        instructionFirst 'Import-Package', 'javax.xml.transform.sax'
-        instructionFirst 'Import-Package', 'javax.xml.transform.dom'
-        instructionFirst 'Import-Package', 'javax.xml.bind'
-        instructionFirst 'Import-Package', 'javax.xml.bind.annotation'
-*/
+
         instructionFirst 'Import-Package', '!org.checkerframework.framework.qual'
         instructionFirst 'Import-Package', '!afu.org.checkerframework.framework.qual'
         instructionFirst 'Import-Package', '!afu.org.checkerframework.checker.formatter.qual'
@@ -119,5 +84,26 @@ jar {
         instructionFirst 'Import-Package', '!org.checkerframework.checker.units.qual'
         instructionFirst 'Import-Package', '!com.sun.tools.attach'
         instructionFirst 'Import-Package', '!com.sun.management'
+
+         */
     }
 }
+
+
+/* old
+instructionFirst 'Import-Package', 'javax.xml.stream'
+instructionFirst 'Import-Package', 'org.w3c.dom'
+instructionFirst 'Import-Package', 'javax.management'
+instruction 'Import-Package', 'javax.annotation;version="[1.2,2)"'
+instructionFirst 'Import-Package', 'javax.naming'
+instructionFirst 'Import-Package', 'javax.net'
+instructionFirst 'Import-Package', 'javax.activation'
+instructionFirst 'Import-Package', 'org.xml.sax'
+instructionFirst 'Import-Package', 'javax.xml.parsers'
+instructionFirst 'Import-Package', 'javax.xml.transform'
+instructionFirst 'Import-Package', 'javax.xml.transform.stream'
+instructionFirst 'Import-Package', 'javax.xml.transform.sax'
+instructionFirst 'Import-Package', 'javax.xml.transform.dom'
+instructionFirst 'Import-Package', 'javax.xml.bind'
+instructionFirst 'Import-Package', 'javax.xml.bind.annotation'
+*/

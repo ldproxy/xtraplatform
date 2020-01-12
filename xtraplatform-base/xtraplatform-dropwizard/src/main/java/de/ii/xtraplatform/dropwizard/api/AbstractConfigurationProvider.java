@@ -5,6 +5,7 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.dropwizard.cfg.MergingSourceProvider;
 import de.ii.xtraplatform.dropwizard.cfg.XtraServerFrameworkCommand;
+import de.ii.xtraplatform.runtime.FelixRuntime;
 import io.dropwizard.Application;
 import io.dropwizard.cli.Cli;
 import io.dropwizard.setup.Bootstrap;
@@ -57,8 +58,8 @@ public abstract class AbstractConfigurationProvider<T extends XtraPlatformConfig
     }
 
     @Override
-    public Pair<T, Environment> startWithFile(Path configurationFile, Consumer<Bootstrap<T>> initializer) {
-        Bootstrap<T> bootstrap = getBootstrap(initializer);
+    public Pair<T, Environment> startWithFile(Path configurationFile, FelixRuntime.ENV env, Consumer<Bootstrap<T>> initializer) {
+        Bootstrap<T> bootstrap = getBootstrap(initializer, env);
 
         return run(configurationFile.toString(), bootstrap);
     }
@@ -81,7 +82,8 @@ public abstract class AbstractConfigurationProvider<T extends XtraPlatformConfig
         throw new IllegalStateException();
     }
 
-    private Bootstrap<T> getBootstrap(Consumer<Bootstrap<T>> initializer) {
+    private Bootstrap<T> getBootstrap(Consumer<Bootstrap<T>> initializer,
+                                      FelixRuntime.ENV env) {
         Application<T> application = new Application<T>() {
             @Override
             public void run(T configuration, Environment environment) throws Exception {
@@ -93,7 +95,7 @@ public abstract class AbstractConfigurationProvider<T extends XtraPlatformConfig
         Bootstrap<T> bootstrap = new Bootstrap<>(application);
         bootstrap.addCommand(new XtraServerFrameworkCommand<>(application));
 
-        bootstrap.setConfigurationSourceProvider(new MergingSourceProvider(bootstrap.getConfigurationSourceProvider(), getAdditionalBaseConfigs()));
+        bootstrap.setConfigurationSourceProvider(new MergingSourceProvider(bootstrap.getConfigurationSourceProvider(), getAdditionalBaseConfigs(), env));
 
         initializer.accept(bootstrap);
 
