@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.event.store;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.entity.api.EntityData;
 import org.apache.felix.ipojo.ComponentFactory;
 import org.apache.felix.ipojo.Factory;
@@ -28,11 +29,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Dictionary;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -50,7 +50,11 @@ import java.util.concurrent.ConcurrentHashMap;
         @Wbp(
                 filter = "(objectClass=de.ii.xtraplatform.event.store.EntityHydrator)",
                 onArrival = "onHydratorArrival",
-                onDeparture = "onHydratorDeparture")
+                onDeparture = "onHydratorDeparture"),
+        @Wbp(
+                filter = "(objectClass=de.ii.xtraplatform.event.store.EntityMigration)",
+                onArrival = "onMigrationArrival",
+                onDeparture = "onMigrationDeparture")
 })
 
 public class EntityFactoryDefault implements EntityFactory {
@@ -67,6 +71,7 @@ public class EntityFactoryDefault implements EntityFactory {
     private final Map<Class<?>, String> entityDataTypes;
     private final Map<String, Class<EntityDataBuilder<EntityData>>> entityDataBuilders;
     private final Map<String, EntityHydrator<EntityData>> entityHydrators;
+    private final Map<String, Map<Long, EntityMigration<EntityData, EntityData>>> entityMigrations;
 
     protected EntityFactoryDefault(@Requires DeclarationBuilderService declarationBuilderService) {
         this.declarationBuilderService = declarationBuilderService;
@@ -76,6 +81,7 @@ public class EntityFactoryDefault implements EntityFactory {
         this.entityDataTypes = new ConcurrentHashMap<>();
         this.entityDataBuilders = new ConcurrentHashMap<>();
         this.entityHydrators = new ConcurrentHashMap<>();
+        this.entityMigrations = new ConcurrentHashMap<>();
     }
 
     private synchronized void onFactoryArrival(ServiceReference<ComponentFactory> ref) {
@@ -183,6 +189,39 @@ public class EntityFactoryDefault implements EntityFactory {
         }
     }
 
+    private synchronized void onMigrationArrival(ServiceReference<EntityMigration<EntityData, EntityData>> ref) {
+        Optional<String> entityType = Optional.ofNullable((String) ref.getProperty("entityType"));
+
+        if (entityType.isPresent()) {
+            EntityMigration<EntityData, EntityData> entityMigration = context.getService(ref);
+            entityMigrations.putIfAbsent(entityType.get(), new ConcurrentHashMap<>());
+            this.entityMigrations.get(entityType.get())
+                                 .put(entityMigration.getSourceVersion(), entityMigration);
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Registered entity schema migration: {} v{} -> v{}", entityType.get(), entityMigration.getSourceVersion(), entityMigration.getTargetVersion());
+            }
+        }
+    }
+
+    private synchronized void onMigrationDeparture(ServiceReference<EntityMigration<EntityData, EntityData>> ref) {
+        try {
+            Optional<String> entityType = Optional.ofNullable((String) ref.getProperty("entityType"));
+
+            if (entityType.isPresent()) {
+                EntityMigration<EntityData, EntityData> entityMigration = context.getService(ref);
+                this.entityMigrations.get(entityType.get())
+                                     .remove(entityMigration.getSourceVersion());
+
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Deregistered entity schema migration: {} v{} -> v{}", entityType.get(), entityMigration.getSourceVersion(), entityMigration.getTargetVersion());
+                }
+            }
+        } catch (Throwable w) {
+            //ignore
+        }
+    }
+
     @Override
     public EntityDataBuilder<EntityData> getDataBuilder(String entityType) {
 
@@ -192,6 +231,56 @@ public class EntityFactoryDefault implements EntityFactory {
         } catch (Throwable e) {
             throw new IllegalStateException("no builder found for entity type " + entityType);
         }
+    }
+
+    @Override
+    public EntityDataBuilder<EntityData> getDataBuilder(String entityType, long entitySchemaVersion) {
+        try {
+            return entityMigrations.get(entityType)
+                                   .get(entitySchemaVersion)
+                                   .getDataBuilder();
+        } catch (Throwable e) {
+            throw new IllegalStateException("no builder found for entity type " + entityType);
+        }
+    }
+
+    @Override
+    public Map<Identifier, EntityData> migrateSchema(Identifier identifier,
+                                                     String entityType, EntityData entityData,
+                                                     OptionalLong targetVersion) {
+        long sourceVersion = entityData.getEntityStorageVersion();
+
+        if (targetVersion.isPresent() && sourceVersion == targetVersion.getAsLong()) {
+            return ImmutableMap.of(identifier, entityData);
+        }
+
+        if (!entityMigrations.containsKey(entityType)) {
+            throw new IllegalStateException(String.format("Cannot load entity '%s' with type '%s' and storageVersion '%d', no migrations found.", entityData.getId(), entityType, entityData.getEntityStorageVersion()));
+        }
+
+        Map<Long, EntityMigration<EntityData, EntityData>> migrations = entityMigrations.get(entityType);
+        EntityData data = entityData;
+        //final long maxSteps = targetVersion - sourceVersion;
+        //long currentSteps = 0;
+
+        /*sourceVersion < targetVersion && currentSteps < maxSteps*/
+        while (targetVersion.isPresent() ? sourceVersion < targetVersion.getAsLong() : migrations.containsKey(sourceVersion)) {
+            if (!migrations.containsKey(sourceVersion)) {
+                throw new IllegalStateException(String.format("No migration found for entity schema: %s v%d.", entityType, sourceVersion));
+            }
+
+            data = migrations.get(sourceVersion)
+                             .migrate(data);
+            sourceVersion = data.getEntityStorageVersion();
+            //currentSteps++;
+        }
+
+        Map<Identifier, EntityData> additionalEntities = migrations.get(entityData.getEntityStorageVersion())
+                                                                   .getAdditionalEntities(identifier, entityData);
+
+        return new ImmutableMap.Builder<Identifier, EntityData>().put(identifier, data)
+                                                                 .putAll(additionalEntities)
+                                                                 .build();
     }
 
     @Override

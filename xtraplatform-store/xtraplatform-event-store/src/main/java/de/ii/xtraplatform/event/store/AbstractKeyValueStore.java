@@ -17,15 +17,19 @@ public abstract class AbstractKeyValueStore<T> implements EventStoreSubscriber, 
 
     protected AbstractKeyValueStore(EventStore eventStore, String eventType) {
         this.eventType = eventType;
-        this.eventSourcing = new EventSourcing<>(eventStore, eventType, this::serialize, this::deserialize);
+        this.eventSourcing = new EventSourcing<>(eventStore, eventType, this::serialize, this::deserialize, this::getDefaultFormat);
         eventStore.subscribe(this);
     }
 
     protected abstract byte[] serialize(T value);
 
-    protected abstract T deserialize(Identifier identifier, byte[] payload);
+    protected abstract T deserialize(Identifier identifier, byte[] payload, String format);
 
-    protected void onStart() {}
+    protected abstract String getDefaultFormat();
+
+    protected CompletableFuture<Void> onStart() {
+        return CompletableFuture.completedFuture(null);
+    }
 
     protected void onCreate(Identifier identifier, T entityData) {}
 
@@ -52,8 +56,7 @@ public abstract class AbstractKeyValueStore<T> implements EventStoreSubscriber, 
                     LOGGER.debug("Replaying events for {}", getEventType());
                     break;
                 case LISTENING:
-                    LOGGER.debug("Listening for events for {}", getEventType());
-                    onStart();
+                    onStart().thenRun(() -> LOGGER.debug("Listening for events for {}", getEventType()));
                     break;
             }
         }
@@ -122,6 +125,11 @@ public abstract class AbstractKeyValueStore<T> implements EventStoreSubscriber, 
                                     onDelete(identifier);
                                 }
                             })
+                            .thenApply(Objects::isNull);
+    }
+
+    protected CompletableFuture<Boolean> dropWithoutTrigger(Identifier identifier) {
+        return eventSourcing.pushMutationEvent(identifier, null)
                             .thenApply(Objects::isNull);
     }
 }

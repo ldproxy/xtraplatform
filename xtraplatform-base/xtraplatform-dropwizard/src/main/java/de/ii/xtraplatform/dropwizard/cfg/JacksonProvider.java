@@ -9,6 +9,7 @@ package de.ii.xtraplatform.dropwizard.cfg;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -61,26 +62,25 @@ public class JacksonProvider implements Jackson {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JacksonProvider.class);
 
+    private final DynamicHandlerInstantiator dynamicHandlerInstantiator;
     private final ObjectMapper jsonMapper;
     private final BundleContext context;
     private final BiMap<Class<?>, String> mapping;
 
     public JacksonProvider(@Context BundleContext context) {
-        jsonMapper = new ObjectMapper();
-        //jsonMapper.disable(MapperFeature.USE_ANNOTATIONS);
-        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
-        jsonMapper.registerModules(new Jdk8Module(), new GuavaModule());
-        jsonMapper.setDefaultMergeable(false);
-
-        jsonMapper.setHandlerInstantiator(new DynamicHandlerInstantiator());
-
+        this.dynamicHandlerInstantiator = new DynamicHandlerInstantiator();
+        this.jsonMapper = configureMapper(new ObjectMapper());
         this.mapping = HashBiMap.create();
         this.context = context;
+    }
 
-        //LOGGER.debug("CREATED JACKSON {}", jsonMapper);
-
+    private ObjectMapper configureMapper(ObjectMapper mapper) {
+        return (ObjectMapper) mapper.enable(SerializationFeature.INDENT_OUTPUT)
+                                    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                    .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
+                                    .registerModules(new Jdk8Module(), new GuavaModule())
+                                    .setDefaultMergeable(false)
+                                    .setHandlerInstantiator(dynamicHandlerInstantiator);
     }
 
     public synchronized void onArrival(ServiceReference<JacksonSubTypeIds> ref) {
@@ -102,6 +102,11 @@ public class JacksonProvider implements Jackson {
     @Override
     public ObjectMapper getDefaultObjectMapper() {
         return jsonMapper;
+    }
+
+    @Override
+    public ObjectMapper getNewObjectMapper(JsonFactory jsonFactory) {
+        return configureMapper(new ObjectMapper(jsonFactory));
     }
 
 

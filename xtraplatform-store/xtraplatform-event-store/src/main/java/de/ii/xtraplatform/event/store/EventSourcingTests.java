@@ -1,9 +1,15 @@
 package de.ii.xtraplatform.event.store;
 
+import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonStreamContext;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.Module;
@@ -11,19 +17,24 @@ import com.fasterxml.jackson.databind.PropertyName;
 import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.deser.BeanDeserializer;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
+import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
 import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
 import com.fasterxml.jackson.databind.deser.impl.BeanPropertyMap;
 import com.fasterxml.jackson.databind.deser.impl.UnwrappedPropertyHandler;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMethod;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.fasterxml.jackson.databind.introspect.NopAnnotationIntrospector;
+import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.util.NameTransformer;
+import com.fasterxml.jackson.databind.util.TokenBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -186,6 +197,94 @@ public class EventSourcingTests {
             //TODO: annotations not retained
             //&& Objects.nonNull(clazz.getAnnotation(Generated.class))
             //&& clazz.getAnnotation(Generated.class).generator().equals("Immutables");
+        }
+    };
+
+    public static final Module DESERIALIZE_API_BUILDINGBLOCK_MIGRATION = new Module() {
+
+        @Override
+        public String getModuleName() {
+            return "DESERIALIZE_API_BUILDINGBLOCK_MIGRATION";
+        }
+
+        @Override
+        public Version version() {
+            return Version.unknownVersion();
+        }
+
+        @Override
+        public void setupModule(SetupContext context) {
+            context.addDeserializationProblemHandler(new DeserializationProblemHandler() {
+                @Override
+                public JavaType handleMissingTypeId(DeserializationContext ctxt, JavaType baseType,
+                                                    TypeIdResolver idResolver, String failureMsg) throws IOException {
+                    if(!failureMsg.contains("'buildingBlock'")) {
+                        return super.handleMissingTypeId(ctxt, baseType, idResolver, failureMsg);
+                    }
+
+                    JsonParser p = ctxt.getParser();
+
+                    JsonLocation currentLocation = p.getCurrentLocation();
+                    byte[] sourceRef = (byte[]) currentLocation
+                                                 .getSourceRef();
+                    long line = currentLocation
+                                       .getLineNr();
+                    long column = currentLocation.getColumnNr();
+
+                    JsonParser parser2 = p.getCodec()
+                                         .getFactory()
+                                         .createParser(sourceRef);
+                    parser2.nextToken();
+                    parser2.nextToken();
+                    parser2.nextToken();
+
+
+                    // but first, sanity check to ensure we have START_OBJECT or FIELD_NAME
+                    JsonToken currentToken = parser2.nextToken();
+                    if (currentToken == JsonToken.START_OBJECT) {
+                        currentToken = parser2.nextToken();
+                    } else if (/*t == JsonToken.START_ARRAY ||*/ currentToken != JsonToken.FIELD_NAME) {
+                        /* This is most likely due to the fact that not all Java types are
+                         * serialized as JSON Objects; so if "as-property" inclusion is requested,
+                         * serialization of things like Lists must be instead handled as if
+                         * "as-wrapper-array" was requested.
+                         * But this can also be due to some custom handling: so, if "defaultImpl"
+                         * is defined, it will be asked to handle this case.
+                         */
+                        return super.handleMissingTypeId(ctxt, baseType, idResolver, failureMsg);
+                    }
+                    // Ok, let's try to find the property. But first, need token buffer...
+
+                    long currentLine = parser2.getCurrentLocation()
+                            .getLineNr();
+                    long currentColumn = parser2.getCurrentLocation().getColumnNr();
+
+                    String lastExtensionType = null;
+
+                    while (currentLine < line || currentColumn < column) {
+
+                        for (; currentToken != JsonToken.END_OBJECT; currentToken = parser2.nextToken()) {
+                            if (currentToken == JsonToken.FIELD_NAME && parser2.getCurrentName()
+                                                                    .equals("extensionType")) {
+                                currentToken = parser2.nextToken();
+                                lastExtensionType = parser2.getValueAsString();
+                            }
+                        }
+
+                        currentLine = parser2.getCurrentLocation()
+                                                  .getLineNr();
+                        currentColumn = parser2.getCurrentLocation()
+                                                  .getColumnNr();
+                        currentToken = parser2.nextToken();
+                    }
+
+                    if (currentLine == line && currentColumn == column && Objects.nonNull(lastExtensionType)) {
+                        return idResolver.typeFromId(ctxt, lastExtensionType);
+                    }
+
+                    return super.handleMissingTypeId(ctxt, baseType, idResolver, failureMsg);
+                }
+            });
         }
     };
 

@@ -21,7 +21,10 @@ public interface ServiceData extends EntityData {
 
     String getServiceType();
 
-    String getLabel();
+    @Value.Default
+    default String getLabel() {
+        return getId();
+    }
 
     Optional<String> getDescription();
 

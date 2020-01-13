@@ -30,5 +30,6 @@ logging:
       archive: true
       archivedLogFilenamePattern: "./data/log/xtraplatform-%d.log.gz"
       archivedFileCount: 7
+      logFormat: "%-5p [%d{ISO8601,UTC}] %-48.48c{40}: %m%n%rEx"
   loggers:
     de.ii: INFO

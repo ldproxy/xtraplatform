@@ -19,4 +19,7 @@ public interface MutationEvent extends Event {
 
     @Nullable
     Boolean deleted();
+
+    @Nullable
+    String format();
 }

@@ -13,10 +13,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static de.ii.xtraplatform.api.functional.LambdaWithException.consumerMayThrow;
 
 public class FileSystemEvents {
 
@@ -27,6 +30,7 @@ public class FileSystemEvents {
     private static final String TYPE_GROUP = "type";
     private static final String PATH_GROUP = "path";
     private static final String ID_GROUP = "id";
+    private static final String FORMAT_GROUP = "format";
 
     // {store}/{type}/{id} -> (?<store>[\w-]+)\/(?<type>[\w-]+)\/(?<id>[\w-]+)
 
@@ -67,10 +71,10 @@ public class FileSystemEvents {
 
         //TODO: check mainPath first, if exists use override
         //TODO: if override exists, merge with incoming
-        Path eventPath = getEventFilePath(event.type(), event.identifier(), mainPathPatternWrite);
-        if (Files.exists(eventPath)) {
-            eventPath = getEventFilePath(event.type(), event.identifier(), savePathPattern);
-        }
+        Path eventPath = getEventFilePath(event.type(), event.identifier(), event.format(), mainPathPatternWrite);
+        /*if (Files.exists(eventPath)) {
+            eventPath = getEventFilePath(event.type(), event.identifier(), event.format(), savePathPattern);
+        }*/
         Files.createDirectories(eventPath.getParent());
         Files.write(eventPath, event.payload());
 
@@ -79,23 +83,61 @@ public class FileSystemEvents {
         }
     }
 
-    public void deleteAllEvents(String type, Identifier identifier) throws IOException {
+    //TODO: only delete overrides if migration
+    public void deleteAllEvents(String type, Identifier identifier, String format) throws IOException {
         for (String pattern : overridePathPatternsWrite) {
-            Path eventPath = getEventFilePath(type, identifier, pattern);
-            boolean deleted = Files.deleteIfExists(eventPath);
-            if (LOGGER.isDebugEnabled() && deleted) {
-                LOGGER.debug("Deleted event file {}", eventPath);
-            }
+            Path eventPath = getEventFilePath(type, identifier, null, pattern);
+
+            deleteEvent(eventPath);
         }
-        Path eventPath = getEventFilePath(type, identifier, mainPathPatternWrite);
-        boolean deleted = Files.deleteIfExists(eventPath);
+        Path eventPath = getEventFilePath(type, identifier, null, mainPathPatternWrite);
+
+        deleteEvent(eventPath);
+
+        /*boolean deleted = Files.deleteIfExists(eventPath);
         if (LOGGER.isDebugEnabled() && deleted) {
             LOGGER.debug("Deleted event file {}", eventPath);
-        }
+        }*/
     }
 
-    private Path getEventFilePath(String type, Identifier identifier, String pathPattern) {
-        return rootPath.resolve(Paths.get(String.format(pathPattern, type, Joiner.on('/').join(identifier.path()), identifier.id())));
+    private void deleteEvent(Path eventPath) throws IOException {
+        Files.list(eventPath.getParent()).forEach(consumerMayThrow(file -> {
+            if (Files.isRegularFile(file) && (Objects.equals(eventPath, file) || file.getFileName().toString().startsWith(eventPath.getFileName().toString() + "."))) {
+                String fileName = file.getFileName()
+                                      .toString();
+                String name = file.toFile()
+                                  .getName();
+                Path backup;
+                if (file.getParent().endsWith("#overrides#")) {
+                    backup = file.getParent()
+                                 .getParent()
+                                 .resolve(".backup/#overrides#");
+                } else {
+                    backup = file.getParent()
+                                 .resolve(".backup");
+                }
+                Files.createDirectories(backup);
+                Files.copy(file, backup.resolve(fileName));
+                Files.delete(file);
+                if (LOGGER.isDebugEnabled() ) {
+                    LOGGER.debug("Deleted event file {}", eventPath);
+                }
+
+                if (file.getParent().endsWith("#overrides#")) {
+                    try {
+                        Files.delete(file.getParent());
+                    } catch (Throwable e) {
+                        //ignore
+                    }
+                }
+
+                boolean stop = true;
+            }
+        }));
+    }
+
+    private Path getEventFilePath(String type, Identifier identifier, String format, String pathPattern) {
+        return rootPath.resolve(Paths.get(String.format(pathPattern, type, Joiner.on('/').join(identifier.path()), identifier.id()) + (Objects.nonNull(format) ? "." + format.toLowerCase() : "")));
     }
 
     private Stream<MutationEvent> loadEventStream(Pattern pathPattern) {
@@ -126,6 +168,12 @@ public class FileSystemEvents {
             String eventType = pathMatcher.group(TYPE_GROUP);
             String eventPath = pathMatcher.group(PATH_GROUP);
             String eventId = pathMatcher.group(ID_GROUP);
+            Optional<String> eventPayloadFormat;
+            try {
+                eventPayloadFormat = Optional.ofNullable(pathMatcher.group(FORMAT_GROUP));
+            } catch (Throwable e) {
+                eventPayloadFormat = Optional.empty();
+            }
 
             if (Objects.nonNull(eventType) && Objects.nonNull(eventPath) && Objects.nonNull(eventId)) {
 
@@ -147,6 +195,7 @@ public class FileSystemEvents {
                                                                             .path(PATH_SPLITTER.split(eventPath))
                                                                             .build())
                                              .payload(bytes)
+                                             .format(eventPayloadFormat.orElse(null))
                                              .build();
             }
         }
@@ -171,6 +220,12 @@ public class FileSystemEvents {
                 pattern.append("(?<");
                 pattern.append(matcher.group("name"));
                 pattern.append(">[\\w-]+)");
+                if (Objects.equals(matcher.group("name"), "id")) {
+                    names.add(FORMAT_GROUP);
+                    pattern.append("(?:\\.(?<");
+                    pattern.append(FORMAT_GROUP);
+                    pattern.append(">[\\w]+))?");
+                }
             } else {
                 if (!Objects.equals(matcher.group("glob"), "**")) {
                     throw new IllegalArgumentException("unknown store path expression: " + matcher.group("glob"));
@@ -180,10 +235,14 @@ public class FileSystemEvents {
                 pattern.append(matcher.group("separator").replaceAll("/", "\\\\/"));
                 pattern.append("(?<");
                 pattern.append(matcher.group("name"));
-                pattern.append(">[\\w-\\/]+)");
+                //TODO: no dot at dir start
+                //pattern.append(">(?:[\\w-_][\\w-_\\.]+\\/?)+)");
+                pattern.append(">(?:[\\w-_](?:[\\w-_]|\\.|\\/(?!\\.))+[\\w-_]))");
                 pattern.append(")?");
             }
         }
+        pattern.insert(0, "^");
+        pattern.append("$");
 
         if (!(names.contains("type") && names.contains("path") && names.contains("id"))) {
             throw new IllegalArgumentException("store path expression must contain type, path and id");

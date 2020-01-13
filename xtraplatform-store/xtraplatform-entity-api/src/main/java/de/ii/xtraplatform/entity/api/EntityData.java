@@ -31,13 +31,13 @@ public interface EntityData {
     }
 
     @Value.Default
-    default long getEntityDataVersion() {
-        return getCurrentEntityDataVersion();
+    default long getEntityStorageVersion() {
+        return 1;
     }
 
     @JsonIgnore
-    @Value.Default
-    default long getCurrentEntityDataVersion() {
+    @Value.Derived
+    default long getEntitySchemaVersion() {
         return 1;
     }
 }

@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.dropwizard.api;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -15,4 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public interface Jackson {
     public ObjectMapper getDefaultObjectMapper();
+
+    ObjectMapper getNewObjectMapper(JsonFactory jsonFactory);
 }

@@ -41,4 +41,9 @@ public class ReadOnlyEventStore extends AbstractFileSystemEventStore {
     public void push(MutationEvent event) {
         throw new UnsupportedOperationException("Operating in read-only mode, writes are not allowed.");
     }
+
+    @Override
+    public boolean isReadOnly() {
+        return true;
+    }
 }

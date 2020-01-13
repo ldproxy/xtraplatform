@@ -47,7 +47,7 @@ public class ReadWriteEventStore extends AbstractFileSystemEventStore {
         //store
         try {
             if (Objects.equals(event.deleted(), true)) {
-                eventReaderWriter.deleteAllEvents(event.type(), event.identifier());
+                eventReaderWriter.deleteAllEvents(event.type(), event.identifier(), event.format());
             } else {
                 eventReaderWriter.saveEvent(event);
             }
@@ -57,5 +57,10 @@ public class ReadWriteEventStore extends AbstractFileSystemEventStore {
 
         //emit
         emit(event);
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return false;
     }
 }

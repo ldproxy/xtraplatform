@@ -26,7 +26,5 @@ public interface Service extends PersistentEntity {
     }
 
     @Override
-    default ServiceData getData() {
-        return getData();
-    }
+    ServiceData getData();
 }

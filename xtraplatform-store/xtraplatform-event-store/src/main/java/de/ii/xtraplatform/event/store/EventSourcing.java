@@ -11,9 +11,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class EventSourcing<T> {
+
+    interface Deserializer<T> {
+        T deserialize(Identifier identifier, byte[] payload, String format);
+    }
+
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventSourcing.class);
 
@@ -22,16 +28,18 @@ public class EventSourcing<T> {
     private final EventStore eventStore;
     private final String eventType;
     private final Function<T, byte[]> serializer;
-    private final BiFunction<Identifier, byte[], T> deserializer;
+    private final Deserializer<T> deserializer;
+    private final String defaultFormat;
 
     public EventSourcing(EventStore eventStore, String eventType, Function<T, byte[]> serializer,
-                         BiFunction<Identifier, byte[], T> deserializer) {
+                         Deserializer<T> deserializer, Supplier<String> defaultFormat) {
         this.eventStore = eventStore;
         this.eventType = eventType;
         this.cache = new ConcurrentHashMap<>();
         this.queue = new ConcurrentHashMap<>();
         this.serializer = serializer;
         this.deserializer = deserializer;
+        this.defaultFormat = defaultFormat.get();
     }
 
     public boolean isInCache(Identifier identifier) {
@@ -69,6 +77,7 @@ public class EventSourcing<T> {
                                                                       .identifier(identifier)
                                                                       .payload(payload)
                                                                       .deleted(isDelete ? true : null)
+                                                                      .format(defaultFormat)
                                                                       .build();
 
             queue.put(identifier, completableFuture);
@@ -90,7 +99,7 @@ public class EventSourcing<T> {
             LOGGER.trace("Adding event: {} {}", event.type(), event.identifier());
         }
 
-        T value = deserializer.apply(event.identifier(), event.payload());
+        T value = deserializer.deserialize(event.identifier(), event.payload(), event.format());
 
         if (Objects.isNull(value)) {
             cache.remove(event.identifier());
@@ -104,8 +113,8 @@ public class EventSourcing<T> {
         }
 
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("GOT {}", value);
-            LOGGER.trace("CACHE {}", cache);
+            LOGGER.trace("Added value: {}", value);
+            //LOGGER.trace("CACHE {}", cache);
         }
     }
 
