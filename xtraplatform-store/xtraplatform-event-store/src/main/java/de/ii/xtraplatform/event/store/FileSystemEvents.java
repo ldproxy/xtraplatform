@@ -101,6 +101,10 @@ public class FileSystemEvents {
     }
 
     private void deleteEvent(Path eventPath) throws IOException {
+        if (!Files.isDirectory(eventPath.getParent())) {
+            return;
+        }
+
         Files.list(eventPath.getParent()).forEach(consumerMayThrow(file -> {
             if (Files.isRegularFile(file) && (Objects.equals(eventPath, file) || file.getFileName().toString().startsWith(eventPath.getFileName().toString() + "."))) {
                 String fileName = file.getFileName()
