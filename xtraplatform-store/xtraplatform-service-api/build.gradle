@@ -1,6 +1,4 @@
 
-version = '2.0.5'
-
 dependencies {
     provided project(':xtraplatform-entity-api')
     provided project(':xtraplatform-scheduler-api')

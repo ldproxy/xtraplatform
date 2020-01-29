@@ -6,11 +6,14 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
+import org.slf4j.LoggerFactory
 
 /**
  * @author zahnen
  */
 class FeaturePlugin implements Plugin<Project> {
+
+    static def LOGGER = LoggerFactory.getLogger(FeaturePlugin.class)
 
     @Override
     void apply(Project project) {
@@ -68,6 +71,14 @@ class FeaturePlugin implements Plugin<Project> {
                 }
             }
 
+
+            subproject.afterEvaluate {
+                if (subproject.version != null && subproject.version  != 'unspecified') {
+                    LOGGER.warn("Warning: Bundle version '{}' is set for '{}'. Bundle versions are ignored, the feature version '{}' from '{}' is used instead.", subproject.version, subproject.name, project.version, project.name)
+                }
+                subproject.version = project.version
+            }
+
             def isIncludedBuild = (project.gradle.parent != null)
 
             //println subproject.name
@@ -81,8 +92,8 @@ class FeaturePlugin implements Plugin<Project> {
                         if (isIncludedBuild) {
 
                         } else {
-                            println 'platform: ' + bom
-                            subproject.configurations.provided.incoming.afterResolve {
+                            //println 'platform: ' + bom
+                            /*subproject.configurations.provided.incoming.afterResolve {
                                 println "resolved provided for ${subproject.name}"
 
                                 subproject.configurations.provided.incoming.dependencies.each({
@@ -90,10 +101,10 @@ class FeaturePlugin implements Plugin<Project> {
                                     println it.attributes
                                     it.artifacts.each {a -> println "${a.name} ${a.type} ${a.extension} ${a.url} "}
                                 })
-                            }
+                            }*/
                             subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
 
-                            println "added platform for ${subproject.name}"
+                            //println "added platform for ${subproject.name}"
 
                             project.dependencies.add('feature', bundles)
                         }
@@ -102,6 +113,7 @@ class FeaturePlugin implements Plugin<Project> {
             }
 
             project.afterEvaluate {
+
                 // add all bundles from xtraplatform-base with all transitive dependencies to compileOnly
                 project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.each({
                     if (it.moduleName == 'xtraplatform-base' || it.moduleName == 'xtraplatform-base-bundles') {
