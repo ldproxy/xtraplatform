@@ -1,6 +1,4 @@
 
-version = '2.0.4'
-
 dependencies {
     provided project(':xtraplatform-openapi')
     provided project(':xtraplatform-server')

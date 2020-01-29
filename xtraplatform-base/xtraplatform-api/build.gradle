@@ -1,22 +1,6 @@
-version = '2.0.2'
 
 dependencies {
     implementation project(':xtraplatform-dropwizard')
     implementation project(':xtraplatform-runtime')
     
-	// used for DeepUpdate, to core or config-store
-	// and decide to embed or use as bundle 
-    //embedded group: 'commons-beanutils', name: 'commons-beanutils', version: '1.8.3'
 }
-/*
-jar {
-    manifest { 
-        instruction 'Embed-Dependency',
-            'commons-beanutils'
-        
-        instruction 'Embed-Transitive', 'true'
-        instruction 'Embed-Export', 'false'
-        instruction 'Embed-Import', 'false'        
-    }
-}
-*/

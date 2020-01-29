@@ -1,6 +1,4 @@
 
-version = '2.0.0'
-
 dependencies {	
 	provided group: 'org.apache.felix', name: 'org.apache.felix.webconsole', version: '4.3.4'
     
