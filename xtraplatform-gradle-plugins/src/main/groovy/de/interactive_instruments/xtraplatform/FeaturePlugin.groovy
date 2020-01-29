@@ -75,8 +75,8 @@ class FeaturePlugin implements Plugin<Project> {
             subproject.afterEvaluate {
                 if (subproject.version != null && subproject.version  != 'unspecified') {
                     LOGGER.warn("Warning: Bundle version '{}' is set for '{}'. Bundle versions are ignored, the feature version '{}' from '{}' is used instead.", subproject.version, subproject.name, project.version, project.name)
-                    subproject.version = project.version
                 }
+                subproject.version = project.version
             }
 
             def isIncludedBuild = (project.gradle.parent != null)
