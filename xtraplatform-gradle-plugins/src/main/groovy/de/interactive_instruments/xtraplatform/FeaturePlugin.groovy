@@ -92,8 +92,8 @@ class FeaturePlugin implements Plugin<Project> {
                         if (isIncludedBuild) {
 
                         } else {
-                            println 'platform: ' + bom
-                            subproject.configurations.provided.incoming.afterResolve {
+                            //println 'platform: ' + bom
+                            /*subproject.configurations.provided.incoming.afterResolve {
                                 println "resolved provided for ${subproject.name}"
 
                                 subproject.configurations.provided.incoming.dependencies.each({
@@ -101,10 +101,10 @@ class FeaturePlugin implements Plugin<Project> {
                                     println it.attributes
                                     it.artifacts.each {a -> println "${a.name} ${a.type} ${a.extension} ${a.url} "}
                                 })
-                            }
+                            }*/
                             subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
 
-                            println "added platform for ${subproject.name}"
+                            //println "added platform for ${subproject.name}"
 
                             project.dependencies.add('feature', bundles)
                         }
