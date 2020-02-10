@@ -11,11 +11,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.immutables.value.Value;
 
 import java.time.Instant;
+import java.util.Optional;
 
 /**
  * @author zahnen
  */
 public interface EntityData {
+
     String getId();
 
     @Value.Default
@@ -40,4 +42,8 @@ public interface EntityData {
     default long getEntitySchemaVersion() {
         return 1;
     }
+
+    @JsonIgnore
+    Optional<String> getEntitySubType();
+
 }

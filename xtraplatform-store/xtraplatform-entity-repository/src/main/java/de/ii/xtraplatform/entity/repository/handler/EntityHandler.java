@@ -73,6 +73,7 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         String entityType = bundleConfigElements[0].getAttribute("entityType");
 
         Optional<String> type = Optional.ofNullable(Strings.emptyToNull(bundleConfigElements[0].getAttribute("type")));
+        Optional<String> subType = Optional.ofNullable(Strings.emptyToNull(bundleConfigElements[0].getAttribute("subType")));
 
         // add @ServiceController for field register in class AbstractPersistentEntity
         Element[] providedServices = metadata.getElements("Provides");
@@ -104,6 +105,9 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         typeDesc.addProperty(new PropertyDescription("data", dataType, null));
         typeDesc.addProperty(new PropertyDescription("type", String.class.getName(), type.orElse(entityType.substring(entityType.lastIndexOf(".") + 1)
                                                                                                .toLowerCase() + "s"), true));
+        if (subType.isPresent()) {
+            typeDesc.addProperty(new PropertyDescription("subType", String.class.getName(), subType.get(), true));
+        }
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("ENTITY {}", metadata);

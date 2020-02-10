@@ -66,7 +66,7 @@ public class EntityFactoryDefault implements EntityFactory {
 
     private final DeclarationBuilderService declarationBuilderService;
     private final Map<String, DeclarationHandle> instanceHandles;
-    private final Map<String, Factory> componentFactories;
+    //private final Map<String, Factory> componentFactories;
     private final Map<String, String> entityClasses;
     private final Map<Class<?>, String> entityDataTypes;
     private final Map<String, Class<EntityDataBuilder<EntityData>>> entityDataBuilders;
@@ -76,7 +76,7 @@ public class EntityFactoryDefault implements EntityFactory {
     protected EntityFactoryDefault(@Requires DeclarationBuilderService declarationBuilderService) {
         this.declarationBuilderService = declarationBuilderService;
         this.instanceHandles = new ConcurrentHashMap<>();
-        this.componentFactories = new ConcurrentHashMap<>();
+        //this.componentFactories = new ConcurrentHashMap<>();
         this.entityClasses = new ConcurrentHashMap<>();
         this.entityDataTypes = new ConcurrentHashMap<>();
         this.entityDataBuilders = new ConcurrentHashMap<>();
@@ -91,6 +91,11 @@ public class EntityFactoryDefault implements EntityFactory {
                                                             .equals("type"))
                                             .map(PropertyDescription::getValue)
                                             .findFirst();
+        Optional<String> entitySubType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
+                                            .filter(pd -> pd.getName()
+                                                            .equals("subType"))
+                                            .map(PropertyDescription::getValue)
+                                            .findFirst();
         Optional<String> entityDataType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
                                                 .filter(pd -> pd.getName()
                                                                 .equals("data"))
@@ -103,8 +108,10 @@ public class EntityFactoryDefault implements EntityFactory {
                                                       .findFirst();
 
         if (entityClassName.isPresent() && entityDataType.isPresent() && entityType.isPresent()) {
+            String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
+
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("ENTITY FACTORY {} {} {}", entityDataType.get(), entityClassName.get(), entityType.get());
+                LOGGER.debug("ENTITY FACTORY {} {} {}", entityDataType.get(), entityClassName.get(), specificEntityType);
             }
             ComponentFactory factory = context.getService(ref);
             try {
@@ -132,13 +139,14 @@ public class EntityFactoryDefault implements EntityFactory {
 
             }
 
-            this.componentFactories.put(entityType.get(), factory);
-            this.entityClasses.put(entityType.get(), entityClassName.get());
+            //this.componentFactories.put(type, factory);
+            this.entityClasses.put(specificEntityType, entityClassName.get());
         }
 
 
     }
 
+    //TODO
     private synchronized void onFactoryDeparture(ServiceReference<Factory> ref) {
         Optional<String> entityType = Optional.ofNullable((String) ref.getProperty("component.class"));
         Optional<String> entityDataType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
@@ -151,7 +159,7 @@ public class EntityFactoryDefault implements EntityFactory {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("REMOVE ENTITY FACTORY {} {}", entityDataType.get(), entityType.get());
             }
-            this.componentFactories.remove(entityDataType.get());
+            //this.componentFactories.remove(entityDataType.get());
             this.entityClasses.remove(entityDataType.get());
 
         }
@@ -159,13 +167,15 @@ public class EntityFactoryDefault implements EntityFactory {
 
     private synchronized void onHydratorArrival(ServiceReference<EntityHydrator<EntityData>> ref) {
         Optional<String> entityType = Optional.ofNullable((String) ref.getProperty("entityType"));
+        Optional<String> entitySubType = Optional.ofNullable((String) ref.getProperty("entitySubType"));
 
         if (entityType.isPresent()) {
+            String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
             EntityHydrator<EntityData> entityHydrator = context.getService(ref);
-            this.entityHydrators.put(entityType.get(), entityHydrator);
+            this.entityHydrators.put(specificEntityType, entityHydrator);
 
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("ENTITY HYDRATOR {} {}", entityType.get(), entityHydrator);
+                LOGGER.debug("ENTITY HYDRATOR {} {}", specificEntityType, entityHydrator);
             }
         }
     }
@@ -294,14 +304,28 @@ public class EntityFactoryDefault implements EntityFactory {
         LOGGER.debug("CREATING ENTITY {} {} {}", entityType, id/*, entityData*/);
 
         String instanceId = entityType + "/" + id;
-        String instanceClassName = entityClasses.get(entityType);
+        String specificEntityType = getSpecificEntityType(entityType, entityData.getEntitySubType());
+        String instanceClassName = entityClasses.get(specificEntityType);
 
         ConfigurationBuilder instanceBuilder = declarationBuilderService.newInstance(instanceClassName)
                                                                         .name(instanceId)
                                                                         .configure()
                                                                         .property("data", entityData);
 
-        if (entityHydrators.containsKey(entityType)) {
+        if (entityHydrators.containsKey(specificEntityType)) {
+            try {
+                entityHydrators.get(specificEntityType)
+                               .getInstanceConfiguration(entityData)
+                               .forEach(instanceBuilder::property);
+            } catch (Throwable e) {
+                LOGGER.error("Entity of type '{}' with id '{}' could not be hydrated: {}", specificEntityType, id, e.getMessage());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Cause:", e);
+                }
+                throw e;
+            }
+
+        } else if (entityHydrators.containsKey(entityType)) {
             try {
                 entityHydrators.get(entityType)
                                .getInstanceConfiguration(entityData)
@@ -364,5 +388,9 @@ public class EntityFactoryDefault implements EntityFactory {
                            .retract();
             instanceHandles.remove(instanceId);
         }
+    }
+
+    private String getSpecificEntityType(String entityType, Optional<String> entitySubType) {
+        return entitySubType.isPresent() ? String.format("%s/%s", entityType, entitySubType.get().toLowerCase()) : entityType;
     }
 }
