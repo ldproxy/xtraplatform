@@ -66,7 +66,7 @@ public class HttpHostClientAkka implements HttpClient {
     //TODO
     @Override
     public Source<ByteString, NotUsed> get(String url) {
-        return null;
+        return requestSource(createHttpGet(url));
     }
 
     @Override
@@ -140,6 +140,41 @@ public class HttpHostClientAkka implements HttpClient {
         return result;
     }
 
+    private Source<ByteString, NotUsed> requestSource(HttpRequest httpRequest) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("HTTP {} request: {}", httpRequest.method().name(), httpRequest.getUri());
+        }
+
+        CompletableFuture<Source<ByteString, NotUsed>> result = new CompletableFuture<>();
+        CompletionStage<QueueOfferResult> offer = requestQueue.offer(Pair.create(httpRequest, Pair.create(null, result)));
+
+        offer.whenComplete((queueOfferResult, throwable) -> {
+            if (!Objects.equals(queueOfferResult, QueueOfferResult.enqueued())) {
+                if (Objects.equals(queueOfferResult, QueueOfferResult.dropped())) {
+                    LOGGER.warn("Request dropped because queue for target host already has {} requests: {}", MAX_QUEUED_REQUESTS, httpRequest);
+                } else {
+                    LOGGER.error("Request queueing failed");
+                }
+
+                Throwable throwable1;
+                if (queueOfferResult instanceof QueueOfferResult.Failure) {
+                    throwable1 = ((QueueOfferResult.Failure) queueOfferResult).cause();
+                } else if (Objects.nonNull(throwable)) {
+                    throwable1 = throwable;
+                } else {
+                    throwable1 = new IllegalStateException();
+                }
+                result.completeExceptionally(throwable1);
+
+                //if (LOGGER.isDebugEnabled()) {
+                LOGGER.error("Queuing exception", throwable1);
+                //}
+            }
+        });
+
+        return result.join();
+    }
+
     private static SourceQueueWithComplete<Pair<HttpRequest, Object>> createRequestQueueForHostPool(
             ActorMaterializer materializer,
             Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool> connectionPool) {
@@ -191,6 +226,20 @@ public class HttpHostClientAkka implements HttpClient {
             result.completeExceptionally(httpResponse.failed()
                                                      .getOrElse(() -> new IllegalStateException("Unknown HTTP client error")));
             //TODO: do something with sink???
+            return;
+        }
+
+        //return source
+        if (Objects.isNull(sink)) {
+            Source<ByteString, NotUsed> byteStringNotUsedSource = Source.single(httpResponse.get())
+                                                                        .map(HttpHostClientAkka::decodeResponse)
+                                                                        .flatMapConcat(httpResponseDecoded -> {
+                                                                            LOGGER.debug("HTTP RESPONSE {}", httpResponseDecoded.status());
+                                                                            return httpResponseDecoded.entity()
+                                                                                                      .withoutSizeLimit()
+                                                                                                      .getDataBytes();
+                                                                        });
+            result.complete((T) byteStringNotUsedSource);
             return;
         }
 

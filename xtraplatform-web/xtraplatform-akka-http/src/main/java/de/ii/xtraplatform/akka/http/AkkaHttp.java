@@ -20,7 +20,10 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.settings.ClientConnectionSettings;
 import akka.http.javadsl.settings.ConnectionPoolSettings;
 import akka.japi.Pair;
+import akka.japi.function.Function;
 import akka.stream.ActorMaterializer;
+import akka.stream.ActorMaterializerSettings;
+import akka.stream.Supervision;
 import akka.stream.javadsl.Flow;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -106,7 +109,10 @@ public class AkkaHttp implements de.ii.xtraplatform.akka.http.Http {
                                                                .getHttpClient());
 
         this.actorSystem = actorSystemProvider.getActorSystem(bundleContext, akkaHttpConfig);
-        this.materializer = ActorMaterializer.create(actorSystem);
+        this.materializer = ActorMaterializer.create(ActorMaterializerSettings.create(actorSystem).withSupervisionStrategy((Function<Throwable, Supervision.Directive>)  throwable -> {
+            LOGGER.debug("Akka exception:", throwable);
+            return Supervision.resume();
+        }), actorSystem);
         this.http = Http.get(actorSystem);
 
         Optional<ProxyConfiguration> proxyConfiguration = Optional.ofNullable(configurationProvider.getConfiguration()
