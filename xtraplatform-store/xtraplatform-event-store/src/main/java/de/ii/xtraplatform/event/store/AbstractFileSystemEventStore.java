@@ -19,7 +19,6 @@ import java.util.List;
 abstract class AbstractFileSystemEventStore extends AbstractEventStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFileSystemEventStore.class);
-    static final String STORE_DIR = "store";
     static final String STORE_DIR_LEGACY = "config-store";
 
     private final Path storeDirectory;
@@ -29,13 +28,28 @@ abstract class AbstractFileSystemEventStore extends AbstractEventStore {
     AbstractFileSystemEventStore(BundleContext bundleContext, XtraPlatform xtraPlatform,
                                  ActorSystemProvider actorSystemProvider, boolean isEnabled) {
         super(isEnabled ? ActorMaterializer.create(actorSystemProvider.getActorSystem(bundleContext)) : null);
-        this.storeDirectory = Paths.get(bundleContext.getProperty(FelixRuntime.DATA_DIR_KEY), STORE_DIR);
+        this.storeDirectory = getStoreDirectory(bundleContext.getProperty(FelixRuntime.DATA_DIR_KEY), xtraPlatform.getConfiguration().store);
         this.eventReaderWriter = isEnabled ? new FileSystemEvents(storeDirectory, xtraPlatform.getConfiguration().store.instancePathPattern, xtraPlatform.getConfiguration().store.overridesPathPatterns) : null;
+    }
+
+    private Path getStoreDirectory(String dataDir, StoreConfiguration storeConfiguration) {
+        String storeLocation = storeConfiguration.location;
+        if (Paths.get(storeLocation).isAbsolute()) {
+            if (storeConfiguration.mode == StoreConfiguration.StoreMode.READ_WRITE && !storeLocation.startsWith(dataDir)) {
+                //not allowed?
+                throw new IllegalStateException(String.format("Invalid store location (%s). READ_WRITE stores must reside inside the data directory (%s).", storeLocation, dataDir));
+            }
+            return Paths.get(storeLocation);
+        }
+
+        return Paths.get(dataDir, storeLocation);
     }
 
     //TODO: middleware for path transformations, e.g. multitenancy
 
     protected final void replay() {
+        LOGGER.info("Store location: {}", storeDirectory.toAbsolutePath());
+
         createOrMigrateStore();
 
         if (Files.exists(storeDirectory)) {

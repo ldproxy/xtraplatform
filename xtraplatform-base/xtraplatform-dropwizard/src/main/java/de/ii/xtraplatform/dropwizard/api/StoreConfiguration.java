@@ -24,6 +24,11 @@ public class StoreConfiguration {
     @Valid
     @NotNull
     @JsonProperty
+    public String location = "store";
+
+    @Valid
+    @NotNull
+    @JsonProperty
     public boolean secured = false;
 
     @Valid
