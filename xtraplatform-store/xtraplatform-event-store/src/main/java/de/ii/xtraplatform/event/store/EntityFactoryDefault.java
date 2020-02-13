@@ -24,6 +24,9 @@ import org.apache.felix.ipojo.extender.DeclarationHandle;
 import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.apache.felix.ipojo.whiteboard.Whiteboards;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -61,11 +65,10 @@ public class EntityFactoryDefault implements EntityFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntityFactoryDefault.class);
 
-    @Context
-    private BundleContext context;
-
+    private final BundleContext context;
     private final DeclarationBuilderService declarationBuilderService;
     private final Map<String, DeclarationHandle> instanceHandles;
+    private final Map<String, CompletableFuture<String>> instanceRegistration;
     //private final Map<String, Factory> componentFactories;
     private final Map<String, String> entityClasses;
     private final Map<Class<?>, String> entityDataTypes;
@@ -73,15 +76,31 @@ public class EntityFactoryDefault implements EntityFactory {
     private final Map<String, EntityHydrator<EntityData>> entityHydrators;
     private final Map<String, Map<Long, EntityMigration<EntityData, EntityData>>> entityMigrations;
 
-    protected EntityFactoryDefault(@Requires DeclarationBuilderService declarationBuilderService) {
+    protected EntityFactoryDefault(@Context BundleContext context,
+                                   @Requires DeclarationBuilderService declarationBuilderService) {
+        this.context = context;
         this.declarationBuilderService = declarationBuilderService;
         this.instanceHandles = new ConcurrentHashMap<>();
+        this.instanceRegistration = new ConcurrentHashMap<>();
         //this.componentFactories = new ConcurrentHashMap<>();
         this.entityClasses = new ConcurrentHashMap<>();
         this.entityDataTypes = new ConcurrentHashMap<>();
         this.entityDataBuilders = new ConcurrentHashMap<>();
         this.entityHydrators = new ConcurrentHashMap<>();
         this.entityMigrations = new ConcurrentHashMap<>();
+
+        try {
+            this.context.addServiceListener(serviceEvent -> {
+                if (serviceEvent.getType() == ServiceEvent.REGISTERED) {
+                    String instanceId = (String) serviceEvent.getServiceReference().getProperty("instance.name");
+                    if (instanceRegistration.containsKey(instanceId)) {
+                        instanceRegistration.get(instanceId).complete(instanceId);
+                    }
+                }
+            }, "(objectClass=de.ii.xtraplatform.entity.api.PersistentEntity)");
+        } catch (InvalidSyntaxException e) {
+            //ignore
+        }
     }
 
     private synchronized void onFactoryArrival(ServiceReference<ComponentFactory> ref) {
@@ -340,11 +359,17 @@ public class EntityFactoryDefault implements EntityFactory {
 
         }
 
+        CompletableFuture<String> registration = new CompletableFuture<>();
+
+        this.instanceRegistration.put(instanceId, registration);
+
         DeclarationHandle handle = instanceBuilder.build();
 
         handle.publish();
 
         this.instanceHandles.put(instanceId, handle);
+
+        registration.join();
     }
 
     @Override

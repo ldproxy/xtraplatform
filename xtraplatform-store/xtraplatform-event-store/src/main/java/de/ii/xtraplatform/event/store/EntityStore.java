@@ -19,6 +19,7 @@ import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.OptionalLong;
@@ -80,7 +81,11 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
         playAdditionalEvents();
 
         //TODO: getAllPaths
-        identifiers().forEach(identifier -> {
+        identifiers().stream()
+                     //TODO: set priority per entity type (for now alphabetic works: codelists < providers < services)
+                     .sorted(Comparator.comparing(identifier -> identifier.path()
+                                                                          .get(0)))
+                     .forEach(identifier -> {
             try {
                 onCreate(identifier, get(identifier));
             } catch (Throwable e) {
