@@ -21,6 +21,7 @@ abstract class AbstractFileSystemEventStore extends AbstractEventStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFileSystemEventStore.class);
     static final String STORE_DIR_LEGACY = "config-store";
 
+    protected final boolean isEnabled;
     private final Path storeDirectory;
     final FileSystemEvents eventReaderWriter;
 
@@ -30,6 +31,7 @@ abstract class AbstractFileSystemEventStore extends AbstractEventStore {
         super(isEnabled ? ActorMaterializer.create(actorSystemProvider.getActorSystem(bundleContext)) : null);
         this.storeDirectory = getStoreDirectory(bundleContext.getProperty(FelixRuntime.DATA_DIR_KEY), xtraPlatform.getConfiguration().store);
         this.eventReaderWriter = isEnabled ? new FileSystemEvents(storeDirectory, xtraPlatform.getConfiguration().store.instancePathPattern, xtraPlatform.getConfiguration().store.overridesPathPatterns) : null;
+        this.isEnabled = isEnabled;
     }
 
     private Path getStoreDirectory(String dataDir, StoreConfiguration storeConfiguration) {
