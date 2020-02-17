@@ -36,7 +36,7 @@ class ApplicationPlugin implements Plugin<Project> {
             project.configurations.feature.dependencies.each {
                 if (it.name == 'xtraplatform-base') {
                     if (!isIncludedBuild) {
-                        project.dependencies.add('app', project.dependencies.enforcedPlatform(it.copy()))
+                        project.dependencies.add('app', project.dependencies.enforcedPlatform(it))
                     }
 
                     project.dependencies.add('app', 'de.interactive_instruments:xtraplatform-runtime')
@@ -52,6 +52,22 @@ class ApplicationPlugin implements Plugin<Project> {
             jcenter()
             maven {
                 url "https://dl.bintray.com/iide/maven"
+            }
+        }
+
+        project.configurations.featureDevOnly.incoming.beforeResolve {
+            project.configurations.featureDevOnly.dependencies.collect().each {
+                if (!it.name.endsWith("-bundles")) {
+                    def bom = [group: it.group, name: "${it.name}", version: it.version]
+                    def bundles = [group: it.group, name: "${it.name}-bundles", version: it.version]
+                    if (isIncludedBuild) {
+
+                    } else {
+                        //subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
+
+                        project.dependencies.add('featureDevOnly', bundles)
+                    }
+                }
             }
         }
 
@@ -223,7 +239,8 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     String createBundleTree(Project project) {
-        def features = sortByDependencyGraph(project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies)
+        def isIncludedBuild = (project.gradle.parent != null)
+        def features = sortByDependencyGraph(project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> isIncludedBuild || feature.moduleName.endsWith("-bundles")}))
         def bundles = features.collect({ it.children.findAll({ bundle -> !(bundle in features) }) })
 
         bundles.add(project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies)
@@ -232,7 +249,8 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     String createDevBundleTree(Project project) {
-        def devFeatures = sortByDependencyGraph(project.configurations.featureDevOnly.resolvedConfiguration.firstLevelModuleDependencies)
+        def isIncludedBuild = (project.gradle.parent != null)
+        def devFeatures = sortByDependencyGraph(project.configurations.featureDevOnly.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> isIncludedBuild || feature.moduleName.endsWith("-bundles")}))
         def devBundles = devFeatures.collect({ it.children.findAll({ bundle -> !(bundle in devFeatures) }) })
 
         return createBundleFileTree(project, devBundles)
