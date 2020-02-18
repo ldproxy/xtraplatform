@@ -25,8 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * @author zahnen
@@ -82,26 +80,35 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
 
     @Override
     protected CompletableFuture<Void> onStart() {
-            playAdditionalEvents();
+        //TODO: getAllPaths
+        return playAdditionalEvents().thenCompose(ignore -> identifiers().stream()
+                                                                         //TODO: set priority per entity type (for now alphabetic works: codelists < providers < services)
+                                                                         .sorted(Comparator.comparing(identifier -> identifier.path()
+                                                                                                                              .get(0)))
+                                                                         .reduce(
+                                                                                 CompletableFuture.completedFuture((PersistentEntity) null),
+                                                                                 (completableFuture, identifier) -> completableFuture.thenCompose(ignore2 -> onCreate(identifier, get(identifier))),
+                                                                                 (first, second) -> first.thenCompose(ignore2 -> second)
+                                                                         ))
+                                     .thenCompose(entity -> null);
+    }
 
-        final CompletableFuture<PersistentEntity>[] c = new CompletableFuture[]{CompletableFuture.completedFuture(null)};
-
-            //TODO: getAllPaths
-        identifiers().stream()
-                         //TODO: set priority per entity type (for now alphabetic works: codelists < providers < services)
-                         .sorted(Comparator.comparing(identifier -> identifier.path()
-                                                                              .get(0)))
-                         .forEach(identifier -> {
-                             try {
-                                 c[0] = c[0].thenCompose(lastEntity -> onCreate(identifier, get(identifier)));
-                             } catch (Throwable e) {
-                                LOGGER.error("", e);
-                             }
-                         });
-
-        return c[0].thenCompose(entity -> null);
-        //TODO: return future from playAdditionalEvents
-        //return CompletableFuture.completedFuture(null);
+    private CompletableFuture<EntityData> playAdditionalEvents() {
+        return additionalEvents.entrySet()
+                               .stream()
+                               .reduce(CompletableFuture.completedFuture(null), (completableFuture, entry) -> completableFuture.thenCompose(ignore -> {
+                                   if (eventStore.isReadOnly()) {
+                                       onEmit(ImmutableMutationEvent.builder()
+                                                                    .type(EVENT_TYPE)
+                                                                    .identifier(entry.getKey())
+                                                                    .payload(serialize(entry.getValue()))
+                                                                    .format(DEFAULT_FORMAT.name())
+                                                                    .build());
+                                       return CompletableFuture.completedFuture((EntityData) null);
+                                   } else {
+                                       return dropWithoutTrigger(entry.getKey()).thenCompose((deleted) -> putWithoutTrigger(entry.getKey(), entry.getValue()));
+                                   }
+                               }), (first, second) -> first.thenCompose(ignore -> second));
     }
 
     @Override
@@ -142,27 +149,5 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
                 return ObjectArrays.concat(typeCollectionName, path);
             }
         };
-    }
-
-    //TODO: test read-only
-    private void playAdditionalEvents() {
-        additionalEvents.forEach(((identifier, entityData) -> {
-            if (eventStore.isReadOnly()) {
-                onEmit(ImmutableMutationEvent.builder()
-                                             .type(EVENT_TYPE)
-                                             .identifier(identifier)
-                                             .payload(serialize(entityData))
-                                             .format(DEFAULT_FORMAT.name())
-                                             .build());
-            } else {
-                //if (has(identifier)) {
-                dropWithoutTrigger(identifier).whenComplete((aBoolean, throwable) -> {
-                    put(identifier, entityData);//.join();
-                });//TODO .join();
-                //} else {
-                //    put(identifier, entityData);//.join();
-                //}
-            }
-        }));
     }
 }

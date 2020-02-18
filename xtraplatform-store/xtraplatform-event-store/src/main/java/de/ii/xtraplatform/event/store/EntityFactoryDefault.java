@@ -39,6 +39,10 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author zahnen
@@ -76,6 +80,7 @@ public class EntityFactoryDefault implements EntityFactory {
     private final Map<String, Class<EntityDataBuilder<EntityData>>> entityDataBuilders;
     private final Map<String, EntityHydrator<EntityData>> entityHydrators;
     private final Map<String, Map<Long, EntityMigration<EntityData, EntityData>>> entityMigrations;
+    private final ScheduledExecutorService executorService;
 
     protected EntityFactoryDefault(@Context BundleContext context,
                                    @Requires DeclarationBuilderService declarationBuilderService,
@@ -90,6 +95,7 @@ public class EntityFactoryDefault implements EntityFactory {
         this.entityDataBuilders = new ConcurrentHashMap<>();
         this.entityHydrators = new ConcurrentHashMap<>();
         this.entityMigrations = new ConcurrentHashMap<>();
+        this.executorService = new ScheduledThreadPoolExecutor(1);
 
         entityRegistry.addEntityListener((instanceId, entity) -> {
             if (instanceRegistration.containsKey(instanceId)) {
@@ -302,8 +308,8 @@ public class EntityFactoryDefault implements EntityFactory {
         Map<Identifier, EntityData> additionalEntities = migrations.get(entityData.getEntityStorageVersion())
                                                                    .getAdditionalEntities(identifier, entityData);
 
-        return new ImmutableMap.Builder<Identifier, EntityData>().put(identifier, data)
-                                                                 .putAll(additionalEntities)
+        return new ImmutableMap.Builder<Identifier, EntityData>().putAll(additionalEntities)
+                                                                 .put(identifier, data)
                                                                  .build();
     }
 
@@ -356,12 +362,14 @@ public class EntityFactoryDefault implements EntityFactory {
 
         CompletableFuture<PersistentEntity> registration = new CompletableFuture<>();
         this.instanceRegistration.put(instanceId, registration);
+        // wait max 5 secs, then proceed
+        ScheduledFuture<Boolean> scheduledFuture = executorService.schedule(() -> registration.complete(null), 5, TimeUnit.SECONDS);
 
         DeclarationHandle handle = instanceBuilder.build();
         handle.publish();
         this.instanceHandles.put(instanceId, handle);
 
-        return registration;
+        return registration.whenComplete((entity, throwable) -> scheduledFuture.cancel(true));
     }
 
     @Override

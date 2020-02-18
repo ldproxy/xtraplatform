@@ -154,7 +154,6 @@ public abstract class AbstractEntityDataStore<T extends EntityData> extends Abst
         EntityDataBuilder<T> builder = getBuilder(identifier, storageVersion);
         T entityDataOld = deserialize(builder, identifier, payload, format);
 
-        //TODO: return Map<Identifier, EntityData>, so we can include Provider
         Map<Identifier, T> entityDataNew = migrate(identifier, entityDataOld, targetVersion);
 
         entityDataNew.forEach(this::addAdditionalEvent);

@@ -119,6 +119,10 @@ public abstract class AbstractKeyValueStore<T> implements EventStoreSubscriber, 
                             });
     }
 
+    protected CompletableFuture<T> putWithoutTrigger(Identifier identifier, T value) {
+        return eventSourcing.pushMutationEvent(identifier, value);
+    }
+
     protected CompletableFuture<Boolean> drop(Identifier identifier) {
         return eventSourcing.pushMutationEvent(identifier, null)
                             .whenComplete((entityData, throwable) -> {
