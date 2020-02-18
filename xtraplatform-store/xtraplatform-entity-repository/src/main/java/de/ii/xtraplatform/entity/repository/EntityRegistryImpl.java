@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * @author zahnen
@@ -44,10 +45,12 @@ public class EntityRegistryImpl implements EntityRegistry {
 
     private final BundleContext context;
     private final Set<PersistentEntity> entities;
+    private final List<BiConsumer<String, PersistentEntity>> entityListeners;
 
     public EntityRegistryImpl(@Context BundleContext context) {
         this.context = context;
         this.entities = new HashSet<>();
+        this.entityListeners = new ArrayList<>();
     }
 
     private synchronized void onEntityArrival(ServiceReference<PersistentEntity> ref) {
@@ -60,6 +63,9 @@ public class EntityRegistryImpl implements EntityRegistry {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Registered entity: {} {}", entity.getClass(), entity.getId());
                 }
+
+                String instanceId = (String) ref.getProperty("instance.name");
+                entityListeners.forEach(listener -> listener.accept(instanceId, entity));
             }
         } catch (Throwable e) {
             LOGGER.error("E", e);
@@ -93,5 +99,10 @@ public class EntityRegistryImpl implements EntityRegistry {
                                      .filter(persistentEntity -> type.isAssignableFrom(persistentEntity.getClass()) && persistentEntity.getId()
                                                                                                                                        .equals(id))
                                      .findFirst();
+    }
+
+    @Override
+    public void addEntityListener(BiConsumer<String, PersistentEntity> listener) {
+        this.entityListeners.add(listener);
     }
 }

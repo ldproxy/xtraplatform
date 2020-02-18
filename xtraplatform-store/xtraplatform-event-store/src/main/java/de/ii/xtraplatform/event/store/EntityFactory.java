@@ -1,9 +1,11 @@
 package de.ii.xtraplatform.event.store;
 
 import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entity.api.PersistentEntity;
 
 import java.util.Map;
 import java.util.OptionalLong;
+import java.util.concurrent.CompletableFuture;
 
 public interface EntityFactory {
 
@@ -16,9 +18,9 @@ public interface EntityFactory {
 
     String getDataTypeName(Class<? extends EntityData> entityDataClass);
 
-    void createInstance(String entityType, String id, EntityData entityData);
+    CompletableFuture<PersistentEntity> createInstance(String entityType, String id, EntityData entityData);
 
-    void updateInstance(String entityType, String id, EntityData entityData);
+    CompletableFuture<PersistentEntity> updateInstance(String entityType, String id, EntityData entityData);
 
     void deleteInstance(String entityType, String id);
 }

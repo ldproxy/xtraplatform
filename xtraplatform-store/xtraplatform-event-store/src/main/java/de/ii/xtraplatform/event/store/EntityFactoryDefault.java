@@ -10,6 +10,8 @@ package de.ii.xtraplatform.event.store;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entity.api.EntityRegistry;
+import de.ii.xtraplatform.entity.api.PersistentEntity;
 import org.apache.felix.ipojo.ComponentFactory;
 import org.apache.felix.ipojo.Factory;
 import org.apache.felix.ipojo.annotations.Component;
@@ -26,7 +28,6 @@ import org.apache.felix.ipojo.whiteboard.Whiteboards;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
-import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +69,7 @@ public class EntityFactoryDefault implements EntityFactory {
     private final BundleContext context;
     private final DeclarationBuilderService declarationBuilderService;
     private final Map<String, DeclarationHandle> instanceHandles;
-    private final Map<String, CompletableFuture<String>> instanceRegistration;
+    private final Map<String, CompletableFuture<PersistentEntity>> instanceRegistration;
     //private final Map<String, Factory> componentFactories;
     private final Map<String, String> entityClasses;
     private final Map<Class<?>, String> entityDataTypes;
@@ -77,7 +78,8 @@ public class EntityFactoryDefault implements EntityFactory {
     private final Map<String, Map<Long, EntityMigration<EntityData, EntityData>>> entityMigrations;
 
     protected EntityFactoryDefault(@Context BundleContext context,
-                                   @Requires DeclarationBuilderService declarationBuilderService) {
+                                   @Requires DeclarationBuilderService declarationBuilderService,
+                                   @Requires EntityRegistry entityRegistry) {
         this.context = context;
         this.declarationBuilderService = declarationBuilderService;
         this.instanceHandles = new ConcurrentHashMap<>();
@@ -89,18 +91,11 @@ public class EntityFactoryDefault implements EntityFactory {
         this.entityHydrators = new ConcurrentHashMap<>();
         this.entityMigrations = new ConcurrentHashMap<>();
 
-        try {
-            this.context.addServiceListener(serviceEvent -> {
-                if (serviceEvent.getType() == ServiceEvent.REGISTERED) {
-                    String instanceId = (String) serviceEvent.getServiceReference().getProperty("instance.name");
-                    if (instanceRegistration.containsKey(instanceId)) {
-                        instanceRegistration.get(instanceId).complete(instanceId);
-                    }
-                }
-            }, "(objectClass=de.ii.xtraplatform.entity.api.PersistentEntity)");
-        } catch (InvalidSyntaxException e) {
-            //ignore
-        }
+        entityRegistry.addEntityListener((instanceId, entity) -> {
+            if (instanceRegistration.containsKey(instanceId)) {
+                instanceRegistration.get(instanceId).complete(entity);
+            }
+        });
     }
 
     private synchronized void onFactoryArrival(ServiceReference<ComponentFactory> ref) {
@@ -318,7 +313,7 @@ public class EntityFactoryDefault implements EntityFactory {
     }
 
     @Override
-    public void createInstance(String entityType, String id, EntityData entityData) {
+    public CompletableFuture<PersistentEntity> createInstance(String entityType, String id, EntityData entityData) {
 
         LOGGER.debug("CREATING ENTITY {} {} {}", entityType, id/*, entityData*/);
 
@@ -359,27 +354,24 @@ public class EntityFactoryDefault implements EntityFactory {
 
         }
 
-        CompletableFuture<String> registration = new CompletableFuture<>();
-
+        CompletableFuture<PersistentEntity> registration = new CompletableFuture<>();
         this.instanceRegistration.put(instanceId, registration);
 
         DeclarationHandle handle = instanceBuilder.build();
-
         handle.publish();
-
         this.instanceHandles.put(instanceId, handle);
 
-        registration.join();
+        return registration;
     }
 
     @Override
-    public void updateInstance(String entityType, String id, EntityData entityData) {
+    public CompletableFuture<PersistentEntity> updateInstance(String entityType, String id, EntityData entityData) {
         LOGGER.debug("UPDATING ENTITY {} {} {}", entityType, id/*, entityData*/);
 
         String instanceId = entityType + "/" + id;
 
         deleteInstance(entityType, id);
-        createInstance(entityType, id, entityData);
+        return createInstance(entityType, id, entityData);
 
         /*if (instanceHandles.containsKey(instanceId)) {
             Dictionary<String, Object> configuration = new Hashtable<>();

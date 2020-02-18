@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.api.Jackson;
 import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entity.api.PersistentEntity;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -24,6 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * @author zahnen
@@ -65,7 +68,8 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
     }
 
     @Override
-    protected Map<Identifier, EntityData> migrate(Identifier identifier, EntityData entityData, OptionalLong targetVersion) {
+    protected Map<Identifier, EntityData> migrate(Identifier identifier, EntityData entityData,
+                                                  OptionalLong targetVersion) {
         String entityType = identifier.path()
                                       .get(0);
         return entityFactory.migrateSchema(identifier, entityType, entityData, targetVersion);
@@ -78,30 +82,33 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
 
     @Override
     protected CompletableFuture<Void> onStart() {
-        playAdditionalEvents();
+            playAdditionalEvents();
 
-        //TODO: getAllPaths
+        final CompletableFuture<PersistentEntity>[] c = new CompletableFuture[]{CompletableFuture.completedFuture(null)};
+
+            //TODO: getAllPaths
         identifiers().stream()
-                     //TODO: set priority per entity type (for now alphabetic works: codelists < providers < services)
-                     .sorted(Comparator.comparing(identifier -> identifier.path()
-                                                                          .get(0)))
-                     .forEach(identifier -> {
-            try {
-                onCreate(identifier, get(identifier));
-            } catch (Throwable e) {
+                         //TODO: set priority per entity type (for now alphabetic works: codelists < providers < services)
+                         .sorted(Comparator.comparing(identifier -> identifier.path()
+                                                                              .get(0)))
+                         .forEach(identifier -> {
+                             try {
+                                 c[0] = c[0].thenCompose(lastEntity -> onCreate(identifier, get(identifier)));
+                             } catch (Throwable e) {
+                                LOGGER.error("", e);
+                             }
+                         });
 
-            }
-        });
-
+        return c[0].thenCompose(entity -> null);
         //TODO: return future from playAdditionalEvents
-        return CompletableFuture.completedFuture(null);
+        //return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    protected void onCreate(Identifier identifier, EntityData entityData) {
-        entityFactory.createInstance(identifier.path()
-                                               .get(0), identifier.id(), entityData);
-        LOGGER.debug("Entity created: {}", identifier);
+    protected CompletableFuture<PersistentEntity> onCreate(Identifier identifier, EntityData entityData) {
+        return entityFactory.createInstance(identifier.path()
+                                                      .get(0), identifier.id(), entityData)
+                            .whenComplete((entity, throwable) -> LOGGER.debug("Entity created: {}", identifier));
     }
 
     @Override
@@ -149,9 +156,9 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
                                              .build());
             } else {
                 //if (has(identifier)) {
-                    dropWithoutTrigger(identifier).whenComplete((aBoolean, throwable) -> {
-                        put(identifier, entityData);//.join();
-                    });//TODO .join();
+                dropWithoutTrigger(identifier).whenComplete((aBoolean, throwable) -> {
+                    put(identifier, entityData);//.join();
+                });//TODO .join();
                 //} else {
                 //    put(identifier, entityData);//.join();
                 //}

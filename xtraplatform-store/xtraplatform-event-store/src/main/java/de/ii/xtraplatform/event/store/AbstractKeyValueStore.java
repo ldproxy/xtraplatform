@@ -1,5 +1,6 @@
 package de.ii.xtraplatform.event.store;
 
+import de.ii.xtraplatform.entity.api.PersistentEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,9 @@ public abstract class AbstractKeyValueStore<T> implements EventStoreSubscriber, 
         return CompletableFuture.completedFuture(null);
     }
 
-    protected void onCreate(Identifier identifier, T entityData) {}
+    protected CompletableFuture<PersistentEntity> onCreate(Identifier identifier, T entityData) {
+        return null;
+    }
 
     protected void onUpdate(Identifier identifier, T entityData) {}
 
