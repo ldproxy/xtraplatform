@@ -29,13 +29,13 @@ class ApplicationPlugin implements Plugin<Project> {
         project.configurations.create("app")
         project.configurations.implementation.extendsFrom(project.configurations.app)
 
-        def isIncludedBuild = (project.gradle.parent != null)
+        def includedBuilds = getIncludedBuilds(project)
 
         project.afterEvaluate {
             def baseFound = false
             project.configurations.feature.dependencies.each {
                 if (it.name == 'xtraplatform-base') {
-                    if (!isIncludedBuild) {
+                    if (!includedBuilds.contains(it.name)) {
                         project.dependencies.add('app', project.dependencies.enforcedPlatform(it))
                     }
 
@@ -58,11 +58,11 @@ class ApplicationPlugin implements Plugin<Project> {
         project.configurations.featureDevOnly.incoming.beforeResolve {
             project.configurations.featureDevOnly.dependencies.collect().each {
                 if (!it.name.endsWith("-bundles")) {
-                    def bom = [group: it.group, name: "${it.name}", version: it.version]
-                    def bundles = [group: it.group, name: "${it.name}-bundles", version: it.version]
-                    if (isIncludedBuild) {
+                    if (includedBuilds.contains(it.name)) {
 
                     } else {
+                        def bom = [group: it.group, name: "${it.name}", version: it.version]
+                        def bundles = [group: it.group, name: "${it.name}-bundles", version: it.version]
                         //subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
 
                         project.dependencies.add('featureDevOnly', bundles)
@@ -239,8 +239,8 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     String createBundleTree(Project project) {
-        def isIncludedBuild = (project.gradle.parent != null)
-        def features = sortByDependencyGraph(project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> isIncludedBuild || feature.moduleName.endsWith("-bundles")}))
+        def includedBuilds = getIncludedBuilds(project)
+        def features = sortByDependencyGraph(project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName) || feature.moduleName.endsWith("-bundles")}))
         def bundles = features.collect({ it.children.findAll({ bundle -> !(bundle in features) }) })
 
         bundles.add(project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies)
@@ -249,8 +249,8 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     String createDevBundleTree(Project project) {
-        def isIncludedBuild = (project.gradle.parent != null)
-        def devFeatures = sortByDependencyGraph(project.configurations.featureDevOnly.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> isIncludedBuild || feature.moduleName.endsWith("-bundles")}))
+        def includedBuilds = getIncludedBuilds(project)
+        def devFeatures = sortByDependencyGraph(project.configurations.featureDevOnly.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName) || feature.moduleName.endsWith("-bundles")}))
         def devBundles = devFeatures.collect({ it.children.findAll({ bundle -> !(bundle in devFeatures) }) })
 
         return createBundleFileTree(project, devBundles)
@@ -358,5 +358,15 @@ class ApplicationPlugin implements Plugin<Project> {
             pattern += ch.replaceAll("([^a-zA-Z0-9 ])", '\\\\$1') + '\\s*'
         }
         return Pattern.compile(pattern)
+    }
+
+    Collection<String> getIncludedBuilds(Project project) {
+        def includedBuilds = project.gradle.includedBuilds.collect {it.name}
+        def parent = project.gradle.parent
+        while (parent != null) {
+            includedBuilds += parent.includedBuilds.collect {it.name}
+            parent = parent.gradle.parent
+        }
+        return includedBuilds
     }
 }

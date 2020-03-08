@@ -51,6 +51,13 @@ class FeaturePlugin implements Plugin<Project> {
     }
 
     void configureSubprojects(Project project) {
+        def includedBuilds = project.gradle.includedBuilds.collect {it.name}
+        def parent = project.gradle.parent
+        while (parent != null) {
+            includedBuilds += parent.includedBuilds.collect {it.name}
+            parent = parent.gradle.parent
+        }
+
         project.subprojects { Project subproject ->
 
             subproject.plugins.apply('java-library')
@@ -79,7 +86,7 @@ class FeaturePlugin implements Plugin<Project> {
                 subproject.version = project.version
             }
 
-            def isIncludedBuild = (project.gradle.parent != null)
+
 
             //println subproject.name
             //println isIncludedBuild ? 'COMPOSITE' : 'STANDALONE'
@@ -87,11 +94,14 @@ class FeaturePlugin implements Plugin<Project> {
             project.configurations.feature.incoming.beforeResolve {
                 project.configurations.feature.dependencies.collect().each {
                     if (!it.name.endsWith("-bundles")) {
-                        def bom = [group: it.group, name: "${it.name}", version: it.version]
-                        def bundles = [group: it.group, name: "${it.name}-bundles", version: it.version]
+                        def isIncludedBuild = includedBuilds.contains(it.name)
                         if (isIncludedBuild) {
-
+                            //println 'IGNORE'
                         } else {
+                            //println 'SPLIT'
+                            def bom = [group: it.group, name: "${it.name}", version: it.version]
+                            def bundles = [group: it.group, name: "${it.name}-bundles", version: it.version]
+
                             //println 'platform: ' + bom
                             /*subproject.configurations.provided.incoming.afterResolve {
                                 println "resolved provided for ${subproject.name}"

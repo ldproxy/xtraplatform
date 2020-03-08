@@ -13,6 +13,9 @@ import java.util.Map;
  * @author zahnen
  */
 public interface EntityDataGenerator<T extends EntityData> {
+
     Class<T> getType();
+
     T generate(Map<String, String> partialData);
+
 }
