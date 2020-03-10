@@ -245,7 +245,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
         bundles.add(project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies)
 
-        return createBundleFileTree(project, bundles, ['xtraplatform-runtime'], 'de.ii.xtraplatform.entity.api.handler:entity', ['xtraplatform-server'], ['xtraplatform-dropwizard', 'osgi-over-slf4j', 'org.apache.felix.ipojo', 'xtraproxy-config', 'ldproxy-config'])
+        return createBundleFileTree(project, bundles, ['xtraplatform-runtime'], 'de.ii.xtraplatform.entity.api.handler:entity', ['xtraplatform-server'], ['xtraplatform-dropwizard', 'osgi-over-slf4j', 'org.apache.felix.ipojo', 'xtraproxy-config', 'ldproxy-config', 'xtraserver-webapi-config'])
     }
 
     String createDevBundleTree(Project project) {
