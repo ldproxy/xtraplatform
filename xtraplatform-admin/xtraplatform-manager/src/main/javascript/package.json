@@ -1,0 +1,33 @@
+{
+  "name": "xtraplatform-manager",
+  "version": "2.0.0",
+  "main": "index.js",
+  "author": "interactive instruments GmbH",
+  "license": "MPL-2.0",
+  "peerDependencies": {
+    "prop-types": "^15",
+    "react": "^16",
+    "react-dom": "^16"
+  },
+  "scripts": {
+    "start": "webpack-dev-server --mode development --open",
+    "build": "webpack --mode production",
+    "test": "mocha",
+    "lint": "eslint --cache --format codeframe --ext mjs,jsx,js src test"
+  },
+  "devDependencies": {
+    "@neutrinojs/airbnb": "^9.1.0",
+    "@neutrinojs/mocha": "^9.1.0",
+    "@neutrinojs/react-components": "^9.1.0",
+    "eslint": "^6",
+    "mocha": "^7",
+    "neutrino": "^9.1.0",
+    "pnp-webpack-plugin": "^1.6.4",
+    "prop-types": "^15",
+    "react": "^16",
+    "react-dom": "^16",
+    "webpack": "^4",
+    "webpack-cli": "^3",
+    "webpack-dev-server": "^3"
+  }
+}
