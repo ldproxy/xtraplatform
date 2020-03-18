@@ -10,7 +10,7 @@
     "react-dom": "^16"
   },
   "scripts": {
-    "start": "webpack-dev-server --mode development --open",
+    "start": "webpack-dev-server --mode development",
     "build": "webpack --mode production",
     "test": "mocha",
     "lint": "eslint --cache --format codeframe --ext mjs,jsx,js src test"
@@ -22,7 +22,6 @@
     "eslint": "^6",
     "mocha": "^7",
     "neutrino": "^9.1.0",
-    "pnp-webpack-plugin": "^1.6.4",
     "prop-types": "^15",
     "react": "^16",
     "react-dom": "^16",
