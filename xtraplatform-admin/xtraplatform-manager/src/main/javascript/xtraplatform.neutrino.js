@@ -1,6 +1,6 @@
 const PnpWebpackPlugin = require(`pnp-webpack-plugin`);
 
-const knownModulePrefixes = ['xtraplatform']
+const knownModulePrefixes = ['xtraplatform', '@xtraplatform']
 const defaultOptions = {
   modulePrefixes: [],
   lib: false
