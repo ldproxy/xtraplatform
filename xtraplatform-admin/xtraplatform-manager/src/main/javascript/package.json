@@ -1,13 +1,21 @@
 {
   "name": "xtraplatform-manager",
   "version": "2.0.0",
-  "main": "index.js",
+  "main": "build/index.js",
+  "module": "src/components/index.jsx",
   "author": "interactive instruments GmbH",
   "license": "MPL-2.0",
+  "sideEffects": false,
   "peerDependencies": {
+    "feature-u": "^3",
+    "grommet": "^2",
+    "grommet-icons": "^2",
     "prop-types": "^15",
     "react": "^16",
-    "react-dom": "^16"
+    "react-dom": "^16",
+    "react-is": "^16",
+    "react-router-dom": "^5",
+    "styled-components": "^5"
   },
   "scripts": {
     "start": "webpack-dev-server --mode development",
@@ -20,11 +28,18 @@
     "@neutrinojs/mocha": "^9.1.0",
     "@neutrinojs/react-components": "^9.1.0",
     "eslint": "^6",
+    "feature-u": "^3.0.0",
+    "grommet": "^2.11.2",
+    "grommet-icons": "*",
     "mocha": "^7",
     "neutrino": "^9.1.0",
+    "pnp-webpack-plugin": "^1.6.4",
     "prop-types": "^15",
     "react": "^16",
     "react-dom": "^16",
+    "react-is": "^16",
+    "react-router-dom": "^5.1.2",
+    "styled-components": "^5.0.1",
     "webpack": "^4",
     "webpack-cli": "^3",
     "webpack-dev-server": "^3"
