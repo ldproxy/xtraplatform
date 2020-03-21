@@ -1,0 +1,36 @@
+{
+  "name": "@xtraplatform/services",
+  "version": "2.0.0",
+  "module": "src/components/index.jsx",
+  "license": "MIT",
+  "peerDependencies": {
+    "feature-u": "^3",
+    "grommet": "^2",
+    "grommet-icons": "^2",
+    "prop-types": "^15",
+    "react": "^16",
+    "react-dom": "^16",
+    "react-router-dom": "^5",
+    "styled-components": "^5"
+  },
+  "scripts": {
+    "start": "webpack-dev-server --mode development --open",
+    "build": "webpack --mode production",
+    "test": "mocha",
+    "lint": "eslint --cache --format codeframe --ext mjs,jsx,js src test"
+  },
+  "devDependencies": {
+    "@neutrinojs/airbnb": "^9.1.0",
+    "@neutrinojs/mocha": "^9.1.0",
+    "@neutrinojs/react-components": "^9.1.0",
+    "eslint": "^6",
+    "mocha": "^7",
+    "neutrino": "^9.1.0",
+    "prop-types": "^15",
+    "react": "^16",
+    "react-dom": "^16",
+    "webpack": "^4",
+    "webpack-cli": "^3",
+    "webpack-dev-server": "^3"
+  }
+}
