@@ -6,7 +6,7 @@ pipeline:
       - cd xtraplatform-base 
       - ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 
-  slack:
+  notify:
     image: plugins/slack
     webhook: ${SLACK_WEBHOOK}
     secrets: [ slack_webhook ]
