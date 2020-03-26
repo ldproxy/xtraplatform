@@ -3,4 +3,10 @@ pipeline:
   build:
     image: openjdk:8-alpine
     commands:
-      - cd xtraplatform-base && ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+      - cd xtraplatform-base 
+      - ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+
+  slack:
+    image: plugins/slack
+    webhook: ${SLACK_WEBHOOK}
+    secrets: [ slack_webhook ]
