@@ -10,6 +10,7 @@ import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 
 import java.io.InputStream;
+import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 public interface HttpClient {
@@ -25,6 +26,8 @@ public interface HttpClient {
     String getAsString(String url);
 
     InputStream getAsInputStream(String url);
+
+    InputStream getAsInputStream(String url, Map<String,String> headers);
 
     InputStream postAsInputStream(String url, byte[] body, ContentType.NonBinary contentType);
 

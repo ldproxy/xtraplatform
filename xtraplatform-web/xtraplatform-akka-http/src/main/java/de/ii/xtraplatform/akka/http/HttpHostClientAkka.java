@@ -5,14 +5,15 @@ import akka.NotUsed;
 import akka.http.javadsl.HostConnectionPool;
 import akka.http.javadsl.coding.Coder;
 import akka.http.javadsl.model.ContentType;
+import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.headers.AcceptEncoding;
+import akka.http.javadsl.model.headers.RawHeader;
 import akka.http.scaladsl.model.headers.HttpEncodings;
 import akka.japi.Pair;
 import akka.japi.function.Function2;
 import akka.japi.function.Procedure;
-import akka.japi.pf.FI;
 import akka.japi.pf.PFBuilder;
 import akka.stream.ActorMaterializer;
 import akka.stream.OverflowStrategy;
@@ -24,15 +25,17 @@ import akka.stream.javadsl.Source;
 import akka.stream.javadsl.SourceQueueWithComplete;
 import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.PartialFunction;
 import scala.util.Try;
 
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 public class HttpHostClientAkka implements HttpClient {
 
@@ -58,7 +61,7 @@ public class HttpHostClientAkka implements HttpClient {
     @Override
     public CompletionStage<Done> get(String url, Sink<ByteString, CompletionStage<Done>> sink) {
 
-        CompletionStage<CompletionStage<Done>> result = request(createHttpGet(url), sink);
+        CompletionStage<CompletionStage<Done>> result = request(createHttpGet(url, ImmutableMap.of()), sink);
 
         return result.thenCompose(doneCompletionStage -> doneCompletionStage);
     }
@@ -82,18 +85,22 @@ public class HttpHostClientAkka implements HttpClient {
     public String getAsString(String url) {
         Sink<ByteString, CompletionStage<StringBuilder>> asStringBuilder = Sink.fold(new StringBuilder(), (Function2<StringBuilder, ByteString, StringBuilder>) (stringBuilder, byteString) -> stringBuilder.append(byteString.utf8String()));
 
-        StringBuilder response = request(createHttpGet(url), asStringBuilder).toCompletableFuture()
-                                                                             .join()
-                                                                             .toCompletableFuture()
-                                                                             .join();
+        StringBuilder response = request(createHttpGet(url, ImmutableMap.of()), asStringBuilder).toCompletableFuture()
+                                                                                                .join()
+                                                                                                .toCompletableFuture()
+                                                                                                .join();
 
         return response.toString();
     }
 
     @Override
     public InputStream getAsInputStream(String url) {
+        return getAsInputStream(url, ImmutableMap.of());
+    }
 
-        return request(createHttpGet(url), StreamConverters.asInputStream()).toCompletableFuture()
+    @Override
+    public InputStream getAsInputStream(String url, Map<String, String> headers) {
+        return request(createHttpGet(url, headers), StreamConverters.asInputStream()).toCompletableFuture()
                                                                             .join();
     }
 
@@ -208,9 +215,10 @@ public class HttpHostClientAkka implements HttpClient {
         result.complete(t);
     }
 
-    private static HttpRequest createHttpGet(String url) {
-        return HttpRequest.GET(url)
-                          .addHeader(ACCEPT);
+    private static HttpRequest createHttpGet(String url, Map<String, String> headers) {
+                return HttpRequest.GET(url)
+                          .addHeader(ACCEPT)
+                        .addHeaders(headers.entrySet().stream().map(entry -> RawHeader.create(entry.getKey(), entry.getValue())).collect(Collectors.toList()));
     }
 
     private static HttpRequest createHttpPost(String url, byte[] body, ContentType.NonBinary contentType) {

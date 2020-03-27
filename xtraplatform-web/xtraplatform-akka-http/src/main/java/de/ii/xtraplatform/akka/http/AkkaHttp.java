@@ -118,7 +118,7 @@ public class AkkaHttp implements de.ii.xtraplatform.akka.http.Http {
 
 
         //TODO: proxy
-        this.defaultClient = new HttpHostClientAkka(materializer, createDefaultConnectionPool(actorSystem, http), true);
+        this.defaultClient = new HttpHostClientAkka(materializer, createDefaultConnectionPool(actorSystem, http, 64, 120), true);
     }
 
     @Validate
@@ -209,16 +209,26 @@ public class AkkaHttp implements de.ii.xtraplatform.akka.http.Http {
         return Optional.empty();
     }
 
-    private static Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, NotUsed> createDefaultConnectionPool(
-            ActorSystem actorSystem, Http http) {
-        return http.superPool(createDefaultConnectionPoolSettings(actorSystem), actorSystem.log());
+    private Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, NotUsed> createDefaultConnectionPool(
+            ActorSystem actorSystem, Http http, int maxParallelRequests, int idleTimeout) {
+        return http.superPool(createDefaultConnectionPoolSettings(actorSystem, maxParallelRequests, idleTimeout), actorSystem.log());
     }
 
-    private static ConnectionPoolSettings createDefaultConnectionPoolSettings(ActorSystem actorSystem) {
+    private ConnectionPoolSettings createDefaultConnectionPoolSettings(ActorSystem actorSystem, int maxParallelRequests,
+                                                                       int idleTimeout) {
+        Optional<HttpProxyTransportGeneric> genericProxy = proxy.map(uri -> new HttpProxyTransportGeneric(uri, nonProxyHosts));
+
+        ClientConnectionSettings connectionSettings = ClientConnectionSettings.create(actorSystem)
+                                                                              .withIdleTimeout(Duration.create(idleTimeout, "s"));
+        if (genericProxy.isPresent()) {
+            connectionSettings = connectionSettings.withTransport(genericProxy.get());
+        }
+
         return ConnectionPoolSettings.create(actorSystem)
-                                     .withMaxOpenRequests(256)
-                                     .withMinConnections(0)
-                                     .withMaxConnections(64);
+                                     .withMaxOpenRequests(maxParallelRequests * 2)//???
+                                     .withMinConnections(0)//???
+                                     .withMaxConnections(maxParallelRequests)
+                                     .withConnectionSettings(connectionSettings);
     }
 
     private static HttpsConnectionContext createTrustAllHttpsConnectionContext() throws NoSuchAlgorithmException, KeyManagementException {
@@ -289,7 +299,7 @@ public class AkkaHttp implements de.ii.xtraplatform.akka.http.Http {
         return URI.create(String.format("%s://%s:%d", proxyConfiguration.getScheme(), proxyConfiguration.getHost(), port));
     }
 
-    private static String createRegexFromGlob(String glob) {
+    static String createRegexFromGlob(String glob) {
         StringBuilder out = new StringBuilder();
 
         for (int i = 0; i < glob.length(); ++i) {

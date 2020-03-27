@@ -11,6 +11,7 @@ import akka.stream.javadsl.BidiFlow;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Keep;
 import akka.util.ByteString;
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -81,8 +82,11 @@ public class HttpProxyTransport extends ClientTransport {
 
             LOGGER.debug("PROXY: {}", withFullPath);
 
+            String proxyAuth = proxyCredentials.map(credentials -> String.format("Proxy-Authorization: Basic %s\\r\\n", credentials.token()))
+                                               .orElse("");
+
             return ByteString.fromString(withFullPath + span._2()
-                                                            .utf8String());
+                                                            .utf8String() + proxyAuth);
         });
     }
 }
