@@ -342,7 +342,7 @@ public class EntityFactoryDefault implements EntityFactory {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Cause:", e);
                 }
-                throw e;
+                //throw e;
             }
 
         } else if (entityHydrators.containsKey(entityType)) {
@@ -355,7 +355,7 @@ public class EntityFactoryDefault implements EntityFactory {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Cause:", e);
                 }
-                throw e;
+                //throw e;
             }
 
         }

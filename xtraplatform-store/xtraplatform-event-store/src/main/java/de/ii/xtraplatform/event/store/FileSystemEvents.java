@@ -6,10 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -105,6 +107,7 @@ public class FileSystemEvents {
             return;
         }
 
+        //TODO: better error handling
         Files.list(eventPath.getParent()).forEach(consumerMayThrow(file -> {
             if (Files.isRegularFile(file) && (Objects.equals(eventPath, file) || file.getFileName().toString().startsWith(eventPath.getFileName().toString() + "."))) {
                 String fileName = file.getFileName()
@@ -121,7 +124,7 @@ public class FileSystemEvents {
                                  .resolve(".backup");
                 }
                 Files.createDirectories(backup);
-                Files.copy(file, backup.resolve(fileName));
+                Files.copy(file, backup.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
                 Files.delete(file);
                 if (LOGGER.isDebugEnabled() ) {
                     LOGGER.debug("Deleted event file {}", eventPath);
