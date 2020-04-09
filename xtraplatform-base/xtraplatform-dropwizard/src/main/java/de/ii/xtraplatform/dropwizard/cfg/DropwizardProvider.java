@@ -43,11 +43,13 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static de.ii.xtraplatform.runtime.FelixRuntime.ENV.DEVELOPMENT;
 import static de.ii.xtraplatform.runtime.FelixRuntime.ENV_KEY;
@@ -199,7 +201,7 @@ public class DropwizardProvider implements Dropwizard {
 
     @Override
     public String getUrl() {
-        return "http://" + getHostName() + ":" + String.valueOf(getApplicationPort()) + "/";
+        return String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort());
     }
 
     private int getApplicationPort() {
@@ -207,8 +209,23 @@ public class DropwizardProvider implements Dropwizard {
                                                                                                      .get(0)).getPort();
     }
 
+    private String getScheme() {
+
+        return Optional.ofNullable(configuration.getServerFactory()
+                                                .getExternalUrl())
+                       .map(URI::create)
+                       .map(URI::getScheme)
+                       .orElse("http");
+    }
+
     private String getHostName() {
-        String hostName = "";
+
+        return Optional.ofNullable(configuration.getServerFactory().getExternalUrl())
+                       .map(URI::create)
+                       .map(URI::getHost)
+                       .orElse("localhost");
+
+        /*String hostName = "";
         try {
             InetAddress iAddress = InetAddress.getLocalHost();
             hostName = iAddress.getCanonicalHostName();
@@ -231,7 +248,7 @@ public class DropwizardProvider implements Dropwizard {
             hostName = "localhost";
         }
 
-        return hostName;
+        return hostName;*/
     }
 
     /*@Override
@@ -283,7 +300,9 @@ public class DropwizardProvider implements Dropwizard {
                                                        .getServlets()) {
             if (sh.getName()
                   .contains("jersey")) {
-                LOGGER.debug("JERSEY CLEANUP");
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("JERSEY CLEANUP");
+                }
                 ServletContainer sc = new ServletContainer(environment.jersey()
                                                                       .getResourceConfig());
                 sh.setServlet(sc);

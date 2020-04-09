@@ -8,7 +8,7 @@ allprojects {
     group = 'de.interactive_instruments'
 }
 
-version = '2.2.2'
+version = '2.2.3'
 
 dependencies {
     bundle subprojects
@@ -25,18 +25,9 @@ dependencies {
 
     //felix ipojo
     bundle group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
-    bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.eventadmin', version: '1.8.0') {
-        exclude group: 'org.osgi', module: 'org.osgi.core'
-        exclude group: 'org.osgi', module: 'org.osgi.compendium'
-    }
-    bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.whiteboard', version: '1.6.0') {
-        exclude group: 'org.osgi', module: 'org.osgi.core'
-        exclude group: 'org.osgi', module: 'org.osgi.compendium'
-    }
-    bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.extender', version: '1.4.0') {
-        exclude group: 'org.apache.felix', module: 'org.osgi.core'
-        exclude group: 'org.osgi', module: 'org.osgi.compendium'
-    }
+    bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.eventadmin', version: '1.8.0')
+    bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.whiteboard', version: '1.6.0')
+    bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.extender', version: '1.4.0')
 }
 
 apply from: '../bintray.gradle'
