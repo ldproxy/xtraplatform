@@ -16,8 +16,11 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 public @interface Entity {
-    Class<?> entityType();
-    Class<?> dataType();
-    String type() default "";
+    String type();
     String subType() default "";
+    Class<?> dataClass();
+
+    String TYPE_KEY = "type";
+    String SUB_TYPE_KEY = "subType";
+    String DATA_CLASS_KEY = "dataClass";
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import de.ii.xtraplatform.entity.api.EntityData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +79,7 @@ public abstract class AbstractEntityDataStore<T extends EntityData> extends Abst
 
         FORMAT payloadFormat;
         try {
+            // default for deserialization is JSON because old configuration files without file extension are JSON
             payloadFormat = Objects.nonNull(format) ? FORMAT.valueOf(format.toUpperCase()) : FORMAT.JSON;
         } catch (Throwable e) {
             LOGGER.error("Could not deserialize entity {}, format '{}' unknown.", identifier, format);
@@ -182,7 +184,7 @@ public abstract class AbstractEntityDataStore<T extends EntityData> extends Abst
 
     //TODO: an in-progress event (e.g. drop) might invalidate this one, do we need distributed locks???
     private boolean isUpdateValid(Identifier identifier, byte[] payload) {
-        return eventSourcing.isInCache(identifier) && Objects.nonNull(deserialize(identifier, payload, null));
+        return eventSourcing.isInCache(identifier) && Objects.nonNull(deserialize(identifier, payload, DEFAULT_FORMAT.toString()));
     }
 
     @Override
@@ -198,7 +200,7 @@ public abstract class AbstractEntityDataStore<T extends EntityData> extends Abst
         }
 
         //TODO: SnapshotProvider???
-        byte[] merged = serialize(deserialize(identifier, payload, null));
+        byte[] merged = serialize(deserialize(identifier, payload, DEFAULT_FORMAT.toString()));
 
         return eventSourcing.pushMutationEventRaw(identifier, merged)
                             .whenComplete((entityData, throwable) -> {
@@ -212,6 +214,11 @@ public abstract class AbstractEntityDataStore<T extends EntityData> extends Abst
 
     private Map<String, Object> addLastModified(Map<String, Object> partialData) {
         if (Objects.nonNull(partialData) && !partialData.isEmpty()) {
+            //use mutable copy of map to allow null values
+            /*Map<String, Object> modified = Maps.newHashMap(partialData);
+            modified.put("lastModified", Instant.now()
+                                                .toEpochMilli());
+            return modified;*/
             return ImmutableMap.<String, Object>builder()
                     .putAll(partialData)
                     .put("lastModified", Instant.now()

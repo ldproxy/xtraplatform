@@ -14,11 +14,11 @@ import de.ii.xtraplatform.entity.api.PersistentEntity;
  */
 public interface Service extends PersistentEntity {
 
-    String ENTITY_TYPE = "services";
+    String TYPE = "services";
 
     @Override
     default String getType() {
-        return ENTITY_TYPE;
+        return TYPE;
     }
 
     default String getServiceType() {

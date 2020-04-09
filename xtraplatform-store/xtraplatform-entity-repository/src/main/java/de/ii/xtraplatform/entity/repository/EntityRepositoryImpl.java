@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 /**
  * @author zahnen
  */
+//TODO: why is this needed still? when deactivated entities do not work any more
 @Component(publicFactory = false)
 @Provides
 @Instantiate
