@@ -59,21 +59,23 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
             throw new IllegalStateException("The class " + getPojoMetadata().getClassName() + " does not extend " + PersistentEntity.class.getName());
         }
 
-        // read dataType from annotation
+
+        // read type, subType and dataClass from annotation
         Element[] bundleConfigElements = metadata.getElements(Entity.class.getSimpleName()
                                                                           .toLowerCase(), NAMESPACE);
-        if (bundleConfigElements == null || bundleConfigElements.length == 0 || !bundleConfigElements[0].containsAttribute("dataType")) {
-            throw new IllegalStateException("DataType not set for Entity");
-        }
-        String dataType = bundleConfigElements[0].getAttribute("dataType");
 
-        if (bundleConfigElements == null || bundleConfigElements.length == 0 || !bundleConfigElements[0].containsAttribute("entityType")) {
-            throw new IllegalStateException("EntityType not set for Entity");
-        }
-        String entityType = bundleConfigElements[0].getAttribute("entityType");
+        Optional<String> type = Optional.ofNullable(Strings.emptyToNull(bundleConfigElements[0].getAttribute(Entity.TYPE_KEY)));
+        Optional<String> subType = Optional.ofNullable(Strings.emptyToNull(bundleConfigElements[0].getAttribute(Entity.SUB_TYPE_KEY)));
+        Optional<String> dataClass = Optional.ofNullable(Strings.emptyToNull(bundleConfigElements[0].getAttribute(Entity.DATA_CLASS_KEY)));
 
-        Optional<String> type = Optional.ofNullable(Strings.emptyToNull(bundleConfigElements[0].getAttribute("type")));
-        Optional<String> subType = Optional.ofNullable(Strings.emptyToNull(bundleConfigElements[0].getAttribute("subType")));
+        if (!type.isPresent()) {
+            throw new IllegalStateException("type not set for Entity");
+        }
+
+        if (!dataClass.isPresent()) {
+            throw new IllegalStateException("dataClass not set for Entity");
+        }
+
 
         // add @ServiceController for field register in class AbstractPersistentEntity
         Element[] providedServices = metadata.getElements("Provides");
@@ -86,6 +88,7 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         providedServices[0].addElement(controller);
         controller.addAttribute(new Attribute("field", "register"));
         controller.addAttribute(new Attribute("value", "false"));
+
 
         // add @Property(name = "data") for method setData in class AbstractPersistentEntity
         Element properties;
@@ -102,12 +105,15 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         data.addAttribute(new Attribute("method", "setData"));
         data.addAttribute(new Attribute("type", EntityData.class.getName()));
 
-        typeDesc.addProperty(new PropertyDescription("data", dataType, null));
-        typeDesc.addProperty(new PropertyDescription("type", String.class.getName(), type.orElse(entityType.substring(entityType.lastIndexOf(".") + 1)
-                                                                                               .toLowerCase() + "s"), true));
+
+
+        // add type, subType and dataClass to type description
+        typeDesc.addProperty(new PropertyDescription(Entity.TYPE_KEY, String.class.getName(), type.get(), true));
         if (subType.isPresent()) {
-            typeDesc.addProperty(new PropertyDescription("subType", String.class.getName(), subType.get(), true));
+            typeDesc.addProperty(new PropertyDescription(Entity.SUB_TYPE_KEY, String.class.getName(), subType.get(), true));
         }
+        typeDesc.addProperty(new PropertyDescription(Entity.DATA_CLASS_KEY, String.class.getName(), dataClass.get(), true));
+
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("ENTITY {}", metadata);

@@ -10,8 +10,10 @@ package de.ii.xtraplatform.event.store;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entity.api.EntityDataGenerator;
 import de.ii.xtraplatform.entity.api.EntityRegistry;
 import de.ii.xtraplatform.entity.api.PersistentEntity;
+import de.ii.xtraplatform.entity.api.handler.Entity;
 import org.apache.felix.ipojo.ComponentFactory;
 import org.apache.felix.ipojo.Factory;
 import org.apache.felix.ipojo.annotations.Component;
@@ -26,8 +28,6 @@ import org.apache.felix.ipojo.extender.DeclarationHandle;
 import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.apache.felix.ipojo.whiteboard.Whiteboards;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,7 +99,8 @@ public class EntityFactoryDefault implements EntityFactory {
 
         entityRegistry.addEntityListener((instanceId, entity) -> {
             if (instanceRegistration.containsKey(instanceId)) {
-                instanceRegistration.get(instanceId).complete(entity);
+                instanceRegistration.get(instanceId)
+                                    .complete(entity);
             }
         });
     }
@@ -108,30 +109,25 @@ public class EntityFactoryDefault implements EntityFactory {
         Optional<String> entityClassName = Optional.ofNullable((String) ref.getProperty("component.class"));
         Optional<String> entityType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
                                             .filter(pd -> pd.getName()
-                                                            .equals("type"))
+                                                            .equals(Entity.TYPE_KEY))
                                             .map(PropertyDescription::getValue)
                                             .findFirst();
         Optional<String> entitySubType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
-                                            .filter(pd -> pd.getName()
-                                                            .equals("subType"))
-                                            .map(PropertyDescription::getValue)
-                                            .findFirst();
+                                               .filter(pd -> pd.getName()
+                                                               .equals(Entity.SUB_TYPE_KEY))
+                                               .map(PropertyDescription::getValue)
+                                               .findFirst();
         Optional<String> entityDataType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
                                                 .filter(pd -> pd.getName()
-                                                                .equals("data"))
-                                                .map(PropertyDescription::getType)
+                                                                .equals(Entity.DATA_CLASS_KEY))
+                                                .map(PropertyDescription::getValue)
                                                 .findFirst();
-        Optional<String> entityDataGenerators = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
-                                                      .filter(pd -> pd.getName()
-                                                                      .equals("generators"))
-                                                      .map(PropertyDescription::getType)
-                                                      .findFirst();
 
         if (entityClassName.isPresent() && entityDataType.isPresent() && entityType.isPresent()) {
             String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
 
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("ENTITY FACTORY {} {} {}", entityDataType.get(), entityClassName.get(), specificEntityType);
+                LOGGER.debug("Registered entity type: {}", specificEntityType);
             }
             ComponentFactory factory = context.getService(ref);
             try {
@@ -142,17 +138,22 @@ public class EntityFactoryDefault implements EntityFactory {
 
                 this.entityDataBuilders.put(entityType.get(), builder);
                 this.entityDataTypes.put(entityDataClass, entityType.get());
-                //TODO
+
                 if (Objects.nonNull(entityDataClass.getSuperclass())) {
                     Arrays.stream(entityDataClass.getSuperclass()
                                                  .getInterfaces())
-                          .forEach(c -> {
-                              if (c.getSimpleName()
-                                   .endsWith("ServiceData")) {
-                                  this.entityDataTypes.put(c, entityType.get());
+                          .forEach(iface -> {
+                              if (EntityData.class.isAssignableFrom(iface)) {
+                                  this.entityDataTypes.put(iface, entityType.get());
                               }
                           });
                 }
+                Arrays.stream(entityDataClass.getInterfaces())
+                      .forEach(iface -> {
+                          if (EntityData.class.isAssignableFrom(iface)) {
+                              this.entityDataTypes.put(iface, entityType.get());
+                          }
+                      });
 
                 boolean br = true;
             } catch (ClassNotFoundException e) {
@@ -169,6 +170,7 @@ public class EntityFactoryDefault implements EntityFactory {
     //TODO
     private synchronized void onFactoryDeparture(ServiceReference<Factory> ref) {
         Optional<String> entityType = Optional.ofNullable((String) ref.getProperty("component.class"));
+        Optional<String> entitySubType = Optional.ofNullable((String) ref.getProperty(Entity.SUB_TYPE_KEY));
         Optional<String> entityDataType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
                                                 .filter(pd -> pd.getName()
                                                                 .equals("data"))
@@ -176,8 +178,9 @@ public class EntityFactoryDefault implements EntityFactory {
                                                 .findFirst();
 
         if (entityType.isPresent() && entityDataType.isPresent()) {
+            String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("REMOVE ENTITY FACTORY {} {}", entityDataType.get(), entityType.get());
+                LOGGER.debug("Deregistered entity type: {}", specificEntityType);
             }
             //this.componentFactories.remove(entityDataType.get());
             this.entityClasses.remove(entityDataType.get());
@@ -186,8 +189,8 @@ public class EntityFactoryDefault implements EntityFactory {
     }
 
     private synchronized void onHydratorArrival(ServiceReference<EntityHydrator<EntityData>> ref) {
-        Optional<String> entityType = Optional.ofNullable((String) ref.getProperty("entityType"));
-        Optional<String> entitySubType = Optional.ofNullable((String) ref.getProperty("entitySubType"));
+        Optional<String> entityType = Optional.ofNullable((String) ref.getProperty(Entity.TYPE_KEY));
+        Optional<String> entitySubType = Optional.ofNullable((String) ref.getProperty(Entity.SUB_TYPE_KEY));
 
         if (entityType.isPresent()) {
             String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
@@ -195,24 +198,22 @@ public class EntityFactoryDefault implements EntityFactory {
             this.entityHydrators.put(specificEntityType, entityHydrator);
 
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("ENTITY HYDRATOR {} {}", specificEntityType, entityHydrator);
+                LOGGER.debug("Registered entity data hydrator: {}", specificEntityType);
             }
         }
     }
 
     private synchronized void onHydratorDeparture(ServiceReference<EntityHydrator<EntityData>> ref) {
         try {
-            Optional<String> entityType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
-                                                .filter(pd -> pd.getName()
-                                                                .equals("entityType"))
-                                                .map(PropertyDescription::getValue)
-                                                .findFirst();
+            Optional<String> entityType = Optional.ofNullable((String) ref.getProperty(Entity.TYPE_KEY));
+            Optional<String> entitySubType = Optional.ofNullable((String) ref.getProperty(Entity.SUB_TYPE_KEY));
 
             if (entityType.isPresent()) {
+                String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("REMOVE ENTITY HYDRATOR {}", entityType.get());
+                    LOGGER.debug("Deregistered entity data hydrator: {}", specificEntityType);
                 }
-                this.entityHydrators.remove(entityType.get());
+                this.entityHydrators.remove(specificEntityType);
             }
         } catch (Throwable w) {
             //ignore
@@ -220,31 +221,35 @@ public class EntityFactoryDefault implements EntityFactory {
     }
 
     private synchronized void onMigrationArrival(ServiceReference<EntityMigration<EntityData, EntityData>> ref) {
-        Optional<String> entityType = Optional.ofNullable((String) ref.getProperty("entityType"));
+        Optional<String> entityType = Optional.ofNullable((String) ref.getProperty(Entity.TYPE_KEY));
+        Optional<String> entitySubType = Optional.ofNullable((String) ref.getProperty(Entity.SUB_TYPE_KEY));
 
         if (entityType.isPresent()) {
+            String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
             EntityMigration<EntityData, EntityData> entityMigration = context.getService(ref);
-            entityMigrations.putIfAbsent(entityType.get(), new ConcurrentHashMap<>());
-            this.entityMigrations.get(entityType.get())
+            entityMigrations.putIfAbsent(specificEntityType, new ConcurrentHashMap<>());
+            this.entityMigrations.get(specificEntityType)
                                  .put(entityMigration.getSourceVersion(), entityMigration);
 
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Registered entity schema migration: {} v{} -> v{}", entityType.get(), entityMigration.getSourceVersion(), entityMigration.getTargetVersion());
+                LOGGER.debug("Registered entity schema migration: {} v{} -> v{}", specificEntityType, entityMigration.getSourceVersion(), entityMigration.getTargetVersion());
             }
         }
     }
 
     private synchronized void onMigrationDeparture(ServiceReference<EntityMigration<EntityData, EntityData>> ref) {
         try {
-            Optional<String> entityType = Optional.ofNullable((String) ref.getProperty("entityType"));
+            Optional<String> entityType = Optional.ofNullable((String) ref.getProperty(Entity.TYPE_KEY));
+            Optional<String> entitySubType = Optional.ofNullable((String) ref.getProperty(Entity.SUB_TYPE_KEY));
 
             if (entityType.isPresent()) {
+                String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
                 EntityMigration<EntityData, EntityData> entityMigration = context.getService(ref);
-                this.entityMigrations.get(entityType.get())
+                this.entityMigrations.get(specificEntityType)
                                      .remove(entityMigration.getSourceVersion());
 
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Deregistered entity schema migration: {} v{} -> v{}", entityType.get(), entityMigration.getSourceVersion(), entityMigration.getTargetVersion());
+                    LOGGER.debug("Deregistered entity schema migration: {} v{} -> v{}", specificEntityType, entityMigration.getSourceVersion(), entityMigration.getTargetVersion());
                 }
             }
         } catch (Throwable w) {
@@ -284,11 +289,13 @@ public class EntityFactoryDefault implements EntityFactory {
             return ImmutableMap.of(identifier, entityData);
         }
 
-        if (!entityMigrations.containsKey(entityType)) {
-            throw new IllegalStateException(String.format("Cannot load entity '%s' with type '%s' and storageVersion '%d', no migrations found.", entityData.getId(), entityType, entityData.getEntityStorageVersion()));
+        String specificEntityType = getSpecificEntityType(entityType, entityData.getEntitySubType());
+
+        if (!entityMigrations.containsKey(specificEntityType)) {
+            throw new IllegalStateException(String.format("Cannot load entity '%s' with type '%s' and storageVersion '%d', no migrations found.", entityData.getId(), specificEntityType, entityData.getEntityStorageVersion()));
         }
 
-        Map<Long, EntityMigration<EntityData, EntityData>> migrations = entityMigrations.get(entityType);
+        Map<Long, EntityMigration<EntityData, EntityData>> migrations = entityMigrations.get(specificEntityType);
         EntityData data = entityData;
         //final long maxSteps = targetVersion - sourceVersion;
         //long currentSteps = 0;
@@ -296,7 +303,7 @@ public class EntityFactoryDefault implements EntityFactory {
         /*sourceVersion < targetVersion && currentSteps < maxSteps*/
         while (targetVersion.isPresent() ? sourceVersion < targetVersion.getAsLong() : migrations.containsKey(sourceVersion)) {
             if (!migrations.containsKey(sourceVersion)) {
-                throw new IllegalStateException(String.format("No migration found for entity schema: %s v%d.", entityType, sourceVersion));
+                throw new IllegalStateException(String.format("No migration found for entity schema: %s v%d.", specificEntityType, sourceVersion));
             }
 
             data = migrations.get(sourceVersion)
@@ -416,6 +423,7 @@ public class EntityFactoryDefault implements EntityFactory {
     }
 
     private String getSpecificEntityType(String entityType, Optional<String> entitySubType) {
-        return entitySubType.isPresent() ? String.format("%s/%s", entityType, entitySubType.get().toLowerCase()) : entityType;
+        return entitySubType.isPresent() ? String.format("%s/%s", entityType, entitySubType.get()
+                                                                                           .toLowerCase()) : entityType;
     }
 }

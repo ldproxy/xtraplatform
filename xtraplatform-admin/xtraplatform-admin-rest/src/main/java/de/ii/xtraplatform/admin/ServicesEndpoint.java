@@ -19,6 +19,10 @@ import de.ii.xtraplatform.service.api.ServiceStatus;
 import de.ii.xtraplatform.web.api.Endpoint;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -62,7 +66,8 @@ public class ServicesEndpoint implements Endpoint {
     private final ObjectMapper objectMapper;
 
     ServicesEndpoint(@Requires EntityDataStore<EntityData> entityRepository, @Requires EntityRegistry entityRegistry,
-                     @Requires ServiceBackgroundTasks serviceBackgroundTasks, @Requires Jackson jackson, @Requires ServiceGenerator<ServiceData> serviceGenerator) {
+                     @Requires ServiceBackgroundTasks serviceBackgroundTasks, @Requires Jackson jackson,
+                     @Requires ServiceGenerator<ServiceData> serviceGenerator) {
         this.serviceRepository = entityRepository.forType(ServiceData.class);
         this.entityRegistry = entityRegistry;
         this.serviceBackgroundTasks = serviceBackgroundTasks;
@@ -72,7 +77,9 @@ public class ServicesEndpoint implements Endpoint {
 
     @GET
     @CacheControl(noCache = true)
-    public List<ServiceStatus> getServices(@Auth User user) {
+    public List<ServiceStatus> getServices(
+            @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user
+    ) {
         return serviceRepository.ids()
                                 .stream()
                                 .map(this::getServiceStatus)
@@ -81,7 +88,10 @@ public class ServicesEndpoint implements Endpoint {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response addService(@Auth User user, Map<String, String> request) {
+    public Response addService(
+            @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
+            @RequestBody Map<String, String> request
+    ) {
 
         if (!request.containsKey("id")) {
             throw new BadRequest("No id given");
@@ -96,15 +106,14 @@ public class ServicesEndpoint implements Endpoint {
         try {
             MDC.put("service", id);
 
-                ServiceData serviceData = serviceGenerator.generate(request); //= serviceRepository.generateEntity(request);
+            ServiceData serviceData = serviceGenerator.generate(request); //= serviceRepository.generateEntity(request);
 
-                ServiceData added = serviceRepository.put(id, serviceData)
-                                                     .get();
+            ServiceData added = serviceRepository.put(id, serviceData)
+                                                 .get();
 
-                return Response.ok()
-                               .entity(getServiceStatus(added))
-                               .build();
-
+            return Response.ok()
+                           .entity(getServiceStatus(added))
+                           .build();
 
 
         } catch (InterruptedException | ExecutionException e) {
@@ -116,10 +125,12 @@ public class ServicesEndpoint implements Endpoint {
                 }
             }
 
-            throw new BadRequest(e.getCause().getMessage());
+            throw new BadRequest(e.getCause()
+                                  .getMessage());
             //throw new InternalServerErrorException(e.getCause());
         } catch (Throwable e) {
-            throw new BadRequest(e.getCause().getMessage());
+            throw new BadRequest(e.getCause()
+                                  .getMessage());
         } finally {
             MDC.remove("service");
         }
@@ -128,13 +139,20 @@ public class ServicesEndpoint implements Endpoint {
     @Path("/{id}")
     @GET
     @CacheControl(noCache = true)
-    public Response getService(@Auth User user, @PathParam("id") String id) {
+    public Response getService(
+            @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
+            @PathParam("id") String id
+    ) {
 
         if (!serviceRepository.has(id)) {
             throw new NotFoundException();
         }
 
-        ServiceData serviceData = serviceRepository.get(id);
+        ServiceData serviceData = entityRegistry.getEntity(Service.class, id)
+                                                .map(Service::getData)
+                                                .orElseGet(() -> serviceRepository.get(id));
+
+        //ServiceData serviceData = serviceRepository.get(id);
 
         try {
             return Response.ok()
@@ -147,8 +165,12 @@ public class ServicesEndpoint implements Endpoint {
 
     @Path("/{id}")
     @POST
-    public Response updateService(@Auth User user, @PathParam("id") String id,
-                                                                        Map<String, Object> request) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateService(
+            @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
+            @PathParam("id") String id,
+            @RequestBody(required = true, content = {@Content()}) Map<String, Object> request
+    ) {
 
         if (!serviceRepository.has(id)) {
             throw new NotFoundException();
@@ -163,12 +185,8 @@ public class ServicesEndpoint implements Endpoint {
             return Response.ok()
                            .entity(objectMapper.writeValueAsString(updated))
                            .build();
-        } catch (InterruptedException | ExecutionException | JsonProcessingException e) {
-            if (e.getCause() instanceof IllegalArgumentException) {
-                throw new BadRequest(e.getCause()
-                                      .getMessage());
-            }
-            throw new InternalServerErrorException();
+        } catch (Throwable e) {
+                throw new BadRequest("Invalid request body: " + e.getMessage());
         } finally {
             MDC.remove("service");
         }
@@ -176,7 +194,10 @@ public class ServicesEndpoint implements Endpoint {
 
     @Path("/{id}")
     @DELETE
-    public Response deleteService(@Auth User user, @PathParam("id") String id) {
+    public Response deleteService(
+            @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
+            @PathParam("id") String id
+    ) {
         try {
             MDC.put("service", id);
 
