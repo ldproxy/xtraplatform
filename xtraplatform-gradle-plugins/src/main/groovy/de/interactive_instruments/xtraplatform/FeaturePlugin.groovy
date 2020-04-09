@@ -78,6 +78,12 @@ class FeaturePlugin implements Plugin<Project> {
                 }
             }
 
+            subproject.configurations.all {
+                exclude group: 'org.osgi', module: 'org.osgi.core'
+                exclude group: 'org.osgi', module: 'org.osgi.compendium'
+            }
+
+
 
             subproject.afterEvaluate {
                 if (subproject.version != null && subproject.version  != 'unspecified') {
