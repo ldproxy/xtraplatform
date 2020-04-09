@@ -105,15 +105,19 @@ public class WebServerDropwizard {
                         LOGGER.info("Stopped web server at {}", u);
 
                     } catch (MultiException ex) {
-                        for (Throwable t : ex.getThrowables()) {
-                            if (t != null) {
-                                LOGGER.error("Error stopping web server: {}", t.getMessage());
-                                LOGGER.debug("Error stopping web server", t);
+                        for (Throwable e : ex.getThrowables()) {
+                            if (e != null) {
+                                LOGGER.error("Error stopping web server: {}", e.getMessage());
+                                if (LOGGER.isDebugEnabled()) {
+                                    LOGGER.debug("Stacktrace", e);
+                                }
                             }
                         }
-                    } catch (Exception ex) {
-                        LOGGER.error("Error stopping web server: {}", ex.getMessage());
-                        LOGGER.debug("Error stopping web server", ex);
+                    } catch (Exception e) {
+                        LOGGER.error("Error stopping web server: {}", e.getMessage());
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Stacktrace", e);
+                        }
                     }
 
 
@@ -124,7 +128,9 @@ public class WebServerDropwizard {
                     }
                 }
                 if (!started && (action == StartStopAction.START || action == StartStopAction.RESTART)) {
-                    LOGGER.debug("DW START {}", Thread.currentThread().getName());
+                    if (LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("DW START {}", Thread.currentThread().getName());
+                    }
                     cleanup();
 
                     try {
@@ -134,9 +140,11 @@ public class WebServerDropwizard {
 
                         LOGGER.info("Started web server at {}", getUrl());
 
-                    } catch (Exception ex) {
-                        LOGGER.error("Error starting web server: {}", ex.getMessage());
-                        LOGGER.debug("Error starting web server", ex);
+                    } catch (Exception e) {
+                        LOGGER.error("Error starting web server: {}", e.getMessage());
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Stacktrace", e);
+                        }
                     }
                 }
             } finally {
@@ -147,14 +155,18 @@ public class WebServerDropwizard {
 
     @Validate
     protected void startBundle() {
-        LOGGER.debug("DW STARTBUNDLE");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("DW STARTBUNDLE");
+        }
 
         start();
     }
 
     @Invalidate
     protected void stopBundle() {
-        LOGGER.debug("DW STOPBUNDLE");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("DW STOPBUNDLE");
+        }
 
         stop();
 
@@ -162,26 +174,31 @@ public class WebServerDropwizard {
     }
 
     protected void start() {
-        LOGGER.debug("DW START");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("DW START");
+        }
 
         startStopThread.submit(new StartStop(StartStopAction.START));
     }
 
     protected void stop() {
-        LOGGER.debug("DW STOP");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("DW STOP");
+        }
 
         startStopThread.submit(new StartStop(StartStopAction.STOP));
     }
 
     protected void restart() {
-        LOGGER.debug("DW RESTART");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("DW RESTART");
+        }
 
         startStopThread.submit(new StartStop(StartStopAction.RESTART));
     }
 
     private void init() {
         if (!initialized) {
-            LOGGER.info("-----------------------------------------------------");
 
             dw.getJersey().setUrlPattern(JERSEY_ENDPOINT);
 
@@ -216,15 +233,21 @@ public class WebServerDropwizard {
     }
 
     private void cleanup() {
-        LOGGER.debug("DW CLEANUP");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("DW CLEANUP");
+        }
         if (!initialized) {
-            LOGGER.debug("DW CLEANUP 1");
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("DW CLEANUP 1");
+            }
             init();
             // cleanup servletContext
             ServletContext servletContext = dw.getApplicationContext().getServletContext();
             servletContext.setAttribute(BundleContext.class.getName(), context);
         } else {
-            LOGGER.debug("DW CLEANUP 2");
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("DW CLEANUP 2");
+            }
             // cleanup servletContext
             ServletContext servletContext = dw.getApplicationContext().getServletContext();
             servletContext.setAttribute(BundleContext.class.getName(), context);
@@ -232,7 +255,9 @@ public class WebServerDropwizard {
             dw.resetServer();
         }
 
-        LOGGER.debug("DW CLEANUP 3");
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("DW CLEANUP 3");
+        }
 
         // cleanup session manager
         /*if (this.sessionManager == null) {

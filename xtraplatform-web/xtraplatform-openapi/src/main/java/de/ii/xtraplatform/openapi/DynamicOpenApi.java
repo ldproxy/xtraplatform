@@ -16,6 +16,9 @@ import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.jaxrs2.Reader;
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.ipojo.annotations.*;
 import org.slf4j.Logger;
@@ -53,6 +56,12 @@ public class DynamicOpenApi extends BaseOpenApiResource implements JaxRsChangeLi
     private synchronized void scan() {
         Reader reader = new Reader(new OpenAPI());
         this.openApiSpec = reader.read(getResourceClasses());
+        openApiSpec.addServersItem(new Server().url("/rest"));
+        openApiSpec.getComponents()
+               .addSecuritySchemes("JWT", new SecurityScheme().type(SecurityScheme.Type.HTTP)
+                                                              .scheme("bearer")
+                                                              .bearerFormat("JWT"));
+        openApiSpec.addSecurityItem(new SecurityRequirement().addList("JWT"));
         this.upToDate = true;
     }
 
