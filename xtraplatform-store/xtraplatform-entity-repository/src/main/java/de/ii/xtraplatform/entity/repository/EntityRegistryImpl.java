@@ -104,5 +104,6 @@ public class EntityRegistryImpl implements EntityRegistry {
     @Override
     public void addEntityListener(BiConsumer<String, PersistentEntity> listener) {
         this.entityListeners.add(listener);
+        //entities.forEach(entity -> listener.accept(entity.getId(), entity));
     }
 }

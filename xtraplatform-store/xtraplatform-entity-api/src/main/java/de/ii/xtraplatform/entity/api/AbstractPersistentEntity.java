@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.entity.api;
 
+import de.ii.xtraplatform.entity.api.handler.Entity;
 import org.apache.felix.ipojo.annotations.Property;
 import org.apache.felix.ipojo.annotations.ServiceController;
 import org.apache.felix.ipojo.annotations.Validate;
@@ -39,7 +40,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
         return data;
     }
 
-    @Property(name = "data") // is ignored here, but added by @Entity handler
+    @Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler
     public final void setData(T data) {
         LOGGER.debug("GOT data {}"/*, data*/);
         this.data = data;
