@@ -23,4 +23,5 @@ public @interface Entity {
     String TYPE_KEY = "type";
     String SUB_TYPE_KEY = "subType";
     String DATA_CLASS_KEY = "dataClass";
+    String DATA_KEY = "data";
 }

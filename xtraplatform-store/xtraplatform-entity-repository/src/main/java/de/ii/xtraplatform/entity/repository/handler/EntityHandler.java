@@ -90,7 +90,7 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         controller.addAttribute(new Attribute("value", "false"));
 
 
-        // add @Property(name = "data") for method setData in class AbstractPersistentEntity
+        // add @Property(name = Entity.DATA_KEY) for method setData in class AbstractPersistentEntity
         Element properties;
         Element[] confs = metadata.getElements("Properties", "");
         if (confs == null || confs.length == 0) {
@@ -101,7 +101,7 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
         }
         Element data = new Element("property", null);
         properties.addElement(data);
-        data.addAttribute(new Attribute("name", "data"));
+        data.addAttribute(new Attribute("name", Entity.DATA_KEY));
         data.addAttribute(new Attribute("method", "setData"));
         data.addAttribute(new Attribute("type", EntityData.class.getName()));
 

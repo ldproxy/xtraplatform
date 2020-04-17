@@ -11,6 +11,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.api.Jackson;
+import de.ii.xtraplatform.entity.api.AutoEntity;
 import de.ii.xtraplatform.entity.api.EntityData;
 import de.ii.xtraplatform.entity.api.PersistentEntity;
 import org.apache.felix.ipojo.annotations.Component;
@@ -74,6 +75,13 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
     }
 
     @Override
+    protected EntityData hydrate(Identifier identifier, EntityData entityData) {
+        String entityType = identifier.path()
+                                      .get(0);
+        return entityFactory.hydrateData(identifier, entityType, entityData);
+    }
+
+    @Override
     protected void addAdditionalEvent(Identifier identifier, EntityData entityData) {
         additionalEvents.put(identifier, entityData);
     }
@@ -113,8 +121,18 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
 
     @Override
     protected CompletableFuture<PersistentEntity> onCreate(Identifier identifier, EntityData entityData) {
+        EntityData hydratedData = hydrate(identifier, entityData);
+
+        if (entityData instanceof AutoEntity) {
+            AutoEntity autoEntity = (AutoEntity) entityData;
+            if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
+                putWithoutTrigger(identifier, hydratedData).join();
+                LOGGER.info("Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.", identifier.path().get(0), entityData.getId());
+            }
+        }
+
         return entityFactory.createInstance(identifier.path()
-                                                      .get(0), identifier.id(), entityData)
+                                                      .get(0), identifier.id(), hydratedData)
                             .whenComplete((entity, throwable) -> LOGGER.debug("Entity created: {}", identifier));
     }
 

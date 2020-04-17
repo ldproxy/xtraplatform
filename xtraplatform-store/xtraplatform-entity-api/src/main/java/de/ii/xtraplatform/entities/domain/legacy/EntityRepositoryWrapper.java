@@ -5,7 +5,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.entity.api;
+package de.ii.xtraplatform.entities.domain.legacy;
+
+import de.ii.xtraplatform.entity.api.EntityRepository;
+import de.ii.xtraplatform.entity.api.EntityRepositoryChangeListener;
+import de.ii.xtraplatform.entity.api.RemoveEntityData;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,6 +18,7 @@ import java.util.Map;
 /**
  * @author zahnen
  */
+@Deprecated // needed for 1.3.x service migration
 public abstract class EntityRepositoryWrapper implements EntityRepository {
 
     private final EntityRepository entityRepository;

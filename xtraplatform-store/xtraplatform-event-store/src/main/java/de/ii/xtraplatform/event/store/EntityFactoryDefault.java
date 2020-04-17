@@ -173,7 +173,7 @@ public class EntityFactoryDefault implements EntityFactory {
         Optional<String> entitySubType = Optional.ofNullable((String) ref.getProperty(Entity.SUB_TYPE_KEY));
         Optional<String> entityDataType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
                                                 .filter(pd -> pd.getName()
-                                                                .equals("data"))
+                                                                .equals(Entity.DATA_KEY))
                                                 .map(PropertyDescription::getType)
                                                 .findFirst();
 
@@ -321,6 +321,43 @@ public class EntityFactoryDefault implements EntityFactory {
     }
 
     @Override
+    public EntityData hydrateData(Identifier identifier, String entityType, EntityData entityData) {
+
+        String specificEntityType = getSpecificEntityType(entityType, entityData.getEntitySubType());
+        String id = identifier.id();
+
+        if (entityHydrators.containsKey(specificEntityType)) {
+            try {
+                return entityHydrators.get(specificEntityType)
+                                      .hydrateData(entityData);
+
+            } catch (Throwable e) {
+                LOGGER.error("Entity of type '{}' with id '{}' could not be hydrated: {}", specificEntityType, id, e.getMessage());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Cause:", e);
+                }
+                //throw e;
+            }
+
+        } else if (entityHydrators.containsKey(entityType)) {
+            try {
+                return entityHydrators.get(entityType)
+                                      .hydrateData(entityData);
+
+            } catch (Throwable e) {
+                LOGGER.error("Entity of type '{}' with id '{}' could not be hydrated: {}", entityType, id, e.getMessage());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Cause:", e);
+                }
+                //throw e;
+            }
+
+        }
+
+        return entityData;
+    }
+
+    @Override
     public String getDataTypeName(Class<? extends EntityData> entityDataClass) {
         return entityDataTypes.get(entityDataClass);
     }
@@ -337,35 +374,7 @@ public class EntityFactoryDefault implements EntityFactory {
         ConfigurationBuilder instanceBuilder = declarationBuilderService.newInstance(instanceClassName)
                                                                         .name(instanceId)
                                                                         .configure()
-                                                                        .property("data", entityData);
-
-        if (entityHydrators.containsKey(specificEntityType)) {
-            try {
-                entityHydrators.get(specificEntityType)
-                               .getInstanceConfiguration(entityData)
-                               .forEach(instanceBuilder::property);
-            } catch (Throwable e) {
-                LOGGER.error("Entity of type '{}' with id '{}' could not be hydrated: {}", specificEntityType, id, e.getMessage());
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Cause:", e);
-                }
-                //throw e;
-            }
-
-        } else if (entityHydrators.containsKey(entityType)) {
-            try {
-                entityHydrators.get(entityType)
-                               .getInstanceConfiguration(entityData)
-                               .forEach(instanceBuilder::property);
-            } catch (Throwable e) {
-                LOGGER.error("Entity of type '{}' with id '{}' could not be hydrated: {}", entityType, id, e.getMessage());
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Cause:", e);
-                }
-                //throw e;
-            }
-
-        }
+                                                                        .property(Entity.DATA_KEY, entityData);
 
         CompletableFuture<PersistentEntity> registration = new CompletableFuture<>();
         this.instanceRegistration.put(instanceId, registration);
@@ -391,7 +400,7 @@ public class EntityFactoryDefault implements EntityFactory {
         /*if (instanceHandles.containsKey(instanceId)) {
             Dictionary<String, Object> configuration = new Hashtable<>();
             configuration.put("instance.name", instanceId);
-            configuration.put("data", entityData);
+            configuration.put(Entity.DATA_KEY, entityData);
 
             if (entityHydrators.containsKey(entityType)) {
                 entityHydrators.get(entityType)

@@ -8,6 +8,8 @@
 package de.ii.xtraplatform.service.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import de.ii.xtraplatform.entity.api.AutoEntity;
 import de.ii.xtraplatform.entity.api.EntityData;
 import org.immutables.value.Value;
 
@@ -17,7 +19,7 @@ import java.util.Optional;
 /**
  * @author zahnen
  */
-public interface ServiceData extends EntityData {
+public interface ServiceData extends EntityData, AutoEntity {
 
     String getServiceType();
 
@@ -41,6 +43,14 @@ public interface ServiceData extends EntityData {
     }
 
     Optional<Integer> getApiVersion();
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Override
+    Optional<Boolean> getAuto();
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Override
+    Optional<Boolean> getAutoPersist();
 
     @JsonIgnore
     default boolean isLoading() {

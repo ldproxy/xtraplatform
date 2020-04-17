@@ -32,9 +32,9 @@ public interface EntityData {
                       .toEpochMilli();
     }
 
-    @Value.Default
+    @Value.Derived
     default long getEntityStorageVersion() {
-        return 1;
+        return getEntitySchemaVersion();
     }
 
     @JsonIgnore

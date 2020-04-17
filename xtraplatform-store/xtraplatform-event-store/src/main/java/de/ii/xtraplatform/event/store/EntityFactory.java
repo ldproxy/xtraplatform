@@ -16,6 +16,8 @@ public interface EntityFactory {
     Map<Identifier, EntityData> migrateSchema(Identifier identifier, String entityType,
                                               EntityData entityData, OptionalLong targetVersion);
 
+    EntityData hydrateData(Identifier identifier, String entityType, EntityData entityData);
+
     String getDataTypeName(Class<? extends EntityData> entityDataClass);
 
     CompletableFuture<PersistentEntity> createInstance(String entityType, String id, EntityData entityData);

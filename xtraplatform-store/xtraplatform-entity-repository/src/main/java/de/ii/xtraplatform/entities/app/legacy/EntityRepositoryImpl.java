@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.entity.repository;
+package de.ii.xtraplatform.entities.app.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
@@ -18,6 +18,8 @@ import de.ii.xtraplatform.entity.api.EntityDataGenerator;
 import de.ii.xtraplatform.entity.api.EntityRepository;
 import de.ii.xtraplatform.entity.api.EntityRepositoryChangeListener;
 import de.ii.xtraplatform.entity.api.RemoveEntityData;
+import de.ii.xtraplatform.entity.api.handler.Entity;
+import de.ii.xtraplatform.entity.repository.EntitySerializer;
 import de.ii.xtraplatform.kvstore.api.KeyValueStore;
 import de.ii.xtraplatform.kvstore.api.rest.AbstractGenericResourceStore;
 import de.ii.xtraplatform.kvstore.api.rest.ResourceSerializer;
@@ -51,6 +53,7 @@ import java.util.stream.Collectors;
  * @author zahnen
  */
 //TODO: why is this needed still? when deactivated entities do not work any more
+@Deprecated // needed for 1.3.x service migration
 @Component(publicFactory = false)
 @Provides
 @Instantiate
@@ -65,13 +68,13 @@ public class EntityRepositoryImpl implements EntityRepository {
     @Context
     BundleContext context;
 
-    @Publishes(name = "create", topics = "create", dataKey = "data", synchronous = true)
+    @Publishes(name = "create", topics = "create", dataKey = Entity.DATA_KEY, synchronous = true)
     private Publisher createListeners;
 
-    @Publishes(name = "update", topics = "update", dataKey = "data", synchronous = true)
+    @Publishes(name = "update", topics = "update", dataKey = Entity.DATA_KEY, synchronous = true)
     private Publisher updateListeners;
 
-    @Publishes(name = "delete", topics = "delete", dataKey = "data", synchronous = true)
+    @Publishes(name = "delete", topics = "delete", dataKey = Entity.DATA_KEY, synchronous = true)
     private Publisher deleteListeners;
 
     private final Map<String,String> entityTypes;
