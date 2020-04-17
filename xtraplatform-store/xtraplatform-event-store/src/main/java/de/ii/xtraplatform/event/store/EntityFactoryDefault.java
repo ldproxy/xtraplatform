@@ -10,6 +10,7 @@ package de.ii.xtraplatform.event.store;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entity.api.EntityDataGenerator;
 import de.ii.xtraplatform.entity.api.EntityRegistry;
 import de.ii.xtraplatform.entity.api.PersistentEntity;
 import de.ii.xtraplatform.entity.api.handler.Entity;
