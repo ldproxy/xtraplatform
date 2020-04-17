@@ -1,6 +1,0 @@
-
-dependencies {
-    provided project(':xtraplatform-entity-api')
-    provided project(':xtraplatform-kvstore-api')
-}
-

@@ -9,11 +9,10 @@ package de.ii.xtraplatform.event.store;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
-import de.ii.xtraplatform.entity.api.EntityData;
-import de.ii.xtraplatform.entity.api.EntityDataGenerator;
-import de.ii.xtraplatform.entity.api.EntityRegistry;
-import de.ii.xtraplatform.entity.api.PersistentEntity;
-import de.ii.xtraplatform.entity.api.handler.Entity;
+import de.ii.xtraplatform.entities.domain.EntityData;
+import de.ii.xtraplatform.entities.domain.EntityRegistry;
+import de.ii.xtraplatform.entities.domain.PersistentEntity;
+import de.ii.xtraplatform.entities.domain.handler.Entity;
 import org.apache.felix.ipojo.ComponentFactory;
 import org.apache.felix.ipojo.Factory;
 import org.apache.felix.ipojo.annotations.Component;
@@ -53,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 @Instantiate
 @Whiteboards(whiteboards = {
         @Wbp(
-                filter = "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=de.ii.xtraplatform.entity.api.PersistentEntity))",
+                filter = "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=de.ii.xtraplatform.entities.domain.PersistentEntity))",
                 onArrival = "onFactoryArrival",
                 onDeparture = "onFactoryDeparture"),
         @Wbp(

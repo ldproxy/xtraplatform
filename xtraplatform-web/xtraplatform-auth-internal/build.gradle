@@ -5,7 +5,7 @@ dependencies {
     provided project(':xtraplatform-server')
 
     provided group: 'de.interactive_instruments', name: 'xtraplatform-config-store-api'
-    provided group: 'de.interactive_instruments', name: 'xtraplatform-entity-api'
+    provided group: 'de.interactive_instruments', name: 'xtraplatform-entities'
     provided group: 'de.interactive_instruments', name: 'xtraplatform-event-store'
 
 }  

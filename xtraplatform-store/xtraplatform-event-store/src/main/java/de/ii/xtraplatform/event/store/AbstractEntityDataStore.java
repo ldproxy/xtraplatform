@@ -5,8 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entities.domain.EntityData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

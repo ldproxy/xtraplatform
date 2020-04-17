@@ -1,5 +1,5 @@
 
 dependencies {
-    provided project(':xtraplatform-entity-api')
+    provided project(':xtraplatform-entities')
     provided project(':xtraplatform-scheduler-api')
 }

@@ -1,7 +1,7 @@
 
 dependencies {
     provided "de.interactive_instruments:xtraplatform-config-store-api"
-    provided "de.interactive_instruments:xtraplatform-entity-api"
+    provided "de.interactive_instruments:xtraplatform-entities"
     provided "de.interactive_instruments:xtraplatform-event-store"
     provided "de.interactive_instruments:xtraplatform-kvstore-api"
     provided "de.interactive_instruments:xtraplatform-service-api"

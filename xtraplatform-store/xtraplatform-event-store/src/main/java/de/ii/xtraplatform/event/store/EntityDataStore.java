@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.event.store;
 
-import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entities.domain.EntityData;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;

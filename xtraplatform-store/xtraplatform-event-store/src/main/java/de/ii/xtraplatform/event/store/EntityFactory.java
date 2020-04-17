@@ -1,7 +1,7 @@
 package de.ii.xtraplatform.event.store;
 
-import de.ii.xtraplatform.entity.api.EntityData;
-import de.ii.xtraplatform.entity.api.PersistentEntity;
+import de.ii.xtraplatform.entities.domain.EntityData;
+import de.ii.xtraplatform.entities.domain.PersistentEntity;
 
 import java.util.Map;
 import java.util.OptionalLong;

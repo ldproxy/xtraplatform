@@ -2,10 +2,10 @@ package de.ii.xtraplatform.auth.internal;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.auth.api.Role;
-import de.ii.xtraplatform.entity.api.AbstractPersistentEntity;
-import de.ii.xtraplatform.entity.api.EntityComponent;
-import de.ii.xtraplatform.entity.api.EntityData;
-import de.ii.xtraplatform.entity.api.handler.Entity;
+import de.ii.xtraplatform.entities.domain.AbstractPersistentEntity;
+import de.ii.xtraplatform.entities.domain.EntityComponent;
+import de.ii.xtraplatform.entities.domain.EntityData;
+import de.ii.xtraplatform.entities.domain.handler.Entity;
 import de.ii.xtraplatform.event.store.EntityDataBuilder;
 import org.immutables.value.Value;
 
