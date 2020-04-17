@@ -63,6 +63,8 @@ public abstract class AbstractEntityDataStore<T extends EntityData> extends Abst
 
     protected abstract Map<Identifier, T> migrate(Identifier identifier, T entityData, OptionalLong targetVersion);
 
+    protected abstract EntityData hydrate(Identifier identifier, EntityData entityData);
+
     protected abstract void addAdditionalEvent(Identifier identifier, T entityData);
 
     @Override
