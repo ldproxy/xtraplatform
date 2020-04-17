@@ -5,9 +5,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.entity.api;
+package de.ii.xtraplatform.entities.domain.legacy;
 
 import com.google.common.collect.ObjectArrays;
+import de.ii.xtraplatform.entity.api.EntityRepository;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 /**
  * @author zahnen
  */
+@Deprecated // needed for 1.3.x service migration
 public class EntityRepositoryForType extends EntityRepositoryWrapper {
 
     private final String entityType;
@@ -27,7 +29,7 @@ public class EntityRepositoryForType extends EntityRepositoryWrapper {
 
     @Override
     protected String transformId(String id) {
-        return String.format("%s%s%s", entityType, ID_SEPARATOR, id);
+        return String.format("%s%s%s", entityType, EntityRepository.ID_SEPARATOR, id);
     }
 
     @Override
@@ -45,7 +47,7 @@ public class EntityRepositoryForType extends EntityRepositoryWrapper {
     }
 
     private Predicate<String> isTransformed() {
-        return id -> id.startsWith(entityType + ID_SEPARATOR);
+        return id -> id.startsWith(entityType + EntityRepository.ID_SEPARATOR);
     }
 
     private String reverseTransformId(String id) {
