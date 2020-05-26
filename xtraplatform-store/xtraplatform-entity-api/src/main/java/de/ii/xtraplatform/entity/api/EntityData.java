@@ -32,7 +32,7 @@ public interface EntityData {
                       .toEpochMilli();
     }
 
-    @Value.Derived
+    @Value.Default
     default long getEntityStorageVersion() {
         return getEntitySchemaVersion();
     }
