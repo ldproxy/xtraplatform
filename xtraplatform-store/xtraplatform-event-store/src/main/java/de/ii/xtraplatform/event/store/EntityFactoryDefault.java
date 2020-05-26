@@ -291,11 +291,11 @@ public class EntityFactoryDefault implements EntityFactory {
 
         String specificEntityType = getSpecificEntityType(entityType, entityData.getEntitySubType());
 
-        if (!entityMigrations.containsKey(specificEntityType)) {
+        if (!entityMigrations.containsKey(specificEntityType) && !entityMigrations.containsKey(entityType)) {
             throw new IllegalStateException(String.format("Cannot load entity '%s' with type '%s' and storageVersion '%d', no migrations found.", entityData.getId(), specificEntityType, entityData.getEntityStorageVersion()));
         }
 
-        Map<Long, EntityMigration<EntityData, EntityData>> migrations = entityMigrations.get(specificEntityType);
+        Map<Long, EntityMigration<EntityData, EntityData>> migrations = entityMigrations.containsKey(specificEntityType) ? entityMigrations.get(specificEntityType) : entityMigrations.get(entityType);
         EntityData data = entityData;
         //final long maxSteps = targetVersion - sourceVersion;
         //long currentSteps = 0;
