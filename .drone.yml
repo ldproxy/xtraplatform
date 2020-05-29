@@ -4,7 +4,7 @@ pipeline:
     image: openjdk:11-slim
     commands:
       - cd xtraplatform-base 
-      - ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+      - ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS --stacktrace
 
   publish:
     image: openjdk:11-slim
