@@ -19,3 +19,4 @@ pipeline:
     image: plugins/slack
     webhook: ${SLACK_WEBHOOK}
     secrets: [ slack_webhook ]
+
