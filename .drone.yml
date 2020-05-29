@@ -1,13 +1,13 @@
 pipeline:
 
   build:
-    image: openjdk:11-alpine
+    image: openjdk:11-slim
     commands:
       - cd xtraplatform-base 
       - ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
 
   publish:
-    image: openjdk:11-alpine
+    image: openjdk:11-slim
     commands:
       - cd xtraplatform-base 
       - ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
