@@ -101,6 +101,10 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }
 
+        if (JavaVersion.current().isJava9Compatible()) {
+            project.application.applicationDefaultJvmArgs  = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED']
+        }
+
         project.tasks.run.with {
             dependsOn project.tasks.installDist
             dependsOn project.tasks.addDevBundles
