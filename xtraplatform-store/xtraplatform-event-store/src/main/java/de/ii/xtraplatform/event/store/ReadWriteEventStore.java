@@ -26,7 +26,8 @@ public class ReadWriteEventStore extends AbstractFileSystemEventStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadWriteEventStore.class);
 
-    @Controller
+    @ServiceController(value = false)
+    private boolean publish;
     private final boolean isEnabled;
 
     ReadWriteEventStore(@Context BundleContext bundleContext, @Requires XtraPlatform xtraPlatform,
@@ -39,6 +40,7 @@ public class ReadWriteEventStore extends AbstractFileSystemEventStore {
     private void onInit() {
         if (isEnabled) {
             replay();
+            this.publish = true;
         }
     }
 
