@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import de.ii.xtraplatform.entity.api.EntityData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +15,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 
@@ -59,9 +59,9 @@ public abstract class AbstractEntityDataStore<T extends EntityData> extends Abst
 
     protected abstract EntityDataBuilder<T> getBuilder(Identifier identifier);
 
-    protected abstract EntityDataBuilder<T> getBuilder(Identifier identifier, long entitySchemaVersion);
+    protected abstract EntityDataBuilder<T> getBuilder(Identifier identifier, long entitySchemaVersion, Optional<String> entitySubType);
 
-    protected abstract Map<Identifier, T> migrate(Identifier identifier, T entityData, OptionalLong targetVersion);
+    protected abstract Map<Identifier, T> migrate(Identifier identifier, T entityData, Optional<String> entitySubType, OptionalLong targetVersion);
 
     protected abstract EntityData hydrate(Identifier identifier, EntityData entityData);
 
@@ -129,7 +129,7 @@ public abstract class AbstractEntityDataStore<T extends EntityData> extends Abst
 
     private T ensureFreshestSchema(Identifier identifier, T entityData, byte[] payload, FORMAT format) throws IOException {
         if (entityData.getEntityStorageVersion() < entityData.getEntitySchemaVersion()) {
-            migrateSchema(identifier, payload, format, entityData.getEntityStorageVersion(), OptionalLong.of(entityData.getEntitySchemaVersion()));
+            migrateSchema(identifier, payload, format, entityData.getEntityStorageVersion(), entityData.getEntitySubType(), OptionalLong.of(entityData.getEntitySchemaVersion()));
 
             return null;
         }
@@ -147,18 +147,18 @@ public abstract class AbstractEntityDataStore<T extends EntityData> extends Abst
 
         long storageVersion =  ((Number) map.getOrDefault("entityStorageVersion", 1)).longValue();
 
-        migrateSchema(identifier, payload, format, storageVersion, OptionalLong.empty());
+        migrateSchema(identifier, payload, format, storageVersion, Optional.empty(), OptionalLong.empty());
 
         return null;
     }
 
     private void migrateSchema(Identifier identifier, byte[] payload,
                                FORMAT format,
-                               long storageVersion, OptionalLong targetVersion) throws IOException {
-        EntityDataBuilder<T> builder = getBuilder(identifier, storageVersion);
+                               long storageVersion, Optional<String> entitySubType, OptionalLong targetVersion) throws IOException {
+        EntityDataBuilder<T> builder = getBuilder(identifier, storageVersion, entitySubType);
         T entityDataOld = deserialize(builder, identifier, payload, format);
 
-        Map<Identifier, T> entityDataNew = migrate(identifier, entityDataOld, targetVersion);
+        Map<Identifier, T> entityDataNew = migrate(identifier, entityDataOld, entitySubType, targetVersion);
 
         entityDataNew.forEach(this::addAdditionalEvent);
 

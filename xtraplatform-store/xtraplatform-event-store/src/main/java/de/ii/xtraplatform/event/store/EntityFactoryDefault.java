@@ -10,7 +10,6 @@ package de.ii.xtraplatform.event.store;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.entity.api.EntityData;
-import de.ii.xtraplatform.entity.api.EntityDataGenerator;
 import de.ii.xtraplatform.entity.api.EntityRegistry;
 import de.ii.xtraplatform.entity.api.PersistentEntity;
 import de.ii.xtraplatform.entity.api.handler.Entity;
@@ -269,11 +268,18 @@ public class EntityFactoryDefault implements EntityFactory {
     }
 
     @Override
-    public EntityDataBuilder<EntityData> getDataBuilder(String entityType, long entitySchemaVersion) {
+    public EntityDataBuilder<EntityData> getDataBuilder(String entityType, long entitySchemaVersion, Optional<String> entitySubType) {
+        String specificEntityType = getSpecificEntityType(entityType, entitySubType);
+
+        if (!entityMigrations.containsKey(specificEntityType) && !entityMigrations.containsKey(entityType)) {
+            throw new IllegalStateException(String.format("Cannot migrate entity with type '%s' and storageVersion '%d', no migrations found.", specificEntityType, entitySchemaVersion));
+        }
+
+        Map<Long, EntityMigration<EntityData, EntityData>> migrations = entityMigrations.containsKey(specificEntityType) ? entityMigrations.get(specificEntityType) : entityMigrations.get(entityType);
+
         try {
-            return entityMigrations.get(entityType)
-                                   .get(entitySchemaVersion)
-                                   .getDataBuilder();
+            return migrations.get(entitySchemaVersion)
+                             .getDataBuilder();
         } catch (Throwable e) {
             throw new IllegalStateException("no builder found for entity type " + entityType);
         }
@@ -282,14 +288,15 @@ public class EntityFactoryDefault implements EntityFactory {
     @Override
     public Map<Identifier, EntityData> migrateSchema(Identifier identifier,
                                                      String entityType, EntityData entityData,
-                                                     OptionalLong targetVersion) {
+                                                     Optional<String> entitySubType, OptionalLong targetVersion) {
         long sourceVersion = entityData.getEntityStorageVersion();
 
         if (targetVersion.isPresent() && sourceVersion == targetVersion.getAsLong()) {
             return ImmutableMap.of(identifier, entityData);
         }
 
-        String specificEntityType = getSpecificEntityType(entityType, entityData.getEntitySubType());
+        Optional<String> subType = entitySubType.isPresent() ? entitySubType : entityData.getEntitySubType();
+        String specificEntityType = getSpecificEntityType(entityType, subType);
 
         if (!entityMigrations.containsKey(specificEntityType) && !entityMigrations.containsKey(entityType)) {
             throw new IllegalStateException(String.format("Cannot load entity '%s' with type '%s' and storageVersion '%d', no migrations found.", entityData.getId(), specificEntityType, entityData.getEntityStorageVersion()));
@@ -306,10 +313,13 @@ public class EntityFactoryDefault implements EntityFactory {
                 throw new IllegalStateException(String.format("No migration found for entity schema: %s v%d.", specificEntityType, sourceVersion));
             }
 
-            data = migrations.get(sourceVersion)
-                             .migrate(data);
+            EntityMigration<EntityData, EntityData> migration = migrations.get(sourceVersion);
+            data = migration.migrate(data);
             sourceVersion = data.getEntityStorageVersion();
             //currentSteps++;
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Migrated schema for entity '{}' with type '{}': v{} -> v{}", entityData.getId(), specificEntityType, migration.getSourceVersion(), migration.getTargetVersion());
+            }
         }
 
         Map<Identifier, EntityData> additionalEntities = migrations.get(entityData.getEntityStorageVersion())
