@@ -34,7 +34,7 @@ public interface EntityData {
 
     @Value.Default
     default long getEntityStorageVersion() {
-        return getEntitySchemaVersion();
+        return 1;
     }
 
     @JsonIgnore

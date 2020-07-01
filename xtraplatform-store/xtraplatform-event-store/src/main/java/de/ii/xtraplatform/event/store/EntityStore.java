@@ -10,6 +10,7 @@ package de.ii.xtraplatform.event.store;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.collect.ObjectArrays;
+import com.google.common.collect.Streams;
 import de.ii.xtraplatform.dropwizard.api.Jackson;
 import de.ii.xtraplatform.entity.api.AutoEntity;
 import de.ii.xtraplatform.entity.api.EntityData;
@@ -21,11 +22,16 @@ import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author zahnen
@@ -41,7 +47,7 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
 
     private final EventStore eventStore;
     private final EntityFactory entityFactory;
-    private final Map<Identifier, EntityData> additionalEvents;
+    private final Queue<Map.Entry<Identifier, EntityData>> additionalEvents;
 
     protected EntityStore(@Requires EventStore eventStore, @Requires Jackson jackson,
                           @Requires EntityFactory entityFactory) {
@@ -51,7 +57,7 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
 
         this.eventStore = eventStore;
         this.entityFactory = entityFactory;
-        this.additionalEvents = new LinkedHashMap<>();
+        this.additionalEvents = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -61,17 +67,17 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
     }
 
     @Override
-    protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, long entitySchemaVersion) {
+    protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, long entitySchemaVersion, Optional<String> entitySubType) {
         return entityFactory.getDataBuilder(identifier.path()
-                                                      .get(0), entitySchemaVersion);
+                                                      .get(0), entitySchemaVersion, entitySubType);
     }
 
     @Override
     protected Map<Identifier, EntityData> migrate(Identifier identifier, EntityData entityData,
-                                                  OptionalLong targetVersion) {
+                                                  Optional<String> entitySubType, OptionalLong targetVersion) {
         String entityType = identifier.path()
                                       .get(0);
-        return entityFactory.migrateSchema(identifier, entityType, entityData, targetVersion);
+        return entityFactory.migrateSchema(identifier, entityType, entityData, entitySubType, targetVersion);
     }
 
     @Override
@@ -83,13 +89,20 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
 
     @Override
     protected void addAdditionalEvent(Identifier identifier, EntityData entityData) {
-        additionalEvents.put(identifier, entityData);
+        additionalEvents.add(new AbstractMap.SimpleImmutableEntry<>(identifier, entityData));
     }
 
     @Override
     protected CompletableFuture<Void> onStart() {
         //TODO: getAllPaths
-        return playAdditionalEvents().thenCompose(ignore -> identifiers().stream()
+        return playAdditionalEvents().thenCompose(ignore -> {
+            // second level migrations
+            if (!additionalEvents.isEmpty()) {
+                return playAdditionalEvents();
+            }
+            return CompletableFuture.completedFuture(null);
+        })
+                                     .thenCompose(ignore -> identifiers().stream()
                                                                          //TODO: set priority per entity type (for now alphabetic works: codelists < providers < services)
                                                                          .sorted(Comparator.comparing(identifier -> identifier.path()
                                                                                                                               .get(0)))
@@ -98,25 +111,31 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
                                                                                  (completableFuture, identifier) -> completableFuture.thenCompose(ignore2 -> onCreate(identifier, get(identifier))),
                                                                                  (first, second) -> first.thenCompose(ignore2 -> second)
                                                                          ))
-                                     .thenCompose(entity -> null);
+                                     .thenCompose(entity -> CompletableFuture.completedFuture(null));
     }
 
     private CompletableFuture<EntityData> playAdditionalEvents() {
-        return additionalEvents.entrySet()
-                               .stream()
-                               .reduce(CompletableFuture.completedFuture(null), (completableFuture, entry) -> completableFuture.thenCompose(ignore -> {
-                                   if (eventStore.isReadOnly()) {
-                                       onEmit(ImmutableMutationEvent.builder()
-                                                                    .type(EVENT_TYPE)
-                                                                    .identifier(entry.getKey())
-                                                                    .payload(serialize(entry.getValue()))
-                                                                    .format(DEFAULT_FORMAT.name())
-                                                                    .build());
-                                       return CompletableFuture.completedFuture((EntityData) null);
-                                   } else {
-                                       return dropWithoutTrigger(entry.getKey()).thenCompose((deleted) -> putWithoutTrigger(entry.getKey(), entry.getValue()));
-                                   }
-                               }), (first, second) -> first.thenCompose(ignore -> second));
+        CompletableFuture<EntityData> completableFuture = CompletableFuture.completedFuture(null);
+
+        while (!additionalEvents.isEmpty()) {
+            Map.Entry<Identifier, EntityData> entry = additionalEvents.remove();
+
+            completableFuture = completableFuture.thenCompose(ignore -> {
+                if (eventStore.isReadOnly()) {
+                    onEmit(ImmutableMutationEvent.builder()
+                                                 .type(EVENT_TYPE)
+                                                 .identifier(entry.getKey())
+                                                 .payload(serialize(entry.getValue()))
+                                                 .format(DEFAULT_FORMAT.name())
+                                                 .build());
+                    return CompletableFuture.completedFuture((EntityData) null);
+                } else {
+                    return dropWithoutTrigger(entry.getKey()).thenCompose((deleted) -> putWithoutTrigger(entry.getKey(), entry.getValue()));
+                }
+            });
+        }
+
+        return completableFuture;
     }
 
     @Override
@@ -127,7 +146,8 @@ public class EntityStore extends AbstractEntityDataStore<EntityData> {
             AutoEntity autoEntity = (AutoEntity) entityData;
             if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
                 putWithoutTrigger(identifier, hydratedData).join();
-                LOGGER.info("Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.", identifier.path().get(0), entityData.getId());
+                LOGGER.info("Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.", identifier.path()
+                                                                                                                                     .get(0), entityData.getId());
             }
         }
 
