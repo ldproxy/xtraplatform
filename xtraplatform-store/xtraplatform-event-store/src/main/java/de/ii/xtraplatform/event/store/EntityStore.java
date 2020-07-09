@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @Component(publicFactory = false)
 @Provides
 @Instantiate
-public class EntityStore extends AbstractEntityDataStore<EntityData> {
+public class EntityStore extends AbstractEntityDataStore<EntityData, EntityDataBuilder<EntityData>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntityStore.class);
     private static final String EVENT_TYPE = "entities";

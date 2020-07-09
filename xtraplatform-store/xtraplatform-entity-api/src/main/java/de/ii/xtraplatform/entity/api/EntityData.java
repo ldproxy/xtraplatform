@@ -16,7 +16,7 @@ import java.util.Optional;
 /**
  * @author zahnen
  */
-public interface EntityData {
+public interface EntityData extends Mergeable {
 
     String getId();
 

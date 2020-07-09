@@ -2,6 +2,8 @@ package de.ii.xtraplatform.event.store;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,14 +158,20 @@ public class FileSystemEvents {
 
         //TODO: 3 depends on pattern
         try {
-            return Files.find(rootPath, 32, (path, basicFileAttributes) -> basicFileAttributes.isRegularFile() && path.getNameCount() - parentCount >= 3)
+            return Files.find(rootPath, 32, (path, basicFileAttributes) -> basicFileAttributes.isRegularFile() && path.getNameCount() - parentCount >= 2)
                         .map(path -> {
                             Matcher matcher = pathPattern.matcher(path.subpath(parentCount, path.getNameCount())
                                                                       .toString());
 
                             return pathToEvent(path, matcher);
                         })
-                        .filter(Objects::nonNull);
+                        .filter(Objects::nonNull)
+                        .sorted()
+                        .peek(mutationEvent -> {
+                            if (LOGGER.isTraceEnabled()) {
+                                LOGGER.trace("Read event {}", mutationEvent);
+                            }
+                        });
         } catch (IOException e) {
             throw new IllegalStateException("Reading event from store path failed", e);
         }
@@ -182,24 +190,22 @@ public class FileSystemEvents {
                 eventPayloadFormat = Optional.empty();
             }
 
-            if (Objects.nonNull(eventType) && Objects.nonNull(eventPath) && Objects.nonNull(eventId)) {
-
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Reading event {type: {}, path: {}, id: {}}", eventType, eventPath, eventId);
-                }
+            if (Objects.nonNull(eventType) && /*Objects.nonNull(eventPath) &&*/ Objects.nonNull(eventId)) {
 
                 byte[] bytes;
                 try {
                     bytes = Files.readAllBytes(path);
                 } catch (IOException e) {
-                    throw new IllegalStateException("Reading event from file failed", e);
+                    throw new IllegalStateException("Reading event from file failed: " + path, e);
                 }
+
+                Iterable<String> eventPathSegments = Strings.isNullOrEmpty(eventPath) ? ImmutableList.of() : PATH_SPLITTER.split(eventPath);
 
                 return ImmutableMutationEvent.builder()
                                              .type(eventType)
                                              .identifier(ImmutableIdentifier.builder()
                                                                             .id(eventId)
-                                                                            .path(PATH_SPLITTER.split(eventPath))
+                                                                            .path(eventPathSegments)
                                                                             .build())
                                              .payload(bytes)
                                              .format(eventPayloadFormat.orElse(null))
@@ -220,13 +226,13 @@ public class FileSystemEvents {
         List<String> names = new ArrayList<>();
 
         while (matcher.find()) {
-            //LOGGER.debug("REGEX {} {} {} {} {}", matcher.group(), matcher.groupCount(), matcher.group("name"), matcher.group("separator"), matcher.group("glob"));
+            LOGGER.debug("PATH REGEX {} {} {} {} {}", matcher.group(), matcher.groupCount(), matcher.group("name"), matcher.group("separator"), matcher.group("glob"));
             if (Objects.isNull(matcher.group("glob"))) {
                 names.add(matcher.group("name"));
                 pattern.append(matcher.group("separator").replaceAll("/", "\\\\/"));
                 pattern.append("(?<");
                 pattern.append(matcher.group("name"));
-                pattern.append(">[\\w-]+)");
+                pattern.append(">[\\w-\\.]+?)");
                 if (Objects.equals(matcher.group("name"), "id")) {
                     names.add(FORMAT_GROUP);
                     pattern.append("(?:\\.(?<");

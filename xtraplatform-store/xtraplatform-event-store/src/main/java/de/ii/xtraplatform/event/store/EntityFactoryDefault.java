@@ -259,6 +259,12 @@ public class EntityFactoryDefault implements EntityFactory {
     @Override
     public EntityDataBuilder<EntityData> getDataBuilder(String entityType) {
 
+        //TODO: use builder from EntityDataDefaults
+        // how to apply user defaults?
+        // who deserializes defaults? I guess defaults should be inserted into entity event stream?
+        // there might be a separate DefaultsStore, extending the to be created AbstractMergeableImmutableStore (now still AbstractEntityDataStore)
+        //TODO: use entitySubType, see below
+        //TODO: how to handle defaults for old schema versions?
         try {
             return entityDataBuilders.get(entityType)
                                      .newInstance();

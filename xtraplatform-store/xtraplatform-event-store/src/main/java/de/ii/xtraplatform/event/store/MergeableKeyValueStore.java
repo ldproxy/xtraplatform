@@ -7,20 +7,19 @@
  */
 package de.ii.xtraplatform.event.store;
 
-import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entity.api.Mergeable;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * id maybe TYPE/ORG/ID, in that case a multitenant middleware would handle splitting into path and id
  *
  * @author zahnen
  */
-public interface EntityDataStore<T extends EntityData> extends MergeableKeyValueStore<T> {
+public interface MergeableKeyValueStore<T extends Mergeable> extends KeyValueStore<T> {
 
     CompletableFuture<T> patch(String id, Map<String, Object> partialData, String... path);
 
-    <U extends T> EntityDataStore<U> forType(Class<U> type);
+    <U extends T> MergeableKeyValueStore<U> forType(Class<U> type);
 
 }
