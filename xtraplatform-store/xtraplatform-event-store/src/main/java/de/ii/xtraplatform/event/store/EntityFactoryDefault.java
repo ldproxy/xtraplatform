@@ -8,6 +8,9 @@
 package de.ii.xtraplatform.event.store;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.entity.api.EntityData;
 import de.ii.xtraplatform.entity.api.EntityRegistry;
@@ -32,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -105,65 +109,65 @@ public class EntityFactoryDefault implements EntityFactory {
     }
 
     private synchronized void onFactoryArrival(ServiceReference<ComponentFactory> ref) {
-        Optional<String> entityClassName = Optional.ofNullable((String) ref.getProperty("component.class"));
-        Optional<String> entityType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
-                                            .filter(pd -> pd.getName()
-                                                            .equals(Entity.TYPE_KEY))
-                                            .map(PropertyDescription::getValue)
-                                            .findFirst();
-        Optional<String> entitySubType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
-                                               .filter(pd -> pd.getName()
-                                                               .equals(Entity.SUB_TYPE_KEY))
-                                               .map(PropertyDescription::getValue)
-                                               .findFirst();
-        Optional<String> entityDataType = Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
-                                                .filter(pd -> pd.getName()
-                                                                .equals(Entity.DATA_CLASS_KEY))
-                                                .map(PropertyDescription::getValue)
-                                                .findFirst();
+        Optional<String> entityClassName = getComponentClass(ref);
+        Optional<String> entityType = getComponentProperty(ref, Entity.TYPE_KEY);
+        Optional<String> entitySubType = getComponentProperty(ref, Entity.SUB_TYPE_KEY);
+        Optional<String> entityDataClassName = getComponentProperty(ref, Entity.DATA_CLASS_KEY);
+        Optional<String> entityDataSubClassName = getComponentProperty(ref, Entity.DATA_SUB_CLASS_KEY).filter(subClass -> !Objects.equals(subClass, "java.lang.Object"));
 
-        if (entityClassName.isPresent() && entityDataType.isPresent() && entityType.isPresent()) {
-            String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
-
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Registered entity type: {}", specificEntityType);
-            }
+        if (entityClassName.isPresent() && entityDataClassName.isPresent() && entityType.isPresent()) {
+            String commonEntityType = entityType.get();
+            String specificEntityType = getSpecificEntityType(commonEntityType, entitySubType);
             ComponentFactory factory = context.getService(ref);
+
             try {
-                Class entityClass = factory.loadClass(factory.getClassName());
-                Class entityDataClass = factory.loadClass(entityDataType.get());
-                JsonDeserialize annotation = (JsonDeserialize) entityDataClass.getAnnotation(JsonDeserialize.class);
-                Class<EntityDataBuilder<EntityData>> builder = (Class<EntityDataBuilder<EntityData>>) annotation.builder();
-
-                this.entityDataBuilders.put(entityType.get(), builder);
-                this.entityDataTypes.put(entityDataClass, entityType.get());
-
-                if (Objects.nonNull(entityDataClass.getSuperclass())) {
-                    Arrays.stream(entityDataClass.getSuperclass()
-                                                 .getInterfaces())
-                          .forEach(iface -> {
-                              if (EntityData.class.isAssignableFrom(iface)) {
-                                  this.entityDataTypes.put(iface, entityType.get());
-                              }
-                          });
-                }
-                Arrays.stream(entityDataClass.getInterfaces())
-                      .forEach(iface -> {
-                          if (EntityData.class.isAssignableFrom(iface)) {
-                              this.entityDataTypes.put(iface, entityType.get());
-                          }
-                      });
-
-                boolean br = true;
+                registerEntityDataClass(factory, commonEntityType, entityDataClassName.get());
             } catch (ClassNotFoundException e) {
+                LOGGER.error("Could not find class for entity data type {}.", entityDataClassName);
+            }
 
+            if (entityDataSubClassName.isPresent()) {
+                try {
+                    registerEntityDataClass(factory, specificEntityType, entityDataSubClassName.get());
+                } catch (ClassNotFoundException e) {
+                    LOGGER.error("Could not find class for entity data type {}.", entityDataClassName);
+                }
             }
 
             //this.componentFactories.put(type, factory);
             this.entityClasses.put(specificEntityType, entityClassName.get());
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Registered entity type: {}", specificEntityType);
+            }
         }
 
 
+    }
+
+    private Optional<String> getComponentClass(ServiceReference<ComponentFactory> ref) {
+        return Optional.ofNullable((String) ref.getProperty("component.class"));
+    }
+
+    private Optional<String> getComponentProperty(ServiceReference<ComponentFactory> ref, String propertyKey) {
+        return Arrays.stream((PropertyDescription[]) ref.getProperty("component.properties"))
+                     .filter(pd -> pd.getName()
+                                     .equals(propertyKey))
+                     .map(PropertyDescription::getValue)
+                     .findFirst();
+    }
+
+    private Class<EntityDataBuilder<EntityData>> getDataBuilderClass(Class<?> dataClass) {
+        JsonDeserialize annotation = dataClass.getAnnotation(JsonDeserialize.class);
+        return (Class<EntityDataBuilder<EntityData>>) annotation.builder();
+    }
+
+    private void registerEntityDataClass(ComponentFactory factory, String entityType, String entityDataType) throws ClassNotFoundException {
+        Class<?> entityDataClass = factory.loadClass(entityDataType);
+        Class<EntityDataBuilder<EntityData>> builder = getDataBuilderClass(entityDataClass);
+
+        this.entityDataBuilders.put(entityType, builder);
+        this.entityDataTypes.put(entityDataClass, entityType);
     }
 
     //TODO
@@ -257,24 +261,39 @@ public class EntityFactoryDefault implements EntityFactory {
     }
 
     @Override
-    public EntityDataBuilder<EntityData> getDataBuilder(String entityType) {
+    public EntityDataBuilder<EntityData> getDataBuilder(String entityType, Optional<String> entitySubType) {
+        String specificEntityType = getSpecificEntityType(entityType, entitySubType);
 
-        //TODO: use builder from EntityDataDefaults
-        // how to apply user defaults?
-        // who deserializes defaults? I guess defaults should be inserted into entity event stream?
-        // there might be a separate DefaultsStore, extending the to be created AbstractMergeableImmutableStore (now still AbstractEntityDataStore)
-        //TODO: use entitySubType, see below
-        //TODO: how to handle defaults for old schema versions?
-        try {
-            return entityDataBuilders.get(entityType)
-                                     .newInstance();
-        } catch (Throwable e) {
+        if (!entityDataBuilders.containsKey(specificEntityType)) {
             throw new IllegalStateException("no builder found for entity type " + entityType);
         }
+
+        try {
+            return entityDataBuilders.get(specificEntityType)
+                                     .newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            LOGGER.error("Could not instantiate builder for entity type {}.", specificEntityType);
+        }
+
+        return null;
     }
 
     @Override
-    public EntityDataBuilder<EntityData> getDataBuilder(String entityType, long entitySchemaVersion, Optional<String> entitySubType) {
+    public List<List<String>> getSubTypes(String entityType, List<String> entitySubType) {
+        String specificEntityType = getSpecificEntityType(entityType, getTypeAsString(entitySubType));
+
+        return entityDataBuilders.keySet()
+                                 .stream()
+                                 .filter(key -> key.startsWith(specificEntityType) && !Objects.equals(key, specificEntityType))
+                                 .map(this::getEntitySubType)
+                                 .filter(Optional::isPresent)
+                                 .map(Optional::get)
+                                 .map(subType -> Splitter.on('/').splitToList(subType))
+                                 .collect(ImmutableList.toImmutableList());
+    }
+
+    @Override
+    public EntityDataBuilder<EntityData> getDataBuilders(String entityType, long entitySchemaVersion, Optional<String> entitySubType) {
         String specificEntityType = getSpecificEntityType(entityType, entitySubType);
 
         if (!entityMigrations.containsKey(specificEntityType) && !entityMigrations.containsKey(entityType)) {
@@ -289,6 +308,21 @@ public class EntityFactoryDefault implements EntityFactory {
         } catch (Throwable e) {
             throw new IllegalStateException("no builder found for entity type " + entityType);
         }
+    }
+
+    @Override
+    public List<String> getTypeAsList(String entitySubtype) {
+        return Splitter.on('/').splitToList(entitySubtype.toLowerCase());
+    }
+
+    @Override
+    public Optional<String> getTypeAsString(List<String> entitySubtype) {
+        if (entitySubtype.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(Joiner.on('/')
+                                 .join(entitySubtype));
     }
 
     @Override
@@ -450,5 +484,13 @@ public class EntityFactoryDefault implements EntityFactory {
     private String getSpecificEntityType(String entityType, Optional<String> entitySubType) {
         return entitySubType.isPresent() ? String.format("%s/%s", entityType, entitySubType.get()
                                                                                            .toLowerCase()) : entityType;
+    }
+
+    private String getCommonEntityType(String specificEntityType) {
+        return specificEntityType.contains("/") ? specificEntityType.substring(0, specificEntityType.indexOf("/")) : specificEntityType;
+    }
+
+    private Optional<String> getEntitySubType(String specificEntityType) {
+        return specificEntityType.contains("/") ? Optional.of(specificEntityType.substring(specificEntityType.indexOf("/") + 1)) : Optional.empty();
     }
 }

@@ -1,8 +1,15 @@
 package de.ii.xtraplatform.event.store;
 
 import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entity.api.Value;
 
-public interface EntityDataBuilder<T extends EntityData> extends MergeableBuilder<T> {
+public interface EntityDataBuilder<T extends EntityData> extends Builder<T> {
+
+    @Override
     T build();
-    EntityDataBuilder<T> from(EntityData data);
+
+    @Override
+    EntityDataBuilder<T> from(Value value);
+
+    EntityDataBuilder<T> from(EntityData value);
 }

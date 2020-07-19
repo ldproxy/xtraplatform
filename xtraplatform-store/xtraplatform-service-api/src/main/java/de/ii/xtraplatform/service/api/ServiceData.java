@@ -9,6 +9,7 @@ package de.ii.xtraplatform.service.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.entity.api.AutoEntity;
 import de.ii.xtraplatform.entity.api.EntityData;
 import org.immutables.value.Value;
@@ -19,7 +20,13 @@ import java.util.Optional;
 /**
  * @author zahnen
  */
+@JsonDeserialize(builder = ImmutableServiceDataCommon.Builder.class)
 public interface ServiceData extends EntityData, AutoEntity {
+
+    @Override
+    default Optional<String> getEntitySubType() {
+        return Optional.of(getServiceType());
+    }
 
     String getServiceType();
 

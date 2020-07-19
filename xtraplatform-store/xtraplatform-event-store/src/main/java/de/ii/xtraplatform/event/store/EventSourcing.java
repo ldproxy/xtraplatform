@@ -7,19 +7,16 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class EventSourcing<T> {
-
-    interface Deserializer<T> {
-        T deserialize(Identifier identifier, byte[] payload, String format);
-    }
-
+//TODO: should this really be a facade for EventStore? or can we make it plain ValueCache?
+public class EventSourcing<T> implements EventStoreSubscriber {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventSourcing.class);
 
@@ -27,19 +24,49 @@ public class EventSourcing<T> {
     private final Map<Identifier, CompletableFuture<T>> queue;
     private final EventStore eventStore;
     private final String eventType;
-    private final Function<T, byte[]> serializer;
-    private final Deserializer<T> deserializer;
-    private final String defaultFormat;
+    private final ValueEncoding<T> valueEncoding;
+    private final Supplier<CompletableFuture<Void>> onStart;
+    private final Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor;
 
-    public EventSourcing(EventStore eventStore, String eventType, Function<T, byte[]> serializer,
-                         Deserializer<T> deserializer, Supplier<String> defaultFormat) {
+    public EventSourcing(EventStore eventStore, String eventType, ValueEncoding<T> valueEncoding, Supplier<CompletableFuture<Void>> onStart, Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor) {
         this.eventStore = eventStore;
         this.eventType = eventType;
-        this.cache = new ConcurrentHashMap<>();
+        this.eventProcessor = eventProcessor;
+        this.cache = new ConcurrentSkipListMap<>();
         this.queue = new ConcurrentHashMap<>();
-        this.serializer = serializer;
-        this.deserializer = deserializer;
-        this.defaultFormat = defaultFormat.get();
+        this.valueEncoding = valueEncoding;
+        this.onStart = onStart;
+
+        eventStore.subscribe(this);
+    }
+
+    @Override
+    public String getEventType() {
+        return eventType;
+    }
+
+    @Override
+    public void onEmit(Event event) {
+        if (event instanceof MutationEvent) {
+            if (eventProcessor.isPresent()) {
+                eventProcessor.get()
+                              .apply((MutationEvent) event)
+                              .forEach(this::onEmit);
+            } else {
+                onEmit((MutationEvent) event);
+            }
+
+        } else if (event instanceof StateChangeEvent) {
+            switch (((StateChangeEvent) event).state()) {
+                case REPLAYING:
+                    LOGGER.debug("Replaying events for {}", getEventType());
+                    break;
+                case LISTENING:
+                    onStart.get()
+                           .thenRun(() -> LOGGER.debug("Listening for events for {}", getEventType()));
+                    break;
+            }
+        }
     }
 
     public boolean isInCache(Identifier identifier) {
@@ -58,7 +85,7 @@ public class EventSourcing<T> {
     }
 
     public CompletableFuture<T> pushMutationEvent(Identifier identifier, T data) {
-        final byte[] payload = serializer.apply(data);
+        final byte[] payload = valueEncoding.serialize(data);
 
         return pushMutationEventRaw(identifier, payload, Objects.isNull(data));
     }
@@ -77,7 +104,8 @@ public class EventSourcing<T> {
                                                                       .identifier(identifier)
                                                                       .payload(payload)
                                                                       .deleted(isDelete ? true : null)
-                                                                      .format(defaultFormat)
+                                                                      .format(valueEncoding.getDefaultFormat()
+                                                                                           .toString())
                                                                       .build();
 
             queue.put(identifier, completableFuture);
@@ -94,21 +122,32 @@ public class EventSourcing<T> {
         return completableFuture;
     }
 
-    public void onEmit(MutationEvent event) {
+    private void onEmit(MutationEvent event) {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Adding event: {} {}", event.type(), event.identifier());
         }
 
-        T value = deserializer.deserialize(event.identifier(), event.payload(), event.format());
+        T value;
+        try {
+            ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(event.format());
 
-        if (Objects.isNull(value)) {
-            cache.remove(event.identifier());
-        } else {
-            cache.put(event.identifier(), value);
+            value = valueEncoding.deserialize(event.identifier(), event.payload(), payloadFormat);
+
+        } catch (Throwable e) {
+            LOGGER.error("Could not deserialize entity {}, format '{}' unknown.", event.identifier(), event.format());
+            value = null;
         }
 
-        if (queue.containsKey(event.identifier())) {
-            queue.remove(event.identifier())
+        Identifier key = event.identifier();
+
+        if (Objects.isNull(value)) {
+            cache.remove(key);
+        } else {
+            cache.put(key, value);
+        }
+
+        if (queue.containsKey(key)) {
+            queue.remove(key)
                  .complete(value);
         }
 

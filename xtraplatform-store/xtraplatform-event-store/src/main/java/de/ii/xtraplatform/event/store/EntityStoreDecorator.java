@@ -44,6 +44,29 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T> extends
     }
 
     @Override
+    default List<Identifier> identifiers(String... path) {
+        return getDecorated().identifiers(transformPath(path));
+    }
+
+    //TODO: transformPath
+    @Override
+    default boolean has(Identifier identifier) {
+        return getDecorated().has(identifier);
+    }
+
+    //TODO
+    @Override
+    default U get(Identifier identifier) {
+        return null;// getDecorated().get(identifier);
+    }
+
+    //TODO
+    @Override
+    default CompletableFuture<U> put(Identifier identifier, U value) {
+        return null;//getDecorated().patch(identifier, value);
+    }
+
+    @Override
     default <U1 extends U> EntityDataStore<U1> forType(Class<U1> type) {
         throw new IllegalArgumentException();
     }

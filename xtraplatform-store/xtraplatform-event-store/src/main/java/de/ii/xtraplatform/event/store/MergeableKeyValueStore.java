@@ -7,8 +7,6 @@
  */
 package de.ii.xtraplatform.event.store;
 
-import de.ii.xtraplatform.entity.api.Mergeable;
-
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -16,10 +14,12 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author zahnen
  */
-public interface MergeableKeyValueStore<T extends Mergeable> extends KeyValueStore<T> {
+//TODO: KeyValueStoreWithMerging
+public interface MergeableKeyValueStore<T> extends KeyValueStore<T> {
 
     CompletableFuture<T> patch(String id, Map<String, Object> partialData, String... path);
 
+    //TODO: KeyValueStoreWithSubtypes
     <U extends T> MergeableKeyValueStore<U> forType(Class<U> type);
 
 }

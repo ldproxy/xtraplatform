@@ -19,9 +19,11 @@ public @interface Entity {
     String type();
     String subType() default "";
     Class<?> dataClass();
+    Class<?> dataSubClass() default Object.class;
 
     String TYPE_KEY = "type";
     String SUB_TYPE_KEY = "subType";
     String DATA_CLASS_KEY = "dataClass";
+    String DATA_SUB_CLASS_KEY = "dataSubClass";
     String DATA_KEY = "data";
 }
