@@ -8,4 +8,6 @@ public interface StateChangeEvent extends Event {
     enum STATE {REPLAYING, LISTENING}
 
     STATE state();
+
+    String type();
 }

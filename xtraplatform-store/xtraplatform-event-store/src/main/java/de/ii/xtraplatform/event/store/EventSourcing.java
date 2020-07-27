@@ -4,10 +4,12 @@ import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -23,26 +25,28 @@ public class EventSourcing<T> implements EventStoreSubscriber {
     private final Map<Identifier, T> cache;
     private final Map<Identifier, CompletableFuture<T>> queue;
     private final EventStore eventStore;
-    private final String eventType;
+    private final List<String> eventTypes;
     private final ValueEncoding<T> valueEncoding;
     private final Supplier<CompletableFuture<Void>> onStart;
     private final Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor;
+    private final Set<String> started;
 
-    public EventSourcing(EventStore eventStore, String eventType, ValueEncoding<T> valueEncoding, Supplier<CompletableFuture<Void>> onStart, Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor) {
+    public EventSourcing(EventStore eventStore, List<String> eventTypes, ValueEncoding<T> valueEncoding, Supplier<CompletableFuture<Void>> onStart, Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor) {
         this.eventStore = eventStore;
-        this.eventType = eventType;
+        this.eventTypes = eventTypes;
         this.eventProcessor = eventProcessor;
         this.cache = new ConcurrentSkipListMap<>();
         this.queue = new ConcurrentHashMap<>();
         this.valueEncoding = valueEncoding;
         this.onStart = onStart;
+        this.started = new HashSet<>();
 
         eventStore.subscribe(this);
     }
 
     @Override
-    public String getEventType() {
-        return eventType;
+    public List<String> getEventTypes() {
+        return eventTypes;
     }
 
     @Override
@@ -59,11 +63,15 @@ public class EventSourcing<T> implements EventStoreSubscriber {
         } else if (event instanceof StateChangeEvent) {
             switch (((StateChangeEvent) event).state()) {
                 case REPLAYING:
-                    LOGGER.debug("Replaying events for {}", getEventType());
+                    LOGGER.debug("Replaying events for {}", ((StateChangeEvent) event).type());
                     break;
                 case LISTENING:
-                    onStart.get()
-                           .thenRun(() -> LOGGER.debug("Listening for events for {}", getEventType()));
+                    started.add(((StateChangeEvent) event).type());
+
+                    if (started.containsAll(getEventTypes())) {
+                        onStart.get()
+                               .thenRun(() -> LOGGER.debug("Listening for events for {}", ((StateChangeEvent) event).type()));
+                    }
                     break;
             }
         }
@@ -94,13 +102,14 @@ public class EventSourcing<T> implements EventStoreSubscriber {
         return pushMutationEventRaw(identifier, payload, false);
     }
 
+    //TODO: which eventType should we push?
     private CompletableFuture<T> pushMutationEventRaw(Identifier identifier, byte[] payload, boolean isDelete) {
         final CompletableFuture<T> completableFuture = new CompletableFuture<>();
 
         try {
             //TODO: if already in queue, pipeline to existing future
             final MutationEvent mutationEvent = ImmutableMutationEvent.builder()
-                                                                      .type(eventType)
+                                                                      .type(eventTypes.get(0))
                                                                       .identifier(identifier)
                                                                       .payload(payload)
                                                                       .deleted(isDelete ? true : null)
@@ -151,10 +160,10 @@ public class EventSourcing<T> implements EventStoreSubscriber {
                  .complete(value);
         }
 
-        if (LOGGER.isTraceEnabled()) {
+        /*if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Added value: {}", value);
             //LOGGER.trace("CACHE {}", cache);
-        }
+        }*/
     }
 
 }

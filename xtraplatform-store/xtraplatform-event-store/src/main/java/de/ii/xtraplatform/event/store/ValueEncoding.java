@@ -1,5 +1,7 @@
 package de.ii.xtraplatform.event.store;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,5 +32,7 @@ public interface ValueEncoding<T> {
     byte[] serialize(Map<String, Object> data);
 
     T deserialize(Identifier identifier, byte[] payload, FORMAT format);
+
+    byte[] nestPayload(byte[] payload, FORMAT format, List<String> nestingPath) throws IOException;
 
 }

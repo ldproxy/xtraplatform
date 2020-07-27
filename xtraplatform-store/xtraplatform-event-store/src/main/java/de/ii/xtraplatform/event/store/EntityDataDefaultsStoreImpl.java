@@ -1,22 +1,19 @@
 package de.ii.xtraplatform.event.store;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.dropwizard.api.Jackson;
 import de.ii.xtraplatform.entity.api.EntityData;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.annotations.ServiceController;
+import org.apache.felix.ipojo.annotations.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -36,8 +33,9 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                                           @Requires EntityFactory entityFactory) {
         this.entityFactory = entityFactory;
         this.valueEncoding = new ValueEncodingJackson<>(jackson);
-        this.eventSourcing = new EventSourcing<>(eventStore, EntityDataDefaultsStore.EVENT_TYPE, valueEncoding, this::onStart, Optional.of(this::processEvent));
+        this.eventSourcing = new EventSourcing<>(eventStore, ImmutableList.of(EntityDataDefaultsStore.EVENT_TYPE), valueEncoding, this::onStart, Optional.of(this::processEvent));
 
+        valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
         valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getBuilder, eventSourcing));
     }
 
@@ -62,7 +60,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                             if (!defaultsPath.getKeyPath()
                                              .isEmpty()) {
                                 try {
-                                    builder.payload(getNestedPayload(event.payload(), event.format(), defaultsPath.getKeyPath()));
+                                    byte[] nestedPayload = valueEncoding.nestPayload(event.payload(), ValueEncoding.FORMAT.fromString(event.format()), defaultsPath.getKeyPath());
+                                    builder.payload(nestedPayload);
                                 } catch (IOException e) {
                                     LOGGER.error("Error:", e);
                                 }
@@ -71,23 +70,6 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                             return builder.build();
                         })
                         .collect(Collectors.toList());
-    }
-
-    private byte[] getNestedPayload(byte[] payload, String format, List<String> keyPath) throws IOException {
-
-        if (keyPath.isEmpty()) {
-            return payload;
-        }
-
-        ObjectMapper mapper = valueEncoding.getMapper(ValueEncoding.FORMAT.fromString(format));
-
-        Map<String, Object> data = mapper.readValue(payload, new TypeReference<LinkedHashMap<String, Object>>() {
-        });
-
-        for (String key : keyPath) {
-            data = ImmutableMap.of(key, data);
-        }
-        return mapper.writeValueAsBytes(data);
     }
 
     private List<Identifier> getCacheKeys(EntityDataDefaultsPath defaultsPath, List<List<String>> subTypes) {

@@ -66,9 +66,13 @@ import java.util.concurrent.TimeUnit;
         @Wbp(
                 filter = "(objectClass=de.ii.xtraplatform.event.store.EntityMigration)",
                 onArrival = "onMigrationArrival",
-                onDeparture = "onMigrationDeparture")
+                onDeparture = "onMigrationDeparture"),
+        @Wbp(
+                filter = "(objectClass=de.ii.xtraplatform.event.store.EntityDataDefaults)",
+                onArrival = "onDefaultsArrival",
+                onDeparture = "onDefaultsDeparture")
 })
-
+//TODO: use generic registry implementation
 public class EntityFactoryDefault implements EntityFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntityFactoryDefault.class);
@@ -83,6 +87,7 @@ public class EntityFactoryDefault implements EntityFactory {
     private final Map<String, Class<EntityDataBuilder<EntityData>>> entityDataBuilders;
     private final Map<String, EntityHydrator<EntityData>> entityHydrators;
     private final Map<String, Map<Long, EntityMigration<EntityData, EntityData>>> entityMigrations;
+    private final Map<String, EntityDataDefaults<EntityData>> entityDataDefaults;
     private final ScheduledExecutorService executorService;
 
     protected EntityFactoryDefault(@Context BundleContext context,
@@ -98,6 +103,7 @@ public class EntityFactoryDefault implements EntityFactory {
         this.entityDataBuilders = new ConcurrentHashMap<>();
         this.entityHydrators = new ConcurrentHashMap<>();
         this.entityMigrations = new ConcurrentHashMap<>();
+        this.entityDataDefaults = new ConcurrentHashMap<>();
         this.executorService = new ScheduledThreadPoolExecutor(1);
 
         entityRegistry.addEntityListener((instanceId, entity) -> {
@@ -260,6 +266,38 @@ public class EntityFactoryDefault implements EntityFactory {
         }
     }
 
+    private synchronized void onDefaultsArrival(ServiceReference<EntityDataDefaults<EntityData>> ref) {
+        Optional<String> entityType = Optional.ofNullable((String) ref.getProperty(Entity.TYPE_KEY));
+        Optional<String> entitySubType = Optional.ofNullable((String) ref.getProperty(Entity.SUB_TYPE_KEY));
+
+        if (entityType.isPresent()) {
+            String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
+            EntityDataDefaults<EntityData> defaults = context.getService(ref);
+            this.entityDataDefaults.put(specificEntityType, defaults);
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Registered entity data defaults: {}", specificEntityType);
+            }
+        }
+    }
+
+    private synchronized void onDefaultsDeparture(ServiceReference<EntityDataDefaults<EntityData>> ref) {
+        try {
+            Optional<String> entityType = Optional.ofNullable((String) ref.getProperty(Entity.TYPE_KEY));
+            Optional<String> entitySubType = Optional.ofNullable((String) ref.getProperty(Entity.SUB_TYPE_KEY));
+
+            if (entityType.isPresent()) {
+                String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Deregistered entity data defaults: {}", specificEntityType);
+                }
+                this.entityDataDefaults.remove(specificEntityType);
+            }
+        } catch (Throwable w) {
+            //ignore
+        }
+    }
+
     @Override
     public EntityDataBuilder<EntityData> getDataBuilder(String entityType, Optional<String> entitySubType) {
         String specificEntityType = getSpecificEntityType(entityType, entitySubType);
@@ -269,6 +307,11 @@ public class EntityFactoryDefault implements EntityFactory {
         }
 
         try {
+            if (entityDataDefaults.containsKey(specificEntityType)) {
+                LOGGER.debug("USING DEFAULTS {}", specificEntityType);
+                return entityDataDefaults.get(specificEntityType).getBuilderWithDefaults();
+            }
+
             return entityDataBuilders.get(specificEntityType)
                                      .newInstance();
         } catch (InstantiationException | IllegalAccessException e) {

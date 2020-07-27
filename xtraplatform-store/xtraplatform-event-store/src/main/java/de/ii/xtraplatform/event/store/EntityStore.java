@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.event.store;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.api.Jackson;
@@ -17,9 +18,12 @@ import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.annotations.ServiceController;
+import org.apache.felix.ipojo.annotations.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.Comparator;
@@ -41,7 +45,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class EntityStore extends AbstractMergeableKeyValueStore<EntityData> implements EntityDataStore<EntityData> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntityStore.class);
-    private static final String EVENT_TYPE = "entities";
+    private static final List<String> EVENT_TYPES = ImmutableList.of("entities", "overrides");
 
     private final boolean isEventStoreReadOnly;
     private final EntityFactory entityFactory;
@@ -56,9 +60,10 @@ public class EntityStore extends AbstractMergeableKeyValueStore<EntityData> impl
         this.entityFactory = entityFactory;
         this.additionalEvents = new ConcurrentLinkedQueue<>();
         this.valueEncoding = new ValueEncodingJackson<>(jackson);
-        this.eventSourcing = new EventSourcing<>(eventStore, EVENT_TYPE, valueEncoding, this::onStart, Optional.empty());
+        this.eventSourcing = new EventSourcing<>(eventStore, EVENT_TYPES, valueEncoding, this::onStart, Optional.of(this::processEvent));
         this.defaultsStore = defaultsStore;
 
+        valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
         valueEncoding.addDecoderMiddleware(new ValueDecoderWithBuilder<>(this::getBuilder, eventSourcing));
         valueEncoding.addDecoderMiddleware(new ValueDecoderEntitySubtype(this::getBuilder, eventSourcing));
         valueEncoding.addDecoderMiddleware(new ValueDecoderEntityDataMigration(eventSourcing, entityFactory, this::addAdditionalEvent));
@@ -90,6 +95,37 @@ public class EntityStore extends AbstractMergeableKeyValueStore<EntityData> impl
         }
 
         return partialData;
+    }
+
+    //TODO: onEmit middleware
+    private List<MutationEvent> processEvent(MutationEvent event) {
+
+        if (!event.type()
+                  .equals(EVENT_TYPES.get(1))) {
+            return ImmutableList.of(event);
+        }
+
+        EntityDataOverridesPath overridesPath = EntityDataOverridesPath.from(event.identifier());
+
+        Identifier cacheKey = ImmutableIdentifier.builder()
+                                                 .addPath(overridesPath.getEntityType())
+                                                 .id(overridesPath.getEntityId())
+                                                 .build();
+
+        ImmutableMutationEvent.Builder builder = ImmutableMutationEvent.builder()
+                                                                       .from(event)
+                                                                       .identifier(cacheKey);
+        if (!overridesPath.getKeyPath()
+                          .isEmpty()) {
+            try {
+                byte[] nestedPayload = valueEncoding.nestPayload(event.payload(), ValueEncoding.FORMAT.fromString(event.format()), overridesPath.getKeyPath());
+                builder.payload(nestedPayload);
+            } catch (IOException e) {
+                LOGGER.error("Error:", e);
+            }
+        }
+
+        return ImmutableList.of(builder.build());
     }
 
     protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
@@ -151,10 +187,11 @@ public class EntityStore extends AbstractMergeableKeyValueStore<EntityData> impl
         while (!additionalEvents.isEmpty()) {
             Map.Entry<Identifier, EntityData> entry = additionalEvents.remove();
 
+            //TODO: which eventType?
             completableFuture = completableFuture.thenCompose(ignore -> {
                 if (isEventStoreReadOnly) {
                     getEventSourcing().onEmit(ImmutableMutationEvent.builder()
-                                                                    .type(EVENT_TYPE)
+                                                                    .type(EVENT_TYPES.get(0))
                                                                     .identifier(entry.getKey())
                                                                     .payload(valueEncoding.serialize(entry.getValue()))
                                                                     .format(valueEncoding.getDefaultFormat()

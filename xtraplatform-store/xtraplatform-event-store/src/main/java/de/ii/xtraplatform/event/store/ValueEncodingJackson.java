@@ -2,6 +2,7 @@ package de.ii.xtraplatform.event.store;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
@@ -10,8 +11,10 @@ import de.ii.xtraplatform.dropwizard.api.Jackson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +35,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     private static final FORMAT DESER_FORMAT_LEGACY = FORMAT.JSON; // old configuration files without file extension are JSON
 
     private final Map<FORMAT, ObjectMapper> mappers; // TODO: use smile/ion mapper for distributed store
+    private final List<ValueDecoderMiddleware<byte[]>> decoderPreProcessor;
     private final List<ValueDecoderMiddleware<T>> decoderMiddleware;
 
     ValueEncodingJackson(Jackson jackson) {
@@ -59,6 +63,11 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
         );
 
         this.decoderMiddleware = new ArrayList<>();
+        this.decoderPreProcessor = new ArrayList<>();
+    }
+
+    public void addDecoderPreProcessor(ValueDecoderMiddleware<byte[]> preProcessor) {
+        this.decoderPreProcessor.add(preProcessor);
     }
 
     public void addDecoderMiddleware(ValueDecoderMiddleware<T> middleware) {
@@ -98,13 +107,25 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
             return null;
         }
 
+        byte[] rawData = payload;
         FORMAT payloadFormat = Objects.equals(format, FORMAT.UNKNOWN) ? DESER_FORMAT_LEGACY : format;
         ObjectMapper objectMapper = getMapper(payloadFormat);
         T data = null;
 
         try {
+            for (ValueDecoderMiddleware<byte[]> preProcessor : decoderPreProcessor) {
+                rawData = preProcessor.process(identifier, rawData, objectMapper, null);
+            }
+        } catch (Throwable e) {
+            LOGGER.error("Deserialization error: {}", e.getMessage());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Stacktrace:", e);
+            }
+        }
+
+        try {
             for (ValueDecoderMiddleware<T> middleware : decoderMiddleware) {
-                data = middleware.process(identifier, payload, objectMapper, data);
+                data = middleware.process(identifier, rawData, objectMapper, data);
             }
 
         } catch (Throwable e) {
@@ -114,7 +135,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
                                                                                 .findFirst();
                 if (recovery.isPresent()) {
                     data = recovery.get()
-                                   .recover(identifier, payload, objectMapper);
+                                   .recover(identifier, rawData, objectMapper);
                 }
             } catch (Throwable e2) {
                 LOGGER.error("Deserialization error: {}", e.getMessage());
@@ -125,6 +146,25 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
         }
 
         return data;
+    }
+
+    @Override
+    public byte[] nestPayload(byte[] payload, FORMAT format, List<String> nestingPath) throws IOException {
+        if (nestingPath.isEmpty()) {
+            return payload;
+        }
+
+        //TODO: .metadata.yml.swp leads to invisible error, should be ignored either silently or with log message
+
+        ObjectMapper mapper = getMapper(format);
+
+        Map<String, Object> data = mapper.readValue(payload, new TypeReference<LinkedHashMap<String, Object>>() {
+        });
+
+        for (String key : nestingPath) {
+            data = ImmutableMap.of(key, data);
+        }
+        return mapper.writeValueAsBytes(data);
     }
 
     final ObjectMapper getDefaultMapper() {
