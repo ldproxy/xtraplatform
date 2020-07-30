@@ -13,6 +13,8 @@ public interface EntityFactory {
 
     EntityDataBuilder<EntityData> getDataBuilder(String entityType, Optional<String> entitySubType);
 
+    Optional<EntityDataDefaults.KeyPathAlias> getKeyPathAlias(String keyPath);
+
     List<List<String>> getSubTypes(String entityType, List<String> entitySubType);
 
     EntityDataBuilder<EntityData> getDataBuilders(String entityType, long entitySchemaVersion, Optional<String> entitySubType);

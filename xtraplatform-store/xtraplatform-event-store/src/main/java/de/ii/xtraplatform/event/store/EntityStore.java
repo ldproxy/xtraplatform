@@ -69,6 +69,12 @@ public class EntityStore extends AbstractMergeableKeyValueStore<EntityData> impl
         valueEncoding.addDecoderMiddleware(new ValueDecoderEntityDataMigration(eventSourcing, entityFactory, this::addAdditionalEvent));
     }
 
+    //TODO: it seems this is needed for correct order (defaults < entities)
+    @Validate
+    private void onVal() {
+        //LOGGER.debug("VALID");
+    }
+
     @Override
     protected ValueEncoding<EntityData> getValueEncoding() {
         return valueEncoding;
@@ -117,8 +123,11 @@ public class EntityStore extends AbstractMergeableKeyValueStore<EntityData> impl
                                                                        .identifier(cacheKey);
         if (!overridesPath.getKeyPath()
                           .isEmpty()) {
+            Optional<EntityDataDefaults.KeyPathAlias> keyPathAlias = entityFactory.getKeyPathAlias(overridesPath.getKeyPath()
+                                                                                                                .get(overridesPath.getKeyPath()
+                                                                                                                                  .size() - 1));
             try {
-                byte[] nestedPayload = valueEncoding.nestPayload(event.payload(), ValueEncoding.FORMAT.fromString(event.format()), overridesPath.getKeyPath());
+                byte[] nestedPayload = valueEncoding.nestPayload(event.payload(), ValueEncoding.FORMAT.fromString(event.format()), overridesPath.getKeyPath(), keyPathAlias);
                 builder.payload(nestedPayload);
             } catch (IOException e) {
                 LOGGER.error("Error:", e);

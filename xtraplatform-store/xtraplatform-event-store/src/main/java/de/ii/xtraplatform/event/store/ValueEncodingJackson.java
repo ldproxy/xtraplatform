@@ -149,7 +149,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     }
 
     @Override
-    public byte[] nestPayload(byte[] payload, FORMAT format, List<String> nestingPath) throws IOException {
+    public byte[] nestPayload(byte[] payload, FORMAT format, List<String> nestingPath, Optional<EntityDataDefaults.KeyPathAlias> keyPathAlias) throws IOException {
         if (nestingPath.isEmpty()) {
             return payload;
         }
@@ -161,7 +161,13 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
         Map<String, Object> data = mapper.readValue(payload, new TypeReference<LinkedHashMap<String, Object>>() {
         });
 
-        for (String key : nestingPath) {
+        for (int i = nestingPath.size() - 1; i >= 0; i--) {
+            if (i == nestingPath.size() - 1 && keyPathAlias.isPresent()) {
+                data = keyPathAlias.get().wrapMap(data);
+                continue;
+            }
+
+            String key = nestingPath.get(i);
             data = ImmutableMap.of(key, data);
         }
         return mapper.writeValueAsBytes(data);

@@ -7,7 +7,6 @@ import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.ServiceController;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +38,12 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getBuilder, eventSourcing));
     }
 
+    //TODO: it seems this is needed for correct order (defaults < entities)
+    @Validate
+    private void onVal() {
+        //LOGGER.debug("VALID");
+    }
+
     //TODO: onEmit middleware
     private List<MutationEvent> processEvent(MutationEvent event) {
 
@@ -46,11 +51,11 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
         List<List<String>> subTypes = entityFactory.getSubTypes(defaultsPath.getEntityType(), defaultsPath.getEntitySubtype());
 
-        LOGGER.debug("Applying to subtypes as well: {}", subTypes);
+        //LOGGER.debug("Applying to subtypes as well: {}", subTypes);
 
         List<Identifier> cacheKeys = getCacheKeys(defaultsPath, subTypes);
 
-        LOGGER.debug("Applying to subtypes as well 2: {}", cacheKeys);
+        //LOGGER.debug("Applying to subtypes as well 2: {}", cacheKeys);
 
         return cacheKeys.stream()
                         .map(cacheKey -> {
@@ -59,8 +64,11 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                                                                                            .identifier(cacheKey);
                             if (!defaultsPath.getKeyPath()
                                              .isEmpty()) {
+                                Optional<EntityDataDefaults.KeyPathAlias> keyPathAlias = entityFactory.getKeyPathAlias(defaultsPath.getKeyPath()
+                                                                                                                                    .get(defaultsPath.getKeyPath()
+                                                                                                                                                      .size() - 1));
                                 try {
-                                    byte[] nestedPayload = valueEncoding.nestPayload(event.payload(), ValueEncoding.FORMAT.fromString(event.format()), defaultsPath.getKeyPath());
+                                    byte[] nestedPayload = valueEncoding.nestPayload(event.payload(), ValueEncoding.FORMAT.fromString(event.format()), defaultsPath.getKeyPath(), keyPathAlias);
                                     builder.payload(nestedPayload);
                                 } catch (IOException e) {
                                     LOGGER.error("Error:", e);

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public interface ValueEncoding<T> {
 
@@ -33,6 +34,6 @@ public interface ValueEncoding<T> {
 
     T deserialize(Identifier identifier, byte[] payload, FORMAT format);
 
-    byte[] nestPayload(byte[] payload, FORMAT format, List<String> nestingPath) throws IOException;
+    byte[] nestPayload(byte[] payload, FORMAT format, List<String> nestingPath, Optional<EntityDataDefaults.KeyPathAlias> keyPathAlias) throws IOException;
 
 }

@@ -322,6 +322,16 @@ public class EntityFactoryDefault implements EntityFactory {
     }
 
     @Override
+    public Optional<EntityDataDefaults.KeyPathAlias> getKeyPathAlias(String keyPath) {
+        return entityDataDefaults.values()
+                                 .stream()
+                                 .flatMap(defaults -> defaults.getAliases().entrySet().stream())
+                                 .filter(entry -> Objects.equals(keyPath, entry.getKey()))
+                                 .map(Map.Entry::getValue)
+                                 .findFirst();
+    }
+
+    @Override
     public List<List<String>> getSubTypes(String entityType, List<String> entitySubType) {
         String specificEntityType = getSpecificEntityType(entityType, getTypeAsString(entitySubType));
 
