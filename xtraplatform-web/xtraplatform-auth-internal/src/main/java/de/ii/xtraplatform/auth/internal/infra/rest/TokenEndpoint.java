@@ -1,11 +1,11 @@
 package de.ii.xtraplatform.auth.internal.infra.rest;
 
+import de.ii.xtraplatform.dropwizard.api.AuthConfig;
 import de.ii.xtraplatform.auth.api.ImmutableUser;
 import de.ii.xtraplatform.auth.api.Role;
 import de.ii.xtraplatform.auth.api.TokenHandler;
 import de.ii.xtraplatform.auth.api.User;
 import de.ii.xtraplatform.auth.api.UserAuthenticator;
-import de.ii.xtraplatform.auth.internal.InternalAuthConfig;
 import de.ii.xtraplatform.auth.internal.SplitCookie;
 import de.ii.xtraplatform.auth.internal.domain.ImmutableTokenResponse;
 import de.ii.xtraplatform.dropwizard.api.XtraPlatform;
@@ -37,17 +37,17 @@ public class TokenEndpoint implements Endpoint {
 
     private static final int DEFAULT_EXPIRY = 2592000;
 
-    @Requires
-    private UserAuthenticator authenticator;
+    private final UserAuthenticator authenticator;
+    private final TokenHandler tokenGenerator;
+    private final XtraPlatform xtraPlatform;
+    private final AuthConfig authConfig;
 
-    @Requires
-    private TokenHandler tokenGenerator;
-
-    @Requires
-    private XtraPlatform xtraPlatform;
-
-    @Requires
-    private InternalAuthConfig internalAuthConfig;
+    public TokenEndpoint(@Requires UserAuthenticator authenticator, @Requires TokenHandler tokenGenerator, @Requires XtraPlatform xtraPlatform) {
+        this.authenticator = authenticator;
+        this.tokenGenerator = tokenGenerator;
+        this.xtraPlatform = xtraPlatform;
+        this.authConfig = xtraPlatform.getConfiguration().auth;
+    }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -59,7 +59,7 @@ public class TokenEndpoint implements Endpoint {
         Optional<User> user;
 
         //TODO: get from cfg.yml, makes it easier to set different defaults for different products
-        if (internalAuthConfig.isAnonymousAccessAllowed()) {
+        if (authConfig.isAnonymousAccessAllowed) {
             user = Optional.of(ImmutableUser.builder()
                                             .name("admin")
                                             .role(Role.ADMIN)

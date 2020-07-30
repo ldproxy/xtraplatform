@@ -10,6 +10,7 @@ package de.ii.xtraplatform.auth.external;
 import com.google.common.cache.CacheBuilderSpec;
 import de.ii.xtraplatform.akka.http.Http;
 import de.ii.xtraplatform.akka.http.HttpClient;
+import de.ii.xtraplatform.dropwizard.api.AuthConfig;
 import de.ii.xtraplatform.auth.api.AuthProvider;
 import de.ii.xtraplatform.auth.api.User;
 import de.ii.xtraplatform.auth.api.UserAuthorizer;
@@ -33,16 +34,14 @@ import org.apache.felix.ipojo.annotations.StaticServiceProperty;
 @Instantiate
 public class ExternalBearerAuthProvider implements AuthProvider<User> {
 
-    //TODO: interface, to constructor
-    @Requires
-    ExternalAuthConfig authConfig;
-
     private final Dropwizard dropwizard;
     private final HttpClient httpClient;
+    private final AuthConfig authConfig;
 
     public ExternalBearerAuthProvider(@Requires Dropwizard dropwizard, @Requires Http http) {
         this.dropwizard = dropwizard;
         this.httpClient = http.getDefaultClient();
+        this.authConfig = dropwizard.getConfiguration().auth;
     }
 
     @Override
@@ -63,10 +62,10 @@ public class ExternalBearerAuthProvider implements AuthProvider<User> {
                 .setPrefix("Bearer")
                 .buildAuthFilter();
 
-        if (!authConfig.getExternalDynamicAuthorizationEndpoint()
+        if (!authConfig.getExternalDynamicAuthorizationEndpoint
                        .isEmpty()) {
             return new AuthDynamicFeature(
-                    new ExternalDynamicAuthFilter<>(authConfig.getExternalDynamicAuthorizationEndpoint(), authConfig.getPostProcessingEndpoint(), httpClient, authFilter)
+                    new ExternalDynamicAuthFilter<>(authConfig.getExternalDynamicAuthorizationEndpoint, authConfig.getPostProcessingEndpoint, httpClient, authFilter)
             );
         }
 
