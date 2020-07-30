@@ -1,8 +1,12 @@
 package de.ii.xtraplatform.dropwizard.api;
 
+import java.net.URI;
+
 public interface XtraPlatform {
 
     XtraPlatformConfiguration getConfiguration();
 
-    String getUrl();
+    URI getUri();
+
+    URI getServicesUri();
 }

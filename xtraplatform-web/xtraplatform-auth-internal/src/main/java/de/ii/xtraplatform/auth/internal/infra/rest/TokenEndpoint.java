@@ -8,7 +8,7 @@ import de.ii.xtraplatform.auth.api.UserAuthenticator;
 import de.ii.xtraplatform.auth.internal.InternalAuthConfig;
 import de.ii.xtraplatform.auth.internal.SplitCookie;
 import de.ii.xtraplatform.auth.internal.domain.ImmutableTokenResponse;
-import de.ii.xtraplatform.server.CoreServerConfig;
+import de.ii.xtraplatform.dropwizard.api.XtraPlatform;
 import de.ii.xtraplatform.web.api.Endpoint;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -44,7 +44,7 @@ public class TokenEndpoint implements Endpoint {
     private TokenHandler tokenGenerator;
 
     @Requires
-    private CoreServerConfig serverConfig;
+    private XtraPlatform xtraPlatform;
 
     @Requires
     private InternalAuthConfig internalAuthConfig;
@@ -117,6 +117,6 @@ public class TokenEndpoint implements Endpoint {
     }
 
     private URI getExternalUri() {
-        return URI.create(serverConfig.getExternalUrl());
+        return xtraPlatform.getServicesUri();
     }
 }

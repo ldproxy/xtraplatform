@@ -11,6 +11,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Appender;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import de.ii.xtraplatform.dropwizard.api.ApplicationProvider;
@@ -36,19 +37,17 @@ import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.ServiceController;
 import org.apache.felix.ipojo.annotations.Validate;
+import org.apache.http.client.utils.URIBuilder;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.osgi.framework.BundleContext;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import static de.ii.xtraplatform.runtime.FelixRuntime.ENV.DEVELOPMENT;
@@ -200,8 +199,26 @@ public class DropwizardProvider implements Dropwizard {
     }
 
     @Override
-    public String getUrl() {
-        return String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort());
+    public URI getUri() {
+        if (Strings.isNullOrEmpty(configuration.getServerFactory()
+                                               .getExternalUrl())) {
+            return URI.create(String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort()));
+        }
+
+        return URI.create(configuration.getServerFactory()
+                                       .getExternalUrl()
+                                       .replace("rest/services/", "")
+                                       .replace("rest/services", ""));
+    }
+
+    @Override
+    public URI getServicesUri() {
+        String uri = getUri().toString();
+        if (uri.endsWith("/")) {
+            uri = uri.substring(0, uri.length()-1);
+        }
+
+        return URI.create(String.format("%s/rest/services", uri));
     }
 
     private int getApplicationPort() {
@@ -220,7 +237,8 @@ public class DropwizardProvider implements Dropwizard {
 
     private String getHostName() {
 
-        return Optional.ofNullable(configuration.getServerFactory().getExternalUrl())
+        return Optional.ofNullable(configuration.getServerFactory()
+                                                .getExternalUrl())
                        .map(URI::create)
                        .map(URI::getHost)
                        .orElse("localhost");

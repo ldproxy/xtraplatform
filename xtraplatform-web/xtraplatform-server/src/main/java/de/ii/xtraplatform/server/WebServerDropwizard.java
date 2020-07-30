@@ -310,7 +310,7 @@ public class WebServerDropwizard {
 
     public String getUrl() {
         if (url.isEmpty()) {
-            this.url = dw.getUrl();
+            this.url = dw.getUri().toString();
         }
         return url;
     }
