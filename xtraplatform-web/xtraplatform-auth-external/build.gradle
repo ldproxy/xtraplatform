@@ -4,8 +4,6 @@ dependencies {
     provided group: 'de.interactive_instruments', name: 'xtraplatform-akka'
     provided project(':xtraplatform-akka-http')
     
-    provided group: 'de.interactive_instruments', name: 'xtraplatform-config-store-api'
-
     embedded (group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1') {
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
     }
