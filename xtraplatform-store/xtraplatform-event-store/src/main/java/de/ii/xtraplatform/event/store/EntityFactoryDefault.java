@@ -308,7 +308,9 @@ public class EntityFactoryDefault implements EntityFactory {
 
         try {
             if (entityDataDefaults.containsKey(specificEntityType)) {
-                LOGGER.debug("USING DEFAULTS {}", specificEntityType);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("USING DEFAULTS {}", specificEntityType);
+                }
                 return entityDataDefaults.get(specificEntityType).getBuilderWithDefaults();
             }
 
@@ -467,9 +469,9 @@ public class EntityFactoryDefault implements EntityFactory {
 
     @Override
     public CompletableFuture<PersistentEntity> createInstance(String entityType, String id, EntityData entityData) {
-
-        LOGGER.debug("CREATING ENTITY {} {} {}", entityType, id/*, entityData*/);
-
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("CREATING ENTITY {} {} {}", entityType, id/*, entityData*/);
+        }
         String instanceId = entityType + "/" + id;
         String specificEntityType = getSpecificEntityType(entityType, entityData.getEntitySubType());
         String instanceClassName = entityClasses.get(specificEntityType);
@@ -493,7 +495,9 @@ public class EntityFactoryDefault implements EntityFactory {
 
     @Override
     public CompletableFuture<PersistentEntity> updateInstance(String entityType, String id, EntityData entityData) {
-        LOGGER.debug("UPDATING ENTITY {} {} {}", entityType, id/*, entityData*/);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("UPDATING ENTITY {} {} {}", entityType, id/*, entityData*/);
+        }
 
         String instanceId = entityType + "/" + id;
 
@@ -523,7 +527,9 @@ public class EntityFactoryDefault implements EntityFactory {
 
     @Override
     public void deleteInstance(String entityType, String id) {
-        LOGGER.debug("DELETING ENTITY {} {}", entityType, id);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("DELETING ENTITY {} {}", entityType, id);
+        }
 
         String instanceId = entityType + "/" + id;
 

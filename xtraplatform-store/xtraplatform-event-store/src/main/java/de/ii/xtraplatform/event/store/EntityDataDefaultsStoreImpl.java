@@ -133,7 +133,9 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         identifiers().forEach(identifier -> {
             EntityDataBuilder<EntityData> builder = get(identifier);
 
-            LOGGER.debug("Loaded defaults: {}", identifier);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Loaded defaults: {}", identifier);
+            }
 
             /*try {
                 builder.build();

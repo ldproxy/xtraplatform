@@ -40,13 +40,13 @@ public abstract class AbstractEventStore implements EventStore {
                 CompletableFuture<Void> cmp = new CompletableFuture<>();
                 eventStream.foreach(event -> {
                     if (event instanceof StateChangeEvent && ((StateChangeEvent) event).state() == StateChangeEvent.STATE.LISTENING) {
-                        LOGGER.debug("{} STARTED", eventType);
+                        //LOGGER.debug("{} STARTED", eventType);
                         cmp.complete(null);
                     }
                     subscriber.onEmit(event);
                 });
                 cmp.join();
-                LOGGER.debug("NEXT");
+                //LOGGER.debug("NEXT");
             }
 
         }, 10, TimeUnit.SECONDS);
