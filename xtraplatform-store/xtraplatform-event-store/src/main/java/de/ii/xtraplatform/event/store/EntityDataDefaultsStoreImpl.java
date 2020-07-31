@@ -98,7 +98,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                 .build();
     }
 
-    private EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
+    @Override
+    public EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
 
         if (eventSourcing.isInCache(identifier)) {
             return eventSourcing.getFromCache(identifier);
