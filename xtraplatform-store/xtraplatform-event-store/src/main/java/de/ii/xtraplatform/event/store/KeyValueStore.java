@@ -16,4 +16,12 @@ public interface KeyValueStore<T> {
     CompletableFuture<T> put(String id, T value, String... path);
 
     CompletableFuture<Boolean> delete(String id, String... path);
+
+    List<Identifier> identifiers(String... path);
+
+    boolean has(Identifier identifier);
+
+    T get(Identifier identifier);
+
+    CompletableFuture<T> put(Identifier identifier, T value);
 }

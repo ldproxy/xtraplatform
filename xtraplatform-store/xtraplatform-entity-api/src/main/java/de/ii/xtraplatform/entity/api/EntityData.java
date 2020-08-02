@@ -16,7 +16,7 @@ import java.util.Optional;
 /**
  * @author zahnen
  */
-public interface EntityData {
+public interface EntityData extends de.ii.xtraplatform.entity.api.Value {
 
     String getId();
 
@@ -34,7 +34,7 @@ public interface EntityData {
 
     @Value.Default
     default long getEntityStorageVersion() {
-        return getEntitySchemaVersion();
+        return 1;
     }
 
     @JsonIgnore

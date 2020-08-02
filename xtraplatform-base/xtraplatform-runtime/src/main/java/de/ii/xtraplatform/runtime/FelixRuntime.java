@@ -177,9 +177,7 @@ public class FelixRuntime {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Base configs: {}", baseConfigs);
             try {
-                String cfg = configurationReader.loadMergedConfig(configurationFile, env)
-                                                 .asCharSource(Charsets.UTF_8)
-                                                 .read();
+                String cfg = configurationReader.loadMergedConfig(configurationFile, env);
                 LOGGER.debug("Application configuration: {}", cfg);
 
             } catch (IOException e) {

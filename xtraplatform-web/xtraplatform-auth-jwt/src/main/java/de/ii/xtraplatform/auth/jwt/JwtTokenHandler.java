@@ -1,11 +1,12 @@
 package de.ii.xtraplatform.auth.jwt;
 
 import com.google.common.base.Strings;
-import de.ii.xtraplatform.auth.api.AuthConfig;
+import de.ii.xtraplatform.dropwizard.api.AuthConfig;
 import de.ii.xtraplatform.auth.api.ImmutableUser;
 import de.ii.xtraplatform.auth.api.Role;
 import de.ii.xtraplatform.auth.api.TokenHandler;
 import de.ii.xtraplatform.auth.api.User;
+import de.ii.xtraplatform.dropwizard.api.XtraPlatform;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
@@ -33,14 +34,17 @@ public class JwtTokenHandler implements TokenHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenHandler.class);
 
-    @Requires
-    private AuthConfig authConfig;
+    private final AuthConfig authConfig;
+
+    public JwtTokenHandler(@Requires XtraPlatform xtraPlatform) {
+        this.authConfig = xtraPlatform.getConfiguration().auth;
+    }
 
     @Override
     public String generateToken(User user, int expiresIn, boolean rememberMe) {
         JwtBuilder jwtBuilder = Jwts.builder()
                                     .setSubject(user.getName())
-                                    .claim(authConfig.getUserRoleKey(), user.getRole()
+                                    .claim(authConfig.getUserRoleKey, user.getRole()
                                                                             .toString())
                                     .claim("rememberMe", rememberMe)
                                     .setExpiration(Date.from(Instant.now()
@@ -57,13 +61,13 @@ public class JwtTokenHandler implements TokenHandler {
         if (authConfig.isActive() && authConfig.isJwt()) {
             try {
                 Claims claimsJws = Jwts.parser()
-                                       .setSigningKey(authConfig.getJwtSigningKey())
+                                       .setSigningKey(authConfig.jwtSigningKey)
                                        .parseClaimsJws(token)
                                        .getBody();
 
                 return Optional.of(ImmutableUser.builder()
                                                 .name(claimsJws.getSubject())
-                                                .role(Role.fromString(Optional.ofNullable(claimsJws.get(authConfig.getUserRoleKey(), String.class))
+                                                .role(Role.fromString(Optional.ofNullable(claimsJws.get(authConfig.getUserRoleKey, String.class))
                                                                               .orElse("USER")))
                                                 .build());
             } catch (Throwable e) {
@@ -80,7 +84,7 @@ public class JwtTokenHandler implements TokenHandler {
         if (authConfig.isActive() && authConfig.isJwt()) {
             try {
                 Claims claimsJws = Jwts.parser()
-                                       .setSigningKey(authConfig.getJwtSigningKey())
+                                       .setSigningKey(authConfig.jwtSigningKey)
                                        .parseClaimsJws(token)
                                        .getBody();
 
@@ -96,7 +100,7 @@ public class JwtTokenHandler implements TokenHandler {
     }
 
     private Key getKey() {
-        return Optional.ofNullable(Strings.emptyToNull(authConfig.getJwtSigningKey()))
+        return Optional.ofNullable(Strings.emptyToNull(authConfig.jwtSigningKey))
                        .map(Base64.getDecoder()::decode)
                        .map(Keys::hmacShaKeyFor)
                        .orElseGet(this::generateKey);
@@ -105,8 +109,11 @@ public class JwtTokenHandler implements TokenHandler {
     private SecretKey generateKey() {
         SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-        authConfig.setJwtSigningKey(Base64.getEncoder()
-                                          .encodeToString(key.getEncoded()));
+        authConfig.jwtSigningKey = Base64.getEncoder()
+                                          .encodeToString(key.getEncoded());
+
+        //TODO
+        LOGGER.warn("No valid jwtSigningKey found in cfg.yml, using {}. ", authConfig.jwtSigningKey);
 
         return key;
     }

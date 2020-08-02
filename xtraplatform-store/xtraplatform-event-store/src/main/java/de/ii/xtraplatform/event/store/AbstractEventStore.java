@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -31,12 +32,22 @@ public abstract class AbstractEventStore implements EventStore {
     public final void subscribe(EventStoreSubscriber subscriber) {
         executorService.schedule(() -> {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("New event store subscriber: {} {}", subscriber.getEventType(), subscriber);
+                LOGGER.debug("New event store subscriber: {} {}", subscriber.getEventTypes(), subscriber);
             }
 
-            EventStream eventStream = getEventStream(subscriber.getEventType());
-
-            eventStream.foreach(subscriber::onEmit);
+            for (String eventType: subscriber.getEventTypes()) {
+                EventStream eventStream = getEventStream(eventType);
+                CompletableFuture<Void> cmp = new CompletableFuture<>();
+                eventStream.foreach(event -> {
+                    if (event instanceof StateChangeEvent && ((StateChangeEvent) event).state() == StateChangeEvent.STATE.LISTENING) {
+                        //LOGGER.debug("{} STARTED", eventType);
+                        cmp.complete(null);
+                    }
+                    subscriber.onEmit(event);
+                });
+                cmp.join();
+                //LOGGER.debug("NEXT");
+            }
 
         }, 10, TimeUnit.SECONDS);
     }
@@ -52,31 +63,32 @@ public abstract class AbstractEventStore implements EventStore {
 
     protected final void onStart() {
         eventStreams.values()
-                    .forEach(eventStream -> emitStateChange(eventStream, StateChangeEvent.STATE.LISTENING));
+                    .forEach(eventStream -> emitStateChange(eventStream, StateChangeEvent.STATE.LISTENING, eventStream.getEventType()));
         this.isStarted = true;
     }
 
     private synchronized EventStream getEventStream(String eventType) {
         Objects.requireNonNull(eventType, "eventType may not be null");
-        return eventStreams.computeIfAbsent(eventType, prefix -> createEventStream());
+        return eventStreams.computeIfAbsent(eventType, prefix -> createEventStream(eventType));
     }
 
-    private EventStream createEventStream() {
-        EventStream eventStream = new EventStream(materializer);
+    private EventStream createEventStream(String eventType) {
+        EventStream eventStream = new EventStream(materializer, eventType);
 
-        emitStateChange(eventStream, StateChangeEvent.STATE.REPLAYING);
+        emitStateChange(eventStream, StateChangeEvent.STATE.REPLAYING, eventType);
 
         // should only happen if there is no replay, so order would be correct
         if (isStarted) {
-            emitStateChange(eventStream, StateChangeEvent.STATE.LISTENING);
+            emitStateChange(eventStream, StateChangeEvent.STATE.LISTENING, eventType);
         }
 
         return eventStream;
     }
 
-    private void emitStateChange(EventStream eventStream, StateChangeEvent.STATE state) {
+    private void emitStateChange(EventStream eventStream, StateChangeEvent.STATE state, String type) {
         eventStream.queue(ImmutableStateChangeEvent.builder()
                                                    .state(state)
+                                                   .type(type)
                                                    .build());
     }
 }

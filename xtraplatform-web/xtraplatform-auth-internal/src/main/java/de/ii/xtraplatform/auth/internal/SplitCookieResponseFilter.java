@@ -2,7 +2,7 @@ package de.ii.xtraplatform.auth.internal;
 
 import de.ii.xtraplatform.auth.api.TokenHandler;
 import de.ii.xtraplatform.auth.api.User;
-import de.ii.xtraplatform.server.CoreServerConfig;
+import de.ii.xtraplatform.dropwizard.api.XtraPlatform;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 @Component
 @Provides
@@ -27,13 +26,13 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitCookieResponseFilter.class);
 
-    private final CoreServerConfig serverConfig;
+    private final XtraPlatform xtraPlatform;
 
     private final TokenHandler tokenHandler;
 
-    public SplitCookieResponseFilter(@Requires CoreServerConfig serverConfig,
+    public SplitCookieResponseFilter(@Requires XtraPlatform xtraPlatform,
                                      @Requires TokenHandler tokenHandler) {
-        this.serverConfig = serverConfig;
+        this.xtraPlatform = xtraPlatform;
         this.tokenHandler = tokenHandler;
     }
 
@@ -86,6 +85,6 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
     }
 
     private URI getExternalUri() {
-        return URI.create(serverConfig.getExternalUrl());
+        return xtraPlatform.getServicesUri();
     }
 }

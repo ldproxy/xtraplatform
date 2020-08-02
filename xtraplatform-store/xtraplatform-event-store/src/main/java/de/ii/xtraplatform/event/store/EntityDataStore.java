@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author zahnen
  */
-public interface EntityDataStore<T extends EntityData> extends KeyValueStore<T> {
+public interface EntityDataStore<T extends EntityData> extends MergeableKeyValueStore<T> {
 
     CompletableFuture<T> patch(String id, Map<String, Object> partialData, String... path);
 

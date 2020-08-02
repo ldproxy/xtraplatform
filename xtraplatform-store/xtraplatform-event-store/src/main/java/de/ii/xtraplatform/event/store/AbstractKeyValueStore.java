@@ -9,24 +9,12 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public abstract class AbstractKeyValueStore<T> implements EventStoreSubscriber, KeyValueStore<T> {
+public abstract class AbstractKeyValueStore<T> implements KeyValueStore<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractKeyValueStore.class);
 
-    private final String eventType;
-    final EventSourcing<T> eventSourcing;
 
-    protected AbstractKeyValueStore(EventStore eventStore, String eventType) {
-        this.eventType = eventType;
-        this.eventSourcing = new EventSourcing<>(eventStore, eventType, this::serialize, this::deserialize, this::getDefaultFormat);
-        eventStore.subscribe(this);
-    }
-
-    protected abstract byte[] serialize(T value);
-
-    protected abstract T deserialize(Identifier identifier, byte[] payload, String format);
-
-    protected abstract String getDefaultFormat();
+    protected abstract EventSourcing<T> getEventSourcing();
 
     protected CompletableFuture<Void> onStart() {
         return CompletableFuture.completedFuture(null);
@@ -36,41 +24,21 @@ public abstract class AbstractKeyValueStore<T> implements EventStoreSubscriber, 
         return null;
     }
 
-    protected void onUpdate(Identifier identifier, T entityData) {}
-
-    protected void onDelete(Identifier identifier) {}
-
-    protected void onFailure(Identifier identifier, Throwable throwable) {}
-
-    @Override
-    public String getEventType() {
-        return eventType;
+    protected void onUpdate(Identifier identifier, T entityData) {
     }
 
-    @Override
-    public void onEmit(Event event) {
-        //TODO: when isReplay switches, notify EntityInstantiator
-        if (event instanceof MutationEvent) {
-            eventSourcing.onEmit((MutationEvent) event);
+    protected void onDelete(Identifier identifier) {
+    }
 
-        } else if (event instanceof StateChangeEvent) {
-            switch (((StateChangeEvent) event).state()) {
-                case REPLAYING:
-                    LOGGER.debug("Replaying events for {}", getEventType());
-                    break;
-                case LISTENING:
-                    onStart().thenRun(() -> LOGGER.debug("Listening for events for {}", getEventType()));
-                    break;
-            }
-        }
+    protected void onFailure(Identifier identifier, Throwable throwable) {
     }
 
     @Override
     public List<String> ids(String... path) {
         return identifiers(path)
-                            .stream()
-                            .map(Identifier::id)
-                            .collect(Collectors.toList());
+                .stream()
+                .map(Identifier::id)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -93,50 +61,54 @@ public abstract class AbstractKeyValueStore<T> implements EventStoreSubscriber, 
         return drop(Identifier.from(id, path));
     }
 
-    protected List<Identifier> identifiers(String... path) {
-        return eventSourcing.getIdentifiers(path);
+    @Override
+    public List<Identifier> identifiers(String... path) {
+        return getEventSourcing().getIdentifiers(path);
     }
 
-    protected boolean has(Identifier identifier) {
-        return eventSourcing.isInCache(identifier);
+    @Override
+    public boolean has(Identifier identifier) {
+        return getEventSourcing().isInCache(identifier);
     }
 
-    protected T get(Identifier identifier) {
-        return eventSourcing.getFromCache(identifier);
+    @Override
+    public T get(Identifier identifier) {
+        return getEventSourcing().getFromCache(identifier);
     }
 
-    protected CompletableFuture<T> put(Identifier identifier, T value) {
+    @Override
+    public CompletableFuture<T> put(Identifier identifier, T value) {
         boolean exists = has(identifier);
 
-        return eventSourcing.pushMutationEvent(identifier, value)
-                            .whenComplete((entityData, throwable) -> {
-                                if (Objects.nonNull(throwable)) {
-                                    onFailure(identifier, throwable);
-                                } else if (Objects.nonNull(entityData)) {
-                                    if (exists) onUpdate(identifier, entityData);
-                                    else onCreate(identifier, entityData);
-                                }
-                            });
+        return getEventSourcing().pushMutationEvent(identifier, value)
+                                 .whenComplete((entityData, throwable) -> {
+                                     if (Objects.nonNull(throwable)) {
+                                         onFailure(identifier, throwable);
+                                     } else if (Objects.nonNull(entityData)) {
+                                         if (exists) onUpdate(identifier, entityData);
+                                         else onCreate(identifier, entityData);
+                                     }
+                                 });
     }
 
     protected CompletableFuture<T> putWithoutTrigger(Identifier identifier, T value) {
-        return eventSourcing.pushMutationEvent(identifier, value);
+        return getEventSourcing().pushMutationEvent(identifier, value);
     }
 
     protected CompletableFuture<Boolean> drop(Identifier identifier) {
-        return eventSourcing.pushMutationEvent(identifier, null)
-                            .whenComplete((entityData, throwable) -> {
-                                if (Objects.nonNull(throwable)) {
-                                    onFailure(identifier, throwable);
-                                } else if (Objects.isNull(entityData)) {
-                                    onDelete(identifier);
-                                }
-                            })
-                            .thenApply(Objects::isNull);
+        return getEventSourcing().pushMutationEvent(identifier, null)
+                                 .whenComplete((entityData, throwable) -> {
+                                     if (Objects.nonNull(throwable)) {
+                                         onFailure(identifier, throwable);
+                                     } else if (Objects.isNull(entityData)) {
+                                         onDelete(identifier);
+                                     }
+                                 })
+                                 .thenApply(Objects::isNull);
     }
 
     protected CompletableFuture<Boolean> dropWithoutTrigger(Identifier identifier) {
-        return eventSourcing.pushMutationEvent(identifier, null)
-                            .thenApply(Objects::isNull);
+        return getEventSourcing().pushMutationEvent(identifier, null)
+                                 .thenApply(Objects::isNull);
     }
 }
