@@ -8,6 +8,8 @@ import de.ii.xtraplatform.dropwizard.cfg.XtraServerFrameworkCommand;
 import de.ii.xtraplatform.runtime.FelixRuntime;
 import io.dropwizard.Application;
 import io.dropwizard.cli.Cli;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.JarLocation;
@@ -95,7 +97,7 @@ public abstract class AbstractConfigurationProvider<T extends XtraPlatformConfig
         Bootstrap<T> bootstrap = new Bootstrap<>(application);
         bootstrap.addCommand(new XtraServerFrameworkCommand<>(application));
 
-        bootstrap.setConfigurationSourceProvider(new MergingSourceProvider(bootstrap.getConfigurationSourceProvider(), getAdditionalBaseConfigs(), env));
+        bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(new MergingSourceProvider(bootstrap.getConfigurationSourceProvider(), getAdditionalBaseConfigs(), env), new EnvironmentVariableSubstitutor(false)));
 
         initializer.accept(bootstrap);
 

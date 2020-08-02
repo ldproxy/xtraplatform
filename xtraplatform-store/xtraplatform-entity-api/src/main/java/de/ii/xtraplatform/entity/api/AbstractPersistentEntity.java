@@ -29,7 +29,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
     @Validate// is ignored here, but added by @EntityComponent stereotype
     public final void onValidate() {
         onStart();
-        LOGGER.debug("STARTED {} {} {}", getId(), shouldRegister(), register);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("STARTED {} {} {}", getId(), shouldRegister(), register);
+        }
     }
 
     protected void onStart() {
@@ -42,15 +44,21 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
 
     @Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler
     public final void setData(T data) {
-        LOGGER.debug("GOT data {}"/*, data*/);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("GOT data {}"/*, data*/);
+        }
         this.data = data;
 
         if (shouldRegister()) {
-            LOGGER.debug("REGISTERED {}", data.getId());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("REGISTERED {}", data.getId());
+            }
             this.register = true;
 
         } else {
-            LOGGER.debug("DEREGISTERED {}", data.getId());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("DEREGISTERED {}", data.getId());
+            }
             this.register = false;
         }
     }

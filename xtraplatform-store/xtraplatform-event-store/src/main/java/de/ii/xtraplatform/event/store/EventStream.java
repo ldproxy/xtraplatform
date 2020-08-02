@@ -16,8 +16,9 @@ public class EventStream {
     private final CompletableFuture<SourceQueueWithComplete<Event>> eventQueue;
     private final Source<Event, NotUsed> eventStream;
     private CompletableFuture<SourceQueueWithComplete<Event>> eventQueueChain;
+    private final String eventType;
 
-    EventStream(ActorMaterializer materializer) {
+    EventStream(ActorMaterializer materializer, String eventType) {
         this.eventQueue = new CompletableFuture<>();
         this.eventStream = Source.<Event>queue(1024, OverflowStrategy.backpressure())
                 .mapMaterializedValue(queue -> {
@@ -26,6 +27,7 @@ public class EventStream {
                 });
         this.materializer = materializer;
         this.eventQueueChain = eventQueue;
+        this.eventType = eventType;
     }
 
     public void foreach(Consumer<Event> eventConsumer) {
@@ -39,5 +41,9 @@ public class EventStream {
             queue.offer(event);
             return queue;
         });
+    }
+
+    public String getEventType() {
+        return eventType;
     }
 }

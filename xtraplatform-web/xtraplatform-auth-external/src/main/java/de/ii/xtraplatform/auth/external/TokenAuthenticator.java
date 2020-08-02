@@ -10,6 +10,7 @@ package de.ii.xtraplatform.auth.external;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xtraplatform.akka.http.HttpClient;
+import de.ii.xtraplatform.dropwizard.api.AuthConfig;
 import de.ii.xtraplatform.auth.api.ImmutableUser;
 import de.ii.xtraplatform.auth.api.Role;
 import de.ii.xtraplatform.auth.api.User;
@@ -34,10 +35,10 @@ public class TokenAuthenticator implements Authenticator<String, User> {
     private static final TypeReference<Map<String, String>> TYPE_REF = new TypeReference<Map<String, String>>() {
     };
 
-    private final ExternalAuthConfig authConfig;
+    private final AuthConfig authConfig;
     private final HttpClient httpClient;
 
-    TokenAuthenticator(ExternalAuthConfig authConfig, HttpClient httpClient) {
+    TokenAuthenticator(AuthConfig authConfig, HttpClient httpClient) {
         this.authConfig = authConfig;
         this.httpClient = httpClient;
     }
@@ -50,27 +51,27 @@ public class TokenAuthenticator implements Authenticator<String, User> {
                     // validate
                     // parse
                     Claims claimsJws = Jwts.parser()
-                                           .setSigningKey(authConfig.getJwtSigningKey())
+                                           .setSigningKey(authConfig.jwtSigningKey)
                                            .parseClaimsJws(token)
                                            .getBody();
 
                     return Optional.of(ImmutableUser.builder()
                                                     .name(claimsJws.getSubject())
-                                                    .role(Role.fromString(Optional.ofNullable(claimsJws.get(authConfig.getUserRoleKey(), String.class))
+                                                    .role(Role.fromString(Optional.ofNullable(claimsJws.get(authConfig.getUserRoleKey, String.class))
                                                                                   .orElse("USER")))
                                                     .build());
                 } else {
                     // validate/exchange
                     // parse
-                    String url = authConfig.getUserInfoUrl()
+                    String url = authConfig.getUserInfoEndpoint
                                            .replace("{{token}}", token);
                     InputStream response = httpClient.getAsInputStream(url);
 
                     Map<String, String> userInfo = MAPPER.readValue(response, TYPE_REF);
 
                     return Optional.of(ImmutableUser.builder()
-                                                    .name(userInfo.get(authConfig.getUserNameKey()))
-                                                    .role(Role.fromString(Optional.ofNullable(userInfo.get(authConfig.getUserRoleKey()))
+                                                    .name(userInfo.get(authConfig.getUserNameKey))
+                                                    .role(Role.fromString(Optional.ofNullable(userInfo.get(authConfig.getUserRoleKey))
                                                                                   .orElse("USER")))
                                                     .build());
                 }

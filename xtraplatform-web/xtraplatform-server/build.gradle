@@ -2,8 +2,6 @@
 dependencies {
     provided project(':xtraplatform-sessions-api')
 
-    provided group: 'de.interactive_instruments', name: 'xtraplatform-config-store-api'
-    
     embedded group: 'org.apache.felix', name: 'org.apache.felix.http.proxy', version: '3.0.2'
 }    
 

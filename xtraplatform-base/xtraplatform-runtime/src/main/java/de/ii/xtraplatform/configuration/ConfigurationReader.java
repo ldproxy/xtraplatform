@@ -6,10 +6,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.runtime.FelixRuntime;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.logging.AbstractAppenderFactory;
 import io.dropwizard.logging.DefaultLoggingFactory;
@@ -96,13 +98,18 @@ public class ConfigurationReader {
         return new ByteArrayInputStream(mapper.writeValueAsBytes(base));
     }
 
-    public ByteSource loadMergedConfig(Path userConfig, FelixRuntime.ENV env) throws IOException {
-        return new ByteSource() {
+    public String loadMergedConfig(Path userConfig, FelixRuntime.ENV env) throws IOException {
+        String cfg = new ByteSource() {
             @Override
             public InputStream openStream() throws IOException {
                 return loadMergedConfig(Files.newInputStream(userConfig), env);
             }
-        };
+        }.asCharSource(Charsets.UTF_8)
+         .read();
+
+        EnvironmentVariableSubstitutor environmentVariableSubstitutor = new EnvironmentVariableSubstitutor(false);
+
+        return environmentVariableSubstitutor.replace(cfg);
     }
 
     public void loadMergedLogging(Path userConfig, FelixRuntime.ENV env) {

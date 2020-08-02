@@ -13,8 +13,8 @@ import de.ii.xtraplatform.api.permission.Auth;
 import de.ii.xtraplatform.api.permission.AuthenticatedUser;
 import de.ii.xtraplatform.api.permission.AuthorizationProvider;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
+import de.ii.xtraplatform.dropwizard.api.XtraPlatform;
 import de.ii.xtraplatform.entity.api.EntityRegistry;
-import de.ii.xtraplatform.server.CoreServerConfig;
 import de.ii.xtraplatform.service.api.Service;
 import de.ii.xtraplatform.service.api.ServiceData;
 import de.ii.xtraplatform.service.api.ServiceListingProvider;
@@ -102,7 +102,7 @@ public class ServicesResource {
     Dropwizard dropwizard;
 
     @Requires
-    private CoreServerConfig coreServerConfig;
+    private XtraPlatform xtraPlatform;
 
     private Map<String, ServiceResourceFactory> serviceResourceFactories;
     private Map<String, ServiceResource> serviceResources;
@@ -294,14 +294,7 @@ public class ServicesResource {
     }
 
     private Optional<URI> getExternalUri() {
-        URI externalUri = null;
-        try {
-            externalUri = new URI(coreServerConfig.getExternalUrl());
-        } catch (URISyntaxException e) {
-            // return null
-        }
-
-        return Optional.ofNullable(externalUri);
+        return Optional.ofNullable(xtraPlatform.getServicesUri());
     }
 
 }
