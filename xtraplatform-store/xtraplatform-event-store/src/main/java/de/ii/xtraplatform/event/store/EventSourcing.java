@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 //TODO: should this really be a facade for EventStore? or can we make it plain ValueCache?
-public class EventSourcing<T> implements EventStoreSubscriber {
+public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventSourcing.class);
 
@@ -77,10 +77,12 @@ public class EventSourcing<T> implements EventStoreSubscriber {
         }
     }
 
+    @Override
     public boolean isInCache(Identifier identifier) {
         return cache.containsKey(identifier);
     }
 
+    @Override
     public T getFromCache(Identifier identifier) {
         return cache.get(identifier);
     }

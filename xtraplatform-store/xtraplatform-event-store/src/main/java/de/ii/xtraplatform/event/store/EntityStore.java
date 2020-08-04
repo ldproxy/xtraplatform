@@ -151,7 +151,7 @@ public class EntityStore extends AbstractMergeableKeyValueStore<EntityData> impl
                                                                     .addAllPath(subtypePath)
                                                                     .build();
         if (defaultsStore.has(defaultsIdentifier)) {
-            return defaultsStore.get(defaultsIdentifier);
+            return defaultsStore.getBuilder(defaultsIdentifier);
         }
 
         return entityFactory.getDataBuilder(identifier.path()
