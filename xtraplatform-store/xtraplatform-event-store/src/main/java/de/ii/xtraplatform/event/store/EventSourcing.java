@@ -138,18 +138,18 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
             LOGGER.trace("Adding event: {} {}", event.type(), event.identifier());
         }
 
+        Identifier key = event.identifier();
         T value;
+
         try {
             ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(event.format());
 
             value = valueEncoding.deserialize(event.identifier(), event.payload(), payloadFormat);
 
         } catch (Throwable e) {
-            LOGGER.error("Could not deserialize entity {}, format '{}' unknown.", event.identifier(), event.format());
-            value = null;
+            LOGGER.error("Could not deserialize {} {}, format '{}' unknown.", event.type(), event.identifier(), event.format());
+            value = cache.getOrDefault(key, null);
         }
-
-        Identifier key = event.identifier();
 
         if (Objects.isNull(value)) {
             cache.remove(key);

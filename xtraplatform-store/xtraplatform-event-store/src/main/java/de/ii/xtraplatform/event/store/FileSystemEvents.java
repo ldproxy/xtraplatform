@@ -226,13 +226,13 @@ public class FileSystemEvents {
         List<String> names = new ArrayList<>();
 
         while (matcher.find()) {
-            LOGGER.debug("PATH REGEX {} {} {} {} {}", matcher.group(), matcher.groupCount(), matcher.group("name"), matcher.group("separator"), matcher.group("glob"));
+            //LOGGER.debug("PATH REGEX {} {} {} {} {}", matcher.group(), matcher.groupCount(), matcher.group("name"), matcher.group("separator"), matcher.group("glob"));
             if (Objects.isNull(matcher.group("glob"))) {
                 names.add(matcher.group("name"));
                 pattern.append(matcher.group("separator").replaceAll("/", "\\\\/"));
                 pattern.append("(?<");
                 pattern.append(matcher.group("name"));
-                pattern.append(">[\\w-\\.]+?)");
+                pattern.append(">[\\w][\\w-\\.]+?)");
                 if (Objects.equals(matcher.group("name"), "id")) {
                     names.add(FORMAT_GROUP);
                     pattern.append("(?:\\.(?<");
@@ -248,8 +248,6 @@ public class FileSystemEvents {
                 pattern.append(matcher.group("separator").replaceAll("/", "\\\\/"));
                 pattern.append("(?<");
                 pattern.append(matcher.group("name"));
-                //TODO: no dot at dir start
-                //pattern.append(">(?:[\\w-_][\\w-_\\.]+\\/?)+)");
                 pattern.append(">(?:[\\w-_](?:[\\w-_]|\\.|\\/(?!\\.))+[\\w-_]))");
                 pattern.append(")?");
             }

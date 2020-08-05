@@ -63,6 +63,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     //TODO: onEmit middleware
     private List<MutationEvent> processEvent(MutationEvent event) {
 
+        if (valueEncoding.isEmpty(event.payload())) {
+            return ImmutableList.of();
+        }
+
         EntityDataDefaultsPath defaultsPath = EntityDataDefaultsPath.from(event.identifier());
 
         List<List<String>> subTypes = entityFactory.getSubTypes(defaultsPath.getEntityType(), defaultsPath.getEntitySubtype());
@@ -84,7 +88,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                                                                                                                                     .get(defaultsPath.getKeyPath()
                                                                                                                                                       .size() - 1));
                                 try {
-                                    byte[] nestedPayload = valueEncoding.nestPayload(event.payload(), ValueEncoding.FORMAT.fromString(event.format()), defaultsPath.getKeyPath(), keyPathAlias);
+                                    byte[] nestedPayload = valueEncoding.nestPayload(event.payload(), event.format(), defaultsPath.getKeyPath(), keyPathAlias);
                                     builder.payload(nestedPayload);
                                 } catch (IOException e) {
                                     LOGGER.error("Error:", e);
