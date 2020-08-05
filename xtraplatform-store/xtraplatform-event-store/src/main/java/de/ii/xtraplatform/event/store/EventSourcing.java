@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 //TODO: should this really be a facade for EventStore? or can we make it plain ValueCache?
-public class EventSourcing<T> implements EventStoreSubscriber {
+public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventSourcing.class);
 
@@ -77,10 +77,12 @@ public class EventSourcing<T> implements EventStoreSubscriber {
         }
     }
 
+    @Override
     public boolean isInCache(Identifier identifier) {
         return cache.containsKey(identifier);
     }
 
+    @Override
     public T getFromCache(Identifier identifier) {
         return cache.get(identifier);
     }
@@ -136,18 +138,18 @@ public class EventSourcing<T> implements EventStoreSubscriber {
             LOGGER.trace("Adding event: {} {}", event.type(), event.identifier());
         }
 
+        Identifier key = event.identifier();
         T value;
+
         try {
             ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(event.format());
 
             value = valueEncoding.deserialize(event.identifier(), event.payload(), payloadFormat);
 
         } catch (Throwable e) {
-            LOGGER.error("Could not deserialize entity {}, format '{}' unknown.", event.identifier(), event.format());
-            value = null;
+            LOGGER.error("Could not deserialize {} {}, format '{}' unknown.", event.type(), event.identifier(), event.format());
+            value = cache.getOrDefault(key, null);
         }
-
-        Identifier key = event.identifier();
 
         if (Objects.isNull(value)) {
             cache.remove(key);

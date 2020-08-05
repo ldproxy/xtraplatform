@@ -9,7 +9,7 @@ import java.util.Optional;
 public interface ValueEncoding<T> {
 
     enum FORMAT {
-        UNKNOWN, JSON, YML, YAML, ION;
+        UNKNOWN, JSON, YML, YAML/*, ION*/;
 
         static FORMAT fromString(String format) {
             if (Objects.isNull(format)) {
@@ -34,6 +34,6 @@ public interface ValueEncoding<T> {
 
     T deserialize(Identifier identifier, byte[] payload, FORMAT format);
 
-    byte[] nestPayload(byte[] payload, FORMAT format, List<String> nestingPath, Optional<EntityDataDefaults.KeyPathAlias> keyPathAlias) throws IOException;
+    byte[] nestPayload(byte[] payload, String format, List<String> nestingPath, Optional<EntityDataDefaults.KeyPathAlias> keyPathAlias) throws IOException;
 
 }

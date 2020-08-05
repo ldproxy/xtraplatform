@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import static de.ii.xtraplatform.event.store.EventSourcingTests.DESERIALIZE_API_BUILDINGBLOCK_MIGRATION;
 import static de.ii.xtraplatform.event.store.EventSourcingTests.DESERIALIZE_IMMUTABLE_BUILDER_NESTED;
@@ -31,6 +33,9 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
     private static final byte[] JSON_NULL = "null".getBytes();
     private static final byte[] YAML_NULL = "--- null\n".getBytes();
+    private static final Pattern JSON_EMPTY = Pattern.compile("(\\s)*");
+    private static final Pattern YAML_EMPTY = Pattern.compile("---(\\s)*");
+
     private static final FORMAT DEFAULT_FORMAT = FORMAT.YML;
     private static final FORMAT DESER_FORMAT_LEGACY = FORMAT.JSON; // old configuration files without file extension are JSON
 
@@ -103,7 +108,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     @Override
     public final T deserialize(Identifier identifier, byte[] payload, FORMAT format) {
         // "null" as payload means delete
-        if (Arrays.equals(payload, JSON_NULL) || Arrays.equals(payload, YAML_NULL)) {
+        if (isNull(payload)) {
             return null;
         }
 
@@ -149,10 +154,19 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     }
 
     @Override
-    public byte[] nestPayload(byte[] payload, FORMAT format, List<String> nestingPath, Optional<EntityDataDefaults.KeyPathAlias> keyPathAlias) throws IOException {
+    public byte[] nestPayload(byte[] payload, String formatString, List<String> nestingPath, Optional<EntityDataDefaults.KeyPathAlias> keyPathAlias) throws IOException {
         if (nestingPath.isEmpty()) {
             return payload;
         }
+
+        FORMAT format;
+        try {
+            format = FORMAT.fromString(formatString);
+        } catch (Throwable e) {
+            //LOGGER.error("Could not deserialize, format '{}' unknown.", formatString);
+            return payload;
+        }
+
 
         //TODO: .metadata.yml.swp leads to invisible error, should be ignored either silently or with log message
 
@@ -179,5 +193,14 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
     final ObjectMapper getMapper(FORMAT format) {
         return mappers.get(format);
+    }
+
+    final boolean isNull(byte[] payload) {
+        return Arrays.equals(payload, JSON_NULL) || Arrays.equals(payload, YAML_NULL);
+    }
+
+    final boolean isEmpty(byte[] payload) {
+        String payloadString = new String(payload, StandardCharsets.UTF_8);
+        return JSON_EMPTY.matcher(payloadString).matches() || YAML_EMPTY.matcher(payloadString).matches();
     }
 }

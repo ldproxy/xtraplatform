@@ -12,7 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -20,13 +22,14 @@ import java.util.stream.Collectors;
 @Component(publicFactory = false)
 @Provides
 @Instantiate
-public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<EntityDataBuilder<EntityData>> implements EntityDataDefaultsStore {
+public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<Map<String,Object>> implements EntityDataDefaultsStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntityDataDefaultsStoreImpl.class);
 
     private final EntityFactory entityFactory;
-    private final ValueEncodingJackson<EntityDataBuilder<EntityData>> valueEncoding;
-    private final EventSourcing<EntityDataBuilder<EntityData>> eventSourcing;
+    private final ValueEncodingJackson<Map<String,Object>> valueEncoding;
+    private final ValueEncodingJackson<EntityDataBuilder<EntityData>> valueEncodingBuilder;
+    private final EventSourcing<Map<String,Object>> eventSourcing;
 
     protected EntityDataDefaultsStoreImpl(@Requires EventStore eventStore, @Requires Jackson jackson,
                                           @Requires EntityFactory entityFactory) {
@@ -35,7 +38,20 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         this.eventSourcing = new EventSourcing<>(eventStore, ImmutableList.of(EntityDataDefaultsStore.EVENT_TYPE), valueEncoding, this::onStart, Optional.of(this::processEvent));
 
         valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
-        valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getBuilder, eventSourcing));
+        valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getDefaults, eventSourcing));
+
+        this.valueEncodingBuilder = new ValueEncodingJackson<>(jackson);
+        valueEncodingBuilder.addDecoderMiddleware(new ValueDecoderBase<>(this::getNewBuilder, new ValueCache<EntityDataBuilder<EntityData>>() {
+            @Override
+            public boolean isInCache(Identifier identifier) {
+                return false;
+            }
+
+            @Override
+            public EntityDataBuilder<EntityData> getFromCache(Identifier identifier) {
+                return null;
+            }
+        }));
     }
 
     //TODO: it seems this is needed for correct order (defaults < entities)
@@ -46,6 +62,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     //TODO: onEmit middleware
     private List<MutationEvent> processEvent(MutationEvent event) {
+
+        if (valueEncoding.isEmpty(event.payload())) {
+            return ImmutableList.of();
+        }
 
         EntityDataDefaultsPath defaultsPath = EntityDataDefaultsPath.from(event.identifier());
 
@@ -68,7 +88,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                                                                                                                                     .get(defaultsPath.getKeyPath()
                                                                                                                                                       .size() - 1));
                                 try {
-                                    byte[] nestedPayload = valueEncoding.nestPayload(event.payload(), ValueEncoding.FORMAT.fromString(event.format()), defaultsPath.getKeyPath(), keyPathAlias);
+                                    byte[] nestedPayload = valueEncoding.nestPayload(event.payload(), event.format(), defaultsPath.getKeyPath(), keyPathAlias);
                                     builder.payload(nestedPayload);
                                 } catch (IOException e) {
                                     LOGGER.error("Error:", e);
@@ -98,12 +118,15 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                 .build();
     }
 
-    @Override
-    public EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
-
+    private Map<String,Object> getDefaults(Identifier identifier) {
         if (eventSourcing.isInCache(identifier)) {
             return eventSourcing.getFromCache(identifier);
         }
+
+        return new LinkedHashMap<>();
+    }
+
+    public EntityDataBuilder<EntityData> getNewBuilder(Identifier identifier) {
 
         EntityDataDefaultsPath defaultsPath = EntityDataDefaultsPath.from(identifier);
 
@@ -113,17 +136,30 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     }
 
     @Override
-    protected ValueEncoding<EntityDataBuilder<EntityData>> getValueEncoding() {
+    public EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
+
+        if (eventSourcing.isInCache(identifier)) {
+            Map<String, Object> defaults = eventSourcing.getFromCache(identifier);
+            byte[] payload = valueEncodingBuilder.serialize(defaults);
+
+            return valueEncodingBuilder.deserialize(identifier, payload, valueEncodingBuilder.getDefaultFormat());
+        }
+
+        return getNewBuilder(identifier);
+    }
+
+    @Override
+    protected ValueEncoding<Map<String,Object>> getValueEncoding() {
         return valueEncoding;
     }
 
     @Override
-    protected EventSourcing<EntityDataBuilder<EntityData>> getEventSourcing() {
+    protected EventSourcing<Map<String,Object>> getEventSourcing() {
         return eventSourcing;
     }
 
     @Override
-    public <U extends EntityDataBuilder<EntityData>> MergeableKeyValueStore<U> forType(Class<U> type) {
+    public <U extends Map<String, Object>> MergeableKeyValueStore<U> forType(Class<U> type) {
         return null;
     }
 
@@ -131,7 +167,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     protected CompletableFuture<Void> onStart() {
 
         identifiers().forEach(identifier -> {
-            EntityDataBuilder<EntityData> builder = get(identifier);
+            //EntityDataBuilder<EntityData> builder = get(identifier);
 
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Loaded defaults: {}", identifier);

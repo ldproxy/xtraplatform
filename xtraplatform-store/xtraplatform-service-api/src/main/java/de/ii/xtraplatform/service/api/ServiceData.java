@@ -30,6 +30,10 @@ public interface ServiceData extends EntityData, AutoEntity {
 
     String getServiceType();
 
+    /**
+     *
+     * @return label for service
+     */
     @Value.Default
     default String getLabel() {
         return getId();
@@ -39,7 +43,7 @@ public interface ServiceData extends EntityData, AutoEntity {
 
     @Value.Default
     default boolean getShouldStart() {
-        return false;
+        return true;
     }
 
     List<Notification> getNotifications();
