@@ -153,7 +153,12 @@ class ApplicationPlugin implements Plugin<Project> {
     }
 
     List<File> getBundleFiles(Project project) {
-        def bundlesFromFeatures = project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
+        def bundlesFromFeature = project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
+            it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != 'xtraplatform-runtime' }).collect({
+                it.file
+            })
+        })
+        def bundlesFromFeatures = project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
             it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != 'xtraplatform-runtime' }).collect({
                 it.file
             })
@@ -162,7 +167,7 @@ class ApplicationPlugin implements Plugin<Project> {
             it.moduleArtifacts
         }).collect({ it.file })
 
-        return bundlesFromFeatures + bundlesFromApplication
+        return bundlesFromFeature + bundlesFromFeatures + bundlesFromApplication
     }
 
     List<File> getDevBundleFiles(Project project) {
@@ -183,6 +188,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
         project.task('createRuntimeClass') {
             inputs.files project.configurations.feature
+            inputs.files project.configurations.featureBundles
             inputs.files project.configurations.featureDevOnly
             inputs.files project.configurations.bundle
             inputs.property("name", {appExtension.name2})
@@ -244,7 +250,8 @@ class ApplicationPlugin implements Plugin<Project> {
 
     String createBundleTree(Project project) {
         def includedBuilds = getIncludedBuilds(project)
-        def features = sortByDependencyGraph(project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName) || feature.moduleName.endsWith("-bundles")}))
+        def deps = project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> includedBuilds.contains(feature.moduleName)}) + project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.findAll({ feature -> feature.moduleName.endsWith("-bundles")})
+        def features = sortByDependencyGraph(deps)
         def bundles = features.collect({ it.children.findAll({ bundle -> !(bundle in features) }) })
 
         bundles.add(project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies)
