@@ -213,12 +213,18 @@ public class DropwizardProvider implements Dropwizard {
 
     @Override
     public URI getServicesUri() {
-        String uri = getUri().toString();
+        if (Strings.isNullOrEmpty(configuration.getServerFactory()
+                                               .getExternalUrl())) {
+            return URI.create(String.format("%s://%s:%d/rest/services", getScheme(), getHostName(), getApplicationPort()));
+        }
+
+        String uri = configuration.getServerFactory()
+                                  .getExternalUrl();
         if (uri.endsWith("/")) {
             uri = uri.substring(0, uri.length()-1);
         }
 
-        return URI.create(String.format("%s/rest/services", uri));
+        return URI.create(uri);
     }
 
     private int getApplicationPort() {
