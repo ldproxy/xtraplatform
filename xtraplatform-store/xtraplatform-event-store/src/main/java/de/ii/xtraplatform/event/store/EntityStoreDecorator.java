@@ -1,8 +1,7 @@
 package de.ii.xtraplatform.event.store;
 
-import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entities.domain.EntityData;
 
-import javax.naming.OperationNotSupportedException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;

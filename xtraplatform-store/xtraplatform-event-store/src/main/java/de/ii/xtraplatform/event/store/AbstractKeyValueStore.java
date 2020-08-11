@@ -1,6 +1,6 @@
 package de.ii.xtraplatform.event.store;
 
-import de.ii.xtraplatform.entity.api.PersistentEntity;
+import de.ii.xtraplatform.entities.domain.PersistentEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

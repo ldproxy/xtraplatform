@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.service.api;
 
-import de.ii.xtraplatform.entity.api.AbstractPersistentEntity;
+import de.ii.xtraplatform.entities.domain.AbstractPersistentEntity;
 
 /**
  * @author zahnen

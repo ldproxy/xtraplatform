@@ -12,10 +12,10 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import de.ii.xtraplatform.entity.api.EntityData;
-import de.ii.xtraplatform.entity.api.EntityRegistry;
-import de.ii.xtraplatform.entity.api.PersistentEntity;
-import de.ii.xtraplatform.entity.api.handler.Entity;
+import de.ii.xtraplatform.entities.domain.EntityData;
+import de.ii.xtraplatform.entities.domain.EntityRegistry;
+import de.ii.xtraplatform.entities.domain.PersistentEntity;
+import de.ii.xtraplatform.entities.domain.handler.Entity;
 import org.apache.felix.ipojo.ComponentFactory;
 import org.apache.felix.ipojo.Factory;
 import org.apache.felix.ipojo.annotations.Component;
@@ -56,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 @Instantiate
 @Whiteboards(whiteboards = {
         @Wbp(
-                filter = "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=de.ii.xtraplatform.entity.api.PersistentEntity))",
+                filter = "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=de.ii.xtraplatform.entities.domain.PersistentEntity))",
                 onArrival = "onFactoryArrival",
                 onDeparture = "onFactoryDeparture"),
         @Wbp(
@@ -133,7 +133,7 @@ public class EntityFactoryDefault implements EntityFactory {
             }
 
             if (entityDataSubClassName.isPresent()) {
-                try {
+            try {
                     registerEntityDataClass(factory, specificEntityType, entityDataSubClassName.get());
                 } catch (ClassNotFoundException e) {
                     LOGGER.error("Could not find class for entity data type {}.", entityDataClassName);
@@ -145,11 +145,11 @@ public class EntityFactoryDefault implements EntityFactory {
 
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Registered entity type: {}", specificEntityType);
-            }
-        }
+                              }
+                }
 
 
-    }
+                          }
 
     private Optional<String> getComponentClass(ServiceReference<ComponentFactory> ref) {
         return Optional.ofNullable((String) ref.getProperty("component.class"));
@@ -161,12 +161,12 @@ public class EntityFactoryDefault implements EntityFactory {
                                      .equals(propertyKey))
                      .map(PropertyDescription::getValue)
                      .findFirst();
-    }
+            }
 
     private Class<EntityDataBuilder<EntityData>> getDataBuilderClass(Class<?> dataClass) {
         JsonDeserialize annotation = dataClass.getAnnotation(JsonDeserialize.class);
         return (Class<EntityDataBuilder<EntityData>>) annotation.builder();
-    }
+        }
 
     private void registerEntityDataClass(ComponentFactory factory, String entityType, String entityDataType) throws ClassNotFoundException {
         Class<?> entityDataClass = factory.loadClass(entityDataType);
@@ -359,7 +359,7 @@ public class EntityFactoryDefault implements EntityFactory {
 
         try {
             return migrations.get(entitySchemaVersion)
-                             .getDataBuilder();
+                                   .getDataBuilder();
         } catch (Throwable e) {
             throw new IllegalStateException("no builder found for entity type " + entityType);
         }

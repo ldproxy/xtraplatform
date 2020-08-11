@@ -10,8 +10,8 @@ package de.ii.xtraplatform.service.api;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import de.ii.xtraplatform.entity.api.AutoEntity;
-import de.ii.xtraplatform.entity.api.EntityData;
+import de.ii.xtraplatform.entities.domain.AutoEntity;
+import de.ii.xtraplatform.entities.domain.EntityData;
 import org.immutables.value.Value;
 
 import java.util.List;

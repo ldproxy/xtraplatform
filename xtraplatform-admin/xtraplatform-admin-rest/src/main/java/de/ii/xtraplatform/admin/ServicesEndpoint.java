@@ -6,15 +6,14 @@ import de.ii.xtraplatform.api.exceptions.BadRequest;
 import de.ii.xtraplatform.auth.api.Role;
 import de.ii.xtraplatform.auth.api.User;
 import de.ii.xtraplatform.dropwizard.api.Jackson;
-import de.ii.xtraplatform.entity.api.EntityData;
-import de.ii.xtraplatform.entity.api.EntityRegistry;
+import de.ii.xtraplatform.entities.domain.EntityData;
+import de.ii.xtraplatform.entities.domain.EntityRegistry;
 import de.ii.xtraplatform.event.store.EntityDataStore;
 import de.ii.xtraplatform.scheduler.api.TaskStatus;
 import de.ii.xtraplatform.service.api.ImmutableServiceStatus;
 import de.ii.xtraplatform.service.api.Service;
 import de.ii.xtraplatform.service.api.ServiceBackgroundTasks;
 import de.ii.xtraplatform.service.api.ServiceData;
-import de.ii.xtraplatform.service.api.ServiceGenerator;
 import de.ii.xtraplatform.service.api.ServiceStatus;
 import de.ii.xtraplatform.web.api.Endpoint;
 import io.dropwizard.auth.Auth;
@@ -62,17 +61,14 @@ public class ServicesEndpoint implements Endpoint {
     private final EntityDataStore<ServiceData> serviceRepository;
     private final EntityRegistry entityRegistry;
     private final ServiceBackgroundTasks serviceBackgroundTasks;
-    private final ServiceGenerator<ServiceData> serviceGenerator;
     private final ObjectMapper objectMapper;
 
     ServicesEndpoint(@Requires EntityDataStore<EntityData> entityRepository, @Requires EntityRegistry entityRegistry,
-                     @Requires ServiceBackgroundTasks serviceBackgroundTasks, @Requires Jackson jackson,
-                     @Requires ServiceGenerator<ServiceData> serviceGenerator) {
+                     /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/ @Requires Jackson jackson) {
         this.serviceRepository = entityRepository.forType(ServiceData.class);
         this.entityRegistry = entityRegistry;
-        this.serviceBackgroundTasks = serviceBackgroundTasks;
+        this.serviceBackgroundTasks = null;//serviceBackgroundTasks;
         this.objectMapper = jackson.getDefaultObjectMapper();
-        this.serviceGenerator = serviceGenerator;
     }
 
     @GET
@@ -106,7 +102,8 @@ public class ServicesEndpoint implements Endpoint {
         try {
             MDC.put("service", id);
 
-            ServiceData serviceData = serviceGenerator.generate(request); //= serviceRepository.generateEntity(request);
+            //TODO: how to get ServiceData from POST body
+            ServiceData serviceData = null;
 
             ServiceData added = serviceRepository.put(id, serviceData)
                                                  .get();
@@ -230,7 +227,7 @@ public class ServicesEndpoint implements Endpoint {
 
         boolean loading = serviceData.isLoading();
 
-        Optional<TaskStatus> currentTaskForService = serviceBackgroundTasks.getCurrentTaskForService(serviceData.getId());
+        Optional<TaskStatus> currentTaskForService = Optional.empty();//TODO serviceBackgroundTasks.getCurrentTaskForService(serviceData.getId());
 
 
         ImmutableServiceStatus.Builder serviceStatus = ImmutableServiceStatus.builder()
