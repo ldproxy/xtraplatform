@@ -1,6 +1,9 @@
 
 dependencies {
 
+    //deprecated, still used for 1.3.x migration
     provided project(':xtraplatform-kvstore-api')
+
+    provided project(':xtraplatform-event-store')
 }
 

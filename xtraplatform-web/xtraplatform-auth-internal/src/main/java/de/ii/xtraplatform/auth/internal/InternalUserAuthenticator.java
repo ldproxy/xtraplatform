@@ -6,7 +6,7 @@ import de.ii.xtraplatform.auth.api.User;
 import de.ii.xtraplatform.auth.api.UserAuthenticator;
 import de.ii.xtraplatform.dropwizard.api.ConfigurationProvider;
 import de.ii.xtraplatform.entities.domain.EntityData;
-import de.ii.xtraplatform.event.store.EntityDataStore;
+import de.ii.xtraplatform.entities.domain.EntityDataStore;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;

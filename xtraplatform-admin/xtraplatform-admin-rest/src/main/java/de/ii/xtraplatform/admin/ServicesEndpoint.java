@@ -8,7 +8,7 @@ import de.ii.xtraplatform.auth.api.User;
 import de.ii.xtraplatform.dropwizard.api.Jackson;
 import de.ii.xtraplatform.entities.domain.EntityData;
 import de.ii.xtraplatform.entities.domain.EntityRegistry;
-import de.ii.xtraplatform.event.store.EntityDataStore;
+import de.ii.xtraplatform.entities.domain.EntityDataStore;
 import de.ii.xtraplatform.scheduler.api.TaskStatus;
 import de.ii.xtraplatform.service.api.ImmutableServiceStatus;
 import de.ii.xtraplatform.service.api.Service;

@@ -1,6 +1,6 @@
 
 dependencies {
-    provided project(':xtraplatform-entities')
     provided project(':xtraplatform-akka')
+    provided project(':xtraplatform-di')
 
 }

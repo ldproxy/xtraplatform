@@ -6,7 +6,7 @@ import de.ii.xtraplatform.entities.domain.AbstractPersistentEntity;
 import de.ii.xtraplatform.entities.domain.EntityComponent;
 import de.ii.xtraplatform.entities.domain.EntityData;
 import de.ii.xtraplatform.entities.domain.handler.Entity;
-import de.ii.xtraplatform.event.store.EntityDataBuilder;
+import de.ii.xtraplatform.entities.domain.EntityDataBuilder;
 import org.immutables.value.Value;
 
 /**

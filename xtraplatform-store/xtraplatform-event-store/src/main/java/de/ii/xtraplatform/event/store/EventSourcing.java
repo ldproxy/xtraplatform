@@ -1,6 +1,15 @@
 package de.ii.xtraplatform.event.store;
 
 import com.google.common.collect.ImmutableList;
+import de.ii.xtraplatform.store.domain.Event;
+import de.ii.xtraplatform.store.domain.EventStore;
+import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
+import de.ii.xtraplatform.store.domain.Identifier;
+import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
+import de.ii.xtraplatform.store.domain.MutationEvent;
+import de.ii.xtraplatform.store.domain.StateChangeEvent;
+import de.ii.xtraplatform.store.domain.ValueCache;
+import de.ii.xtraplatform.store.domain.ValueEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

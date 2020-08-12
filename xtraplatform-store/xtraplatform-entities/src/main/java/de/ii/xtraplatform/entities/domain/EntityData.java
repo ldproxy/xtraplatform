@@ -16,7 +16,7 @@ import java.util.Optional;
 /**
  * @author zahnen
  */
-public interface EntityData extends de.ii.xtraplatform.entity.api.Value {
+public interface EntityData extends de.ii.xtraplatform.store.domain.Value {
 
     String getId();
 
