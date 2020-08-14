@@ -8,7 +8,7 @@ const NavigationMenu = ({ routes, onClick }) => {
     return (
         <Box flex="grow" justify="start">
             {routes.map((route) => (
-                <Link key={route.path} path={route.path} label={route.title} onClick={onClick} />
+                <Link key={route.path} path={route.path} label={route.menuLabel} onClick={onClick} />
             ))}
         </Box>
     );

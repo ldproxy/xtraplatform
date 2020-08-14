@@ -1,27 +1,29 @@
 import React from 'react';
 import { createFeature } from 'feature-u';
 
-const featureName = 'webservice'
-const link = () => <div>Link</div>;
-const header = () => <div>Services</div>;
-const main = () => <div>ServiceList</div>;
+import { ServiceIndexHeader, ServiceIndexMain } from './Index';
+import { ServiceEditHeader } from './Edit';
+
+const featureName = 'service'
 
 export default createFeature({
   name: featureName,
 
   fassets: {
     defineUse: { // KEY: supply content under contract of the app feature
-      [`${featureName}.menulink`]: link,
-      [`${featureName}.route`]: {
-        info: {
-          title: 'Services',
+      [`${featureName}.routes`]: [
+        {
           path: '/services',
+          menuLabel: 'Services',
+          headerComponent: () => <ServiceIndexHeader serviceTypes={[{ id: 'ogc_api', label: 'OGC API' }]} />,
+          mainComponent: () => <ServiceIndexMain services={[{ id: 'flur', label: 'Flurstuecke' }]} />,
         },
-        components: {
-          header: header,
-          main: main,
+        {
+          path: '/services/:id',
+          headerComponent: ServiceEditHeader,
+          mainComponent: () => <div>FLUR</div>,
         }
-      }
+      ]
     }
   }
 
