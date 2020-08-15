@@ -1,7 +1,8 @@
 import Manager from './Manager';
-import ThemeBase from './ThemeBase';
+import ThemeBase, { theme } from './ThemeBase';
 
 export {
     Manager,
     ThemeBase,
+    theme as themeBase
 };

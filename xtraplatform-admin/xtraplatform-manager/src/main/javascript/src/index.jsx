@@ -1,7 +1,7 @@
 import { render } from 'react-dom';
 import { launchApp } from 'feature-u';
 
-import { Content, Sidebar, TileGrid, Tile, StatusIcon, SpinnerIcon, FormFieldHelp, NavLink, TaskProgress, } from './components';
+import { Content, Sidebar, TileGrid, Tile, StatusIcon, SpinnerIcon, FormFieldHelp, InfoLabel, NavLink, TaskProgress, } from './components';
 import { Manager, ThemeBase } from './features';
 import { validatePropTypes } from './featureUtils';
 import { useQuery, useDeepCompareEffect, usePrevious, useDebounceValue, useDebounce, useDebounceFields, useHover } from './hooks';
@@ -24,6 +24,7 @@ export {
     StatusIcon,
     SpinnerIcon,
     FormFieldHelp,
+    InfoLabel,
     NavLink,
     TaskProgress,
     launch,

@@ -22,8 +22,8 @@
     "build": "webpack --mode production",
     "test": "mocha",
     "lint": "eslint --cache --format codeframe --ext mjs,jsx,js src test",
-    "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "storybook": "start-storybook -p 6006 --docs",
+    "build-storybook": "build-storybook --docs"
   },
   "devDependencies": {
     "@babel/core": "*",
@@ -31,11 +31,11 @@
     "@neutrinojs/airbnb": "^9.3.0",
     "@neutrinojs/mocha": "^9.3.0",
     "@neutrinojs/react-components": "^9.3.0",
-    "@storybook/addon-actions": "^6.0.6",
-    "@storybook/addon-docs": "^6.0.6",
-    "@storybook/addon-essentials": "^6.0.6",
-    "@storybook/addon-links": "^6.0.6",
-    "@storybook/react": "^6.0.6",
+    "@storybook/addon-actions": "^6.0.10",
+    "@storybook/addon-docs": "^6.0.10",
+    "@storybook/addon-essentials": "^6.0.10",
+    "@storybook/addon-links": "^6.0.10",
+    "@storybook/react": "^6.0.10",
     "babel-loader": "*",
     "eslint": "^6.8.0",
     "feature-u": "^3.0.0",

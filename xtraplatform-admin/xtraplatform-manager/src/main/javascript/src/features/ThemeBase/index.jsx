@@ -4,6 +4,8 @@ import { customTheme } from './theme'
 
 const featureName = 'themedefault'
 
+export { customTheme as theme }
+
 export default createFeature({
   name: featureName,
 

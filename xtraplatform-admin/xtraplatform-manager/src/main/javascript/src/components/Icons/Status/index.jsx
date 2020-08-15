@@ -4,11 +4,11 @@ import PropTypes from 'prop-types';
 import { StatusCritical, StatusDisabled, StatusGood, StatusUnknown, StatusWarning } from 'grommet-icons';
 
 const VALUE_ICON = {
+  unknown: StatusUnknown,
+  ok: StatusGood,
+  warning: StatusWarning,
   critical: StatusCritical,
   disabled: StatusDisabled,
-  ok: StatusGood,
-  unknown: StatusUnknown,
-  warning: StatusWarning,
 };
 
 const IconsStatus = ({ value, ...rest }) => {
@@ -20,7 +20,10 @@ const IconsStatus = ({ value, ...rest }) => {
 IconsStatus.displayName = 'IconsStatus';
 
 IconsStatus.propTypes = {
-  value: PropTypes.string.isRequired
+  /**
+   * The status code
+   */
+  value: PropTypes.oneOf(['unknown', 'ok', 'warning', 'critical', 'disabled']).isRequired
 };
 
 IconsStatus.defaultProps = {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 import { Box, Form, FormField, TextInput, TextArea } from 'grommet';
-import { FormFieldHelp, useDebounceFields } from '@xtraplatform/core'
+import { FormFieldHelp, InfoLabel, useDebounceFields } from '@xtraplatform/core'
 
 
 const ServiceEditGeneral = ({ id, url, label, description, onChange }) => {
@@ -17,18 +17,18 @@ const ServiceEditGeneral = ({ id, url, label, description, onChange }) => {
   return (
     <Box pad={{ horizontal: 'small', vertical: 'medium' }} fill="horizontal">
       <Form>
-        <FormFieldHelp label="Id">
+        <FormField label={<InfoLabel label="Id" />}>
           <TextInput name="id" value={id} readOnly={true} />
-        </FormFieldHelp>
-        <FormFieldHelp label="Url">
+        </FormField>
+        <FormField label="Url">
           <TextInput name="url" value={url} readOnly={true} />
-        </FormFieldHelp>
-        <FormFieldHelp label="Label" help="Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe ">
+        </FormField>
+        <FormField label={<InfoLabel label="Label" inheritedFrom="service defaults" help="Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe " />}>
           <TextInput name="label" value={state.label} onChange={setState} />
-        </FormFieldHelp>
-        <FormFieldHelp label="Description" help="HELP">
+        </FormField>
+        <FormField label={<InfoLabel label="Description" help="HELP" />}>
           <TextArea name="description" value={state.description} onChange={setState} />
-        </FormFieldHelp>
+        </FormField>
       </Form>
     </Box>
   );
