@@ -22,6 +22,11 @@ export default createFeature({
             ['*.theme', {}]
         ]
     },
+    appInit: ({ showStatus }) => {
+        showStatus('Initializing...')
+
+        return Promise.resolve()
+    },
     appWillStart: ({ fassets, curRootAppElm }) => {
 
         // ensure no content is clobbered (children NOT supported)

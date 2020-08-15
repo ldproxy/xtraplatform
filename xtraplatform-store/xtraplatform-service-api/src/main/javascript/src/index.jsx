@@ -1,5 +1,5 @@
-import React from 'react';
-import { render } from 'react-dom';
-import Example from './components/Example';
+import {Services} from './features';
 
-render(<Example />, document.getElementById('root'));
+export {
+    Services,
+}

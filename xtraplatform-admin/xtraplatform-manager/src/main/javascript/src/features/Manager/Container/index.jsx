@@ -5,7 +5,7 @@ import { Box, Grommet } from 'grommet';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
 import Navigation from '../Navigation';
-import { Content, Sidebar } from '../../Layout';
+import { Sidebar } from '../../../index';
 
 const Manager = () => {
 

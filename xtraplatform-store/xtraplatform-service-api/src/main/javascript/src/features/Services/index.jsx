@@ -12,6 +12,11 @@ export { servicesFeature, serviceViewActions, serviceEditTabs }
 export default createFeature({
   name: servicesFeature,
 
+  appInit: ({ showStatus }) => {
+    showStatus('Loading services...')
+    return Promise.resolve()
+  },
+
   fassets: {
     // provided resources
     defineUse: {

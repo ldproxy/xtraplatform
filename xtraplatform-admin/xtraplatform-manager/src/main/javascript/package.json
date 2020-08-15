@@ -2,7 +2,7 @@
   "name": "@xtraplatform/core",
   "version": "2.0.0",
   "main": "build/index.js",
-  "module": "src/components/index.jsx",
+  "module": "src/index.jsx",
   "author": "interactive instruments GmbH",
   "license": "MPL-2.0",
   "sideEffects": false,

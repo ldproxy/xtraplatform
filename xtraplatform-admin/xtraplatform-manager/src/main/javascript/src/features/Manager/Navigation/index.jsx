@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import { Box } from 'grommet';
 
-import { Sidebar } from '../../Layout';
+import { Sidebar } from '../../../index';
 import NavigationHeader from './Header';
 import NavigationMenu from './Menu';
 
