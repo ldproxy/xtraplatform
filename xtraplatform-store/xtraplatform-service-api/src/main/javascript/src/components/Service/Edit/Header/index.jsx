@@ -1,31 +1,47 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { useParams } from "react-router-dom";
+import { useFassets } from 'feature-u'
+import { serviceViewActions } from '../../constants'
 
-import { Box, Text } from 'grommet';
-import { Multiple } from 'grommet-icons';
+import { Box, Heading } from 'grommet';
+import { Globe } from 'grommet-icons';
+import { TaskProgress } from '@xtraplatform/core';
+import Actions from './Actions'
 
-import AddControl from './Add'
+const ServiceEditHeader = ({ service }) => {
+  const ViewActions = useFassets(serviceViewActions());
 
-//TODO: navControl, icon
-const ServiceEditHeader = ({ compact, role, serviceTypes }) => {
-  let { id } = useParams();
 
-  let navControl = <Multiple />;
-  let label = <Text size='large' weight={500}>{id}</Text>;
-  let icon;
+  const token = null
+  const onSidebarClose = () => { }
+  const updateService = () => { }
+  const deleteService = () => { }
 
-  const showAddControl = !compact && 'read only' !== role;
 
   return (
-    <Box direction="row" align='center' justify="between" fill="horizontal">
-      <Box direction="row" gap="small" align='center'>
-        {navControl}
-        {label}
-        {showAddControl && <AddControl serviceTypes={serviceTypes} />}
+    <>
+      <Box direction='row' gap='small' align='center'>
+        <Globe />
+        <Heading level="3"
+          margin="none"
+          strong={true}
+          truncate={true}
+          title={`${service.label} [${service.id}]`}>
+          {service.label}
+        </Heading>
       </Box>
-      {icon}
-    </Box>
+      {service.hasBackgroundTask && <TaskProgress progress={service.progress} message={service.message} />}
+      <Actions
+        id={service.id}
+        status={service.status}
+        shouldStart={service.shouldStart}
+        secured={service.secured}
+        token={token}
+        onClose={onSidebarClose}
+        updateService={updateService}
+        removeService={deleteService}
+        ViewActions={ViewActions} />
+    </>
   );
 };
 

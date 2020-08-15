@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import { Box } from 'grommet';
 
-import NavigationContainer from './Container';
+import { Sidebar } from '../../Layout';
 import NavigationHeader from './Header';
 import NavigationMenu from './Menu';
 
@@ -20,7 +20,7 @@ const Navigation = (props) => {
     }
 
     return (
-        <NavigationContainer isLayer={isLayer} onClose={onClose}>
+        <Sidebar isLayer={isLayer} hideBorder={true} onClose={onClose}>
             <Box fill="vertical" background="menu">
                 <NavigationHeader isLayer={isLayer} onClose={onClose} title={title} logo={logo} />
                 <NavigationMenu routes={routes} onClick={onClose} />
@@ -37,7 +37,7 @@ const Navigation = (props) => {
                             )
                             : <NavLogin loginError={loginError} loginExpired={loginExpired} onLogin={onLogin} />)*/}
             </Box>
-        </NavigationContainer>
+        </Sidebar>
     );
 };
 

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import { Box, Layer } from 'grommet';
 
-const NavigationContainer = ({ isLayer, onClose, children }) => {
+const Sidebar = ({ isLayer, onClose, hideBorder, children }) => {
 
     if (isLayer) {
         return (
@@ -21,18 +21,18 @@ const NavigationContainer = ({ isLayer, onClose, children }) => {
     }
 
     return (
-        <Box fill="vertical" basis="1/4">
+        <Box fill="vertical" basis="1/4" border={!hideBorder && { side: 'right', size: 'small', color: 'light-4' }}>
             {children}
         </Box>
     );
 
 };
 
-NavigationContainer.displayName = 'NavigationContainer';
+Sidebar.displayName = 'Sidebar';
 
-NavigationContainer.propTypes = {
+Sidebar.propTypes = {
     isLayer: PropTypes.bool,
     onClose: PropTypes.func,
 };
 
-export default NavigationContainer;
+export default Sidebar;

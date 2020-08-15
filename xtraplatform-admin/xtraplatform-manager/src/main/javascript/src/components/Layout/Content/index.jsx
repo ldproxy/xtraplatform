@@ -5,14 +5,14 @@ import { Box } from 'grommet';
 import HeaderContainer from './Header';
 import MainContainer from './Main';
 
-const Content = ({ Header, Main }) => {
+const Content = ({ header, main }) => {
     return (
-        <Box fill={true}>
+        <Box flex fill="vertical">
             <HeaderContainer>
-                <Header />
+                {header}
             </HeaderContainer>
             <MainContainer>
-                <Main />
+                {main}
             </MainContainer>
         </Box>
     );
@@ -21,9 +21,8 @@ const Content = ({ Header, Main }) => {
 Content.displayName = 'Content';
 
 Content.propTypes = {
-    path: PropTypes.string,
-    Header: PropTypes.func,
-    Main: PropTypes.func,
+    header: PropTypes.element,
+    main: PropTypes.element,
 };
 
 export default Content;

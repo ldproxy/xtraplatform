@@ -1,30 +1,51 @@
 import React from 'react';
-import { createFeature } from 'feature-u';
+import PropTypes from 'prop-types';
+import { createFeature, fassetValidations } from 'feature-u';
+import { validatePropTypes } from '@xtraplatform/core'
 
-import { ServiceIndexHeader, ServiceIndexMain } from './Index';
-import { ServiceEditHeader } from './Edit';
+import { servicesFeature, serviceViewActions, serviceEditTabs } from './constants'
+import ServiceIndex from './Index';
+import ServiceEdit from './Edit';
 
-const featureName = 'service'
+export { servicesFeature, serviceViewActions, serviceEditTabs }
 
 export default createFeature({
-  name: featureName,
+  name: servicesFeature,
 
   fassets: {
-    defineUse: { // KEY: supply content under contract of the app feature
-      [`${featureName}.routes`]: [
+    // provided resources
+    defineUse: {
+      [`${servicesFeature}.routes`]: [
         {
           path: '/services',
           menuLabel: 'Services',
-          headerComponent: () => <ServiceIndexHeader serviceTypes={[{ id: 'ogc_api', label: 'OGC API' }]} />,
-          mainComponent: () => <ServiceIndexMain services={[{ id: 'flur', label: 'Flurstuecke' }]} />,
+          content: <ServiceIndex />,
         },
         {
           path: '/services/:id',
-          headerComponent: ServiceEditHeader,
-          mainComponent: () => <div>FLUR</div>,
+          content: <ServiceEdit />,
+          sidebar: <ServiceIndex isCompact={true} />,
         }
-      ]
-    }
+      ],
+      [serviceViewActions('noop')]: () => <div>noop</div>,
+      [serviceEditTabs('noop')]: {
+        id: 'noop',
+        label: 'noop',
+        component: () => <div>noop</div>
+      }
+    },
+    //consumed resources
+    use: [
+      [serviceViewActions(), { required: false, type: fassetValidations.comp }],
+      [serviceEditTabs(), {
+        required: false,
+        type: validatePropTypes({
+          id: PropTypes.string.isRequired,
+          label: PropTypes.string.isRequired,
+          component: PropTypes.elementType.isRequired
+        })
+      }],
+    ]
   }
 
 });

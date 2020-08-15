@@ -38,6 +38,7 @@ const ServiceIndexMainTile = ({ id, label, shouldStart, status, message, progres
       fill={isCompact ? 'horizontal' : false}
       onClick={() => history.push(`${route}/${id}`)}
       selected={isSelected}
+      focusIndicator={false}
       background="content"
       hoverStyle="border"
       hoverColorIndex="accent-1"

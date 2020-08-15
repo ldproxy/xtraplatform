@@ -5,7 +5,7 @@ import { Box, Grommet } from 'grommet';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
 import Navigation from '../Navigation';
-import Content from '../Content';
+import { Content, Sidebar } from '../../Layout';
 
 const Manager = () => {
 
@@ -17,7 +17,7 @@ const Manager = () => {
     const role = 'admin';
 
     const isLayer = false;
-    const [isLayerActive, setLayerActive] = useState(true);
+    const [isLayerActive, setLayerActive] = useState(false);
     const closeLayer = () => { setLayerActive(false) }
 
     const routes = useFassets('*.routes').flat(1).filter((route) => !route.roles || route.roles.some((allowedRole) => allowedRole === role));
@@ -32,16 +32,17 @@ const Manager = () => {
     return (
         <Router>
             <Grommet full theme={theme}>
-                <Box direction="row" fill>
-                    <Navigation title={appName} routes={menuRoutes} isLayer={isLayer} isLayerActive={isLayerActive} onClose={closeLayer} />
-                    <Switch>
-                        {routes.map(({ path, headerComponent, mainComponent }) =>
-                            <Route key={path} path={path} exact>
-                                <Content Header={headerComponent} Main={mainComponent} />
-                            </Route>
-                        )}
-                    </Switch>
-                </Box>
+                <Switch>
+                    {routes.map(({ path, content, sidebar }) =>
+                        <Route key={path} path={path} exact>
+                            <Box direction="row" fill>
+                                <Navigation title={appName} routes={menuRoutes} isLayer={!!sidebar} isLayerActive={isLayerActive} onClose={closeLayer} />
+                                {sidebar && <Sidebar>{sidebar}</Sidebar>}
+                                {content}
+                            </Box>
+                        </Route>
+                    )}
+                </Switch>
             </Grommet>
         </Router>
     );
