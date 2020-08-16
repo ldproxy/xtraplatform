@@ -1,0 +1,11 @@
+{
+  "name": "@xtraplatform/neutrino",
+  "version": "2.0.0",
+  "main": "index.js",
+  "author": "interactive instruments GmbH",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "deepmerge": "^4.2.2",
+    "pnp-webpack-plugin": "^1.6.4"
+  }
+}

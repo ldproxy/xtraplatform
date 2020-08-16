@@ -1,4 +1,5 @@
 const PnpWebpackPlugin = require(`pnp-webpack-plugin`);
+const merge = require('deepmerge');
 
 const knownModulePrefixes = ['xtraplatform', '@xtraplatform']
 const defaultOptions = {
@@ -32,6 +33,15 @@ module.exports = (opts = defaultOptions) => neutrino => {
     .maxEntrypointSize(512000)
     .maxAssetSize(512000);
 
+  neutrino.config
+    .module
+    .rule('lint')
+    .use('eslint')
+      .tap(options => merge(options, {
+        rules: {
+          'react/jsx-props-no-spreading': 'off'
+        }
+      }));
 
   if (opts.lib) {
     neutrino.config
