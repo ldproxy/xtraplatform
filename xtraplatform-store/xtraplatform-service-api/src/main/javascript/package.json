@@ -12,7 +12,9 @@
     "test": "mocha",
     "lint": "eslint --cache --format codeframe --ext mjs,jsx,js src test",
     "storybook": "start-storybook -p 6006 --docs --ci",
-    "build-storybook": "build-storybook --docs"
+    "build-storybook": "build-storybook --docs",
+    "bump": "yarn version check --interactive && yarn version apply --all",
+    "publish": "yarn npm publish"
   },
   "peerDependencies": {
     "@xtraplatform/core": "^2",
