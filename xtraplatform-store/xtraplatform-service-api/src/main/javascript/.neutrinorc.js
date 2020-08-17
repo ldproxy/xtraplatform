@@ -1,5 +1,6 @@
 const airbnb = require('@neutrinojs/airbnb');
 const reactComponents = require('@neutrinojs/react-components');
+const xtraplatform = require('@xtraplatform/neutrino');
 const mocha = require('@neutrinojs/mocha');
 
 module.exports = {
@@ -9,6 +10,7 @@ module.exports = {
   use: [
     airbnb(),
     reactComponents(),
+    xtraplatform(),
     mocha(),
   ],
 };

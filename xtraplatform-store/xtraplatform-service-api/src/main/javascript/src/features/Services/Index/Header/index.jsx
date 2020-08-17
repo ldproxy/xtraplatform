@@ -30,7 +30,11 @@ ServiceIndex.displayName = 'ServiceIndex';
 
 ServiceIndex.propTypes = {
   compact: PropTypes.bool,
-  role: PropTypes.string
+  serviceTypes: AddControl.propTypes.serviceTypes
 };
+
+ServiceIndex.defaultProps = {
+  compact: false
+}
 
 export default ServiceIndex;
