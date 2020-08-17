@@ -29,8 +29,8 @@ const devDependencies = {
   "@storybook/addon-essentials": "^6.0.10",
   "@storybook/addon-links": "^6.0.10",
   "@storybook/react": "^6.0.10",
-  "@xtraplatform/neutrino": "file:/home/zahnen/development/xtraplatform/xtraplatform-admin/xtraplatform-manager/src/main/javascript/packages/neutrino",
-  "@xtraplatform/core": "file:/home/zahnen/development/xtraplatform/xtraplatform-admin/xtraplatform-manager/src/main/javascript/packages/core",
+  "@xtraplatform/core": "^2.0.0-beta1",
+  "@xtraplatform/neutrino": "^2.0.0-beta2",
   "feature-u": "^3",
   "grommet": "^2",
   "grommet-icons": "^4",
@@ -48,7 +48,7 @@ const devDependencies = {
   //TODO: needed for storybook
   "@babel/core": "*",
   "babel-loader": "*",
-  "core-js": "^3.6.5",
+  "core-js": "*",
 };
 const peerDependencies = {
   '@xtraplatform/core': '^2',
@@ -86,7 +86,7 @@ class XtraPlatform extends Generator {
     this.fs.write(neutrinorc, this.fs
       .read(neutrinorc)
       .replace("const reactComponents = require('@neutrinojs/react-components');", "const reactComponents = require('@neutrinojs/react-components');\nconst xtraplatform = require('@xtraplatform/neutrino');")
-      .replace("reactComponents(),", "reactComponents(),\nxtraplatform({lib: true}),")
+      .replace("reactComponents(),", "reactComponents(),\n    xtraplatform(),")
     );
 
     //patch package.json

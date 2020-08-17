@@ -4,7 +4,7 @@ const merge = require('deepmerge');
 const knownModulePrefixes = ['xtraplatform', '@xtraplatform']
 const defaultOptions = {
   modulePrefixes: [],
-  lib: false
+  lib: true
 }
 
 module.exports = (opts = defaultOptions) => neutrino => {
@@ -37,11 +37,11 @@ module.exports = (opts = defaultOptions) => neutrino => {
     .module
     .rule('lint')
     .use('eslint')
-      .tap(options => merge(options, {
-        rules: {
-          'react/jsx-props-no-spreading': 'off'
-        }
-      }));
+    .tap(options => merge(options, {
+      rules: {
+        'react/jsx-props-no-spreading': 'off'
+      }
+    }));
 
   if (opts.lib) {
     neutrino.config
