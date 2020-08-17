@@ -2,5 +2,8 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "bump": "yarn version check --interactive && yarn version apply --all"
+  }
 }

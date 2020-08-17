@@ -2035,7 +2035,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-actions@npm:6.0.10, @storybook/addon-actions@npm:^6.0.10":
+"@storybook/addon-actions@npm:6.0.10":
   version: 6.0.10
   resolution: "@storybook/addon-actions@npm:6.0.10"
   dependencies:
@@ -2102,7 +2102,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/addon-docs@npm:6.0.10, @storybook/addon-docs@npm:^6.0.10":
+"@storybook/addon-docs@npm:6.0.10":
   version: 6.0.10
   resolution: "@storybook/addon-docs@npm:6.0.10"
   dependencies:
@@ -3410,8 +3410,6 @@ __metadata:
     "@neutrinojs/airbnb": ^9.3.0
     "@neutrinojs/mocha": ^9.3.0
     "@neutrinojs/react-components": ^9.3.0
-    "@storybook/addon-actions": ^6.0.10
-    "@storybook/addon-docs": ^6.0.10
     "@storybook/addon-essentials": ^6.0.10
     "@storybook/addon-links": ^6.0.10
     "@storybook/react": ^6.0.10
@@ -3441,7 +3439,7 @@ __metadata:
   peerDependencies:
     feature-u: ^3
     grommet: ^2
-    grommet-icons: ^2
+    grommet-icons: ^4
     prop-types: ^15
     react: ^16
     react-dom: ^16
@@ -3465,7 +3463,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@xtraplatform/neutrino@^2.0.0, @xtraplatform/neutrino@workspace:packages/neutrino":
+"@xtraplatform/neutrino@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@xtraplatform/neutrino@npm:2.0.0::__archiveUrl=https%3A%2F%2Fdl.bintray.com%2F%2Fiide%2Fnpm%2F%40xtraplatform%2Fneutrino%2F-%2F%40xtraplatform%2Fneutrino-2.0.0.tgz"
+  dependencies:
+    deepmerge: ^4.2.2
+    pnp-webpack-plugin: ^1.6.4
+  checksum: 21dc7d078b4958d363d1c64ced1ed8eeda59d4130b5c5f002ff17fba2f7d069d123e7d56929d1ddcb3db272bffd0ab2cd9ebe0d73c1953675650ccf06f673da0
+  languageName: node
+  linkType: hard
+
+"@xtraplatform/neutrino@workspace:packages/neutrino":
   version: 0.0.0-use.local
   resolution: "@xtraplatform/neutrino@workspace:packages/neutrino"
   dependencies:
