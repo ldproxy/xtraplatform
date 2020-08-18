@@ -1,20 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { createFeature, fassetValidations } from 'feature-u';
-import { validatePropTypes } from '@xtraplatform/core'
+import { validatePropTypes } from '@xtraplatform/core';
 
-import { servicesFeature, serviceViewActions, serviceEditTabs } from './constants'
+import { servicesFeature, serviceViewActions, serviceEditTabs } from './constants';
 import ServiceIndex from './Index';
 import ServiceEdit from './Edit';
 
-export { servicesFeature, serviceViewActions, serviceEditTabs }
+export { servicesFeature, serviceViewActions, serviceEditTabs };
 
 export default createFeature({
   name: servicesFeature,
 
   appInit: ({ showStatus }) => {
-    showStatus('Loading services...')
-    return Promise.resolve()
+    showStatus('Loading services...');
+    return Promise.resolve();
   },
 
   fassets: {
@@ -29,17 +29,17 @@ export default createFeature({
         {
           path: '/services/:id',
           content: <ServiceEdit />,
-          sidebar: <ServiceIndex isCompact={true} />,
-        }
+          sidebar: <ServiceIndex isCompact />,
+        },
       ],
       [serviceViewActions('noop')]: () => <div>noop</div>,
       [serviceEditTabs('noop')]: {
         id: 'noop',
         label: 'noop',
-        component: () => <div>noop</div>
-      }
+        component: () => <div>noop</div>,
+      },
     },
-    //consumed resources
+    // consumed resources
     use: [
       [serviceViewActions(), { required: false, type: fassetValidations.comp }],
       [serviceEditTabs(), {
@@ -47,10 +47,10 @@ export default createFeature({
         type: validatePropTypes({
           id: PropTypes.string.isRequired,
           label: PropTypes.string.isRequired,
-          component: PropTypes.elementType.isRequired
-        })
+          component: PropTypes.elementType.isRequired,
+        }),
       }],
-    ]
-  }
+    ],
+  },
 
 });

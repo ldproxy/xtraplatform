@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Form, FormField, TextInput, TextArea } from 'grommet';
-import { FormFieldHelp, InfoLabel, useDebounceFields } from '@xtraplatform/core'
+import {
+  Box, Form, FormField, TextInput, TextArea,
+} from 'grommet';
+import { InfoLabel, useDebounceFields } from '@xtraplatform/core';
 
-
-const ServiceEditGeneral = ({ id, url, label, description, onChange }) => {
-
+const ServiceEditGeneral = ({
+  id, url, label, description, onChange,
+}) => {
   const fields = {
-    label: label,
-    description: description
-  }
+    label,
+    description,
+  };
 
   const [state, setState] = useDebounceFields(fields, 2000, onChange);
 
@@ -18,16 +20,29 @@ const ServiceEditGeneral = ({ id, url, label, description, onChange }) => {
     <Box pad={{ horizontal: 'small', vertical: 'medium' }} fill="horizontal">
       <Form>
         <FormField label={<InfoLabel label="Id" />}>
-          <TextInput name="id" value={id} readOnly={true} />
+          <TextInput name="id" value={id} readOnly />
         </FormField>
         <FormField label="Url">
-          <TextInput name="url" value={url} readOnly={true} />
+          <TextInput name="url" value={url} readOnly />
         </FormField>
-        <FormField label={<InfoLabel label="Label" inheritedFrom="service defaults" help="Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe " />}>
+        <FormField
+          label={(
+            <InfoLabel
+              label="Label"
+              inheritedFrom="service defaults"
+              help="Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe Hilfe "
+            />
+          )}
+        >
           <TextInput name="label" value={state.label} onChange={setState} />
         </FormField>
         <FormField label={<InfoLabel label="Description" help="HELP" />}>
-          <TextArea name="description" value={state.description} onChange={setState} />
+          <TextArea
+            name="description"
+            value={state.description}
+            resize="vertical"
+            onChange={setState}
+          />
         </FormField>
       </Form>
     </Box>
