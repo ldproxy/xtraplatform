@@ -106,73 +106,29 @@ import { Meta } from '@storybook/addon-docs/blocks';
   
 `}</style>
 
-# Welcome to Storybook
+# Getting started
 
-Storybook helps you build UI components in isolation from your app's business logic, data, and context.
-That makes it easy to develop hard-to-reach states. Save these UI states as **stories** to revisit during development, testing, or QA.
+## Prerequisites
 
-Browse example stories now by navigating to them in the sidebar.
-View their code in the `src/storybook-examples` directory to learn how they work.
-We recommend building UIs with a [**component-driven**](https://componentdriven.org) process starting with atomic components and ending with pages.
+[Node.js 10.x](https://nodejs.org/dist/latest-v10.x/)
 
-<div class="subheading">Configure</div>
+Yarn: `npm install -g yarn`
 
-<div class="link-list">
-  <a class="link-item" href="https://storybook.js.org/docs/react/api/presets" target="_blank">
-    <span>
-      <strong>Presets for popular tools</strong>
-      Easy setup for TypeScript, SCSS and more.
-    </span>
-  </a>
-  <a class="link-item" href="https://storybook.js.org/docs/react/configure/webpack" target="_blank">
-    <span>
-      <strong>Build configuration</strong>
-      How to customize webpack and Babel
-    </span>
-  </a>
-  <a class="link-item" href="https://storybook.js.org/docs/react/configure/styling-and-css" target="_blank">
-    <span>
-      <strong>Styling</strong>
-      How to load and configure CSS libraries
-    </span>
-  </a>
-  <a class="link-item" href="https://storybook.js.org/docs/react/get-started/setup#configure-storybook-for-your-stack" target="_blank">
-    <span>
-      <strong>Data</strong>
-      Providers and mocking for data libraries
-    </span>
-  </a>
-</div>
+## Creating a module
 
-<div class="subheading">Learn</div>
+In a Java bundle, run the following in the `src/main` directory:
 
-<div class="link-list">
-  <a class="link-item" href="https://storybook.js.org/docs" target="_blank">
-    <span>
-      <strong>Storybook documentation</strong>
-      Configure, customize, and extend
-    </span>
-  </a>
-  <a class="link-item" href="https://www.learnstorybook.com" target="_blank">
-    <span>
-      <strong>In-depth guides</strong>
-      Best practices from leading teams
-    </span>
-  </a>
-  <a class="link-item" href="https://github.com/storybookjs/storybook" target="_blank">
-    <span>
-      <strong>GitHub project</strong>
-      View the source and add issues
-    </span>
-  </a>
-  <a class="link-item" href="https://discord.gg/UUt2PJb" target="_blank">
-    <span>
-      <strong>Discord chat</strong>
-      Chat with maintainers and the community
-    </span>
-  </a>
-</div>
+```
+yarn dlx 
+```
 
-<div class="tip-wrapper">
-  <span class="tip">Tip</span>Edit the Markdown in <code>src/storybook-examples/welcome.mdx</code>
-</div>
+Now you can switch to the `javascript` directory and run:
+
+```
+yarn storybook
+```
+
+[Storybook](https://storybook.js.org/) will start at [http://localhost:6006](http://localhost:6006). 
+
+It already contains a story for the `Example` component. You can now start to implement your own components and stories and remove/rename the examples.
+

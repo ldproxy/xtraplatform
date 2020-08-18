@@ -54,4 +54,27 @@ module.exports = (opts = defaultOptions) => neutrino => {
         callback();
       });
   }
+
+  neutrino.config
+    .devServer
+    .proxy({
+      "/rest": {
+        target: "http://localhost:7080",
+        changeOrigin: true,
+        logLevel: 'debug',
+        /*onProxyReq(proxyReq, req, res) {
+          if (req.method == "POST") {
+            console.log('BODY', req.body)
+            proxyReq.write(JSON.stringify(req.body));
+            proxyReq.end();
+
+          }
+        }*/
+      },
+      "/system": {
+        target: "http://localhost:7080",
+        changeOrigin: true
+      }
+    })
+
 };

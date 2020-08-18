@@ -5,6 +5,33 @@ __metadata:
   version: 4
   cacheKey: 5
 
+"@apollo/client@npm:^3.1.3":
+  version: 3.1.3
+  resolution: "@apollo/client@npm:3.1.3"
+  dependencies:
+    "@types/zen-observable": ^0.8.0
+    "@wry/context": ^0.5.2
+    "@wry/equality": ^0.2.0
+    fast-json-stable-stringify: ^2.0.0
+    graphql-tag: ^2.11.0
+    hoist-non-react-statics: ^3.3.2
+    optimism: ^0.12.1
+    prop-types: ^15.7.2
+    symbol-observable: ^1.2.0
+    ts-invariant: ^0.4.4
+    tslib: ^1.10.0
+    zen-observable: ^0.8.14
+  peerDependencies:
+    graphql: ^14.0.0 || ^15.0.0
+    react: ^16.8.0
+    subscriptions-transport-ws: ^0.9.0
+  peerDependenciesMeta:
+    react:
+      optional: true
+  checksum: 525668ad5828d1b01cb9e235c6240e17f4f50a4bf536599261065acca5fbfd067b70b1f333b0e0d082690ee37ff9ddbb04305f00dccda7f8a330f7a89a16d7c6
+  languageName: node
+  linkType: hard
+
 "@babel/code-frame@npm:7.8.3":
   version: 7.8.3
   resolution: "@babel/code-frame@npm:7.8.3"
@@ -3204,6 +3231,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/zen-observable@npm:^0.8.0":
+  version: 0.8.0
+  resolution: "@types/zen-observable@npm:0.8.0"
+  checksum: 63a7bf7d119c4239201952b004902a85be41643f8bfaee14b1881ea5a35508b6dce2cb63b9402152d7ccff8afde03ead9e3192c2666532fb5227667f297eb32f
+  languageName: node
+  linkType: hard
+
 "@webassemblyjs/ast@npm:1.9.0":
   version: 1.9.0
   resolution: "@webassemblyjs/ast@npm:1.9.0"
@@ -3401,10 +3435,38 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@wry/context@npm:^0.5.2":
+  version: 0.5.2
+  resolution: "@wry/context@npm:0.5.2"
+  dependencies:
+    tslib: ^1.9.3
+  checksum: 6547fb0eb53431d655e65400a7f16c1cc9b2ebd5b4924dee2912e0d9925343264f4cd6f3300e09199e5a1b44cb235d71de0cf561d2fa4b8c8519adf758cfcefe
+  languageName: node
+  linkType: hard
+
+"@wry/equality@npm:^0.1.2":
+  version: 0.1.11
+  resolution: "@wry/equality@npm:0.1.11"
+  dependencies:
+    tslib: ^1.9.3
+  checksum: 3d1da5799967fc272ae53f698514c169c85a04c11c1db3e4641a21edc82af75bfb4db9221c4f87aa333f14c7b43b72311fa66dae1ae981fa6f24c2bc5863d92b
+  languageName: node
+  linkType: hard
+
+"@wry/equality@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "@wry/equality@npm:0.2.0"
+  dependencies:
+    tslib: ^1.9.3
+  checksum: ddd217fbefd8f105174abe099450e0ac1b813e19451b8525d2143098b23c42b30dd5042f38c5c92ba55017f9efab2ae4ce18d66a83d0e329de8523691a8bf60e
+  languageName: node
+  linkType: hard
+
 "@xtraplatform/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@xtraplatform/core@workspace:packages/core"
   dependencies:
+    "@apollo/client": ^3.1.3
     "@babel/core": "*"
     "@mdx-js/react": ^1.6.16
     "@neutrinojs/airbnb": ^9.3.0
@@ -3413,19 +3475,24 @@ __metadata:
     "@storybook/addon-essentials": ^6.0.10
     "@storybook/addon-links": ^6.0.10
     "@storybook/react": ^6.0.10
-    "@xtraplatform/neutrino": ^2.0.0
+    "@xtraplatform/neutrino": ^2.0.0-beta.2
+    apollo-link-rest: ^0.8.0-beta.0
     babel-loader: "*"
     check-prop-types: ^1.1.2
     core-js: ^3.6.5
     deepmerge: ^4.2.2
     eslint: ^6.8.0
     feature-u: ^3.0.0
+    graphql: ^15.3.0
+    graphql-anywhere: ^4.2.7
     grommet: ^2.14.0
     grommet-icons: ^4.4.0
+    jwt-decode: ^2.2.0
     mocha: ^7.2.0
     neutrino: ^9.3.0
     pnp-webpack-plugin: ^1.6.4
     prop-types: ^15.7.2
+    qs: ^6.9.4
     query-string: ^6.13.1
     react: ^16.13.1
     react-dom: ^16.13.1
@@ -3437,10 +3504,16 @@ __metadata:
     webpack-cli: ^3.3.12
     webpack-dev-server: ^3.11.0
   peerDependencies:
+    "@apollo/client": ^3
+    apollo-link-rest: ^0.8.0-beta.0
     feature-u: ^3
+    graphql: ^15
+    graphql-anywhere: ^4
     grommet: ^2
     grommet-icons: ^4
+    jwt-decode: ^2
     prop-types: ^15
+    qs: ^6
     react: ^16
     react-dom: ^16
     react-is: ^16
@@ -3456,24 +3529,15 @@ __metadata:
     "@neutrinojs/create-project": ^9.3.0
     deepmerge: ^4.2.2
     replace-in-file: ^6.1.0
+    yeoman-environment: ^2.10.3
     yeoman-generator: ^4.11.0
     yo: ^3.1.1
   bin:
-    create-module: ./bin/create-module.sh
+    create-module: ./bin/create-module.js
   languageName: unknown
   linkType: soft
 
-"@xtraplatform/neutrino@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "@xtraplatform/neutrino@npm:2.0.0::__archiveUrl=https%3A%2F%2Fdl.bintray.com%2F%2Fiide%2Fnpm%2F%40xtraplatform%2Fneutrino%2F-%2F%40xtraplatform%2Fneutrino-2.0.0.tgz"
-  dependencies:
-    deepmerge: ^4.2.2
-    pnp-webpack-plugin: ^1.6.4
-  checksum: 21dc7d078b4958d363d1c64ced1ed8eeda59d4130b5c5f002ff17fba2f7d069d123e7d56929d1ddcb3db272bffd0ab2cd9ebe0d73c1953675650ccf06f673da0
-  languageName: node
-  linkType: hard
-
-"@xtraplatform/neutrino@workspace:packages/neutrino":
+"@xtraplatform/neutrino@^2.0.0-beta.2, @xtraplatform/neutrino@workspace:packages/neutrino":
   version: 0.0.0-use.local
   resolution: "@xtraplatform/neutrino@workspace:packages/neutrino"
   dependencies:
@@ -3777,6 +3841,32 @@ __metadata:
     normalize-path: ^3.0.0
     picomatch: ^2.0.4
   checksum: cf61bbaf7f34d9f94dd966230b7a7f8f1f24e3e2185540741a2561118e108206d85101ee2fc9876cd756475dbe6573d84d91115c3abdbf53a64e26a5f1f06b67
+  languageName: node
+  linkType: hard
+
+"apollo-link-rest@npm:^0.8.0-beta.0":
+  version: 0.8.0-beta.0
+  resolution: "apollo-link-rest@npm:0.8.0-beta.0"
+  peerDependencies:
+    "@apollo/client": ">=3"
+    graphql: ">=0.11"
+    graphql-anywhere: ">=4"
+    qs: ">=6"
+  checksum: ae76ba7123dc7709a283a833c423a8555a74bb905b6a1f29a222dc8a30729bed4863e970a074c36664653de7d1c63b18e5a7953e4058f2b6332733e893bcb3a9
+  languageName: node
+  linkType: hard
+
+"apollo-utilities@npm:^1.3.4":
+  version: 1.3.4
+  resolution: "apollo-utilities@npm:1.3.4"
+  dependencies:
+    "@wry/equality": ^0.1.2
+    fast-json-stable-stringify: ^2.0.0
+    ts-invariant: ^0.4.0
+    tslib: ^1.10.0
+  peerDependencies:
+    graphql: ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0
+  checksum: 5a046f8792b124a0fdc8ac37f4c50ba57cd4914dabcd652baaee08de541707c82bf2fb4d814e7d6d35b0b916f1582e5492c16809b43f0a2ce1584d9f89d4cd70
   languageName: node
   linkType: hard
 
@@ -9161,6 +9251,35 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
+"graphql-anywhere@npm:^4.2.7":
+  version: 4.2.7
+  resolution: "graphql-anywhere@npm:4.2.7"
+  dependencies:
+    apollo-utilities: ^1.3.4
+    ts-invariant: ^0.3.2
+    tslib: ^1.10.0
+  peerDependencies:
+    graphql: ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0
+  checksum: b733c679eaef8b3f361ff1f13d7d8da88672b00213bdcef136c3bdd4e4f1a0dea50004209dd29b936be0b18fb758212f9582249eeadd89e86a56e0bc5ded700c
+  languageName: node
+  linkType: hard
+
+"graphql-tag@npm:^2.11.0":
+  version: 2.11.0
+  resolution: "graphql-tag@npm:2.11.0"
+  peerDependencies:
+    graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0
+  checksum: 400355590180cce2f39df5c599cad20ee982bb7e4a63ad70857aa0fe2e82e3ef6233a4db2b80a03e6dfa84bf3ecb13dc2947936eaf31753c94876e22be45ea78
+  languageName: node
+  linkType: hard
+
+"graphql@npm:^15.3.0":
+  version: 15.3.0
+  resolution: "graphql@npm:15.3.0"
+  checksum: f01c05eb9102a88f33b4276b38399f066067d5be03c66c3bfec3e71e1793a91750e408f7abb001831bc2daf09746ab70ac0af16894d0ef1f1c1246fb0c2f4b0e
+  languageName: node
+  linkType: hard
+
 "grommet-icons@npm:^4.2.0, grommet-icons@npm:^4.4.0":
   version: 4.4.0
   resolution: "grommet-icons@npm:4.4.0"
@@ -9509,7 +9628,7 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
-"hoist-non-react-statics@npm:^3.0.0, hoist-non-react-statics@npm:^3.1.0, hoist-non-react-statics@npm:^3.2.0, hoist-non-react-statics@npm:^3.3.0":
+"hoist-non-react-statics@npm:^3.0.0, hoist-non-react-statics@npm:^3.1.0, hoist-non-react-statics@npm:^3.2.0, hoist-non-react-statics@npm:^3.3.0, hoist-non-react-statics@npm:^3.3.2":
   version: 3.3.2
   resolution: "hoist-non-react-statics@npm:3.3.2"
   dependencies:
@@ -11138,6 +11257,13 @@ fsevents@^1.2.7:
     array-includes: ^3.1.1
     object.assign: ^4.1.0
   checksum: 36471d635b7e52aacaa8e926edcec2f6fdf5cfb4ccb945e87209b2bd0e4feac586293b465170b8287afbdff138ce4ff9cfc7ca2bd23900f6f3740423c29f49f5
+  languageName: node
+  linkType: hard
+
+"jwt-decode@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "jwt-decode@npm:2.2.0"
+  checksum: d3e8f2176740df81bffa6b3fe4b7305f0ab6c45a796670113046b0f1fb0dba0b610573d4cf4aa4676c3ba52fe678984c0e63b2525df059c224d3be9b685f45bf
   languageName: node
   linkType: hard
 
@@ -12999,6 +13125,15 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
+"optimism@npm:^0.12.1":
+  version: 0.12.1
+  resolution: "optimism@npm:0.12.1"
+  dependencies:
+    "@wry/context": ^0.5.2
+  checksum: 3e2a62ca68bd766087b814782ec174f49863b8419af1db5ac6325803041799bd9c04e288ec1ec37f05d82072f5ae0194d0df095fb169eb639fee03f3986be868
+  languageName: node
+  linkType: hard
+
 "optionator@npm:^0.8.1, optionator@npm:^0.8.3":
   version: 0.8.3
   resolution: "optionator@npm:0.8.3"
@@ -14142,7 +14277,7 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
-"qs@npm:^6.6.0":
+"qs@npm:^6.6.0, qs@npm:^6.9.4":
   version: 6.9.4
   resolution: "qs@npm:6.9.4"
   checksum: beba62d1e1c66e9888cc08a488eb95771c252a92289a96bff4b767a49e4e7afe9487d7ee3269b856292d8281b855ac5eac927c2e77f845e407ee4fe54743fea7
@@ -16628,6 +16763,13 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
+"symbol-observable@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "symbol-observable@npm:1.2.0"
+  checksum: 268834a1d4cba19d40f367e5c2755f612969c8418e43a3be17408e392802a667f8bb542893440d58a080a8ea8da05ea98e27e472b9f4ff6fbda78a21a1a41c53
+  languageName: node
+  linkType: hard
+
 "symbol.prototype.description@npm:^1.0.0":
   version: 1.0.2
   resolution: "symbol.prototype.description@npm:1.0.2"
@@ -17060,6 +17202,24 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
+"ts-invariant@npm:^0.3.2":
+  version: 0.3.3
+  resolution: "ts-invariant@npm:0.3.3"
+  dependencies:
+    tslib: ^1.9.3
+  checksum: 4ecb5863f55a7dad210a0aa6ce31fa051be0ffa17576e544b2b47443b4e4d72fd7a8b345f8ef602f2d45b50286db7453e3e04e1ee81794af5fbf84fb4d78c5cc
+  languageName: node
+  linkType: hard
+
+"ts-invariant@npm:^0.4.0, ts-invariant@npm:^0.4.4":
+  version: 0.4.4
+  resolution: "ts-invariant@npm:0.4.4"
+  dependencies:
+    tslib: ^1.9.3
+  checksum: 0280fb0e853db923605d84d83a7587342b2fcf718af5eac858cc461fcaa95837543de5f6d0a9afd8caf84faa01ffcc2a21cf71f5f51894d3e854b8a9504786bc
+  languageName: node
+  linkType: hard
+
 "ts-pnp@npm:^1.1.6":
   version: 1.2.0
   resolution: "ts-pnp@npm:1.2.0"
@@ -17084,7 +17244,7 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
-"tslib@npm:^1.10.0, tslib@npm:^1.9.0":
+"tslib@npm:^1.10.0, tslib@npm:^1.9.0, tslib@npm:^1.9.3":
   version: 1.13.0
   resolution: "tslib@npm:1.13.0"
   checksum: 5dc3bdaea3b67c76ef4a14c28fcb2171da7bcf292fd9c59a260098729626b1ce766c52b588f08e324ed9a0c52ea8a93a815920f980d75981abc9d850fbf310fb
@@ -18584,6 +18744,13 @@ fsevents@^1.2.7:
   bin:
     yosay: cli.js
   checksum: cd6265bca741b67675f58ee8537f108a1614068f603853bac9629b61082d3341e00c0ea6f320103cc5766a3a4d4ff3806058e2500f6356139a8926c833934a8a
+  languageName: node
+  linkType: hard
+
+"zen-observable@npm:^0.8.14":
+  version: 0.8.15
+  resolution: "zen-observable@npm:0.8.15"
+  checksum: 7d155f8a75b9314f9f31e70a31edcd897b0e8a1313737502ab84a573e49d2c333b738e415c156334a6e910c363ce546b59fa7921eff61440285caa99c843df74
   languageName: node
   linkType: hard
 

@@ -90,19 +90,6 @@ const useDebounceFields = (fields, delay, onChange) => {
     return [state, setState]
 }
 
-//Detect if otherNode is contained by refNode
-function isParent(refNode, otherNode) {
-    var parent = otherNode.parentNode;
-    do {
-        if (refNode == parent) {
-            return true;
-        } else {
-            parent = parent.parentNode;
-        }
-    } while (parent);
-    return false;
-}
-
 // for icons/svg it only works when setting 'pointer-events: none;' in css
 const useHover = () => {
     const [value, setValue] = useState(false);
