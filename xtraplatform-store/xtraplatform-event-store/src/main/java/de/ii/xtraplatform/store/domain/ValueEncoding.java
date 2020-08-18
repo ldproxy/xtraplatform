@@ -1,5 +1,7 @@
 package de.ii.xtraplatform.store.domain;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +9,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 public interface ValueEncoding<T> {
+
+    ObjectMapper getMapper(FORMAT format);
 
     enum FORMAT {
         UNKNOWN, JSON, YML, YAML/*, ION*/;

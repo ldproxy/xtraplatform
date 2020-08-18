@@ -195,7 +195,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
         return getMapper(DEFAULT_FORMAT);
     }
 
-    final ObjectMapper getMapper(FORMAT format) {
+    @Override
+    public final ObjectMapper getMapper(FORMAT format) {
         return mappers.get(format);
     }
 

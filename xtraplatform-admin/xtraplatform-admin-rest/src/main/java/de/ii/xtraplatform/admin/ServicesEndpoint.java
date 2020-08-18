@@ -15,6 +15,8 @@ import de.ii.xtraplatform.service.api.Service;
 import de.ii.xtraplatform.service.api.ServiceBackgroundTasks;
 import de.ii.xtraplatform.service.api.ServiceData;
 import de.ii.xtraplatform.service.api.ServiceStatus;
+import de.ii.xtraplatform.store.app.ValueEncodingJackson;
+import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.web.api.Endpoint;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
@@ -68,7 +70,7 @@ public class ServicesEndpoint implements Endpoint {
         this.serviceRepository = entityRepository.forType(ServiceData.class);
         this.entityRegistry = entityRegistry;
         this.serviceBackgroundTasks = null;//serviceBackgroundTasks;
-        this.objectMapper = jackson.getDefaultObjectMapper();
+        this.objectMapper = new ValueEncodingJackson<>(jackson).getMapper(ValueEncoding.FORMAT.JSON);
     }
 
     @GET
@@ -158,6 +160,21 @@ public class ServicesEndpoint implements Endpoint {
         } catch (JsonProcessingException e) {
             throw new InternalServerErrorException();
         }
+    }
+
+    @Path("/{id}/status")
+    @GET
+    @CacheControl(noCache = true)
+    public ServiceStatus getServiceStatus(
+            @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
+            @PathParam("id") String id
+    ) {
+
+        if (!serviceRepository.has(id)) {
+            throw new NotFoundException();
+        }
+
+        return getServiceStatus(id);
     }
 
     @Path("/{id}")
