@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { useLocation } from "react-router-dom";
-import useDeepCompareEffect from 'use-deep-compare-effect'
-import queryString from 'query-string'
+import { useLocation } from 'react-router-dom';
+import useDeepCompareEffect from 'use-deep-compare-effect';
+import qs from 'qs';
 
 const useQuery = () => {
-    return queryString.parse(useLocation().search);
-}
+    return qs.parse(useLocation().search);
+};
 
 const usePrevious = (value) => {
     // The ref object is a generic container whose current property is mutable ...
@@ -19,7 +19,7 @@ const usePrevious = (value) => {
 
     // Return previous value (happens before update in useEffect above)
     return ref.current;
-}
+};
 
 const useDebounceValue = (value, delay, deepCompare) => {
     // State and setters for debounced value
@@ -29,7 +29,6 @@ const useDebounceValue = (value, delay, deepCompare) => {
 
     useCompareEffect(
         () => {
-
             // Update debounced value after delay
             const handler = setTimeout(() => {
                 setDebouncedValue(value);
@@ -46,10 +45,9 @@ const useDebounceValue = (value, delay, deepCompare) => {
     );
 
     return debouncedValue;
-}
+};
 
 const useDebounce = (value, delay, onChange, deepCompare) => {
-
     const change = useDebounceValue(value, delay, deepCompare);
 
     const isFirstRun = useRef(true);
@@ -60,18 +58,17 @@ const useDebounce = (value, delay, onChange, deepCompare) => {
                 isFirstRun.current = false;
                 return;
             }
-            onChange(change)
+            onChange(change);
         },
         [change] // Only call effect if debounced search term changes
     );
-}
+};
 
 const useDebounceFields = (fields, delay, onChange) => {
+    const setters = {};
+    const state = {};
 
-    const setters = {}
-    const state = {}
-
-    for (let field of Object.keys(fields)) {
+    for (const field of Object.keys(fields)) {
         const [value, setter] = useState(fields[field]);
 
         setters[field] = setter;
@@ -81,14 +78,14 @@ const useDebounceFields = (fields, delay, onChange) => {
     useDebounce(state, delay, onChange, true);
 
     const setState = (event) => {
-        const field = event.target.name
-        const value = event.target.value
+        const field = event.target.name;
+        const { value } = event.target;
 
-        setters[field](value)
-    }
+        setters[field](value);
+    };
 
-    return [state, setState]
-}
+    return [state, setState];
+};
 
 // for icons/svg it only works when setting 'pointer-events: none;' in css
 const useHover = () => {
@@ -99,24 +96,21 @@ const useHover = () => {
     const handleMouseOver = () => setValue(true);
     const handleMouseOut = () => setValue(false);
 
-    useEffect(
-        () => {
-            const node = ref.current;
-            if (node) {
-                node.addEventListener('mouseover', handleMouseOver);
-                node.addEventListener('mouseout', handleMouseOut);
+    useEffect(() => {
+        const node = ref.current;
+        if (node) {
+            node.addEventListener('mouseover', handleMouseOver);
+            node.addEventListener('mouseout', handleMouseOut);
 
-                return () => {
-                    node.removeEventListener('mouseover', handleMouseOver);
-                    node.removeEventListener('mouseout', handleMouseOut);
-                };
-            }
-        },
-        [ref.current]
-    );
+            return () => {
+                node.removeEventListener('mouseover', handleMouseOver);
+                node.removeEventListener('mouseout', handleMouseOut);
+            };
+        }
+    }, [ref.current]);
 
     return [ref, value];
-}
+};
 
 export {
     useQuery,
@@ -126,4 +120,4 @@ export {
     useDebounce,
     useDebounceFields,
     useHover,
-}
+};

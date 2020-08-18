@@ -1,6 +1,6 @@
 import { Meta } from '@storybook/addon-docs/blocks';
 
-<Meta title="Core/Introduction" />
+<Meta title='Core/Introduction' />
 
 <style>{`
   .subheading {
@@ -118,17 +118,28 @@ Yarn: `npm install -g yarn`
 
 In a Java bundle, run the following in the `src/main` directory:
 
-```
-yarn dlx 
+```shell
+yarn dlx
 ```
 
 Now you can switch to the `javascript` directory and run:
 
 ```
-yarn storybook
+env "NPM_CONFIG_@xtraplatform:registry=https://api.bintray.com/npm/iide/npm/" npx @xtraplatform/create-module javascript geo_json
 ```
 
-[Storybook](https://storybook.js.org/) will start at [http://localhost:6006](http://localhost:6006). 
+In this case the name of the module would be `geo_json`, so adjust to the desired name.
+
+[Storybook](https://storybook.js.org/) will start at [http://localhost:6006](http://localhost:6006).
 
 It already contains a story for the `Example` component. You can now start to implement your own components and stories and remove/rename the examples.
 
+## Resources
+
+[Grommet Components](https://v2.grommet.io/components)
+
+[Grommet Icons](https://icons.grommet.io/)
+
+[React Hooks](https://reactjs.org/docs/hooks-intro.html)
+
+[Storybook](https://storybook.js.org/docs/react/get-started/introduction)

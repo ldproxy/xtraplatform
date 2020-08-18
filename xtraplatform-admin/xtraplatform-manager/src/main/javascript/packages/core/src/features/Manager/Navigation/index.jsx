@@ -7,9 +7,16 @@ import { Sidebar } from '../../../index';
 import NavigationHeader from './Header';
 import NavigationMenu from './Menu';
 
-const Navigation = (props) => {
-    const { title, logo, routes, onClose, isLayer, isLayerActive, loginError, loginExpired, user, secured, onLogin, onLogout, onChangePassword } = props;
-    const [isChangePassword, setChangePassword] = useState(false);
+const Navigation = ({
+    title,
+    logo,
+    routes,
+    onClose,
+    isLayer,
+    isLayerActive,
+    user /* loginError, loginExpired, secured, onLogin, onLogout, onChangePassword, */,
+}) => {
+    // const [isChangePassword, setChangePassword] = useState(false);
 
     if (isLayer && !isLayerActive) {
         return null;
@@ -20,11 +27,16 @@ const Navigation = (props) => {
     }
 
     return (
-        <Sidebar isLayer={isLayer} hideBorder={true} onClose={onClose}>
-            <Box fill="vertical" background="menu">
-                <NavigationHeader isLayer={isLayer} onClose={onClose} title={title} logo={logo} />
+        <Sidebar isLayer={isLayer} hideBorder onClose={onClose}>
+            <Box fill='vertical' background='menu'>
+                <NavigationHeader
+                    isLayer={isLayer}
+                    onClose={onClose}
+                    title={title}
+                    logo={logo}
+                />
                 <NavigationMenu routes={routes} onClick={onClose} />
-                {/*(!secured && !user)
+                {/* (!secured && !user)
                     ? <></>
                     : (user
                         ? user.forceChangePassword || isChangePassword
@@ -35,7 +47,7 @@ const Navigation = (props) => {
                                     <NavUser name={user.sub} onChangePassword={secured && (() => setChangePassword(true))} onLogout={secured && onLogout} />
                                 </Box>
                             )
-                            : <NavLogin loginError={loginError} loginExpired={loginExpired} onLogin={onLogin} />)*/}
+                            : <NavLogin loginError={loginError} loginExpired={loginExpired} onLogin={onLogin} />) */}
             </Box>
         </Sidebar>
     );

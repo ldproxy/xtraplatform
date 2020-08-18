@@ -2,13 +2,18 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { Box } from 'grommet';
-import Link from './Link'
+import Link from './Link';
 
 const NavigationMenu = ({ routes, onClick }) => {
     return (
-        <Box flex="grow" justify="start">
+        <Box flex='grow' justify='start'>
             {routes.map((route) => (
-                <Link key={route.path} path={route.path} label={route.menuLabel} onClick={onClick} />
+                <Link
+                    key={route.path}
+                    path={route.path}
+                    label={route.menuLabel}
+                    onClick={onClick}
+                />
             ))}
         </Box>
     );
@@ -17,8 +22,12 @@ const NavigationMenu = ({ routes, onClick }) => {
 NavigationMenu.displayName = 'NavigationMenu';
 
 NavigationMenu.propTypes = {
-    routes: PropTypes.arrayOf(PropTypes.object),
+    routes: PropTypes.arrayOf(PropTypes.object).isRequired,
     onClick: PropTypes.func,
+};
+
+NavigationMenu.defaultProps = {
+    onClick: null,
 };
 
 export default NavigationMenu;

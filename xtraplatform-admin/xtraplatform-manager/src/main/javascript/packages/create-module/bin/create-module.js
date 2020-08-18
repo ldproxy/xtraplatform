@@ -1,3 +1,7 @@
+#!/usr/bin/env node
+
+process.env.npm_config_user_agent = 'yarn/2.1.1 ' + process.env.npm_config_user_agent
+
 var yeoman = require('yeoman-environment');
 var env = yeoman.createEnv();
 

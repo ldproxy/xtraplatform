@@ -38,8 +38,16 @@ module.exports = (opts = defaultOptions) => neutrino => {
     .rule('lint')
     .use('eslint')
     .tap(options => merge(options, {
-      rules: {
-        'react/jsx-props-no-spreading': 'off'
+      baseConfig: {
+        rules: {
+          'react/jsx-props-no-spreading': 'off',
+          'arrow-body-style': 'off',
+        },
+        extends: [
+          require.resolve('eslint-config-prettier'),
+          require.resolve('eslint-config-prettier/babel'),
+          require.resolve('eslint-config-prettier/react'),
+        ]
       }
     }));
 

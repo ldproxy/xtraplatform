@@ -110,7 +110,7 @@ class XtraPlatform extends Generator {
 
     //yarn v2
     //TODO: plugins, merge .yarnrc.yml
-    this._spawnSync('yarn set version berry');
+    //this._spawnSync('yarn set version berry');
 
     this.log('Using yarn v2');
 

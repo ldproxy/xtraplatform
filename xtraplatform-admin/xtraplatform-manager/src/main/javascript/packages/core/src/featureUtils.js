@@ -1,19 +1,27 @@
 import checkPropTypes from 'check-prop-types';
 
-const validatePropTypes = (schema) => resource => {
+const validatePropTypes = (schema) => (resource) => {
     if (Array.isArray(resource)) {
-        for (let res of resource) {
-            const result = checkPropTypes(schema, res, 'resource prop', 'contract');
-            if (result) return result
+        for (let i = 0; i < resource.length; i++) {
+            const result = checkPropTypes(
+                schema,
+                resource[i],
+                'resource prop',
+                'contract'
+            );
+            if (result) return result;
         }
     } else {
-        const result = checkPropTypes(schema, resource, 'resource prop', 'contract');
-        if (result) return result
+        const result = checkPropTypes(
+            schema,
+            resource,
+            'resource prop',
+            'contract'
+        );
+        if (result) return result;
     }
 
-    return null
-}
-
-export {
-    validatePropTypes
+    return null;
 };
+
+export { validatePropTypes };

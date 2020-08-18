@@ -7,5 +7,10 @@
   "scripts": {
     "bump": "yarn version check --interactive && yarn version apply --all",
     "publish": "yarn workspaces foreach --exclude root -v npm publish"
+  },
+  "dependenciesMeta": {
+    "prettier": {
+      "unplugged": true
+    }
   }
 }
