@@ -1,6 +1,6 @@
 {
   "name": "@xtraplatform/core",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0-beta.2",
   "main": "build/index.js",
   "module": "src/index.jsx",
   "author": "interactive instruments GmbH",
@@ -41,7 +41,7 @@
     "@storybook/addon-essentials": "^6.0.10",
     "@storybook/addon-links": "^6.0.10",
     "@storybook/react": "^6.0.10",
-    "@xtraplatform/neutrino": "^2.0.0-beta.2",
+    "@xtraplatform/neutrino": "^2.0.0-beta.3",
     "apollo-link-rest": "^0.8.0-beta.0",
     "babel-loader": "*",
     "eslint": "^6.8.0",
