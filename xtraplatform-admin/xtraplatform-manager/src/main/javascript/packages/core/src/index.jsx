@@ -8,12 +8,14 @@ import {
     Tile,
     StatusIcon,
     SpinnerIcon,
-    FormFieldHelp,
     InfoLabel,
     NavLink,
     TaskProgress,
+    Manager,
+    ThemeBase,
+    themeBase,
 } from './components';
-import { Manager, ThemeBase, themeBase } from './features';
+
 import { validatePropTypes } from './featureUtils';
 import {
     useQuery,
@@ -42,7 +44,6 @@ export {
     Tile,
     StatusIcon,
     SpinnerIcon,
-    FormFieldHelp,
     InfoLabel,
     NavLink,
     TaskProgress,

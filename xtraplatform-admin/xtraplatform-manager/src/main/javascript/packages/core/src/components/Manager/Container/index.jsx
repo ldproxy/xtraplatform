@@ -6,7 +6,7 @@ import { InMemoryCache, ApolloClient, ApolloProvider } from '@apollo/client';
 import { RestLink } from 'apollo-link-rest';
 
 import Navigation from '../Navigation';
-import { Sidebar } from '../../../index';
+import { Sidebar } from '../../Layout';
 import { ProvideAuth } from '../../../auth';
 
 const baseUrl = '../rest/admin';
