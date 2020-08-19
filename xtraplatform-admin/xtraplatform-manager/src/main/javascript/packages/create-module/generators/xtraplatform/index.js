@@ -22,10 +22,14 @@ const meta = (name) => ({
   devDependencies: {},
 });
 const scripts = {
+  prettier: "prettier --write .",
+  lint:
+    "prettier --check . && eslint --cache --format codeframe --ext mjs,jsx,js src test",
   storybook: "start-storybook -p 6006 --docs --ci",
   "build-storybook": "build-storybook --docs",
 };
 const devDependencies = {
+  "@apollo/client": "^3",
   "@mdx-js/react": "^1.6.16",
   "@storybook/addon-docs": "^6.0.10",
   "@storybook/addon-essentials": "^6.0.10",
@@ -57,6 +61,7 @@ const devDependencies = {
 };
 const peerDependencies = {
   "@xtraplatform/core": "^2",
+  "@apollo/client": "^3",
   "feature-u": "^3",
   grommet: "^2",
   "grommet-icons": "^4",
@@ -123,12 +128,16 @@ class XtraPlatform extends Generator {
     this.fs.writeJSON(packageJson, patched);
 
     // copy our templates
-    this.fs.copyTpl(
+    this.fs.copy(
       this.templatePath(__dirname, "templates/xtraplatform/**"),
       directory,
-      { data: this.options },
-      {},
       { globOptions: { dot: true } }
+    );
+
+    // workaround, .yarnrc.yml is ignored by yarn publish
+    this.fs.move(
+      this.destinationPath(directory, "yarnrc.yml"),
+      this.destinationPath(directory, ".yarnrc.yml")
     );
 
     //yarn.lock
@@ -137,7 +146,9 @@ class XtraPlatform extends Generator {
     this.log("Creating yarn.lock");
 
     this.writeDestination(yarnLock, "");
+  }
 
+  install() {
     //yarn vscode eslint prettier
     this._spawnSync("yarn dlx @yarnpkg/pnpify --sdk vscode");
 

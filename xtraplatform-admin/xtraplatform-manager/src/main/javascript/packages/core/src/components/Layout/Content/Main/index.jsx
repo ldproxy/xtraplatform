@@ -10,7 +10,7 @@ const ContentMain = ({ children }) => {
 ContentMain.displayName = 'ContentMain';
 
 ContentMain.propTypes = {
-    children: PropTypes.arrayOf(PropTypes.element).isRequired,
+    children: PropTypes.element.isRequired,
 };
 
 export default ContentMain;

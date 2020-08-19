@@ -58,11 +58,13 @@ Navigation.displayName = 'Navigation';
 Navigation.propTypes = {
     title: PropTypes.string,
     logo: PropTypes.string,
-    routes: PropTypes.arrayOf(),
+    routes: PropTypes.arrayOf(PropTypes.object),
     onClose: PropTypes.func,
     isLayer: PropTypes.bool,
     isLayerActive: PropTypes.bool,
-    user: PropTypes.objectOf(),
+    user: PropTypes.shape({
+        role: PropTypes.string.isRequired,
+    }),
 };
 
 Navigation.defaultProps = {

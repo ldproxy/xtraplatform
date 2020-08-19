@@ -1,4 +1,4 @@
-import { Services } from './features';
+import { Services } from './components';
 
 export {
   Services,

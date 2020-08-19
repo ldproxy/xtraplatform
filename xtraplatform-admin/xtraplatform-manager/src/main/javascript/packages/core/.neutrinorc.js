@@ -7,5 +7,5 @@ module.exports = {
     options: {
         root: __dirname,
     },
-    use: [airbnb(), reactComponents(), mocha(), xtraplatform({ lib: true })],
+    use: [airbnb(), reactComponents(), mocha(), xtraplatform()],
 };

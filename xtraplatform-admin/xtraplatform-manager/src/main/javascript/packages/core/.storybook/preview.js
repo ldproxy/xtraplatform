@@ -1,6 +1,6 @@
 import React from 'react';
 import { Grommet } from 'grommet';
-import { themeBase } from '../src/features';
+import { themeBase } from '../src/components';
 
 export const decorators = [
     (Story) => (

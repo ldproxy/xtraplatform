@@ -29,7 +29,7 @@ const ContentHeader = ({ children }) => {
 ContentHeader.displayName = 'ContentHeader';
 
 ContentHeader.propTypes = {
-    children: PropTypes.arrayOf(PropTypes.element).isRequired,
+    children: PropTypes.element.isRequired,
 };
 
 export default ContentHeader;

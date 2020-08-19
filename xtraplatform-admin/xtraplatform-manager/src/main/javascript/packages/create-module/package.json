@@ -1,6 +1,6 @@
 {
   "name": "@xtraplatform/create-module",
-  "version": "2.0.0-beta.9",
+  "version": "2.0.0-beta.12",
   "main": "index.js",
   "license": "MIT",
   "bin": "./bin/create-module.js",

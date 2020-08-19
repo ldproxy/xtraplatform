@@ -40,7 +40,7 @@ Sidebar.propTypes = {
     isLayer: PropTypes.bool,
     onClose: PropTypes.func,
     hideBorder: PropTypes.bool,
-    children: PropTypes.arrayOf(PropTypes.element),
+    children: PropTypes.element,
 };
 
 Sidebar.defaultProps = {
