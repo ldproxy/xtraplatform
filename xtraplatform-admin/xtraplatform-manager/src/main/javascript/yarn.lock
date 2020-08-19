@@ -3476,7 +3476,7 @@ __metadata:
     "@storybook/addon-essentials": ^6.0.12
     "@storybook/addon-links": ^6.0.12
     "@storybook/react": ^6.0.12
-    "@xtraplatform/neutrino": 2.0.0-beta.3
+    "@xtraplatform/neutrino": 2.0.0-beta.4
     apollo-link-rest: ^0.8.0-beta.0
     babel-loader: "*"
     check-prop-types: ^1.1.2
@@ -3535,7 +3535,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@xtraplatform/neutrino@2.0.0-beta.3, @xtraplatform/neutrino@workspace:packages/neutrino":
+"@xtraplatform/neutrino@2.0.0-beta.4, @xtraplatform/neutrino@workspace:packages/neutrino":
   version: 0.0.0-use.local
   resolution: "@xtraplatform/neutrino@workspace:packages/neutrino"
   dependencies:
