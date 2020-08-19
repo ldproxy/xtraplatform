@@ -12,5 +12,9 @@
     "prettier": {
       "unplugged": true
     }
+  },
+  "devDependencies": {
+    "eslint": "^7.7.0",
+    "prettier": "^2.0.5"
   }
 }

@@ -42,7 +42,7 @@ Tile.propTypes = {
     pad: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
 };
 
-Tile.propTypes = {
+Tile.defaultProps = {
     onClick: null,
     basis: null,
     background: null,

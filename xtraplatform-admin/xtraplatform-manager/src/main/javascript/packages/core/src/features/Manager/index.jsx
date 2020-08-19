@@ -29,7 +29,8 @@ export default createFeature({
 
         return Promise.resolve();
     },
-    appWillStart: ({ fassets, curRootAppElm }) => {
+    // eslint-disable-next-line react/prop-types
+    appWillStart: ({ curRootAppElm }) => {
         // ensure no content is clobbered (children NOT supported)
         assertNoRootAppElm(curRootAppElm, '<Manager>');
 

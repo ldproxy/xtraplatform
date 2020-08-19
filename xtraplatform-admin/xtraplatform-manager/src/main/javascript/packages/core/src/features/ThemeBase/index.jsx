@@ -1,4 +1,3 @@
-import React from 'react';
 import { createFeature } from 'feature-u';
 import { customTheme } from './theme';
 

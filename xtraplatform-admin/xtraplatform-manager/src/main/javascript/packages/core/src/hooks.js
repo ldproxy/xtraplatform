@@ -60,7 +60,7 @@ const useDebounce = (value, delay, onChange, deepCompare) => {
             }
             onChange(change);
         },
-        [change] // Only call effect if debounced search term changes
+        [onChange, change] // Only call effect if debounced search term changes
     );
 };
 
@@ -68,7 +68,9 @@ const useDebounceFields = (fields, delay, onChange) => {
     const setters = {};
     const state = {};
 
-    for (const field of Object.keys(fields)) {
+    // TODO
+    for (let i = 0; i < Object.keys(fields).length; i++) {
+        const field = Object.keys(fields)[i];
         const [value, setter] = useState(fields[field]);
 
         setters[field] = setter;
@@ -107,7 +109,8 @@ const useHover = () => {
                 node.removeEventListener('mouseout', handleMouseOut);
             };
         }
-    }, [ref.current]);
+        return undefined;
+    }, []);
 
     return [ref, value];
 };

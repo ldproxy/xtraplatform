@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
 import { Box } from 'grommet';
@@ -57,8 +57,22 @@ Navigation.displayName = 'Navigation';
 
 Navigation.propTypes = {
     title: PropTypes.string,
-    routes: PropTypes.array,
+    logo: PropTypes.string,
+    routes: PropTypes.arrayOf(),
     onClose: PropTypes.func,
+    isLayer: PropTypes.bool,
+    isLayerActive: PropTypes.bool,
+    user: PropTypes.objectOf(),
+};
+
+Navigation.defaultProps = {
+    title: null,
+    logo: null,
+    routes: [],
+    onClose: null,
+    isLayer: false,
+    isLayerActive: false,
+    user: null,
 };
 
 export default Navigation;

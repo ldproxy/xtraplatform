@@ -26,7 +26,6 @@ const Manager = () => {
     const activeTheme = 'default';
     const secured = false;
 
-    const isLayer = false;
     const [isLayerActive, setLayerActive] = useState(false);
     const closeLayer = () => {
         setLayerActive(false);

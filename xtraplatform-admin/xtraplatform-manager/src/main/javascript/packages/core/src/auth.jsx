@@ -1,51 +1,19 @@
-import React, { useState, useEffect, useContext, createContext } from 'react';
+import React, {
+    useState,
+    useEffect,
+    useContext,
+    useCallback,
+    createContext,
+} from 'react';
+import PropTypes from 'prop-types';
 import jwtDecode from 'jwt-decode';
 
 const authContext = createContext();
-
-// Provider component that wraps your app and makes auth object ...
-// ... available to any child component that calls useAuth().
-export const ProvideAuth = ({ baseUrl, allowAnonymousAccess, children }) => {
-    const auth = useProvideAuth(baseUrl, allowAnonymousAccess);
-    return <authContext.Provider value={auth}>{children}</authContext.Provider>;
-};
 
 // Hook for child components to get the auth object ...
 // ... and re-render when it changes.
 export const useAuth = () => {
     return useContext(authContext);
-};
-
-// Provider hook that creates auth object and handles state
-const useProvideAuth = (baseUrl, allowAnonymousAccess) => {
-    const [state, setState] = useState({});
-
-    const signin = (credentials) => {
-        return getToken(baseUrl, credentials).then((token) => {
-            setState(token);
-            return token;
-        });
-    };
-
-    const signout = () => {
-        return setState(clearToken());
-    };
-
-    useEffect(() => {
-        if (allowAnonymousAccess) {
-            async function waitForSignin() {
-                await signin({ rememberMe: true });
-            }
-            waitForSignin();
-        }
-    }, [allowAnonymousAccess]);
-
-    // Return the user object and auth methods
-    return {
-        state,
-        signin,
-        signout,
-    };
 };
 
 const getCookieValue = (name) => {
@@ -100,4 +68,57 @@ const clearToken = () => {
         user: null,
         error: null,
     };
+};
+
+// Provider hook that creates auth object and handles state
+const useProvideAuth = (baseUrl, allowAnonymousAccess) => {
+    const [state, setState] = useState({});
+
+    const signin = useCallback(
+        (credentials) => {
+            return getToken(baseUrl, credentials).then((token) => {
+                setState(token);
+                return token;
+            });
+        },
+        [baseUrl]
+    );
+
+    const signout = useCallback(() => {
+        return setState(clearToken());
+    }, []);
+
+    useEffect(() => {
+        if (allowAnonymousAccess) {
+            // eslint-disable-next-line no-inner-declarations
+            async function waitForSignin() {
+                await signin({ rememberMe: true });
+            }
+            waitForSignin();
+        }
+    }, [allowAnonymousAccess, signin]);
+
+    // Return the user object and auth methods
+    return {
+        state,
+        signin,
+        signout,
+    };
+};
+
+// Provider component that wraps your app and makes auth object ...
+// ... available to any child component that calls useAuth().
+export const ProvideAuth = ({ baseUrl, allowAnonymousAccess, children }) => {
+    const auth = useProvideAuth(baseUrl, allowAnonymousAccess);
+    return <authContext.Provider value={auth}>{children}</authContext.Provider>;
+};
+
+ProvideAuth.propTypes = {
+    baseUrl: PropTypes.string.isRequired,
+    allowAnonymousAccess: PropTypes.bool,
+    children: PropTypes.element.isRequired,
+};
+
+ProvideAuth.defaultProps = {
+    allowAnonymousAccess: false,
 };

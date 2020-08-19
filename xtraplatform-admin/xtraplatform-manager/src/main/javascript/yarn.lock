@@ -15680,6 +15680,9 @@ fsevents@^1.2.7:
 "root@workspace:.":
   version: 0.0.0-use.local
   resolution: "root@workspace:."
+  dependencies:
+    eslint: ^7.7.0
+    prettier: ^2.0.5
   dependenciesMeta:
     prettier:
       unplugged: true

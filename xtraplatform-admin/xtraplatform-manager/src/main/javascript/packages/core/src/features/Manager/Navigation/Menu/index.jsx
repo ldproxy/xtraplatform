@@ -8,6 +8,7 @@ const NavigationMenu = ({ routes, onClick }) => {
     return (
         <Box flex='grow' justify='start'>
             {routes.map((route) => (
+                // eslint-disable-next-line jsx-a11y/anchor-is-valid
                 <Link
                     key={route.path}
                     path={route.path}
