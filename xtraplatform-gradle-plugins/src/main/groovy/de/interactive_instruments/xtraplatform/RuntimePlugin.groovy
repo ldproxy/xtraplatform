@@ -25,7 +25,7 @@ class RuntimePlugin implements Plugin<Project> {
         ClassGenerator.generateClassTask(project, 'pkgs', packagePath, className, {}, {
 
             def exports = 'new ImmutableMap.Builder<String,String>()'
-
+            def exports2 = 'private static final Map<String,String> exports = new LinkedHashMap<String,String>();\nstatic {'
             def excludes = []
 
             // determine artifacts that should be included in the bundle, might be transitive or not
@@ -39,15 +39,19 @@ class RuntimePlugin implements Plugin<Project> {
                 //project.jar.manifest.instruction("Export-Package", "${pkg.name};version=${pkg.version.replaceAll('(-[\\w]+)+$', '')}")
                 //project.jar.manifest.instruction("Import-Package", "${pkg.name};version=${pkg.version.replaceAll('(-[\\w]+)+$', '')}")
 
-                exports += "\n.put(\"${pkg.name}\", \"${pkg.version}\")"
+                //exports += "\n.put(\"${pkg.name}\", \"${pkg.version}\")"
+                exports2 += "\nexports.put(\"${pkg.name}\", \"${pkg.version}\");"
             }
 
             extension.exports.each { pkg ->
                 //println "${pkg.key} ${pkg.value}"
 
-                exports += "\n.put(\"${pkg.key}\", \"${pkg.value}\")"
+                //exports += "\n.put(\"${pkg.key}\", \"${pkg.value}\")"
+                exports2 += "\nexports.put(\"${pkg.key}\", \"${pkg.value}\");"
             }
 
+            exports2 += '\n}\n'
+            exports += "\n.putAll(exports)"
             exports += "\n.put(\"${packageName}\", \"${project.version}\")"
             exports += "\n.put(\"de.ii.xtraplatform.configuration\", \"${project.version}\")"
 
@@ -58,9 +62,11 @@ class RuntimePlugin implements Plugin<Project> {
 
                 import com.google.common.collect.ImmutableMap;
                 import java.util.Map;
+                import java.util.LinkedHashMap;
     
                 class ${className} {
                 
+                    ${exports2}
                     static final Map<String, String> EXPORTS = ${exports};
 
                 }
