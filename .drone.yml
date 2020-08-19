@@ -1,12 +1,23 @@
 pipeline:
 
   build:
-    image: openjdk:8-alpine
+    image: openjdk:11-slim
     commands:
       - cd xtraplatform-base 
-      - ../gradlew assemble -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+      - ../gradlew assemble
+
+  publish:
+    image: openjdk:11-slim
+    commands:
+      - cd xtraplatform-base 
+      - ../gradlew bintrayUpload -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+    secrets: [ bintray_user, bintray_pass]
+#    when:
+#      event: tag
+#      branch: master
 
   notify:
     image: plugins/slack
     webhook: ${SLACK_WEBHOOK}
     secrets: [ slack_webhook ]
+

@@ -20,6 +20,7 @@ dependencies {
         systemBundle group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
         systemBundle group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
     }
+
 }
 
 systemBundle {

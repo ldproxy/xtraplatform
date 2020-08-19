@@ -22,6 +22,7 @@ class FeaturePlugin implements Plugin<Project> {
         project.plugins.apply("maven-publish")
 
         project.configurations.create("feature")
+        project.configurations.create("featureBundles")
         project.configurations.create("bundle")
         //project.configurations.create("default")
 
@@ -30,6 +31,7 @@ class FeaturePlugin implements Plugin<Project> {
         project.configurations.runtimeElements.setTransitive(false)
         project.configurations.bundle.setTransitive(false)
         project.configurations.feature.setTransitive(true)
+        project.configurations.featureBundles.setTransitive(true)
         project.configurations.feature.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
 
         /*project.extensions.javaPlatform.with {
@@ -42,6 +44,36 @@ class FeaturePlugin implements Plugin<Project> {
                 url "https://dl.bintray.com/iide/maven"
             }
         }
+
+
+
+        def includedBuilds = project.gradle.includedBuilds.collect {it.name}
+        def parent = project.gradle.parent
+        while (parent != null) {
+            includedBuilds += parent.includedBuilds.collect {it.name}
+            parent = parent.gradle.parent
+        }
+
+        project.configurations.feature.incoming.beforeResolve {
+            project.configurations.feature.dependencies.collect().each {
+                    def isIncludedBuild = includedBuilds.contains(it.name)
+                    if (isIncludedBuild) {
+                        //println 'IGNORE'
+                    } else {
+                        //println 'SPLIT'
+                        def bom = [group: it.group, name: "${it.name}", version: it.version]
+                        def bundles = [group: it.group, name: "${it.name}-bundles", version: it.version]
+
+                        project.dependencies.add('featureBundles', project.dependencies.enforcedPlatform(bom))
+
+                        //println "added platform for ${subproject.name}"
+
+                        project.dependencies.add('featureBundles', bundles)
+                    }
+            }
+        }
+
+
 
         addPublication(project)
 
@@ -122,7 +154,7 @@ class FeaturePlugin implements Plugin<Project> {
 
                             //println "added platform for ${subproject.name}"
 
-                            project.dependencies.add('feature', bundles)
+                            //project.dependencies.add('feature', bundles)
                         }
                     }
                 }
@@ -139,6 +171,18 @@ class FeaturePlugin implements Plugin<Project> {
                                 subproject.dependencies.add('compileOnly', bundle.name)
                                 subproject.dependencies.add('testImplementation', bundle.name)
                                 //subproject.dependencies.add('implementation', bundle.name)
+                            //}
+                        }
+                    }
+                })
+                project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.each({
+                    if (it.moduleName == 'xtraplatform-base' || it.moduleName == 'xtraplatform-base-bundles') {
+                        it.children.each { bundle ->
+                            //TODO
+                            //if (bundle.moduleGroup == 'de.interactive_instruments' || bundle.moduleName.startsWith("org.apache.felix.ipojo")) {
+                            subproject.dependencies.add('compileOnly', bundle.name)
+                            subproject.dependencies.add('testImplementation', bundle.name)
+                            //subproject.dependencies.add('implementation', bundle.name)
                             //}
                         }
                     }
