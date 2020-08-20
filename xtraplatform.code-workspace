@@ -1,0 +1,22 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/.idea": true,
+      "**/.pnp.js": true,
+      "**/.vscode": true,
+      "**/.yarn": true,
+      "**/*.gradle": true,
+      "**/*.iml": true,
+      "**/build": true,
+      "**/gradle*": true,
+      "**/out": true,
+      "**/src/main/java": true,
+      "**/yarn.lock": true
+    }
+  }
+}
