@@ -112,17 +112,20 @@ const useProvideAuth = (baseUrl, allowAnonymousAccess) => {
 
 // Provider component that wraps your app and makes auth object ...
 // ... available to any child component that calls useAuth().
-export const ProvideAuth = ({ baseUrl, allowAnonymousAccess, children }) => {
+export const AuthProvider = ({ baseUrl, allowAnonymousAccess, children }) => {
     const auth = useProvideAuth(baseUrl, allowAnonymousAccess);
+
     return <authContext.Provider value={auth}>{children}</authContext.Provider>;
 };
 
-ProvideAuth.propTypes = {
+AuthProvider.displayName = 'AuthProvider';
+
+AuthProvider.propTypes = {
     baseUrl: PropTypes.string.isRequired,
     allowAnonymousAccess: PropTypes.bool,
     children: PropTypes.element.isRequired,
 };
 
-ProvideAuth.defaultProps = {
+AuthProvider.defaultProps = {
     allowAnonymousAccess: false,
 };

@@ -7,7 +7,7 @@ import { RestLink } from 'apollo-link-rest';
 
 import { Sidebar } from '@xtraplatform/core';
 import Navigation from '../Navigation';
-import { ProvideAuth } from '../../../auth';
+import { AuthProvider } from '../Auth';
 
 const baseUrl = '../rest/admin';
 
@@ -49,7 +49,7 @@ const Manager = () => {
     const theme = useFassets(`${activeTheme}.theme`);
 
     return (
-        <ProvideAuth baseUrl={baseUrl} allowAnonymousAccess={!secured}>
+        <AuthProvider baseUrl={baseUrl} allowAnonymousAccess={!secured}>
             <ApolloProvider client={client}>
                 <Grommet full theme={theme}>
                     <Router>
@@ -75,7 +75,7 @@ const Manager = () => {
                     </Router>
                 </Grommet>
             </ApolloProvider>
-        </ProvideAuth>
+        </AuthProvider>
     );
 };
 
