@@ -1,6 +1,6 @@
 {
     "name": "@xtraplatform/core",
-    "version": "1.0.0",
+    "version": "2.0.0-beta.4",
     "author": "interactive instruments GmbH",
     "license": "MPL-2.0",
     "module": "src/index.jsx",
@@ -45,5 +45,16 @@
         "react-is": "^16",
         "react-router-dom": "^5",
         "styled-components": "^5"
+    },
+    "dependencies": {
+        "apollo-link-rest": "^0.8.0-beta.0",
+        "check-prop-types": "^1.1.2",
+        "core-js": "^3.6.5",
+        "deepmerge": "^4.2.2",
+        "graphql": "^15.3.0",
+        "graphql-anywhere": "^4.2.7",
+        "jwt-decode": "^2.2.0",
+        "qs": "^6.9.4",
+        "use-deep-compare-effect": "^1.3.1"
     }
 }

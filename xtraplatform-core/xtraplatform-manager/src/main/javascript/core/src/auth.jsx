@@ -17,7 +17,9 @@ export const useAuth = () => {
 };
 
 const getCookieValue = (name) => {
+    // eslint-disable-next-line no-undef
     console.log('COOKIES', document.cookie);
+    // eslint-disable-next-line no-undef
     const value = document.cookie.match(
         new RegExp(`(^|[^;]+)\\s*${name}\\s*=\\s*([^;]+)`, 'g')
     );
@@ -27,12 +29,14 @@ const getCookieValue = (name) => {
 
 const deleteCookie = (name) => {
     const cookie = `${name}=; Max-Age=0; path=/`;
+    // eslint-disable-next-line no-undef
     document.cookie = cookie;
 };
 
 const TOKEN_COOKIE_NAME = 'xtraplatform-token';
 
 const getToken = (baseUrl, credentials) => {
+    // eslint-disable-next-line no-undef
     return fetch(`${baseUrl}/../auth/token`, {
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         method: 'POST',
