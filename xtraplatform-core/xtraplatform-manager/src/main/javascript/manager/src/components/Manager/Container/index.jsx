@@ -5,8 +5,8 @@ import { HashRouter as Router, Switch, Route } from 'react-router-dom';
 import { InMemoryCache, ApolloClient, ApolloProvider } from '@apollo/client';
 import { RestLink } from 'apollo-link-rest';
 
+import { Sidebar } from '@xtraplatform/core';
 import Navigation from '../Navigation';
-import { Sidebar } from '../../Layout';
 import { ProvideAuth } from '../../../auth';
 
 const baseUrl = '../rest/admin';

@@ -1,6 +1,6 @@
-/* import React from 'react';
+import React from 'react';
 import { Grommet } from 'grommet';
-import { themeBase } from '../src/components';
+import { themeBase } from '../xtraplatform-core/xtraplatform-manager/src/main/javascript/manager';
 
 export const decorators = [
     (Story) => (
@@ -8,7 +8,7 @@ export const decorators = [
             <Story />
         </Grommet>
     ),
-];*/
+];
 
 export const parameters = {
     actions: { argTypesRegex: '^on[A-Z].*' },

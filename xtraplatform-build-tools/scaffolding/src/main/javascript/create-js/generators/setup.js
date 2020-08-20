@@ -30,8 +30,10 @@ if (core.version !== XTRAPLATFORM_CORE_VERSION) {
 }
 
 const devDependencies = {
+    '@mdx-js/react': '^1.6.16', // TODO
     '@neutrinojs/airbnb': `^${NEUTRINO_VERSION}`,
     '@neutrinojs/mocha': `^${NEUTRINO_VERSION}`,
+    '@storybook/addon-docs': `^${STORYBOOK_VERSION}`,
     '@xtraplatform/neutrino': `^${XTRAPLATFORM_NEUTRINO_VERSION}`,
     neutrino: `^${NEUTRINO_VERSION}`,
 };

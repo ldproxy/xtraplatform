@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { createFeature, assertNoRootAppElm } from 'feature-u';
 
-import { validatePropTypes } from '../../featureUtils';
+import { validatePropTypes } from '@xtraplatform/core';
 import Manager from './Container';
 
 export default createFeature({
