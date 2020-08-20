@@ -1,0 +1,19 @@
+{
+    "name": "@xtraplatform/setup",
+    "version": "2.0.0-beta.0",
+    "main": "index.js",
+    "author": "interactive instruments GmbH",
+    "license": "MPL-2.0",
+    "dependencies": {
+        "@neutrinojs/airbnb": "^9.3.0",
+        "@neutrinojs/compile-loader": "^9.3.0",
+        "@neutrinojs/eslint": "^9.3.0",
+        "@neutrinojs/mocha": "^9.3.0",
+        "@storybook/source-loader": "^6.0.14",
+        "@xtraplatform/core": "^2.0.0-beta.4",
+        "@xtraplatform/neutrino": "^2.0.0-beta.4",
+        "chalk": "^4.1.0",
+        "yeoman-environment": "^2.10.3",
+        "yeoman-generator": "^4.11.0"
+    }
+}
