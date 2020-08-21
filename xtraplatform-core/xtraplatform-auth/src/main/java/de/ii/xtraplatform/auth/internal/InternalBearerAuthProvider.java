@@ -9,7 +9,7 @@ package de.ii.xtraplatform.auth.internal;
 
 import com.google.common.cache.CacheBuilderSpec;
 import com.google.common.collect.Lists;
-import de.ii.xtraplatform.auth.api.AuthProvider;
+import de.ii.xtraplatform.dropwizard.api.AuthProvider;
 import de.ii.xtraplatform.auth.api.TokenHandler;
 import de.ii.xtraplatform.auth.api.User;
 import de.ii.xtraplatform.auth.api.UserAuthorizer;

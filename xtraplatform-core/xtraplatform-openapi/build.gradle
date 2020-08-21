@@ -4,20 +4,20 @@ ext {
 }
 
 dependencies {
-
-    provided project(':xtraplatform-web-rest')
+    provided project(':xtraplatform-dropwizard')
 
     embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: swaggerVersion
     embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-models', version: swaggerVersion
     embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-annotations', version: swaggerVersion
     embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-integration', version: swaggerVersion
     embeddedFlat group: 'io.swagger.core.v3', name: 'swagger-core', version: swaggerVersion
-    //embeddedFlat 'org.reflections:reflections:0.9.11'
     embeddedFlat 'io.github.classgraph:classgraph:4.8.65'
 } 
 
 jar {
     manifest {
+        instruction 'Embed-Export', 'true'
+        instruction 'Embed-Import', 'true'
         instructionFirst 'Import-Package', '!com.google.gson'
         instructionFirst 'Import-Package', '!org.dom4j'
         instructionFirst 'Import-Package', '!org.dom4j.io'

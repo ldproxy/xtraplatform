@@ -1,0 +1,8 @@
+
+dependencies {
+    provided project(':xtraplatform-dropwizard')
+    provided project(':xtraplatform-auth')
+    provided project(':xtraplatform-openapi')
+    provided project(':xtraplatform-services')
+}
+

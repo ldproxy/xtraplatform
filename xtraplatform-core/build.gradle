@@ -29,9 +29,9 @@ dependencies {
     bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.whiteboard', version: '1.6.0')
     bundle (group: 'org.apache.felix', name: 'org.apache.felix.ipojo.handler.extender', version: '1.4.0')
 }
-/*
-apply from: '../immutables.gradle'
 
+apply from: '../immutables.gradle'
+/*
 apply from: '../unit-tests.gradle'
 
 apply from: '../bintray.gradle'

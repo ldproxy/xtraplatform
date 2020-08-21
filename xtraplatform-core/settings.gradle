@@ -13,3 +13,4 @@ rootDir.listFiles().each { file ->
     }
 }
 
+includeBuild '../xtraplatform-gradle-plugins'

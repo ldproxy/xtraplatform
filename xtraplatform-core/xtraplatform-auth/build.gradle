@@ -1,23 +1,22 @@
 
+ext {
+    jjwtVersion = '0.10.6'
+}
+
 dependencies {
-    provided project(':xtraplatform-auth-api')
-    provided group: 'de.interactive_instruments', name: 'xtraplatform-akka'
-    provided project(':xtraplatform-akka-http')
+    provided project(':xtraplatform-streams')
+    provided project(':xtraplatform-store')
     
-    embedded (group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1') {
+    embedded (group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: jjwtVersion) {
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
     }
 }
 
 jar {
     manifest {
-        instruction 'Embed-Export', 'false'
-        instruction 'Embed-Import', 'false'
-/*
-        instructionFirst 'Import-Package', 'javax.xml.bind'
+        instructionFirst 'Import-Package', 'com.fasterxml.jackson.core'
+        instructionFirst 'Import-Package', 'com.fasterxml.jackson.databind'
         instructionFirst 'Import-Package', 'javax.crypto'
         instructionFirst 'Import-Package', 'javax.crypto.spec'
-        
- */
     }
 }

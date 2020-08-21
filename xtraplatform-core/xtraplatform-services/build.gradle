@@ -1,13 +1,7 @@
 
 dependencies {
-    provided project(':xtraplatform-scheduler-api')
-    
-    embedded group: 'it.sauronsoftware.cron4j', name: 'cron4j', version: '2.2.5'    
-}
+    provided project(':xtraplatform-dropwizard')
+    provided project(':xtraplatform-store')
 
-jar {
-    manifest { 
-        instruction 'Embed-Import', 'false'
-        instruction 'Embed-Export', 'false'        
-    }
+    embedded group: 'it.sauronsoftware.cron4j', name: 'cron4j', version: '2.2.5'
 }

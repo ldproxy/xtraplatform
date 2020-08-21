@@ -9,7 +9,7 @@ package de.ii.xtraplatform.web.rest;
 
 import com.google.common.collect.Sets;
 import de.ii.xtraplatform.dropwizard.api.Dropwizard;
-import de.ii.xtraplatform.auth.api.AuthProvider;
+import de.ii.xtraplatform.dropwizard.api.AuthProvider;
 import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.jetty.NonblockingServletHolder;
 import org.apache.felix.ipojo.annotations.Component;
