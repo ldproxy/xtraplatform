@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xtraplatform.store.domain.Builder;
 import de.ii.xtraplatform.store.domain.Value;
 import de.ii.xtraplatform.store.domain.ValueDecoderMiddleware;
-import de.ii.xtraplatform.event.store.EventSourcing;
 import de.ii.xtraplatform.store.domain.Identifier;
 
 import java.io.IOException;

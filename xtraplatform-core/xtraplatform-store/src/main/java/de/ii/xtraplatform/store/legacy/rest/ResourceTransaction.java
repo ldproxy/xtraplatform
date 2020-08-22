@@ -5,18 +5,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.kvstore.api.rest;
+package de.ii.xtraplatform.store.legacy.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.ii.xtraplatform.kvstore.api.MultiTransaction;
-import de.ii.xtraplatform.kvstore.api.Transaction;
-import de.ii.xtraplatform.kvstore.api.WriteTransaction;
-import de.ii.xtraplatform.api.Resource;
-import de.ii.xtraplatform.api.exceptions.ResourceNotFound;
-import de.ii.xtraplatform.api.exceptions.WriteError;
+import de.ii.xtraplatform.store.legacy.MultiTransaction;
+import de.ii.xtraplatform.store.legacy.Transaction;
+import de.ii.xtraplatform.store.legacy.WriteTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
@@ -83,7 +81,7 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
         switch (operation) {
             case ADD:
                 if (cache.hasResource(resourceId)) {
-                    throw new WriteError("A resource with id '" + resourceId + "' already exists");
+                    throw new IllegalStateException("A resource with id '" + resourceId + "' already exists");
                 }
                 break;
             case UPDATE:
@@ -91,10 +89,10 @@ public class ResourceTransaction<T extends Resource> extends MultiTransaction im
             case DELETE:
                 // TODO: necessary?
                 if (resourceId == null) {
-                    throw new ResourceNotFound("A resource with id 'NULL' does not exist");
+                    throw new NotFoundException("A resource with id 'NULL' does not exist");
                 }
                 if (!cache.hasResource(resourceId)) {
-                    throw new ResourceNotFound("A resource with id '" + resourceId + "' does not exist");
+                    throw new NotFoundException("A resource with id '" + resourceId + "' does not exist");
                 }
                 break;
             case DELETE_ALL:

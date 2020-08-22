@@ -5,12 +5,11 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
-import de.ii.xtraplatform.configuration.ConfigurationReader;
+import de.ii.xtraplatform.runtime.domain.ConfigurationReader;
+import de.ii.xtraplatform.runtime.domain.Constants;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.util.Duration;
@@ -21,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,16 +37,6 @@ import java.util.stream.Collectors;
 public class FelixRuntime {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FelixRuntime.class);
-
-    public enum ENV {
-        PRODUCTION,
-        DEVELOPMENT,
-        CONTAINER
-    }
-
-    public static final String DATA_DIR_KEY = "de.ii.xtraplatform.directories.data";
-    public static final String ENV_KEY = "de.ii.xtraplatform.environment";
-    public static final String USER_CONFIG_PATH_KEY = "de.ii.xtraplatform.userConfigPath";
 
     private static final String ENV_VAR = "XTRAPLATFORM_ENV";
     private static final String DATA_DIR_NAME = "data";
@@ -68,7 +56,7 @@ public class FelixRuntime {
         Map<String, String> felixConfig = new HashMap<>();
         Path dataDir = getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
         Path bundlesDir = getBundlesDir(args).orElseThrow(() -> new IllegalArgumentException("No bundles directory found"));
-        ENV env = parseEnvironment();
+        Constants.ENV env = parseEnvironment();
         ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
         Path configurationFile = configurationReader.getConfigurationFile(dataDir, env);
 
@@ -116,7 +104,7 @@ public class FelixRuntime {
             startLevel++;
         }
 
-        if (env == ENV.DEVELOPMENT) {
+        if (env == Constants.ENV.DEVELOPMENT) {
             for (List<String> level : devBundles) {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Level {} Bundles: {}", startLevel, level);
@@ -144,10 +132,10 @@ public class FelixRuntime {
                                                                              .join(Exports.EXPORTS));
         felixConfig.put(FelixConstants.FRAMEWORK_BOOTDELEGATION, "sun.misc");
 
-        felixConfig.put(DATA_DIR_KEY, dataDir.toAbsolutePath()
-                                             .toString());
-        felixConfig.put(ENV_KEY, env.name());
-        felixConfig.put(USER_CONFIG_PATH_KEY, configurationFile.toAbsolutePath().toString());
+        felixConfig.put(Constants.DATA_DIR_KEY, dataDir.toAbsolutePath()
+                                                       .toString());
+        felixConfig.put(Constants.ENV_KEY, env.name());
+        felixConfig.put(Constants.USER_CONFIG_PATH_KEY, configurationFile.toAbsolutePath().toString());
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Felix config: {}", felixConfig);
@@ -288,12 +276,12 @@ public class FelixRuntime {
         loggingFactory.configure(new MetricRegistry(), "xtraplatform");
     }
 
-    private ENV parseEnvironment() {
+    private Constants.ENV parseEnvironment() {
         return Optional.ofNullable(System.getenv(ENV_VAR))
-                       .filter(e -> Arrays.stream(ENV.values())
+                       .filter(e -> Arrays.stream(Constants.ENV.values())
                                           .map(Enum::name)
                                           .anyMatch(v -> Objects.equals(e, v)))
-                       .map(ENV::valueOf)
-                       .orElse(ENV.PRODUCTION);
+                       .map(Constants.ENV::valueOf)
+                       .orElse(Constants.ENV.PRODUCTION);
     }
 }

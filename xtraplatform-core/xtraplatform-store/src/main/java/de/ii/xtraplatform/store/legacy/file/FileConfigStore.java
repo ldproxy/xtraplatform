@@ -5,16 +5,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.kvstore.file;
+package de.ii.xtraplatform.store.legacy.file;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import de.ii.xtraplatform.kvstore.api.KeyNotFoundException;
-import de.ii.xtraplatform.kvstore.api.KeyValueStore;
-import de.ii.xtraplatform.kvstore.api.Transaction;
-import de.ii.xtraplatform.kvstore.api.WriteTransaction;
+import de.ii.xtraplatform.store.legacy.KeyValueStore;
+import de.ii.xtraplatform.store.legacy.KeyNotFoundException;
+import de.ii.xtraplatform.store.legacy.Transaction;
+import de.ii.xtraplatform.store.legacy.WriteTransaction;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,9 +1,9 @@
 package de.ii.xtraplatform.store.app;
 
 import akka.stream.ActorMaterializer;
-import de.ii.xtraplatform.akka.ActorSystemProvider;
-import de.ii.xtraplatform.dropwizard.api.StoreConfiguration.StoreMode;
-import de.ii.xtraplatform.dropwizard.api.XtraPlatform;
+import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
+import de.ii.xtraplatform.runtime.domain.StoreConfiguration.StoreMode;
+import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;

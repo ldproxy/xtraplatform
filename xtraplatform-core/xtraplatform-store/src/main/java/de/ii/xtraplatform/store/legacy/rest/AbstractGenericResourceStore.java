@@ -5,18 +5,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.kvstore.api.rest;
+package de.ii.xtraplatform.store.legacy.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
-import de.ii.xtraplatform.kvstore.api.KeyNotFoundException;
-import de.ii.xtraplatform.kvstore.api.KeyValueStore;
-import de.ii.xtraplatform.kvstore.api.Transaction;
-import de.ii.xtraplatform.kvstore.api.rest.ResourceTransaction.OPERATION;
-import de.ii.xtraplatform.api.Resource;
-import de.ii.xtraplatform.api.exceptions.WriteError;
+import de.ii.xtraplatform.store.legacy.KeyNotFoundException;
+import de.ii.xtraplatform.store.legacy.KeyValueStore;
+import de.ii.xtraplatform.store.legacy.Transaction;
+import de.ii.xtraplatform.store.legacy.rest.ResourceTransaction.OPERATION;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +25,12 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -376,7 +379,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
 
             LOGGER.debug("COMMITTED SRT");
 
-        } catch (IOException | WriteError ex) {
+        } catch (Throwable ex) {
             resourceTransaction.rollback();
 
             throw ex;

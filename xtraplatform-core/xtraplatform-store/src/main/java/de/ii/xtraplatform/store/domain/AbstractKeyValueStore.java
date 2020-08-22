@@ -1,6 +1,6 @@
 package de.ii.xtraplatform.store.domain;
 
-import de.ii.xtraplatform.event.store.EventSourcing;
+import de.ii.xtraplatform.store.app.EventSourcing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

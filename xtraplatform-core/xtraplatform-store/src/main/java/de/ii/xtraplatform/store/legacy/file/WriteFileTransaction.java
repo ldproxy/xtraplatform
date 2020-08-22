@@ -5,11 +5,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.kvstore.file;
+package de.ii.xtraplatform.store.legacy.file;
 
-import de.ii.xtraplatform.kvstore.api.WriteTransaction;
 
-import java.io.*;
+import de.ii.xtraplatform.store.legacy.WriteTransaction;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
 /**
  * Created by zahnen on 21.11.15.

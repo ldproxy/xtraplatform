@@ -1,9 +1,9 @@
 package de.ii.xtraplatform.store.infra;
 
 import com.google.common.collect.ImmutableList;
-import de.ii.xtraplatform.dropwizard.api.StoreConfiguration;
-import de.ii.xtraplatform.dropwizard.api.XtraPlatform;
-import de.ii.xtraplatform.runtime.FelixRuntime;
+import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
+import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
+import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.store.app.EventPaths;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.Identifier;
@@ -31,7 +31,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static de.ii.xtraplatform.api.functional.LambdaWithException.consumerMayThrow;
+import static de.ii.xtraplatform.dropwizard.domain.LambdaWithException.consumerMayThrow;
 
 @Component
 @Provides
@@ -51,11 +51,11 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
     EventStoreDriverFs(@Context BundleContext bundleContext,
                        @Requires XtraPlatform xtraPlatform) {
-        this.storeDirectory = getStoreDirectory(bundleContext.getProperty(FelixRuntime.DATA_DIR_KEY), xtraPlatform.getConfiguration().store);
+        this.storeDirectory = getStoreDirectory(bundleContext.getProperty(Constants.DATA_DIR_KEY), xtraPlatform.getConfiguration().store);
         this.eventPaths = new EventPaths(storeDirectory, xtraPlatform.getConfiguration().store.instancePathPattern, xtraPlatform.getConfiguration().store.overridesPathPatterns, this::adjustPathPattern);
         this.isEnabled = true; //TODO: xtraPlatform.getConfiguration().store.driver = StoreDriver.FS
 
-        List<Path> additionalDirectories = getAdditionalDirectories(bundleContext.getProperty(FelixRuntime.DATA_DIR_KEY), xtraPlatform.getConfiguration().store);
+        List<Path> additionalDirectories = getAdditionalDirectories(bundleContext.getProperty(Constants.DATA_DIR_KEY), xtraPlatform.getConfiguration().store);
         this.additionalEventPaths = additionalDirectories.stream()
                                                          .map(additionalDirectory -> new EventPaths(additionalDirectory, xtraPlatform.getConfiguration().store.instancePathPattern, xtraPlatform.getConfiguration().store.overridesPathPatterns, this::adjustPathPattern))
                                                          .collect(Collectors.toList());

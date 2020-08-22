@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.collect.ImmutableMap;
-import de.ii.xtraplatform.dropwizard.api.Jackson;
+import de.ii.xtraplatform.dropwizard.domain.Jackson;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.ValueDecoderMiddleware;
 import de.ii.xtraplatform.store.domain.ValueEncoding;

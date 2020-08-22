@@ -5,10 +5,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.kvstore.api.rest;
+package de.ii.xtraplatform.store.legacy.rest;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import de.ii.xtraplatform.api.Resource;
 
 import java.io.IOException;
 import java.io.Reader;

@@ -5,15 +5,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.kvstore.api;
+package de.ii.xtraplatform.store.legacy;
 
-import de.ii.xtraplatform.kvstore.api.rest.MultiTenantStore;
-import de.ii.xtraplatform.kvstore.api.rest.ResourceStore;
-import de.ii.xtraplatform.api.StoreRegistry;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
+import de.ii.xtraplatform.store.legacy.rest.StoreRegistry;
+import de.ii.xtraplatform.store.legacy.rest.MultiTenantStore;
+import de.ii.xtraplatform.store.legacy.rest.ResourceStore;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -21,6 +17,10 @@ import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
