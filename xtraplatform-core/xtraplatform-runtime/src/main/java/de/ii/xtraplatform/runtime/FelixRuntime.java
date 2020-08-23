@@ -158,8 +158,8 @@ public class FelixRuntime {
         try {
             felix.start();
 
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Felix started");
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Felix started");
             }
         } catch (Exception ex) {
             LOGGER.error("Could not start felix: {}", ex.getMessage());

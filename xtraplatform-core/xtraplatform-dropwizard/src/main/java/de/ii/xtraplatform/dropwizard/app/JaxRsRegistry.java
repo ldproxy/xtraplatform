@@ -269,7 +269,9 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
                 .ifPresent(servletHolder -> {
                     try {
                         servletHolder.doStop();
-                        LOGGER.debug("Stopped ServletHolder {})", servletHolder.getName());
+                        if (LOGGER.isTraceEnabled()) {
+                            LOGGER.trace("Stopped ServletHolder {})", servletHolder.getName());
+                        }
                     } catch (Exception e) {
                         // ignore
                     }

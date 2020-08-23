@@ -9,6 +9,8 @@ package de.ii.xtraplatform.dropwizard.app;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Appender;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Strings;
@@ -127,7 +129,15 @@ public class DropwizardProvider implements Dropwizard {
         //LOGGER.warn(FrameworkMessages.GLOBALLY_ENABLED_JSON_PRETTY_PRINTING);
         //}
 
-        LOGGER.info("Store mode: {}", configuration.store.mode);
+        environment.metrics().removeMatching(new MetricFilter() {
+            @Override
+            public boolean matches(String name, Metric metric) {
+                if (name.startsWith("jvm.memory.pools") || name.startsWith("ch.qos.logback")) {
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
     //@Override

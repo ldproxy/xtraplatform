@@ -177,7 +177,7 @@ public class WebServerDropwizard {
             LOGGER.trace("DW START");
         }
 
-        startStopThread.schedule(new StartStop(StartStopAction.START), 15, TimeUnit.SECONDS);
+        startStopThread.schedule(new StartStop(StartStopAction.START), 10, TimeUnit.SECONDS);
     }
 
     protected void stop() {

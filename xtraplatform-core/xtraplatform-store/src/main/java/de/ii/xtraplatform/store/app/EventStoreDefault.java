@@ -1,6 +1,7 @@
 package de.ii.xtraplatform.store.app;
 
 import akka.stream.ActorMaterializer;
+import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
 import de.ii.xtraplatform.runtime.domain.StoreConfiguration.StoreMode;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
@@ -30,6 +31,7 @@ public class EventStoreDefault implements EventStore {
 
     private final EventStoreDriver driver;
     private final EventSubscriptions subscriptions;
+    private final StoreConfiguration storeConfiguration;
     private final boolean isReadOnly;
 
     EventStoreDefault(@Context BundleContext bundleContext,
@@ -38,11 +40,14 @@ public class EventStoreDefault implements EventStore {
                       @Requires EventStoreDriver eventStoreDriver) {
         this.driver = eventStoreDriver;
         this.subscriptions = new EventSubscriptions(ActorMaterializer.create(actorSystemProvider.getActorSystem(bundleContext)));
-        this.isReadOnly = xtraPlatform.getConfiguration().store.mode == StoreMode.READ_ONLY;
+        this.storeConfiguration = xtraPlatform.getConfiguration().store;
+        this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
     }
 
     @Validate
     private void onInit() {
+        LOGGER.info("Store mode: {}", storeConfiguration.mode);
+
         driver.start();
 
         driver.loadEventStream()

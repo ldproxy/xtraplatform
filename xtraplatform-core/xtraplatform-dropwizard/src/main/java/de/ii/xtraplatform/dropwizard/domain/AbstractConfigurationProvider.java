@@ -102,6 +102,8 @@ public abstract class AbstractConfigurationProvider<T extends XtraPlatformConfig
 
         initializer.accept(bootstrap);
 
+        bootstrap.registerMetrics();
+
         return bootstrap;
     }
 
