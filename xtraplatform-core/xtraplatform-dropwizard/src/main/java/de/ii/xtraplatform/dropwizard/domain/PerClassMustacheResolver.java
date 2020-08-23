@@ -1,4 +1,4 @@
-package de.ii.xtraplatform.dropwizard.app;
+package de.ii.xtraplatform.dropwizard.domain;
 
 import de.ii.xtraplatform.dropwizard.domain.PartialMustacheResolver;
 import org.apache.felix.ipojo.annotations.Component;

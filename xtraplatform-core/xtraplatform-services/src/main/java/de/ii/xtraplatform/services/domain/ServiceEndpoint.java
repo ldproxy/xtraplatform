@@ -11,14 +11,6 @@ package de.ii.xtraplatform.services.domain;
  *
  * @author zahnen
  */
-public interface ServiceResource {
+public interface ServiceEndpoint {
     String SERVICE_TYPE_KEY = "serviceType";
-
-    //ServiceData getService();
-
-    //void setService(ServiceData service);
-
-    //void init(ObjectMapper defaultObjectMapper, EntityRepository entityRepository, AuthorizationProvider permProvider);
-
-    //void setMustacheRenderer(ViewRenderer mustacheRenderer);
 }

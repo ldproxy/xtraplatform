@@ -18,7 +18,7 @@ import de.ii.xtraplatform.store.domain.entities.handler.Entity;
 import de.ii.xtraplatform.store.domain.entities.legacy.EntityRepository;
 import de.ii.xtraplatform.store.domain.entities.legacy.EntityRepositoryChangeListener;
 import de.ii.xtraplatform.store.domain.entities.legacy.RemoveEntityData;
-import de.ii.xtraplatform.store.legacy.KeyValueStore;
+import de.ii.xtraplatform.store.domain.legacy.KeyValueStore;
 import de.ii.xtraplatform.store.legacy.rest.AbstractGenericResourceStore;
 import de.ii.xtraplatform.store.legacy.rest.ResourceSerializer;
 import de.ii.xtraplatform.store.legacy.rest.ResourceStore;

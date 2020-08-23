@@ -10,7 +10,7 @@ package de.ii.xtraplatform.store.legacy.file;
 import static de.ii.xtraplatform.runtime.domain.Constants.DATA_DIR_KEY;
 import java.io.File;
 
-import de.ii.xtraplatform.store.legacy.KeyValueStore;
+import de.ii.xtraplatform.store.domain.legacy.KeyValueStore;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;

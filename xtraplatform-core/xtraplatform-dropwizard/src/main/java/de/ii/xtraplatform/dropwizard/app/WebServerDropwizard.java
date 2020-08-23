@@ -25,7 +25,9 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletRegistration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -44,10 +46,6 @@ public class WebServerDropwizard {
     @Context
     private BundleContext context;
 
-    // wait for logging
-    //@Requires
-    //private LogStore logStore;
-
     @Requires
     private Dropwizard dw;
 
@@ -57,7 +55,7 @@ public class WebServerDropwizard {
 
     private boolean started;
     private final Lock startStopLock;
-    private final ExecutorService startStopThread;
+    private final ScheduledExecutorService startStopThread;
 
     public WebServerDropwizard() {
 
@@ -65,7 +63,7 @@ public class WebServerDropwizard {
 
         this.startStopLock = new ReentrantLock();
 
-        this.startStopThread = Executors.newSingleThreadExecutor(new ThreadFactory() {
+        this.startStopThread = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -179,7 +177,7 @@ public class WebServerDropwizard {
             LOGGER.trace("DW START");
         }
 
-        startStopThread.submit(new StartStop(StartStopAction.START));
+        startStopThread.schedule(new StartStop(StartStopAction.START), 15, TimeUnit.SECONDS);
     }
 
     protected void stop() {
@@ -203,31 +201,10 @@ public class WebServerDropwizard {
 
             dw.getJersey().setUrlPattern(JERSEY_ENDPOINT);
 
-            //dw.getJersey().register(new FakeResource());
-
-            // TODO: verify
-            //dw.getJersey().getResourceConfig().register(QueryParamConnegFilter.class);
-            //dw.getJersey().getResourceConfig().getContainerRequestFilters().add(QueryParamConnegFilter.class);
-
-            // TODO: no longer part of jersey, replace with: https://stackoverflow.com/questions/23600676/how-to-normalize-uris-in-jersey-2
-            //dw.getJersey().enable(ResourceConfig.FEATURE_CANONICALIZE_URI_PATH);
-
             this.server = dw.getConfiguration().getServerFactory().build(dw.getEnvironment());
 
             ServletRegistration.Dynamic servlet = dw.getServlets().addServlet("osgi", new ProxyServlet());
             servlet.addMapping(APP_ENDPOINT);
-
-            /*dw.getEnvironment().getAdminContext().destroy();
-            for (Connector c : server.getConnectors()) {
-                if (c.getName().equals("admin")) {
-                    try {
-                        c.stop();
-                        server.removeConnector(c);
-                    } catch (Exception ex) {
-                        LOGGER.debug("Error removing connector {}", c.getName(), ex);
-                    }
-                }
-            }*/
 
             this.initialized = true;
         }
@@ -260,54 +237,9 @@ public class WebServerDropwizard {
             LOGGER.trace("DW CLEANUP 3");
         }
 
-        // cleanup session manager
-        /*if (this.sessionManager == null) {
-            disableSessionManager();
-        } else {
-            enableSessionManager(sessionManager);
-        }*/
-
         // cleanup url
         this.url = "";
     }
-
-    // TODO: reimplement
-    /*@Bind(optional = true, policy = BindingPolicy.DYNAMIC_PRIORITY)
-    public void bind(SessionManager sm) {
-        LOGGER.debug("DW BIND");
-
-        this.sessionManager = sm;
-
-        restart();
-    }
-
-    @Unbind
-    public void unbind(SessionManager sm) {
-        LOGGER.debug("DW UNBIND");
-
-        this.sessionManager = null;
-
-        restart();
-    }*/
-
-    /*private void enableSessionManager(SessionManager sm) {
-        if (!(sm instanceof Nullable || sm == null)) {
-            LOGGER.debug("enableSessionManager: {}", sm);
-
-            org.eclipse.jetty.server.SessionManager sm2 = sm.getSessionManager();
-            dw.getApplicationContext().setSessionHandler(new SessionHandler(sm2));
-            dw.getApplicationContext().setSessionsEnabled(true);
-            dw.getApplicationContext().getServer().setSessionIdManager(sm.getSessionIdManager());
-        }
-    }
-
-    private void disableSessionManager() {
-        LOGGER.debug("disableSessionManager");
-
-        dw.getApplicationContext().setSessionHandler(null);
-        dw.getApplicationContext().setSessionsEnabled(false);
-        dw.getApplicationContext().getServer().setSessionIdManager(null);
-    }*/
 
     public String getUrl() {
         if (url.isEmpty()) {

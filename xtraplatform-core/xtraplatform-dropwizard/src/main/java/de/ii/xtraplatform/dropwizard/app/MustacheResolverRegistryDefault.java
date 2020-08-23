@@ -24,7 +24,7 @@ import java.util.Optional;
 @Provides
 @Instantiate
 @Wbp(
-        filter = "(objectClass=de.ii.xtraplatform.dropwizard.views.PartialMustacheResolver)",
+        filter = "(objectClass=de.ii.xtraplatform.dropwizard.domain.PartialMustacheResolver)",
         onArrival = "onArrival",
         onDeparture = "onDeparture")
 public class MustacheResolverRegistryDefault implements MustacheResolverRegistry {

@@ -14,6 +14,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import de.ii.xtraplatform.dropwizard.domain.MustacheRenderer;
 import de.ii.xtraplatform.dropwizard.domain.MustacheResolverRegistry;
 import io.dropwizard.views.View;
 import io.dropwizard.views.ViewRenderException;
@@ -31,7 +32,7 @@ import java.util.Optional;
 /**
  * @author zahnen
  */
-public class FallbackMustacheViewRenderer extends MustacheViewRenderer {
+public class FallbackMustacheViewRenderer extends MustacheViewRenderer implements MustacheRenderer {
 
     private final LoadingCache<Class<? extends View>, MustacheFactory> factories;
     private final MustacheResolverRegistry mustacheResolverRegistry;
@@ -66,6 +67,7 @@ public class FallbackMustacheViewRenderer extends MustacheViewRenderer {
         }
     }
 
+    @Override
     public void render(View view, OutputStreamWriter writer) throws IOException {
         try {
             final MustacheFactory mustacheFactory = useCache ? factories.get(view.getClass())

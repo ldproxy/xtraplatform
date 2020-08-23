@@ -9,8 +9,8 @@ package de.ii.xtraplatform.store.legacy.file;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import de.ii.xtraplatform.store.legacy.KeyValueStore;
-import de.ii.xtraplatform.store.legacy.KeyNotFoundException;
+import de.ii.xtraplatform.store.domain.legacy.KeyValueStore;
+import de.ii.xtraplatform.store.domain.legacy.KeyNotFoundException;
 import de.ii.xtraplatform.store.legacy.Transaction;
 import de.ii.xtraplatform.store.legacy.WriteTransaction;
 

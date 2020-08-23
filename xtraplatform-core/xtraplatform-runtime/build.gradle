@@ -13,13 +13,10 @@ dependencies {
     systemBundle (group: 'io.dropwizard', name: 'dropwizard-json-logging', version: dropwizardVersion)
     systemBundle group: 'org.threeten', name: 'threeten-extra', version: '1.3.2'
 
-    if(JavaVersion.current().isJava11Compatible()) {
-        //java >= 11
-        systemBundle group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'
-        systemBundle group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.12'
-        systemBundle group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
-        systemBundle group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
-    }
+    systemBundle group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'
+    systemBundle group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.12'
+    systemBundle group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
+    systemBundle group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
 
 }
 

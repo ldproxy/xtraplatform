@@ -29,8 +29,6 @@ import javax.ws.rs.ext.Provider;
 @Provider
 public class ServiceContextBinder extends AbstractBinder implements Binder, ServiceInjectableContext {
 
-    public static final String SERVICE_CONTEXT_KEY = "XP_SERVICE";
-
     //TODO: bind every subtype
     @Override
     protected void configure() {
@@ -39,7 +37,7 @@ public class ServiceContextBinder extends AbstractBinder implements Binder, Serv
 
     @Override
     public void inject(ContainerRequestContext containerRequestContext, Service service) {
-        containerRequestContext.setProperty(SERVICE_CONTEXT_KEY, service);
+        containerRequestContext.setProperty(ServiceInjectableContext.SERVICE_CONTEXT_KEY, service);
     }
 
     public static class ServiceFactory extends AbstractContainerRequestValueFactory<Service> {
@@ -47,7 +45,7 @@ public class ServiceContextBinder extends AbstractBinder implements Binder, Serv
         @Override
         @RequestScoped
         public Service provide() {
-            return (Service) getContainerRequest().getProperty(SERVICE_CONTEXT_KEY);
+            return (Service) getContainerRequest().getProperty(ServiceInjectableContext.SERVICE_CONTEXT_KEY);
         }
     }
 }

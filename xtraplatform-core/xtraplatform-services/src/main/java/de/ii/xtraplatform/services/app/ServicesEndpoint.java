@@ -10,13 +10,12 @@ package de.ii.xtraplatform.services.app;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.dropwizard.domain.MediaTypeCharset;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceData;
+import de.ii.xtraplatform.services.domain.ServiceEndpoint;
 import de.ii.xtraplatform.services.domain.ServiceInjectableContext;
 import de.ii.xtraplatform.services.domain.ServiceListingProvider;
-import de.ii.xtraplatform.services.domain.ServiceResource;
-import de.ii.xtraplatform.services.domain.ServiceResourceFactory;
+import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import io.dropwizard.jersey.caching.CacheControl;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -43,7 +42,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,27 +53,23 @@ import java.util.stream.Collectors;
  * @author zahnen
  */
 @Component
-@Provides(specifications = {ServicesResource.class})
+@Provides(specifications = {ServicesEndpoint.class})
 @Instantiate
 @Whiteboards(whiteboards = {
         @Wbp(
-                filter = "(objectClass=de.ii.xtraplatform.service.api.ServiceResource)",
+                filter = "(objectClass=de.ii.xtraplatform.services.domain.ServiceEndpoint)",
                 onArrival = "onServiceResourceArrival",
                 onDeparture = "onServiceResourceDeparture"),
         @Wbp(
-                filter = "(objectClass=de.ii.xtraplatform.service.api.ServiceResourceFactory)",
-                onArrival = "onServiceResourceFactoryArrival",
-                onDeparture = "onServiceResourceFactoryDeparture"),
-        @Wbp(
-                filter = "(objectClass=de.ii.xtraplatform.service.api.ServiceListingProvider)",
+                filter = "(objectClass=de.ii.xtraplatform.services.domain.ServiceListingProvider)",
                 onArrival = "onServiceListingProviderArrival",
                 onDeparture = "onServiceListingProviderDeparture")
 })
 @Path("/services/")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
-public class ServicesResource {
+public class ServicesEndpoint {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServicesResource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServicesEndpoint.class);
 
     @Requires
     private EntityRegistry entityRegistry;
@@ -89,42 +83,25 @@ public class ServicesResource {
     @Requires
     private XtraPlatform xtraPlatform;
 
-    private Map<String, ServiceResourceFactory> serviceResourceFactories;
-    private Map<String, ServiceResource> serviceResources;
+    private Map<String, ServiceEndpoint> serviceResources;
     private Map<MediaType, ServiceListingProvider> serviceListingProviders;
 
     @org.apache.felix.ipojo.annotations.Context
     private BundleContext context;
 
-    public synchronized void onServiceResourceArrival(ServiceReference<ServiceResource> ref) {
-        ServiceResource sr = context.getService(ref);
-        String type = (String) ref.getProperty(ServiceResource.SERVICE_TYPE_KEY);
+    public synchronized void onServiceResourceArrival(ServiceReference<ServiceEndpoint> ref) {
+        ServiceEndpoint sr = context.getService(ref);
+        String type = (String) ref.getProperty(ServiceEndpoint.SERVICE_TYPE_KEY);
         if (sr != null && type != null) {
             serviceResources.put(type, sr);
         }
     }
 
-    public synchronized void onServiceResourceDeparture(ServiceReference<ServiceResource> ref) {
-        ServiceResource sr = context.getService(ref);
-        String type = (String) ref.getProperty(ServiceResource.SERVICE_TYPE_KEY);
+    public synchronized void onServiceResourceDeparture(ServiceReference<ServiceEndpoint> ref) {
+        ServiceEndpoint sr = context.getService(ref);
+        String type = (String) ref.getProperty(ServiceEndpoint.SERVICE_TYPE_KEY);
         if (sr != null && type != null) {
             serviceResources.remove(type);
-        }
-    }
-
-    public synchronized void onServiceResourceFactoryArrival(ServiceReference<ServiceResourceFactory> ref) {
-        ServiceResourceFactory sr = context.getService(ref);
-        String type = (String) ref.getProperty(ServiceResource.SERVICE_TYPE_KEY);
-        if (sr != null && type != null) {
-            serviceResourceFactories.put(type, sr);
-        }
-    }
-
-    public synchronized void onServiceResourceFactoryDeparture(ServiceReference<ServiceResourceFactory> ref) {
-        ServiceResourceFactory sr = context.getService(ref);
-        String type = (String) ref.getProperty(ServiceResource.SERVICE_TYPE_KEY);
-        if (sr != null && type != null) {
-            serviceResourceFactories.remove(type);
         }
     }
 
@@ -146,8 +123,7 @@ public class ServicesResource {
         }
     }
 
-    public ServicesResource() {
-        this.serviceResourceFactories = new HashMap<>();
+    public ServicesEndpoint() {
         this.serviceResources = new LinkedHashMap<>();
         this.serviceListingProviders = new LinkedHashMap<>();
     }
@@ -206,13 +182,13 @@ public class ServicesResource {
     }
 
     @Path("/{service}/")
-    public ServiceResource getServiceResource(@PathParam("service") String id, @QueryParam("callback") String callback,
+    public ServiceEndpoint getServiceResource(@PathParam("service") String id, @QueryParam("callback") String callback,
                                               @Context ContainerRequestContext containerRequestContext) {
         return getVersionedServiceResource(id, callback, containerRequestContext, null);
     }
 
     @Path("/{service}/v{version}/")
-    public ServiceResource getVersionedServiceResource(@PathParam("service") String id,
+    public ServiceEndpoint getVersionedServiceResource(@PathParam("service") String id,
                                                        @QueryParam("callback") String callback,
                                                        @Context ContainerRequestContext containerRequestContext,
                                                        @PathParam("version") Integer version) {
@@ -261,7 +237,7 @@ public class ServicesResource {
 
     // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory 
     // TODO: cache resource object per service
-    private ServiceResource getServiceResource(Service s) {
+    private ServiceEndpoint getServiceResource(Service s) {
         return serviceResources.get(s.getServiceType());
     }
 

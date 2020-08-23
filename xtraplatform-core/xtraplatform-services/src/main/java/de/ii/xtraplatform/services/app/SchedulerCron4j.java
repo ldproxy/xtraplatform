@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 @Provides
 @Instantiate
 @Wbp(
-        filter = "(objectClass=de.ii.xtraplatform.scheduler.api.SchedulerTask)",
+        filter = "(objectClass=de.ii.xtraplatform.services.domain.SchedulerTask)",
         onArrival = "onTaskArrival",
         onDeparture = "onTaskDeparture")
 public class SchedulerCron4j implements Scheduler {
