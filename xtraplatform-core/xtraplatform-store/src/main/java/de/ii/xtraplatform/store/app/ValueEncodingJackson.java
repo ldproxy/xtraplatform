@@ -117,7 +117,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
         }
 
         byte[] rawData = payload;
-        FORMAT payloadFormat = Objects.equals(format, FORMAT.UNKNOWN) ? DESER_FORMAT_LEGACY : format;
+        FORMAT payloadFormat = Objects.equals(format, FORMAT.NONE) ? DESER_FORMAT_LEGACY : format;
         ObjectMapper objectMapper = getMapper(payloadFormat);
         T data = null;
 

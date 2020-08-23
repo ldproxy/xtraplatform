@@ -13,11 +13,11 @@ public interface ValueEncoding<T> {
     ObjectMapper getMapper(FORMAT format);
 
     enum FORMAT {
-        UNKNOWN, JSON, YML, YAML/*, ION*/;
+        NONE, JSON, YML, YAML, UNKNOWN/*, ION*/;
 
         public static FORMAT fromString(String format) {
             if (Objects.isNull(format)) {
-                return UNKNOWN;
+                return NONE;
             }
 
             for (FORMAT f: values()) {
@@ -26,11 +26,15 @@ public interface ValueEncoding<T> {
                 }
             }
 
-            throw new IllegalArgumentException();
+            return UNKNOWN;
         }
     }
 
     FORMAT getDefaultFormat();
+
+    default boolean isSupported(String format) {
+        return FORMAT.fromString(format) != FORMAT.UNKNOWN;
+    }
 
     byte[] serialize(T data);
 

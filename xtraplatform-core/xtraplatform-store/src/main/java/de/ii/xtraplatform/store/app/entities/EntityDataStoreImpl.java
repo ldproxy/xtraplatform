@@ -122,7 +122,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     //TODO: onEmit middleware
     private List<MutationEvent> processEvent(MutationEvent event) {
 
-        if (valueEncoding.isEmpty(event.payload())) {
+        if (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format())) {
             return ImmutableList.of();
         }
 

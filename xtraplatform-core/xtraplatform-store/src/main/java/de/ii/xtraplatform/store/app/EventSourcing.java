@@ -143,20 +143,27 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     }
 
     private void onEmit(MutationEvent event) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Adding event: {} {}", event.type(), event.identifier());
+        Identifier key = event.identifier();
+        ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(event.format());
+
+        if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN) {
+            if (queue.containsKey(key)) {
+                queue.remove(key)
+                     .complete(null);
+            }
+            return;
         }
 
-        Identifier key = event.identifier();
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Adding event: {} {} {}", event.type(), event.identifier(), event.format());
+        }
+
         T value;
 
         try {
-            ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(event.format());
-
             value = valueEncoding.deserialize(event.identifier(), event.payload(), payloadFormat);
 
         } catch (Throwable e) {
-            LOGGER.error("Could not deserialize {} {}, format '{}' unknown.", event.type(), event.identifier(), event.format());
             value = cache.getOrDefault(key, null);
         }
 
