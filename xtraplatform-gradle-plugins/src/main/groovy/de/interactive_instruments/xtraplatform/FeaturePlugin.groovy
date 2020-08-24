@@ -65,22 +65,22 @@ class FeaturePlugin implements Plugin<Project> {
 
     void addFeatureBundles(Project project, includedBuilds) {
         project.afterEvaluate {
-            println "INC " + includedBuilds
+            //println "INC " + includedBuilds
             project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.collect().each {
                 def isIncludedBuild = includedBuilds.contains(it.moduleName)
 
                 if (!isIncludedBuild) {
-                    println "add bom " + it.moduleName + " to " + project.name
+                    //println "add bom " + it.moduleName + " to " + project.name
                     def bom = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
 
                     project.dependencies.add('featureBundles', project.dependencies.enforcedPlatform(bom))
 
-                    println "add bundles " + it.moduleName + "-bundles to " + project.name
+                    //println "add bundles " + it.moduleName + "-bundles to " + project.name
                     def bundles = [group: it.moduleGroup, name: "${it.moduleName}-bundles", version: it.moduleVersion]
 
                     project.dependencies.add('featureBundles', bundles)
                 } else {
-                    println "add included bundles " + it.moduleName + " to " + project.name
+                    //println "add included bundles " + it.moduleName + " to " + project.name
                     def bundles = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
 
                     project.dependencies.add('featureBundles', bundles)

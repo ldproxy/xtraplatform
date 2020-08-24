@@ -64,7 +64,7 @@ class BundlePlugin implements Plugin<Project> {
                 }
             }
             if (failed) {
-                throw new GradleException("Invalid imports found, aborting build.")
+                throw new GradleException("Invalid imports found, aborting build. Cross-bundle imports are only allowed from packages containing '.domain' or '.api'.")
             }
         }
     }
@@ -72,7 +72,7 @@ class BundlePlugin implements Plugin<Project> {
     void addEmbeddingToJarTask(Project project) {
         project.tasks.jar.doFirst {
             def doExport = project.jar.manifest.instructions.get("Embed-Export") != null && project.jar.manifest.instructions.get("Embed-Export")[0] == "true";
-            def doImport = project.jar.manifest.instructions.get("Embed-Import") != null && project.jar.manifest.instructions.get("Embed-Import")[0] == "true";
+            def doImport = project.jar.manifest.instructions.get("Embed-Import") == null || project.jar.manifest.instructions.get("Embed-Import")[0] != "false";
             def excludes = project.jar.manifest.instructions.get("Embed-Excludes")
 
             //if (embedInstruction != null) {
@@ -106,24 +106,24 @@ class BundlePlugin implements Plugin<Project> {
             }
 
             // determine all dependent artifacts to analyze packages to be imported
-            //if (doImport) {
-            def requiredArtifacts = [] as Set
-            def deps2 = Dependencies.getDependencies(project, 'embeddedExport', [], true) + Dependencies.getDependencies(project, 'embeddedFlatExport', [], false)
+            if (doImport) {
+                def requiredArtifacts = [] as Set
+                def deps2 = Dependencies.getDependencies(project, 'embeddedExport', [], true) + Dependencies.getDependencies(project, 'embeddedFlatExport', [], false) + Dependencies.getDependencies(project, 'embedded', [], true) + Dependencies.getDependencies(project, 'embeddedFlat', [], false)
 
-            deps2.each { dependency ->
-                dependency.moduleArtifacts.each { artifact ->
-                    requiredArtifacts.add(artifact.file)
+                deps2.each { dependency ->
+                    dependency.moduleArtifacts.each { artifact ->
+                        requiredArtifacts.add(artifact.file)
+                    }
+                }
+
+                requiredArtifacts.each { artifact ->
+                    // for bnd analysis
+                    project.copy {
+                        from artifact
+                        into project.jar.manifest.classesDir
+                    }
                 }
             }
-
-            requiredArtifacts.each { artifact ->
-                // for bnd analysis
-                project.copy {
-                    from artifact
-                    into project.jar.manifest.classesDir
-                }
-            }
-            //}
 
             // determine packages for export
             def pkgs = Dependencies.getPackages(deps)

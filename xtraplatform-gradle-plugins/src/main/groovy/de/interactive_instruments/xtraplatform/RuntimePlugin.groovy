@@ -53,7 +53,7 @@ class RuntimePlugin implements Plugin<Project> {
             exports2 += '\n}\n'
             exports += "\n.putAll(exports)"
             exports += "\n.put(\"${packageName}\", \"${project.version.replaceAll('-[a-z]+', '')}\")"
-            exports += "\n.put(\"de.ii.xtraplatform.configuration\", \"${project.version.replaceAll('-[a-z]+', '')}\")"
+            exports += "\n.put(\"${packageName}.domain\", \"${project.version.replaceAll('-[a-z]+', '')}\")"
 
             exports += "\n.build()"
 

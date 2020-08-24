@@ -1,26 +1,7 @@
 package de.interactive_instruments.xtraplatform;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.sun.javadoc.AnnotationDesc;
-import com.sun.javadoc.ClassDoc;
-import com.sun.javadoc.ConstructorDoc;
-import com.sun.javadoc.FieldDoc;
-import com.sun.javadoc.MethodDoc;
-import com.sun.javadoc.Parameter;
-import com.sun.javadoc.RootDoc;
-import com.sun.javadoc.Type;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class XtraPlatformDoclet {
-
+/* TODO: does not work with Java 11 in Intellij, seems to work in console
     public static void main(String... args){}
 
     public static int optionLength(String option) {
@@ -238,5 +219,5 @@ public class XtraPlatformDoclet {
         fw.flush();
         fw.close();
     }
-
+*/
 }
