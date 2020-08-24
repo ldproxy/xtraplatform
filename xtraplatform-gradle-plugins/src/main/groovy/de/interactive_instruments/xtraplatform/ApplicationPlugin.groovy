@@ -256,7 +256,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
         bundles.add(project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies)
         //TODO
-        return createBundleFileTree(project, bundles, [FeaturePlugin.XTRAPLATFORM_RUNTIME], 'de.ii.xtraplatform.store.domain.entities.handler:entity', [], ['xtraplatform-dropwizard', 'osgi-over-slf4j', 'org.apache.felix.ipojo', 'xtraproxy-config', 'ldproxy-config', 'xtraserver-webapi-config'])
+        return createBundleFileTree(project, bundles, [FeaturePlugin.XTRAPLATFORM_RUNTIME], 'de.ii.xtraplatform.store.domain.entities.handler:entity', [], ['xtraplatform-dropwizard', 'xtraplatform-auth', 'osgi-over-slf4j', 'org.apache.felix.ipojo', 'xtraproxy-config', 'ldproxy-config', 'xtraserver-webapi-config'])
     }
 
     String createDevBundleTree(Project project) {
@@ -271,7 +271,7 @@ class ApplicationPlugin implements Plugin<Project> {
         return features.toSorted { featureA, featureB ->
             if (featureA == featureB) return 0
             def dependsOn = featureA.children.stream().anyMatch({ child -> child == featureB })
-            return dependsOn ? -1 : 1
+            return dependsOn ? 1 : -1
         }
     }
 
