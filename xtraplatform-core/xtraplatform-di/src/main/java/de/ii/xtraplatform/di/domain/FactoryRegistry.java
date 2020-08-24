@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -7,18 +7,18 @@
  */
 package de.ii.xtraplatform.di.domain;
 
-import org.apache.felix.ipojo.Factory;
-
 import java.util.Map;
+import org.apache.felix.ipojo.Factory;
 
 public interface FactoryRegistry<T> extends Registry.State<Factory> {
 
-    String FACTORY_FILTER_PREFIX = "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=";
-    String FACTORY_FILTER_SUFFIX = "))";
+  String FACTORY_FILTER_PREFIX =
+      "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=";
+  String FACTORY_FILTER_SUFFIX = "))";
 
-    boolean ensureTypeExists();
+  boolean ensureTypeExists();
 
-    T createInstance(Map<String, Object> configuration, String... factoryProperties);
+  T createInstance(Map<String, Object> configuration, String... factoryProperties);
 
-    void disposeInstance(T instance);
+  void disposeInstance(T instance);
 }

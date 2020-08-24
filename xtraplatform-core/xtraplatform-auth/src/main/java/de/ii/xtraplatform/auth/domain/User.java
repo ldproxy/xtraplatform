@@ -1,5 +1,5 @@
-/**
- * Copyright 2018 interactive instruments GmbH
+/*
+ * Copyright 2018-2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,19 +7,20 @@
  */
 package de.ii.xtraplatform.auth.domain;
 
+import java.security.Principal;
 import org.immutables.value.Value;
 
-import java.security.Principal;
-
-/**
- * @author zahnen
- */
+/** @author zahnen */
 @Value.Immutable
 public interface User extends Principal {
 
-    @Value.Default
-    default Role getRole() {return Role.NONE;}
+  @Value.Default
+  default Role getRole() {
+    return Role.NONE;
+  }
 
-    @Value.Default
-    default boolean getForceChangePassword() {return false;}
+  @Value.Default
+  default boolean getForceChangePassword() {
+    return false;
+  }
 }

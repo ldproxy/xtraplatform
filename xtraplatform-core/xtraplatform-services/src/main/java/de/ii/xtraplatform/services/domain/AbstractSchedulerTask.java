@@ -1,5 +1,5 @@
-/**
- * Copyright 2018 interactive instruments GmbH
+/*
+ * Copyright 2018-2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,21 +7,18 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-/**
- *
- * @author zahnen
- */
+/** @author zahnen */
 public abstract class AbstractSchedulerTask implements SchedulerTask {
 
-    private String id;
-    
-    @Override
-    public String getId() {
-        return id;
-    }
+  private String id;
 
-    @Override
-    public void setId(String id) {
-        this.id = id;
-    }
+  @Override
+  public String getId() {
+    return id;
+  }
+
+  @Override
+  public void setId(String id) {
+    this.id = id;
+  }
 }

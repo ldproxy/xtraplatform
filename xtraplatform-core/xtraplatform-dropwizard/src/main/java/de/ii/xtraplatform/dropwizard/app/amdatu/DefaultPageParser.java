@@ -1,5 +1,5 @@
-/**
- * Copyright 2018 interactive instruments GmbH
+/*
+ * Copyright 2015-2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -11,71 +11,71 @@ import java.util.Scanner;
 
 /**
  * Parses the {@link Constants#WEB_RESOURCE_DEFAULT_PAGE} bundle header into a list of names.
- * <p>
- * Allowed syntax for this header is (in pseudo-BNF):
- * </p>
+ *
+ * <p>Allowed syntax for this header is (in pseudo-BNF):
+ *
  * <pre>
  * header ::= entries
- * 
+ *
  * entries ::= entry (',' entries)?
- * 
+ *
  * entry ::= default | path '=' default
- * 
+ *
  * default ::= URLCHAR+
- * 
+ *
  * path ::= '/'? URLCHAR*
- * 
+ *
  * URLCHAR ::= all characters accepted in a URL (see RFC 1738).
  * </pre>
  */
 public class DefaultPageParser {
 
-    /**
-     * Parses a given key into a {@link DefaultPages} instance.
-     * 
-     * @param key the key to parse, can be <code>null</code> or empty.
-     * @return the {@link DefaultPages} instance with the parsed information, never <code>null</code>.
-     * @throws InvalidEntryException in case the given key contained an invalid entry.
-     */
-    public static DefaultPages parseDefaultPages(String key) throws InvalidEntryException {
-        DefaultPages defaultPages = new DefaultPages();
+  /**
+   * Parses a given key into a {@link DefaultPages} instance.
+   *
+   * @param key the key to parse, can be <code>null</code> or empty.
+   * @return the {@link DefaultPages} instance with the parsed information, never <code>null</code>.
+   * @throws InvalidEntryException in case the given key contained an invalid entry.
+   */
+  public static DefaultPages parseDefaultPages(String key) throws InvalidEntryException {
+    DefaultPages defaultPages = new DefaultPages();
 
-        if ((key != null) && !"".equals(key.trim())) {
-            Scanner scanner = new Scanner(key);
-            scanner.useDelimiter(",\\s*");
+    if ((key != null) && !"".equals(key.trim())) {
+      Scanner scanner = new Scanner(key);
+      scanner.useDelimiter(",\\s*");
 
-            try {
-                while (scanner.hasNext()) {
-                    String entry = scanner.next().trim();
+      try {
+        while (scanner.hasNext()) {
+          String entry = scanner.next().trim();
 
-                    if ("".equals(entry)) {
-                        throw new InvalidEntryException(key, entry);
-                    }
+          if ("".equals(entry)) {
+            throw new InvalidEntryException(key, entry);
+          }
 
-                    parseDefaultPageEntry(defaultPages, entry);
-                }
-            } finally {
-                scanner.close();
-            }
-
+          parseDefaultPageEntry(defaultPages, entry);
         }
-
-        return defaultPages;
+      } finally {
+        scanner.close();
+      }
     }
 
-    private static void parseDefaultPageEntry(DefaultPages defaultPages, String entry) throws InvalidEntryException {
-        try {
-            int idx = entry.indexOf('=');
-            if (idx >= 0) {
-                String path = entry.substring(0, idx).trim();
-                String page = entry.substring(idx + 1).trim();
+    return defaultPages;
+  }
 
-                defaultPages.addDefault(path, page);
-            } else {
-                defaultPages.addGlobalDefault(entry);
-            }
-        } catch (IllegalArgumentException e) {
-            throw new InvalidEntryException("Invalid entry!", entry);
-        }
+  private static void parseDefaultPageEntry(DefaultPages defaultPages, String entry)
+      throws InvalidEntryException {
+    try {
+      int idx = entry.indexOf('=');
+      if (idx >= 0) {
+        String path = entry.substring(0, idx).trim();
+        String page = entry.substring(idx + 1).trim();
+
+        defaultPages.addDefault(path, page);
+      } else {
+        defaultPages.addGlobalDefault(entry);
+      }
+    } catch (IllegalArgumentException e) {
+      throw new InvalidEntryException("Invalid entry!", entry);
     }
+  }
 }

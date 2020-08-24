@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -7,44 +7,38 @@
  */
 package de.ii.xtraplatform.di.domain;
 
-
-import org.osgi.framework.ServiceReference;
-
 import java.util.Optional;
+import org.osgi.framework.ServiceReference;
 
 public interface Registry<T> {
 
-    String ON_ARRIVAL_METHOD = "onArrival";
-    String ON_DEPARTURE_METHOD = "onDeparture";
-    String FILTER_PREFIX = "(objectClass=";
-    String FILTER_SUFFIX = ")";
+  String ON_ARRIVAL_METHOD = "onArrival";
+  String ON_DEPARTURE_METHOD = "onDeparture";
+  String FILTER_PREFIX = "(objectClass=";
+  String FILTER_SUFFIX = ")";
 
-    interface State<U> {
+  interface State<U> {
 
-        Optional<U> get(String... identifiers);
+    Optional<U> get(String... identifiers);
 
-        Optional<U> onArrival(ServiceReference<U> ref);
+    Optional<U> onArrival(ServiceReference<U> ref);
 
-        Optional<U> onDeparture(ServiceReference<U> ref);
-    }
+    Optional<U> onDeparture(ServiceReference<U> ref);
+  }
 
-    Registry.State<T> getRegistryState();
+  Registry.State<T> getRegistryState();
 
-    default void onArrival(ServiceReference<T> ref) {
-        Optional<T> t = getRegistryState().onArrival(ref);
-        onRegister(t);
-    }
+  default void onArrival(ServiceReference<T> ref) {
+    Optional<T> t = getRegistryState().onArrival(ref);
+    onRegister(t);
+  }
 
-    default void onDeparture(ServiceReference<T> ref) {
-        Optional<T> t = getRegistryState().onDeparture(ref);
-        onDeregister(t);
-    }
+  default void onDeparture(ServiceReference<T> ref) {
+    Optional<T> t = getRegistryState().onDeparture(ref);
+    onDeregister(t);
+  }
 
-    default void onRegister(Optional<T> instance) {
+  default void onRegister(Optional<T> instance) {}
 
-    }
-
-    default void onDeregister(Optional<T> instance) {
-
-    }
+  default void onDeregister(Optional<T> instance) {}
 }

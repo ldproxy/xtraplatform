@@ -1,5 +1,5 @@
-/**
- * Copyright 2018 interactive instruments GmbH
+/*
+ * Copyright 2018-2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -11,17 +11,15 @@ import io.dropwizard.auth.Authorizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 public class UserAuthorizer implements Authorizer<User> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserAuthorizer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(UserAuthorizer.class);
 
-    @Override
-    public boolean authorize(User user, String role) {
-        LOGGER.debug("Authorizing {} for role {}", user, role);
+  @Override
+  public boolean authorize(User user, String role) {
+    LOGGER.debug("Authorizing {} for role {}", user, role);
 
-        return user.getRole().isGreaterOrEqual(Role.fromString(role));
-    }
+    return user.getRole().isGreaterOrEqual(Role.fromString(role));
+  }
 }

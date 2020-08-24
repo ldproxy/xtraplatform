@@ -1,5 +1,11 @@
+/*
+ * Copyright 2019-2020 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.runtime;
-
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,12 +19,6 @@ import de.ii.xtraplatform.runtime.domain.Constants;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.util.Duration;
-import org.apache.felix.framework.Felix;
-import org.apache.felix.framework.util.FelixConstants;
-import org.apache.felix.main.AutoProcessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,258 +30,259 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.felix.framework.Felix;
+import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.main.AutoProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 public class FelixRuntime {
+  private static final Logger LOGGER = LoggerFactory.getLogger(FelixRuntime.class);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FelixRuntime.class);
+  private static final String ENV_VAR = "XTRAPLATFORM_ENV";
+  private static final String DATA_DIR_NAME = "data";
+  private static final String BUNDLES_DIR_NAME = "bundles";
+  private static final String FELIX_CACHE_DIR_NAME = "felix-cache";
 
-    private static final String ENV_VAR = "XTRAPLATFORM_ENV";
-    private static final String DATA_DIR_NAME = "data";
-    private static final String BUNDLES_DIR_NAME = "bundles";
-    private static final String FELIX_CACHE_DIR_NAME = "felix-cache";
+  private final String name;
+  private final String version;
+  private Felix felix;
 
-    private final String name;
-    private final String version;
-    private Felix felix;
+  public FelixRuntime(String name, String version) {
+    this.name = name;
+    this.version = version;
+  }
 
-    public FelixRuntime(String name, String version) {
-        this.name = name;
-        this.version = version;
+  public void init(
+      String[] args,
+      List<List<String>> bundles,
+      List<List<String>> devBundles,
+      List<ByteSource> baseConfigs) {
+    Map<String, String> felixConfig = new HashMap<>();
+    Path dataDir =
+        getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
+    Path bundlesDir =
+        getBundlesDir(args)
+            .orElseThrow(() -> new IllegalArgumentException("No bundles directory found"));
+    Constants.ENV env = parseEnvironment();
+    ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
+    Path configurationFile = configurationReader.getConfigurationFile(dataDir, env);
+
+    configurationReader.loadMergedLogging(configurationFile, env);
+
+    // preloadLoggingConfiguration(dataDir.resolve(CONFIG_FILE_NAME),
+    // dataDir.resolve(CONFIG_FILE_NAME_LEGACY));
+
+    LOGGER.info("--------------------------------------------------");
+    LOGGER.info("Starting {} {}", name, version);
+
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Data directory: {}", dataDir);
+      LOGGER.debug("Bundles directory: {}", bundlesDir);
+      LOGGER.debug("Environment: {}", env);
     }
 
-    public void init(String[] args, List<List<String>> bundles, List<List<String>> devBundles, List<ByteSource> baseConfigs) {
-        Map<String, String> felixConfig = new HashMap<>();
-        Path dataDir = getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
-        Path bundlesDir = getBundlesDir(args).orElseThrow(() -> new IllegalArgumentException("No bundles directory found"));
-        Constants.ENV env = parseEnvironment();
-        ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
-        Path configurationFile = configurationReader.getConfigurationFile(dataDir, env);
+    // trace
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Base configs: {}", baseConfigs);
+      try {
+        String cfg = configurationReader.loadMergedConfig(configurationFile, env);
+        LOGGER.debug("Application configuration: {}", cfg);
+      } catch (IOException e) {
+        // ignore
+      }
+    }
 
-        configurationReader.loadMergedLogging(configurationFile, env);
+    String bundlePrefix =
+        "reference:file:" + bundlesDir.toAbsolutePath().toString().replaceAll(" ", "%20") + "/";
+    int startLevel = 1;
 
-        //preloadLoggingConfiguration(dataDir.resolve(CONFIG_FILE_NAME), dataDir.resolve(CONFIG_FILE_NAME_LEGACY));
+    for (List<String> level : bundles) {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Level {} Bundles: {}", startLevel, level);
+      }
 
-        LOGGER.info("--------------------------------------------------");
-        LOGGER.info("Starting {} {}", name, version);
+      String levelBundles =
+          level.stream().map(bundle -> bundlePrefix + bundle).collect(Collectors.joining(" "));
 
+      felixConfig.put(AutoProcessor.AUTO_START_PROP + "." + startLevel, levelBundles);
+
+      startLevel++;
+    }
+
+    if (env == Constants.ENV.DEVELOPMENT) {
+      for (List<String> level : devBundles) {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Data directory: {}", dataDir);
-            LOGGER.debug("Bundles directory: {}", bundlesDir);
-            LOGGER.debug("Environment: {}", env);
+          LOGGER.debug("Level {} Bundles: {}", startLevel, level);
         }
 
-        //trace
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Base configs: {}", baseConfigs);
-            try {
-                String cfg = configurationReader.loadMergedConfig(configurationFile, env);
-                LOGGER.debug("Application configuration: {}", cfg);
+        String levelBundles =
+            level.stream().map(bundle -> bundlePrefix + bundle).collect(Collectors.joining(" "));
 
-            } catch (IOException e) {
-                //ignore
-            }
-        }
+        felixConfig.put(AutoProcessor.AUTO_START_PROP + "." + startLevel, levelBundles);
 
-        String bundlePrefix = "reference:file:" + bundlesDir.toAbsolutePath()
-                                                            .toString()
-                                                            .replaceAll(" ", "%20") + "/";
-        int startLevel = 1;
-
-        for (List<String> level : bundles) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Level {} Bundles: {}", startLevel, level);
-            }
-
-            String levelBundles = level.stream()
-                                       .map(bundle -> bundlePrefix + bundle)
-                                       .collect(Collectors.joining(" "));
-
-            felixConfig.put(AutoProcessor.AUTO_START_PROP + "." + startLevel, levelBundles);
-
-            startLevel++;
-        }
-
-        if (env == Constants.ENV.DEVELOPMENT) {
-            for (List<String> level : devBundles) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Level {} Bundles: {}", startLevel, level);
-                }
-
-                String levelBundles = level.stream()
-                                           .map(bundle -> bundlePrefix + bundle)
-                                           .collect(Collectors.joining(" "));
-
-                felixConfig.put(AutoProcessor.AUTO_START_PROP + "." + startLevel, levelBundles);
-
-                startLevel++;
-            }
-        }
-
-        felixConfig.put(FelixConstants.FRAMEWORK_BEGINNING_STARTLEVEL, Integer.toString(startLevel));
-
-        felixConfig.put(FelixConstants.FRAMEWORK_STORAGE, dataDir.resolve(FELIX_CACHE_DIR_NAME)
-                                                                 .toAbsolutePath()
-                                                                 .toString());
-        felixConfig.put(FelixConstants.FRAMEWORK_STORAGE_CLEAN, FelixConstants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT);
-        // Export the host provided service interface package.
-        felixConfig.put(FelixConstants.FRAMEWORK_SYSTEMPACKAGES_EXTRA, Joiner.on(',')
-                                                                             .withKeyValueSeparator(";version=")
-                                                                             .join(Exports.EXPORTS));
-        felixConfig.put(FelixConstants.FRAMEWORK_BOOTDELEGATION, "sun.misc");
-
-        felixConfig.put(Constants.DATA_DIR_KEY, dataDir.toAbsolutePath()
-                                                       .toString());
-        felixConfig.put(Constants.ENV_KEY, env.name());
-        felixConfig.put(Constants.USER_CONFIG_PATH_KEY, configurationFile.toAbsolutePath().toString());
-
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Felix config: {}", felixConfig);
-        }
-
-        try {
-            this.felix = new Felix(felixConfig);
-            felix.init();
-        } catch (Exception ex) {
-            LOGGER.error("Could not initialize felix: {}", ex.getMessage());
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("", ex);
-            }
-        }
-
-        AutoProcessor.process(felixConfig, felix.getBundleContext());
+        startLevel++;
+      }
     }
 
-    public void start() {
-        try {
-            felix.start();
+    felixConfig.put(FelixConstants.FRAMEWORK_BEGINNING_STARTLEVEL, Integer.toString(startLevel));
 
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Felix started");
-            }
-        } catch (Exception ex) {
-            LOGGER.error("Could not start felix: {}", ex.getMessage());
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("", ex);
-            }
-        }
+    felixConfig.put(
+        FelixConstants.FRAMEWORK_STORAGE,
+        dataDir.resolve(FELIX_CACHE_DIR_NAME).toAbsolutePath().toString());
+    felixConfig.put(
+        FelixConstants.FRAMEWORK_STORAGE_CLEAN, FelixConstants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT);
+    // Export the host provided service interface package.
+    felixConfig.put(
+        FelixConstants.FRAMEWORK_SYSTEMPACKAGES_EXTRA,
+        Joiner.on(',').withKeyValueSeparator(";version=").join(Exports.EXPORTS));
+    felixConfig.put(FelixConstants.FRAMEWORK_BOOTDELEGATION, "sun.misc");
 
+    felixConfig.put(Constants.DATA_DIR_KEY, dataDir.toAbsolutePath().toString());
+    felixConfig.put(Constants.ENV_KEY, env.name());
+    felixConfig.put(Constants.USER_CONFIG_PATH_KEY, configurationFile.toAbsolutePath().toString());
+
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Felix config: {}", felixConfig);
     }
 
-    public void stop(long timeout) {
-        try {
-            felix.stop();
-            felix.waitForStop(timeout);
-
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Felix stopped");
-            }
-        } catch (Exception ex) {
-            LOGGER.error("Could not stop felix: {}", ex.getMessage());
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("", ex);
-            }
-        }
+    try {
+      this.felix = new Felix(felixConfig);
+      felix.init();
+    } catch (Exception ex) {
+      LOGGER.error("Could not initialize felix: {}", ex.getMessage());
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("", ex);
+      }
     }
 
-    private Optional<Path> getDataDir(String[] args) {
-        Path dataDir;
+    AutoProcessor.process(felixConfig, felix.getBundleContext());
+  }
 
-        if (args.length >= 1) {
-            dataDir = Paths.get(args[0]);
-        } else {
-            dataDir = Paths.get(DATA_DIR_NAME)
-                           .toAbsolutePath();
-            if (!Files.isDirectory(dataDir)) {
-                dataDir = Paths.get("../", DATA_DIR_NAME)
-                               .toAbsolutePath();
-            }
-        }
-        if (!Files.isDirectory(dataDir)) {
-            return Optional.empty();
-        }
+  public void start() {
+    try {
+      felix.start();
 
-        return Optional.of(dataDir);
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Felix started");
+      }
+    } catch (Exception ex) {
+      LOGGER.error("Could not start felix: {}", ex.getMessage());
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("", ex);
+      }
+    }
+  }
+
+  public void stop(long timeout) {
+    try {
+      felix.stop();
+      felix.waitForStop(timeout);
+
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Felix stopped");
+      }
+    } catch (Exception ex) {
+      LOGGER.error("Could not stop felix: {}", ex.getMessage());
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("", ex);
+      }
+    }
+  }
+
+  private Optional<Path> getDataDir(String[] args) {
+    Path dataDir;
+
+    if (args.length >= 1) {
+      dataDir = Paths.get(args[0]);
+    } else {
+      dataDir = Paths.get(DATA_DIR_NAME).toAbsolutePath();
+      if (!Files.isDirectory(dataDir)) {
+        dataDir = Paths.get("../", DATA_DIR_NAME).toAbsolutePath();
+      }
+    }
+    if (!Files.isDirectory(dataDir)) {
+      return Optional.empty();
     }
 
-    private Optional<Path> getBundlesDir(String[] args) {
-        Path bundlesDir;
+    return Optional.of(dataDir);
+  }
 
-        if (args.length >= 2) {
-            bundlesDir = Paths.get(args[1]);
-        } else {
-            bundlesDir = Paths.get(BUNDLES_DIR_NAME)
-                              .toAbsolutePath();
-            if (!Files.isDirectory(bundlesDir)) {
-                bundlesDir = Paths.get("../" + BUNDLES_DIR_NAME)
-                                  .toAbsolutePath();
-            }
-        }
-        if (!Files.isDirectory(bundlesDir)) {
-            return Optional.empty();
-        }
+  private Optional<Path> getBundlesDir(String[] args) {
+    Path bundlesDir;
 
-        return Optional.of(bundlesDir);
+    if (args.length >= 2) {
+      bundlesDir = Paths.get(args[1]);
+    } else {
+      bundlesDir = Paths.get(BUNDLES_DIR_NAME).toAbsolutePath();
+      if (!Files.isDirectory(bundlesDir)) {
+        bundlesDir = Paths.get("../" + BUNDLES_DIR_NAME).toAbsolutePath();
+      }
+    }
+    if (!Files.isDirectory(bundlesDir)) {
+      return Optional.empty();
     }
 
-    private void preloadLoggingConfiguration(Path configFile, Path fallbackConfigFile) {
+    return Optional.of(bundlesDir);
+  }
 
-        DefaultLoggingFactory loggingFactory;
+  private void preloadLoggingConfiguration(Path configFile, Path fallbackConfigFile) {
+    DefaultLoggingFactory loggingFactory;
 
-        try {
-            ObjectMapper objectMapper = null;
-            ObjectMapper mergeMapper = null;
-            JsonNode jsonNodeBase = null;
-            JsonNode jsonNode = null;
+    try {
+      ObjectMapper objectMapper = null;
+      ObjectMapper mergeMapper = null;
+      JsonNode jsonNodeBase = null;
+      JsonNode jsonNode = null;
 
-            //TODO: refactor MergingSourceProvider etc into ConfigurationReader, use here
-            if (Files.isReadable(configFile)) {
-                objectMapper = Jackson.newObjectMapper(new YAMLFactory());
+      // TODO: refactor MergingSourceProvider etc into ConfigurationReader, use here
+      if (Files.isReadable(configFile)) {
+        objectMapper = Jackson.newObjectMapper(new YAMLFactory());
 
-                mergeMapper = objectMapper.copy()
-                                    .setDefaultMergeable(true);
-                mergeMapper.configOverride(List.class)
-                           .setMergeable(false);
-                mergeMapper.configOverride(Map.class)
-                           .setMergeable(false);
-                mergeMapper.configOverride(Duration.class)
-                           .setMergeable(false);
+        mergeMapper = objectMapper.copy().setDefaultMergeable(true);
+        mergeMapper.configOverride(List.class).setMergeable(false);
+        mergeMapper.configOverride(Map.class).setMergeable(false);
+        mergeMapper.configOverride(Duration.class).setMergeable(false);
 
-                ByteSource byteSource = Resources.asByteSource(Resources.getResource(getClass(), "/cfg.base.yml"));
-                jsonNodeBase = objectMapper.readTree(byteSource.openStream());
-                jsonNode = objectMapper.readTree(configFile.toFile());
-            } else if (Files.isReadable(fallbackConfigFile)) {
-                objectMapper = Jackson.newObjectMapper();
-                jsonNode = objectMapper.readTree(fallbackConfigFile.toFile());
-            }
+        ByteSource byteSource =
+            Resources.asByteSource(Resources.getResource(getClass(), "/cfg.base.yml"));
+        jsonNodeBase = objectMapper.readTree(byteSource.openStream());
+        jsonNode = objectMapper.readTree(configFile.toFile());
+      } else if (Files.isReadable(fallbackConfigFile)) {
+        objectMapper = Jackson.newObjectMapper();
+        jsonNode = objectMapper.readTree(fallbackConfigFile.toFile());
+      }
 
-            if (jsonNodeBase != null) {
-                loggingFactory = Objects.requireNonNull(objectMapper)
-                                        .readerFor(DefaultLoggingFactory.class)
-                                        .readValue(jsonNodeBase.at("/logging"));
+      if (jsonNodeBase != null) {
+        loggingFactory =
+            Objects.requireNonNull(objectMapper)
+                .readerFor(DefaultLoggingFactory.class)
+                .readValue(jsonNodeBase.at("/logging"));
 
-                mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNode.at("/logging"));
-            } else {
-                loggingFactory = Objects.requireNonNull(objectMapper)
-                                        .readerFor(DefaultLoggingFactory.class)
-                                        .readValue(jsonNode.at("/logging"));
-            }
-        } catch (Throwable e) {
-            // use defaults
-            loggingFactory = new DefaultLoggingFactory();
-        }
-
-        loggingFactory.configure(new MetricRegistry(), "xtraplatform");
+        mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNode.at("/logging"));
+      } else {
+        loggingFactory =
+            Objects.requireNonNull(objectMapper)
+                .readerFor(DefaultLoggingFactory.class)
+                .readValue(jsonNode.at("/logging"));
+      }
+    } catch (Throwable e) {
+      // use defaults
+      loggingFactory = new DefaultLoggingFactory();
     }
 
-    private Constants.ENV parseEnvironment() {
-        return Optional.ofNullable(System.getenv(ENV_VAR))
-                       .filter(e -> Arrays.stream(Constants.ENV.values())
-                                          .map(Enum::name)
-                                          .anyMatch(v -> Objects.equals(e, v)))
-                       .map(Constants.ENV::valueOf)
-                       .orElse(Constants.ENV.PRODUCTION);
-    }
+    loggingFactory.configure(new MetricRegistry(), "xtraplatform");
+  }
+
+  private Constants.ENV parseEnvironment() {
+    return Optional.ofNullable(System.getenv(ENV_VAR))
+        .filter(
+            e ->
+                Arrays.stream(Constants.ENV.values())
+                    .map(Enum::name)
+                    .anyMatch(v -> Objects.equals(e, v)))
+        .map(Constants.ENV::valueOf)
+        .orElse(Constants.ENV.PRODUCTION);
+  }
 }

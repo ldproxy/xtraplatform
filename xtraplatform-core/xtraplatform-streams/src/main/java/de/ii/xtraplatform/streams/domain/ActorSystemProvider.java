@@ -1,5 +1,5 @@
-/**
- * Copyright 2018 interactive instruments GmbH
+/*
+ * Copyright 2018-2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -11,10 +11,9 @@ import akka.actor.ActorSystem;
 import com.typesafe.config.Config;
 import org.osgi.framework.BundleContext;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 public interface ActorSystemProvider {
-    ActorSystem getActorSystem(BundleContext context);
-    ActorSystem getActorSystem(BundleContext context, Config config);
+  ActorSystem getActorSystem(BundleContext context);
+
+  ActorSystem getActorSystem(BundleContext context, Config config);
 }

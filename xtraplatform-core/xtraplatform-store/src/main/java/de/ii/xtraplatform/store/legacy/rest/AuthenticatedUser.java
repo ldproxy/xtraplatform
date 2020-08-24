@@ -1,5 +1,5 @@
-/**
- * Copyright 2018 interactive instruments GmbH
+/*
+ * Copyright 2015-2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10,62 +10,58 @@ package de.ii.xtraplatform.store.legacy.rest;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author fischer
- */
+/** @author fischer */
 public class AuthenticatedUser {
-    
-    private String id;
-    private Role role;
-    private String orgId;
-    private List<String> groups;
 
-    public AuthenticatedUser() {
-        this.role = Role.NONE;
-        this.groups = new ArrayList<>();
-    }
-    
-    public AuthenticatedUser(String id) {
-        this();
-        this.id = id;
-    }
-    
-    public AuthenticatedUser(String orgId, String id) {
-        this(id);
-        this.orgId = orgId;
-    }
+  private String id;
+  private Role role;
+  private String orgId;
+  private List<String> groups;
 
-    public String getId() {
-        return id;
-    }
+  public AuthenticatedUser() {
+    this.role = Role.NONE;
+    this.groups = new ArrayList<>();
+  }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+  public AuthenticatedUser(String id) {
+    this();
+    this.id = id;
+  }
 
-    public Role getRole() {
-        return role;
-    }
+  public AuthenticatedUser(String orgId, String id) {
+    this(id);
+    this.orgId = orgId;
+  }
 
-    public void setRole(Role role) {
-        this.role = role;
-    }
+  public String getId() {
+    return id;
+  }
 
-    public String getOrgId() {
-        return orgId;
-    }
+  public void setId(String id) {
+    this.id = id;
+  }
 
-    public void setOrgId(String orgId) {
-        this.orgId = orgId;
-    }
+  public Role getRole() {
+    return role;
+  }
 
-    public List<String> getGroups() {
-        return groups;
-    }
+  public void setRole(Role role) {
+    this.role = role;
+  }
 
-    public void setGroups(List<String> groups) {
-        this.groups = groups;
-    }
-    
+  public String getOrgId() {
+    return orgId;
+  }
+
+  public void setOrgId(String orgId) {
+    this.orgId = orgId;
+  }
+
+  public List<String> getGroups() {
+    return groups;
+  }
+
+  public void setGroups(List<String> groups) {
+    this.groups = groups;
+  }
 }

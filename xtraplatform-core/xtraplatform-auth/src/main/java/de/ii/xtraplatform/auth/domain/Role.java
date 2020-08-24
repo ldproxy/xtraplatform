@@ -1,5 +1,5 @@
-/**
- * Copyright 2018 interactive instruments GmbH
+/*
+ * Copyright 2018-2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,36 +7,34 @@
  */
 package de.ii.xtraplatform.auth.domain;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 public enum Role {
-    NONE,
-    USER,
-    EDITOR,
-    ADMIN,
-    SUPERADMIN;
+  NONE,
+  USER,
+  EDITOR,
+  ADMIN,
+  SUPERADMIN;
 
-    public static Role fromString(String role) {
-        for (Role v : Role.values()) {
-            if (v.toString().toLowerCase().equals(role.toLowerCase())) {
-                return v;
-            }
-        }
-        return NONE;
+  public static Role fromString(String role) {
+    for (Role v : Role.values()) {
+      if (v.toString().toLowerCase().equals(role.toLowerCase())) {
+        return v;
+      }
     }
+    return NONE;
+  }
 
-    public boolean isGreaterOrEqual(Role other) {
-        return this.compareTo(other) >= 0;
-    }
+  public boolean isGreaterOrEqual(Role other) {
+    return this.compareTo(other) >= 0;
+  }
 
-    public boolean isGreater(Role other) {
-        return this.compareTo(other) > 0;
-    }
+  public boolean isGreater(Role other) {
+    return this.compareTo(other) > 0;
+  }
 
-    public interface Minimum {
-        String ADMIN = "ADMIN";
-        String EDITOR = "EDITOR";
-        String USER = "USER";
-    }
+  public interface Minimum {
+    String ADMIN = "ADMIN";
+    String EDITOR = "EDITOR";
+    String USER = "USER";
+  }
 }

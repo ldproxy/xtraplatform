@@ -1,5 +1,5 @@
-/**
- * Copyright 2018 interactive instruments GmbH
+/*
+ * Copyright 2015-2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,34 +8,31 @@
 package de.ii.xtraplatform.services.domain;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import org.immutables.value.Value;
 
-import java.util.Map;
-
-/**
- *
- * @author zahnen
- */
+/** @author zahnen */
 @Value.Immutable
 public abstract class Notification {
 
-    public enum LEVEL {
-        ERROR,
-        WARNING,
-        INFO
-    }
+  public enum LEVEL {
+    ERROR,
+    WARNING,
+    INFO
+  }
 
-    public static final String DEFAULT_LANGUAGE = "en";
+  public static final String DEFAULT_LANGUAGE = "en";
 
-    public abstract LEVEL getLevel();
+  public abstract LEVEL getLevel();
 
-    @Value.Default
-    public Map<String, String> getMessages() {
-        return ImmutableMap.of(DEFAULT_LANGUAGE, "");
-    };
+  @Value.Default
+  public Map<String, String> getMessages() {
+    return ImmutableMap.of(DEFAULT_LANGUAGE, "");
+  }
+  ;
 
-    @Value.Derived
-    public String getMessage() {
-        return getMessages().getOrDefault(DEFAULT_LANGUAGE, "");
-    }
+  @Value.Derived
+  public String getMessage() {
+    return getMessages().getOrDefault(DEFAULT_LANGUAGE, "");
+  }
 }

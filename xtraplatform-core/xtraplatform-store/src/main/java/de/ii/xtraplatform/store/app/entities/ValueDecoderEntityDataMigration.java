@@ -1,15 +1,21 @@
+/*
+ * Copyright 2020 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.store.app.entities;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.ii.xtraplatform.store.app.EventSourcing;
+import de.ii.xtraplatform.store.app.ValueDecoderWithBuilder;
+import de.ii.xtraplatform.store.domain.Identifier;
+import de.ii.xtraplatform.store.domain.ValueDecoderMiddleware;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
-import de.ii.xtraplatform.store.app.ValueDecoderWithBuilder;
-import de.ii.xtraplatform.store.domain.ValueDecoderMiddleware;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
-import de.ii.xtraplatform.store.app.EventSourcing;
-import de.ii.xtraplatform.store.domain.Identifier;
-
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,63 +25,84 @@ import java.util.function.BiConsumer;
 
 public class ValueDecoderEntityDataMigration implements ValueDecoderMiddleware<EntityData> {
 
-    private final EventSourcing<EntityData> eventSourcing;
-    private final EntityFactory entityFactory;
-    private final BiConsumer<Identifier, EntityData> addAdditionalEvent;
+  private final EventSourcing<EntityData> eventSourcing;
+  private final EntityFactory entityFactory;
+  private final BiConsumer<Identifier, EntityData> addAdditionalEvent;
 
-    public ValueDecoderEntityDataMigration(EventSourcing<EntityData> eventSourcing, EntityFactory entityFactory, BiConsumer<Identifier, EntityData> addAdditionalEvent) {
-        this.eventSourcing = eventSourcing;
-        this.entityFactory = entityFactory;
-        this.addAdditionalEvent = addAdditionalEvent;
+  public ValueDecoderEntityDataMigration(
+      EventSourcing<EntityData> eventSourcing,
+      EntityFactory entityFactory,
+      BiConsumer<Identifier, EntityData> addAdditionalEvent) {
+    this.eventSourcing = eventSourcing;
+    this.entityFactory = entityFactory;
+    this.addAdditionalEvent = addAdditionalEvent;
+  }
+
+  @Override
+  public EntityData process(
+      Identifier identifier, byte[] payload, ObjectMapper objectMapper, EntityData entityData)
+      throws IOException {
+    if (entityData.getEntityStorageVersion() < entityData.getEntitySchemaVersion()) {
+      migrateSchema(
+          identifier,
+          payload,
+          objectMapper,
+          entityData.getEntityStorageVersion(),
+          entityData.getEntitySubType(),
+          OptionalLong.of(entityData.getEntitySchemaVersion()));
+
+      return null;
     }
 
-    @Override
-    public EntityData process(Identifier identifier, byte[] payload, ObjectMapper objectMapper, EntityData entityData) throws IOException {
-        if (entityData.getEntityStorageVersion() < entityData.getEntitySchemaVersion()) {
-            migrateSchema(identifier, payload, objectMapper, entityData.getEntityStorageVersion(), entityData.getEntitySubType(), OptionalLong.of(entityData.getEntitySchemaVersion()));
+    return entityData;
+  }
 
-            return null;
-        }
+  @Override
+  public boolean canRecover() {
+    return true;
+  }
 
-        return entityData;
+  // TODO: entitySubType
+  @Override
+  public EntityData recover(Identifier identifier, byte[] payload, ObjectMapper objectMapper)
+      throws IOException {
+    TypeReference<LinkedHashMap<String, Object>> typeRef =
+        new TypeReference<LinkedHashMap<String, Object>>() {};
+    Map<String, Object> map = objectMapper.readValue(payload, typeRef);
+
+    if (!map.containsKey("id")) {
+      throw new IllegalArgumentException("not a valid entity, no id found");
     }
 
-    @Override
-    public boolean canRecover() {
-        return true;
-    }
+    long storageVersion = ((Number) map.getOrDefault("entityStorageVersion", 1)).longValue();
 
-    //TODO: entitySubType
-    @Override
-    public EntityData recover(Identifier identifier, byte[] payload, ObjectMapper objectMapper) throws IOException {
-        TypeReference<LinkedHashMap<String, Object>> typeRef = new TypeReference<LinkedHashMap<String, Object>>() {};
-        Map<String, Object> map = objectMapper.readValue(payload, typeRef);
+    migrateSchema(
+        identifier, payload, objectMapper, storageVersion, Optional.empty(), OptionalLong.empty());
 
-        if (!map.containsKey("id")) {
-            throw new IllegalArgumentException("not a valid entity, no id found");
-        }
+    return null;
+  }
 
-        long storageVersion =  ((Number) map.getOrDefault("entityStorageVersion", 1)).longValue();
+  private void migrateSchema(
+      Identifier identifier,
+      byte[] payload,
+      ObjectMapper objectMapper,
+      long storageVersion,
+      Optional<String> entitySubType,
+      OptionalLong targetVersion)
+      throws IOException {
+    EntityDataBuilder<EntityData> builderOld =
+        entityFactory.getDataBuilders(identifier.path().get(0), storageVersion, entitySubType);
+    ValueDecoderWithBuilder<EntityData> valueDecoderWithBuilder =
+        new ValueDecoderWithBuilder<>(identifier1 -> builderOld, eventSourcing);
+    EntityData entityDataOld =
+        valueDecoderWithBuilder.process(identifier, payload, objectMapper, null);
 
-        migrateSchema(identifier, payload, objectMapper, storageVersion, Optional.empty(), OptionalLong.empty());
+    String entityType = identifier.path().get(0);
 
-        return null;
-    }
+    Map<Identifier, EntityData> entityDataNew =
+        entityFactory.migrateSchema(
+            identifier, entityType, entityDataOld, entitySubType, targetVersion);
 
-    private void migrateSchema(Identifier identifier, byte[] payload,
-                               ObjectMapper objectMapper,
-                               long storageVersion, Optional<String> entitySubType, OptionalLong targetVersion) throws IOException {
-        EntityDataBuilder<EntityData> builderOld = entityFactory.getDataBuilders(identifier.path()
-                                                                                           .get(0), storageVersion, entitySubType);
-        ValueDecoderWithBuilder<EntityData> valueDecoderWithBuilder = new ValueDecoderWithBuilder<>(identifier1 -> builderOld, eventSourcing);
-        EntityData entityDataOld = valueDecoderWithBuilder.process(identifier, payload, objectMapper, null);
-
-        String entityType = identifier.path()
-                                      .get(0);
-
-        Map<Identifier, EntityData> entityDataNew = entityFactory.migrateSchema(identifier, entityType, entityDataOld, entitySubType, targetVersion);
-
-        entityDataNew.forEach(addAdditionalEvent);
-
-    }
+    entityDataNew.forEach(addAdditionalEvent);
+  }
 }

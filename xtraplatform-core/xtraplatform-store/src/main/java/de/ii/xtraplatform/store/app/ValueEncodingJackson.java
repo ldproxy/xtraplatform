@@ -1,4 +1,15 @@
+/*
+ * Copyright 2020 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.store.app;
+
+import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_API_BUILDINGBLOCK_MIGRATION;
+import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_IMMUTABLE_BUILDER_NESTED;
+import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -8,13 +19,10 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
+import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.ValueDecoderMiddleware;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
-import de.ii.xtraplatform.store.domain.Identifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -25,187 +33,197 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_API_BUILDINGBLOCK_MIGRATION;
-import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_IMMUTABLE_BUILDER_NESTED;
-import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER;
-
-//TODO: make default format and supported formats configurable
+// TODO: make default format and supported formats configurable
 public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ValueEncodingJackson.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ValueEncodingJackson.class);
 
-    private static final byte[] JSON_NULL = "null".getBytes();
-    private static final byte[] YAML_NULL = "--- null\n".getBytes();
-    private static final Pattern JSON_EMPTY = Pattern.compile("(\\s)*");
-    private static final Pattern YAML_EMPTY = Pattern.compile("---(\\s)*");
+  private static final byte[] JSON_NULL = "null".getBytes();
+  private static final byte[] YAML_NULL = "--- null\n".getBytes();
+  private static final Pattern JSON_EMPTY = Pattern.compile("(\\s)*");
+  private static final Pattern YAML_EMPTY = Pattern.compile("---(\\s)*");
 
-    private static final FORMAT DEFAULT_FORMAT = FORMAT.YML;
-    private static final FORMAT DESER_FORMAT_LEGACY = FORMAT.JSON; // old configuration files without file extension are JSON
+  private static final FORMAT DEFAULT_FORMAT = FORMAT.YML;
+  private static final FORMAT DESER_FORMAT_LEGACY =
+      FORMAT.JSON; // old configuration files without file extension are JSON
 
-    private final Map<FORMAT, ObjectMapper> mappers; // TODO: use smile/ion mapper for distributed store
-    private final List<ValueDecoderMiddleware<byte[]>> decoderPreProcessor;
-    private final List<ValueDecoderMiddleware<T>> decoderMiddleware;
+  private final Map<FORMAT, ObjectMapper>
+      mappers; // TODO: use smile/ion mapper for distributed store
+  private final List<ValueDecoderMiddleware<byte[]>> decoderPreProcessor;
+  private final List<ValueDecoderMiddleware<T>> decoderMiddleware;
 
-    public ValueEncodingJackson(Jackson jackson) {
+  public ValueEncodingJackson(Jackson jackson) {
 
-        ObjectMapper jsonMapper = jackson.getDefaultObjectMapper()
-                                         .copy()
-                                         .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
-                                         .registerModule(DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER)
-                                         .registerModule(DESERIALIZE_API_BUILDINGBLOCK_MIGRATION)
-                                         .setDefaultMergeable(true);
+    ObjectMapper jsonMapper =
+        jackson
+            .getDefaultObjectMapper()
+            .copy()
+            .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
+            .registerModule(DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER)
+            .registerModule(DESERIALIZE_API_BUILDINGBLOCK_MIGRATION)
+            .setDefaultMergeable(true);
 
-        ObjectMapper yamlMapper = jackson.getNewObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
-                                                                              .disable(YAMLGenerator.Feature.USE_NATIVE_OBJECT_ID)
-                                                                              .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
-                                         .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
-                                         .registerModule(DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER)
-                                         .registerModule(DESERIALIZE_API_BUILDINGBLOCK_MIGRATION)
-                                         .setDefaultMergeable(true)
-                                         .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    ObjectMapper yamlMapper =
+        jackson
+            .getNewObjectMapper(
+                new YAMLFactory()
+                    .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
+                    .disable(YAMLGenerator.Feature.USE_NATIVE_OBJECT_ID)
+                    .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
+            .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
+            .registerModule(DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER)
+            .registerModule(DESERIALIZE_API_BUILDINGBLOCK_MIGRATION)
+            .setDefaultMergeable(true)
+            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
-        this.mappers = ImmutableMap.of(
-                FORMAT.JSON, jsonMapper,
-                FORMAT.YML, yamlMapper,
-                FORMAT.YAML, yamlMapper
-        );
+    this.mappers =
+        ImmutableMap.of(
+            FORMAT.JSON, jsonMapper,
+            FORMAT.YML, yamlMapper,
+            FORMAT.YAML, yamlMapper);
 
-        this.decoderMiddleware = new ArrayList<>();
-        this.decoderPreProcessor = new ArrayList<>();
+    this.decoderMiddleware = new ArrayList<>();
+    this.decoderPreProcessor = new ArrayList<>();
+  }
+
+  public void addDecoderPreProcessor(ValueDecoderMiddleware<byte[]> preProcessor) {
+    this.decoderPreProcessor.add(preProcessor);
+  }
+
+  public void addDecoderMiddleware(ValueDecoderMiddleware<T> middleware) {
+    this.decoderMiddleware.add(middleware);
+  }
+
+  @Override
+  public final FORMAT getDefaultFormat() {
+    return DEFAULT_FORMAT;
+  }
+
+  // TODO: default serialization format should depend on EventStore implementation
+  @Override
+  public final byte[] serialize(T data) {
+    try {
+      return getDefaultMapper().writeValueAsBytes(data);
+    } catch (JsonProcessingException e) {
+      // should never happen
+      throw new IllegalStateException("Unexpected serialization error", e);
+    }
+  }
+
+  @Override
+  public byte[] serialize(Map<String, Object> data) {
+    try {
+      return getDefaultMapper().writeValueAsBytes(data);
+    } catch (JsonProcessingException e) {
+      // should never happen
+      throw new IllegalStateException("Unexpected serialization error", e);
+    }
+  }
+
+  @Override
+  public final T deserialize(Identifier identifier, byte[] payload, FORMAT format) {
+    // "null" as payload means delete
+    if (isNull(payload)) {
+      return null;
     }
 
-    public void addDecoderPreProcessor(ValueDecoderMiddleware<byte[]> preProcessor) {
-        this.decoderPreProcessor.add(preProcessor);
+    byte[] rawData = payload;
+    FORMAT payloadFormat = Objects.equals(format, FORMAT.NONE) ? DESER_FORMAT_LEGACY : format;
+    ObjectMapper objectMapper = getMapper(payloadFormat);
+    T data = null;
+
+    try {
+      for (ValueDecoderMiddleware<byte[]> preProcessor : decoderPreProcessor) {
+        rawData = preProcessor.process(identifier, rawData, objectMapper, null);
+      }
+    } catch (Throwable e) {
+      LOGGER.error("Deserialization error: {}", e.getMessage());
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Stacktrace:", e);
+      }
     }
 
-    public void addDecoderMiddleware(ValueDecoderMiddleware<T> middleware) {
-        this.decoderMiddleware.add(middleware);
-    }
+    try {
+      for (ValueDecoderMiddleware<T> middleware : decoderMiddleware) {
+        data = middleware.process(identifier, rawData, objectMapper, data);
+      }
 
-    @Override
-    public final FORMAT getDefaultFormat() {
-        return DEFAULT_FORMAT;
-    }
-
-    //TODO: default serialization format should depend on EventStore implementation
-    @Override
-    public final byte[] serialize(T data) {
-        try {
-            return getDefaultMapper().writeValueAsBytes(data);
-        } catch (JsonProcessingException e) {
-            //should never happen
-            throw new IllegalStateException("Unexpected serialization error", e);
+    } catch (Throwable e) {
+      try {
+        Optional<ValueDecoderMiddleware<T>> recovery =
+            decoderMiddleware.stream().filter(ValueDecoderMiddleware::canRecover).findFirst();
+        if (recovery.isPresent()) {
+          data = recovery.get().recover(identifier, rawData, objectMapper);
         }
-    }
-
-    @Override
-    public byte[] serialize(Map<String, Object> data) {
-        try {
-            return getDefaultMapper().writeValueAsBytes(data);
-        } catch (JsonProcessingException e) {
-            //should never happen
-            throw new IllegalStateException("Unexpected serialization error", e);
+      } catch (Throwable e2) {
+        LOGGER.error("Deserialization error: {}", e.getMessage());
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Stacktrace:", e);
         }
+      }
     }
 
-    @Override
-    public final T deserialize(Identifier identifier, byte[] payload, FORMAT format) {
-        // "null" as payload means delete
-        if (isNull(payload)) {
-            return null;
-        }
+    return data;
+  }
 
-        byte[] rawData = payload;
-        FORMAT payloadFormat = Objects.equals(format, FORMAT.NONE) ? DESER_FORMAT_LEGACY : format;
-        ObjectMapper objectMapper = getMapper(payloadFormat);
-        T data = null;
-
-        try {
-            for (ValueDecoderMiddleware<byte[]> preProcessor : decoderPreProcessor) {
-                rawData = preProcessor.process(identifier, rawData, objectMapper, null);
-            }
-        } catch (Throwable e) {
-            LOGGER.error("Deserialization error: {}", e.getMessage());
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Stacktrace:", e);
-            }
-        }
-
-        try {
-            for (ValueDecoderMiddleware<T> middleware : decoderMiddleware) {
-                data = middleware.process(identifier, rawData, objectMapper, data);
-            }
-
-        } catch (Throwable e) {
-            try {
-                Optional<ValueDecoderMiddleware<T>> recovery = decoderMiddleware.stream()
-                                                                                .filter(ValueDecoderMiddleware::canRecover)
-                                                                                .findFirst();
-                if (recovery.isPresent()) {
-                    data = recovery.get()
-                                   .recover(identifier, rawData, objectMapper);
-                }
-            } catch (Throwable e2) {
-                LOGGER.error("Deserialization error: {}", e.getMessage());
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Stacktrace:", e);
-                }
-            }
-        }
-
-        return data;
+  @Override
+  public byte[] nestPayload(
+      byte[] payload,
+      String formatString,
+      List<String> nestingPath,
+      Optional<KeyPathAlias> keyPathAlias)
+      throws IOException {
+    if (nestingPath.isEmpty()) {
+      return payload;
     }
 
-    @Override
-    public byte[] nestPayload(byte[] payload, String formatString, List<String> nestingPath, Optional<KeyPathAlias> keyPathAlias) throws IOException {
-        if (nestingPath.isEmpty()) {
-            return payload;
-        }
-
-        FORMAT format;
-        try {
-            format = FORMAT.fromString(formatString);
-        } catch (Throwable e) {
-            //LOGGER.error("Could not deserialize, format '{}' unknown.", formatString);
-            return payload;
-        }
-
-
-        //TODO: .metadata.yml.swp leads to invisible error, should be ignored either silently or with log message
-
-        ObjectMapper mapper = getMapper(format);
-
-        Map<String, Object> data = mapper.readValue(payload, new TypeReference<LinkedHashMap<String, Object>>() {
-        });
-
-        for (int i = nestingPath.size() - 1; i >= 0; i--) {
-            if (i == nestingPath.size() - 1 && keyPathAlias.isPresent()) {
-                data = keyPathAlias.get().wrapMap(data);
-                continue;
-            }
-
-            String key = nestingPath.get(i);
-            data = ImmutableMap.of(key, data);
-        }
-        return mapper.writeValueAsBytes(data);
+    FORMAT format;
+    try {
+      format = FORMAT.fromString(formatString);
+    } catch (Throwable e) {
+      // LOGGER.error("Could not deserialize, format '{}' unknown.", formatString);
+      return payload;
     }
 
-    final ObjectMapper getDefaultMapper() {
-        return getMapper(DEFAULT_FORMAT);
-    }
+    // TODO: .metadata.yml.swp leads to invisible error, should be ignored either silently or with
+    // log message
 
-    @Override
-    public final ObjectMapper getMapper(FORMAT format) {
-        return mappers.get(format);
-    }
+    ObjectMapper mapper = getMapper(format);
 
-    final boolean isNull(byte[] payload) {
-        return Arrays.equals(payload, JSON_NULL) || Arrays.equals(payload, YAML_NULL);
-    }
+    Map<String, Object> data =
+        mapper.readValue(payload, new TypeReference<LinkedHashMap<String, Object>>() {});
 
-    public final boolean isEmpty(byte[] payload) {
-        String payloadString = new String(payload, StandardCharsets.UTF_8);
-        return JSON_EMPTY.matcher(payloadString).matches() || YAML_EMPTY.matcher(payloadString).matches();
+    for (int i = nestingPath.size() - 1; i >= 0; i--) {
+      if (i == nestingPath.size() - 1 && keyPathAlias.isPresent()) {
+        data = keyPathAlias.get().wrapMap(data);
+        continue;
+      }
+
+      String key = nestingPath.get(i);
+      data = ImmutableMap.of(key, data);
     }
+    return mapper.writeValueAsBytes(data);
+  }
+
+  final ObjectMapper getDefaultMapper() {
+    return getMapper(DEFAULT_FORMAT);
+  }
+
+  @Override
+  public final ObjectMapper getMapper(FORMAT format) {
+    return mappers.get(format);
+  }
+
+  final boolean isNull(byte[] payload) {
+    return Arrays.equals(payload, JSON_NULL) || Arrays.equals(payload, YAML_NULL);
+  }
+
+  public final boolean isEmpty(byte[] payload) {
+    String payloadString = new String(payload, StandardCharsets.UTF_8);
+    return JSON_EMPTY.matcher(payloadString).matches()
+        || YAML_EMPTY.matcher(payloadString).matches();
+  }
 }

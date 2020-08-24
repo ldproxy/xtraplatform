@@ -1,5 +1,5 @@
-/**
- * Copyright 2018 interactive instruments GmbH
+/*
+ * Copyright 2018-2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,16 +9,13 @@ package de.ii.xtraplatform.store.domain.entities.legacy;
 
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 @Deprecated
 public interface EntityRepositoryChangeListener {
 
-    void onEntityCreate(String id, EntityData data);
+  void onEntityCreate(String id, EntityData data);
 
-    void onEntityUpdate(String id, EntityData data);
+  void onEntityUpdate(String id, EntityData data);
 
-    void onEntityDelete(String id);
-
+  void onEntityDelete(String id);
 }

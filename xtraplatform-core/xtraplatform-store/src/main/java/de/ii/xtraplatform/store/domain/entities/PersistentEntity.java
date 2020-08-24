@@ -1,5 +1,5 @@
-/**
- * Copyright 2018 interactive instruments GmbH
+/*
+ * Copyright 2018-2020 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,16 +7,14 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 public interface PersistentEntity {
 
-    default String getId() {
-        return getData() != null ? getData().getId() : null;
-    }
+  default String getId() {
+    return getData() != null ? getData().getId() : null;
+  }
 
-    String getType();
+  String getType();
 
-    EntityData getData();
+  EntityData getData();
 }
