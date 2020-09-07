@@ -256,7 +256,7 @@ class ApplicationPlugin implements Plugin<Project> {
 
         bundles.add(project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies)
         //TODO
-        return createBundleFileTree(project, bundles, [FeaturePlugin.XTRAPLATFORM_RUNTIME], 'de.ii.xtraplatform.store.domain.entities.handler:entity', [], ['xtraplatform-dropwizard', 'xtraplatform-auth', 'osgi-over-slf4j', 'org.apache.felix.ipojo', 'xtraproxy-config', 'ldproxy-config', 'xtraserver-webapi-config'])
+        return createBundleFileTree(project, bundles, [FeaturePlugin.XTRAPLATFORM_RUNTIME], 'de.ii.xtraplatform.store.domain.entities.handler:entity', [], ['xtraplatform-dropwizard', 'xtraplatform-auth', 'osgi-over-slf4j', 'org.apache.felix.ipojo'])
     }
 
     String createDevBundleTree(Project project) {
@@ -306,9 +306,9 @@ class ApplicationPlugin implements Plugin<Project> {
                 it.file
             })
 
-            delayedBundles += bundles.findAll({ bundle -> manifestContains(project, bundle, lateStartManifestPattern) })
-            lastBundles += bundles.findAll({ bundle -> lateStartNames.any({ bundle.name.startsWith(it) }) })
             firstBundles += bundles.findAll({ bundle -> earlyStartNames.any({ bundle.name.startsWith(it) }) })
+            lastBundles += bundles.findAll({ bundle -> !(bundle in firstBundles) && lateStartNames.any({ bundle.name.startsWith(it) }) })
+            delayedBundles += bundles.findAll({ bundle -> !(bundle in firstBundles) && !(bundle in lastBundles) && manifestContains(project, bundle, lateStartManifestPattern) })
 
             featureBundles += createBundleList(bundles.findAll({ bundle -> !(bundle in delayedBundles) && !(bundle in lastBundles) && !(bundle in firstBundles) }))
 
