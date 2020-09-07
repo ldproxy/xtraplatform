@@ -9,6 +9,7 @@ package de.ii.xtraplatform.store.domain;
 
 import de.ii.xtraplatform.store.app.EventSourcing;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -94,6 +95,10 @@ public abstract class AbstractKeyValueStore<T> implements KeyValueStore<T> {
 
   protected CompletableFuture<T> putWithoutTrigger(Identifier identifier, T value) {
     return getEventSourcing().pushMutationEvent(identifier, value);
+  }
+
+  protected CompletableFuture<T> putPartialWithoutTrigger(Identifier identifier, Map<String, Object> value) {
+    return getEventSourcing().pushPartialMutationEvent(identifier, value);
   }
 
   protected CompletableFuture<Boolean> drop(Identifier identifier) {

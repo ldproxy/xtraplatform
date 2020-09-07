@@ -12,6 +12,7 @@ import de.ii.xtraplatform.dropwizard.domain.Jackson;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
 import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
+import de.ii.xtraplatform.store.app.ValueDecoderWithBuilder;
 import de.ii.xtraplatform.store.app.ValueEncodingJackson;
 import de.ii.xtraplatform.store.domain.AbstractMergeableKeyValueStore;
 import de.ii.xtraplatform.store.domain.EventStore;
@@ -54,6 +55,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   private final EntityFactory entityFactory;
   private final ValueEncodingJackson<Map<String, Object>> valueEncoding;
   private final ValueEncodingJackson<EntityDataBuilder<EntityData>> valueEncodingBuilder;
+  private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
+  private final ValueEncodingJackson<EntityData> valueEncodingEntity;
   private final EventSourcing<Map<String, Object>> eventSourcing;
 
   protected EntityDataDefaultsStoreImpl(
@@ -85,6 +88,38 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
               @Override
               public EntityDataBuilder<EntityData> getFromCache(Identifier identifier) {
+                return null;
+              }
+            }));
+
+    this.valueEncodingMap = new ValueEncodingJackson<>(jackson);
+    valueEncodingMap.addDecoderMiddleware(
+        new ValueDecoderBase<>(
+            identifier -> new LinkedHashMap<>(),
+            new ValueCache<Map<String,Object>>() {
+              @Override
+              public boolean isInCache(Identifier identifier) {
+                return false;
+              }
+
+              @Override
+              public Map<String,Object> getFromCache(Identifier identifier) {
+                return null;
+              }
+            }));
+
+    this.valueEncodingEntity = new ValueEncodingJackson<>(jackson);
+    valueEncodingEntity.addDecoderMiddleware(
+        new ValueDecoderWithBuilder<>(
+            this::getBuilder,
+            new ValueCache<EntityData>() {
+              @Override
+              public boolean isInCache(Identifier identifier) {
+                return false;
+              }
+
+              @Override
+              public EntityData getFromCache(Identifier identifier) {
                 return null;
               }
             }));
@@ -161,6 +196,31 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         .build();
   }
 
+  @Override
+  public Map<String, Object> subtractDefaults(Identifier identifier, Optional<String> subType,
+      Map<String, Object> data) {
+
+    Identifier defaultsIdentifier = subType.isPresent() ? ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
+        .addAllPath(identifier.path()).addPath(subType.get().toLowerCase()).build() : ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
+        .addAllPath(identifier.path()).build();
+
+    EntityDataBuilder<EntityData> newBuilder = getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders();
+
+    try {
+      byte[] payload = valueEncodingEntity.serialize(newBuilder.build());
+
+      Map<String, Object> defaults = valueEncodingMap
+          .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat());
+
+      return new MapSubtractor().subtract(data, defaults);
+
+    } catch (Throwable e) {
+      boolean br = true;
+    }
+
+    return data;
+  }
+
   private Map<String, Object> getDefaults(Identifier identifier) {
     if (eventSourcing.isInCache(identifier)) {
       return eventSourcing.getFromCache(identifier);
@@ -207,6 +267,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     return null;
   }
 
+  //TODO: load defaults from EntityFactory that weren't loaded by event
   @Override
   protected CompletableFuture<Void> onStart() {
 

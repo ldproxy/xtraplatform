@@ -10,9 +10,13 @@ package de.ii.xtraplatform.store.domain.entities;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.MergeableKeyValueStore;
 import java.util.Map;
+import java.util.Optional;
 
 public interface EntityDataDefaultsStore extends MergeableKeyValueStore<Map<String, Object>> {
   String EVENT_TYPE = "defaults";
+
+  Map<String, Object> subtractDefaults(Identifier identifier, Optional<String> subType,
+      Map<String, Object> data);
 
   EntityDataBuilder<EntityData> getBuilder(Identifier identifier);
 }

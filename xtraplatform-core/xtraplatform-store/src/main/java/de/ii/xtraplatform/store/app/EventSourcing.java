@@ -123,6 +123,12 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     return pushMutationEventRaw(identifier, payload, Objects.isNull(data));
   }
 
+  public CompletableFuture<T> pushPartialMutationEvent(Identifier identifier, Map<String, Object> data) {
+    final byte[] payload = valueEncoding.serialize(data);
+
+    return pushMutationEventRaw(identifier, payload, Objects.isNull(data));
+  }
+
   public CompletableFuture<T> pushMutationEventRaw(Identifier identifier, byte[] payload) {
     return pushMutationEventRaw(identifier, payload, false);
   }

@@ -12,6 +12,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
 import de.ii.xtraplatform.store.app.EventSourcing;
+import de.ii.xtraplatform.store.app.ValueDecoderBase;
 import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
 import de.ii.xtraplatform.store.app.ValueDecoderWithBuilder;
 import de.ii.xtraplatform.store.app.ValueEncodingJackson;
@@ -22,6 +23,7 @@ import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.MutationEvent;
+import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.store.domain.entities.AutoEntity;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
@@ -35,6 +37,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -64,6 +67,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private final EntityFactory entityFactory;
   private final Queue<Map.Entry<Identifier, EntityData>> additionalEvents;
   private final ValueEncodingJackson<EntityData> valueEncoding;
+  private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
   private final EventSourcing<EntityData> eventSourcing;
   private final EntityDataDefaultsStore defaultsStore;
 
@@ -76,6 +80,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.entityFactory = entityFactory;
     this.additionalEvents = new ConcurrentLinkedQueue<>();
     this.valueEncoding = new ValueEncodingJackson<>(jackson);
+    this.valueEncodingMap = new ValueEncodingJackson<>(jackson);
     this.eventSourcing =
         new EventSourcing<>(
             eventStore, EVENT_TYPES, valueEncoding, this::onStart, Optional.of(this::processEvent));
@@ -89,6 +94,18 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     valueEncoding.addDecoderMiddleware(
         new ValueDecoderEntityDataMigration(
             eventSourcing, entityFactory, this::addAdditionalEvent));
+
+    valueEncodingMap.addDecoderMiddleware(new ValueDecoderBase<>(identifier -> new LinkedHashMap<>(), new ValueCache<Map<String, Object>>() {
+      @Override
+      public boolean isInCache(Identifier identifier) {
+        return false;
+      }
+
+      @Override
+      public Map<String, Object> getFromCache(Identifier identifier) {
+        return null;
+      }
+    }));
   }
 
   // TODO: it seems this is needed for correct order (defaults < entities)
@@ -251,18 +268,34 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected CompletableFuture<Void> onCreate(Identifier identifier, EntityData entityData) {
-    EntityData hydratedData = hydrate(identifier, entityData);
+    EntityData hydratedData = entityData;
 
     if (entityData instanceof AutoEntity) {
       AutoEntity autoEntity = (AutoEntity) entityData;
       if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
-        putWithoutTrigger(identifier, hydratedData).join();
-        LOGGER.info(
-            "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-            identifier.path().get(0),
-            entityData.getId());
+        hydratedData = hydrate(identifier, hydratedData);
+
+        if (!isEventStoreReadOnly) {
+          Map<String, Object> map = valueEncodingMap
+              .deserialize(identifier, valueEncoding.serialize(hydratedData), valueEncoding.getDefaultFormat());
+
+          Map<String, Object> withoutDefaults = defaultsStore
+              .subtractDefaults(identifier, entityData.getEntitySubType(), map);
+
+          putPartialWithoutTrigger(identifier, withoutDefaults).join();
+          LOGGER.info(
+              "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
+              identifier.path().get(0),
+              entityData.getId());
+        } else {
+          LOGGER.warn("Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
+              identifier.path().get(0),
+              entityData.getId());
+        }
       }
     }
+
+    hydratedData = hydrate(identifier, hydratedData);
 
     return entityFactory
         .createInstance(identifier.path().get(0), identifier.id(), hydratedData)

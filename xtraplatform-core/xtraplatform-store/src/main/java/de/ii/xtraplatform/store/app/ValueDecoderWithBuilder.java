@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xtraplatform.store.domain.Builder;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.Value;
+import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueDecoderMiddleware;
 import java.io.IOException;
 import java.util.function.Function;
@@ -18,12 +19,12 @@ import java.util.function.Function;
 public class ValueDecoderWithBuilder<T extends Value> implements ValueDecoderMiddleware<T> {
 
   private final Function<Identifier, Builder<T>> newBuilderSupplier;
-  private final EventSourcing<T> eventSourcing; // TODO -> ValueCache
+  private final ValueCache<T> valueCache;
 
   public ValueDecoderWithBuilder(
-      Function<Identifier, Builder<T>> newBuilderSupplier, EventSourcing<T> eventSourcing) {
+      Function<Identifier, Builder<T>> newBuilderSupplier, ValueCache<T> valueCache) {
     this.newBuilderSupplier = newBuilderSupplier;
-    this.eventSourcing = eventSourcing;
+    this.valueCache = valueCache;
   }
 
   @Override
@@ -31,8 +32,8 @@ public class ValueDecoderWithBuilder<T extends Value> implements ValueDecoderMid
       throws IOException {
     Builder<T> builder = newBuilderSupplier.apply(identifier);
 
-    if (eventSourcing.isInCache(identifier)) {
-      builder.from(eventSourcing.getFromCache(identifier));
+    if (valueCache.isInCache(identifier)) {
+      builder.from(valueCache.getFromCache(identifier));
     }
 
     objectMapper.readerForUpdating(builder).readValue(payload);
