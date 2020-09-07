@@ -91,7 +91,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     this.dw = dw;
 
     // TODO
-    this.isAuthProviderAvailable = true;
+    this.isAuthProviderAvailable = false;
   }
 
   public synchronized void addingService(ServiceReference reference) {
@@ -192,6 +192,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
             jersey.register(provider1.getAuthDynamicFeature());
             jersey.register(provider1.getRolesAllowedDynamicFeature());
             jersey.register(provider1.getAuthValueFactoryProvider());
+            this.isAuthProviderAvailable = true;
             LOGGER.debug("Registered JAX-RS Auth Provider {}", provider.getClass());
           } else {
             jersey.register(provider);
@@ -206,6 +207,8 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
           LOGGER.debug("Registered JAX-RS Resource {}", resource.getClass());
         }
         resourceCache.clear();
+      } else if (!isAuthProviderAvailable && !resourceCache.isEmpty()) {
+        LOGGER.debug("No JAX-RS Auth Provider registered yet, cannot register Resources.");
       }
       if (!filterCache.isEmpty()) {
         for (Object filter : filterCache) {
