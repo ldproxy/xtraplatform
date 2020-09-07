@@ -43,7 +43,7 @@ public class FelixRuntime {
   private static final String ENV_VAR = "XTRAPLATFORM_ENV";
   private static final String DATA_DIR_NAME = "data";
   private static final String BUNDLES_DIR_NAME = "bundles";
-  private static final String FELIX_CACHE_DIR_NAME = "felix-cache";
+  private static final String FELIX_CACHE_DIR_NAME = "tmp/felix";
 
   private final String name;
   private final String version;
