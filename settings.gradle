@@ -1,8 +1,5 @@
 rootProject.name = 'xtraplatform'
 
-includeBuild './xtraplatform-gradle-plugins'
-includeBuild './xtraplatform-base'
-includeBuild './xtraplatform-store'
-includeBuild './xtraplatform-web'
-includeBuild './xtraplatform-admin'
-includeBuild './xtraplatform-dev'
+//includeBuild './xtraplatform-gradle-plugins'
+//includeBuild './xtraplatform-dev'
+includeBuild './xtraplatform-core'

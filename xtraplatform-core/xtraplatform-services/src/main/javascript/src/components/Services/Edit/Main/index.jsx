@@ -12,58 +12,68 @@ import { serviceEditTabs } from '../../constants';
 
 // TODO: navControl, icon
 const ServiceEditMain = ({ service, onChange }) => {
-  const urlQuery = useQuery();
-  const location = useLocation();
-  const history = useHistory();
-  const extEditTabs = useFassets(serviceEditTabs());
+    const urlQuery = useQuery();
+    const location = useLocation();
+    const history = useHistory();
+    const extEditTabs = useFassets(serviceEditTabs());
 
-  const editTabs = [
-    {
-      id: 'general',
-      label: 'General',
-      component: ServiceEditGeneral,
-    },
-    {
-      id: 'api',
-      label: 'Api',
-      component: ServiceEditApi,
-    },
-    ...extEditTabs,
-  ];
-  const selectedTab = urlQuery.tab ? Math.max(editTabs.findIndex((tab) => tab.id === urlQuery.tab), 0) : 0;
-  const onTabSelect = (tab) => {
-    console.log('TAB', tab); history.push({
-      ...location,
-      search: `?tab=${tab}`,
-    });
-  };
+    const editTabs = [
+        {
+            id: 'general',
+            label: 'General',
+            component: ServiceEditGeneral,
+        },
+        {
+            id: 'api',
+            label: 'Api',
+            component: ServiceEditApi,
+        },
+        ...extEditTabs,
+    ];
+    const selectedTab = urlQuery.tab
+        ? Math.max(
+              editTabs.findIndex((tab) => tab.id === urlQuery.tab),
+              0
+          )
+        : 0;
+    const onTabSelect = (tab) => {
+        console.log('TAB', tab);
+        history.push({
+            ...location,
+            search: `?tab=${tab}`,
+        });
+    };
 
-  const mappingError = null;
-  const token = null;
+    const mappingError = null;
+    const token = null;
 
-  return (
-    <Tabs justify="start" margin={{ top: 'small' }} activeIndex={selectedTab} onActive={(index) => onTabSelect(editTabs[index].id)}>
-      {editTabs
-        && editTabs.map((tab) => {
-          const Edit = tab.component;
-          return (
-            <Tab title={tab.label} key={tab.id} focusIndicator={false}>
-              <Box fill overflow={{ vertical: 'auto' }}>
-                {mappingError}
-                <Edit {...service} token={token} onChange={onChange} />
-              </Box>
-            </Tab>
-          );
-        })}
-    </Tabs>
-  );
+    return (
+        <Tabs
+            justify='start'
+            margin={{ top: 'small' }}
+            activeIndex={selectedTab}
+            onActive={(index) => onTabSelect(editTabs[index].id)}>
+            {editTabs &&
+                editTabs.map((tab) => {
+                    const Edit = tab.component;
+                    return (
+                        <Tab title={tab.label} key={tab.id} focusIndicator={false}>
+                            <Box fill overflow={{ vertical: 'auto' }}>
+                                {mappingError}
+                                <Edit {...service} token={token} onChange={onChange} />
+                            </Box>
+                        </Tab>
+                    );
+                })}
+        </Tabs>
+    );
 };
 
 ServiceEditMain.displayName = 'ServiceEditMain';
 
 ServiceEditMain.propTypes = {
-  compact: PropTypes.bool,
-  role: PropTypes.string,
+    compact: PropTypes.bool,
+    role: PropTypes.string,
 };
 
 export default ServiceEditMain;

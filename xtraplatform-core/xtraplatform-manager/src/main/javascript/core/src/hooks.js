@@ -4,7 +4,7 @@ import useDeepCompareEffect from 'use-deep-compare-effect';
 import qs from 'qs';
 
 const useQuery = () => {
-    return qs.parse(useLocation().search);
+    return qs.parse(useLocation().search, { ignoreQueryPrefix: true });
 };
 
 const usePrevious = (value) => {
@@ -79,6 +79,7 @@ const useDebounceFields = (fields, delay, onChange) => {
 
     useDebounce(state, delay, onChange, true);
 
+    //TODO: selects etc.
     const setState = (event) => {
         const field = event.target.name;
         const { value } = event.target;

@@ -1,3 +1,3 @@
-import Services from './Services';
+import Services, { servicesFeature, serviceViewActions, serviceEditTabs } from './Services';
 
-export { Services };
+export { Services, servicesFeature, serviceViewActions, serviceEditTabs };

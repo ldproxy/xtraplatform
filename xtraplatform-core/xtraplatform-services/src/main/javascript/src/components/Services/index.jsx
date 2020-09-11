@@ -10,47 +10,43 @@ import ServiceEdit from './Edit';
 export { servicesFeature, serviceViewActions, serviceEditTabs };
 
 export default createFeature({
-  name: servicesFeature,
+    name: servicesFeature,
 
-  appInit: ({ showStatus }) => {
-    showStatus('Loading services...');
-    return Promise.resolve();
-  },
-
-  fassets: {
-    // provided resources
-    defineUse: {
-      [`${servicesFeature}.routes`]: [
-        {
-          path: '/services',
-          menuLabel: 'Services',
-          content: <ServiceIndex />,
-        },
-        {
-          path: '/services/:id',
-          content: <ServiceEdit />,
-          sidebar: <ServiceIndex isCompact />,
-        },
-      ],
-      [serviceViewActions('noop')]: () => <div>noop</div>,
-      [serviceEditTabs('noop')]: {
-        id: 'noop',
-        label: 'noop',
-        component: () => <div>noop</div>,
-      },
+    appInit: ({ showStatus }) => {
+        showStatus('Loading services...');
+        return Promise.resolve();
     },
-    // consumed resources
-    use: [
-      [serviceViewActions(), { required: false, type: fassetValidations.comp }],
-      [serviceEditTabs(), {
-        required: false,
-        type: validatePropTypes({
-          id: PropTypes.string.isRequired,
-          label: PropTypes.string.isRequired,
-          component: PropTypes.elementType.isRequired,
-        }),
-      }],
-    ],
-  },
 
+    fassets: {
+        // provided resources
+        defineUse: {
+            [`${servicesFeature}.routes`]: [
+                {
+                    path: '/services',
+                    menuLabel: 'Services',
+                    content: <ServiceIndex />,
+                },
+                {
+                    path: '/services/:id',
+                    content: <ServiceEdit />,
+                    sidebar: <ServiceIndex isCompact />,
+                },
+            ],
+        },
+        // consumed resources
+        use: [
+            [serviceViewActions(), { required: false, type: fassetValidations.comp }],
+            [
+                serviceEditTabs(),
+                {
+                    required: false,
+                    type: validatePropTypes({
+                        id: PropTypes.string.isRequired,
+                        label: PropTypes.string.isRequired,
+                        component: PropTypes.elementType.isRequired,
+                    }),
+                },
+            ],
+        ],
+    },
 });
