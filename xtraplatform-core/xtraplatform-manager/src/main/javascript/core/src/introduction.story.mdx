@@ -1,0 +1,145 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title='Core/Introduction' />
+
+<style>{`
+  .subheading {
+    --mediumdark: '#999999';
+    font-weight: 900;
+    font-size: 13px;
+    color: #999;
+    letter-spacing: 6px;
+    line-height: 24px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    margin-top: 40px;
+  }
+
+  .link-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+    row-gap: 10px;
+  }
+
+  @media (min-width: 620px) {
+    .link-list {
+      row-gap: 20px;
+      column-gap: 20px;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media all and (-ms-high-contrast:none) {
+  .link-list {
+      display: -ms-grid;
+      -ms-grid-columns: 1fr 1fr;
+      -ms-grid-rows: 1fr 1fr;
+    }
+  }
+
+  .link-item {
+    display: block;
+    padding: 20px 30px 20px 15px;
+    border: 1px solid #00000010;
+    border-radius: 5px;
+    transition: background 150ms ease-out, border 150ms ease-out, transform 150ms ease-out;
+    color: #333333;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .link-item:hover {
+    border-color: #1EA7FD50;
+    transform: translate3d(0, -3px, 0);
+    box-shadow: rgba(0, 0, 0, 0.08) 0 3px 10px 0;
+  }
+
+  .link-item:active {
+    border-color: #1EA7FD;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .link-item strong {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+  }
+  
+  .link-item img {
+    height: 40px;
+    width: 40px;
+    margin-right: 15px;
+    flex: none;
+  }
+
+  .link-item span {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .tip {
+    display: inline-block;
+    border-radius: 1em;
+    font-size: 11px;
+    line-height: 12px;
+    font-weight: 700;
+    background: #E7FDD8;
+    color: #66BF3C;
+    padding: 4px 12px;
+    margin-right: 10px;
+    vertical-align: top;
+  }
+
+  .tip-wrapper {
+    font-size: 13px;
+    line-height: 20px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+  }
+
+  .tip-wrapper code {
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  
+`}</style>
+
+# Getting started
+
+## Prerequisites
+
+[Node.js 10.x](https://nodejs.org/dist/latest-v10.x/)
+
+Yarn: `npm install -g yarn`
+
+## Creating a module
+
+In a Java bundle, run the following in the `src/main` directory:
+
+```shell
+yarn dlx
+```
+
+Now you can switch to the `javascript` directory and run:
+
+```
+env "NPM_CONFIG_@xtraplatform:registry=https://api.bintray.com/npm/iide/npm/" npx @xtraplatform/create-module javascript geo_json
+```
+
+In this case the name of the module would be `geo_json`, so adjust to the desired name.
+
+[Storybook](https://storybook.js.org/) will start at [http://localhost:6006](http://localhost:6006).
+
+It already contains a story for the `Example` component. You can now start to implement your own components and stories and remove/rename the examples.
+
+## Resources
+
+[Grommet Components](https://v2.grommet.io/components)
+
+[Grommet Icons](https://icons.grommet.io/)
+
+[React Hooks](https://reactjs.org/docs/hooks-intro.html)
+
+[Storybook](https://storybook.js.org/docs/react/get-started/introduction)

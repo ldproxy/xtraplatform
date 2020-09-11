@@ -1,5 +1,5 @@
 
-subprojects {
+configure(subprojects.findAll{it.name != 'xtraplatform-runtime'}) {
 
     dependencies {
         compileOnly         "org.immutables:value:2.7.5:annotations"

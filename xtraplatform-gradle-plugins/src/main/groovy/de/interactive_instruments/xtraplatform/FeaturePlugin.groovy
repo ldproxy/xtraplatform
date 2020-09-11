@@ -15,28 +15,29 @@ class FeaturePlugin implements Plugin<Project> {
 
     static def LOGGER = LoggerFactory.getLogger(FeaturePlugin.class)
 
+    public static String XTRAPLATFORM_CORE = "xtraplatform-core"
+    public static String XTRAPLATFORM_RUNTIME = "xtraplatform-runtime"
+
     @Override
     void apply(Project project) {
-        //project.plugins.apply("java-platform")
         project.plugins.apply("java") // needed for platform constraints
         project.plugins.apply("maven-publish")
 
+        // consumed features
         project.configurations.create("feature")
-        project.configurations.create("featureBundles")
-        project.configurations.create("bundle")
-        //project.configurations.create("default")
 
-        //project.configurations.default.extendsFrom(project.configurations.feature)
+        // consumed bundles
+        project.configurations.create("featureBundles")
+
+        //provided bundles
+        project.configurations.create("bundle")
+
         project.configurations.runtimeElements.extendsFrom(project.configurations.bundle)
         project.configurations.runtimeElements.setTransitive(false)
         project.configurations.bundle.setTransitive(false)
         project.configurations.feature.setTransitive(true)
         project.configurations.featureBundles.setTransitive(true)
         project.configurations.feature.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
-
-        /*project.extensions.javaPlatform.with {
-            allowDependencies()
-        }*/
 
         project.repositories {
             jcenter()
@@ -46,7 +47,6 @@ class FeaturePlugin implements Plugin<Project> {
         }
 
 
-
         def includedBuilds = project.gradle.includedBuilds.collect {it.name}
         def parent = project.gradle.parent
         while (parent != null) {
@@ -54,47 +54,49 @@ class FeaturePlugin implements Plugin<Project> {
             parent = parent.gradle.parent
         }
 
-        project.configurations.feature.incoming.beforeResolve {
-            project.configurations.feature.dependencies.collect().each {
-                    def isIncludedBuild = includedBuilds.contains(it.name)
-                    if (isIncludedBuild) {
-                        //println 'IGNORE'
-                    } else {
-                        //println 'SPLIT'
-                        def bom = [group: it.group, name: "${it.name}", version: it.version]
-                        def bundles = [group: it.group, name: "${it.name}-bundles", version: it.version]
-
-                        project.dependencies.add('featureBundles', project.dependencies.enforcedPlatform(bom))
-
-                        //println "added platform for ${subproject.name}"
-
-                        project.dependencies.add('featureBundles', bundles)
-                    }
-            }
-        }
-
-
+        addFeatureBundles(project, includedBuilds)
 
         addPublication(project)
 
-        configureSubprojects(project)
+        configureSubprojects(project, includedBuilds)
 
         project.plugins.apply(DocPlugin.class)
     }
 
-    void configureSubprojects(Project project) {
-        def includedBuilds = project.gradle.includedBuilds.collect {it.name}
-        def parent = project.gradle.parent
-        while (parent != null) {
-            includedBuilds += parent.includedBuilds.collect {it.name}
-            parent = parent.gradle.parent
+    void addFeatureBundles(Project project, includedBuilds) {
+        project.afterEvaluate {
+            //println "INC " + includedBuilds
+            project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.collect().each {
+                def isIncludedBuild = includedBuilds.contains(it.moduleName)
+
+                if (!isIncludedBuild) {
+                    //println "add bom " + it.moduleName + " to " + project.name
+                    def bom = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
+
+                    project.dependencies.add('featureBundles', project.dependencies.enforcedPlatform(bom))
+
+                    //println "add bundles " + it.moduleName + "-bundles to " + project.name
+                    def bundles = [group: it.moduleGroup, name: "${it.moduleName}-bundles", version: it.moduleVersion]
+
+                    project.dependencies.add('featureBundles', bundles)
+                } else {
+                    //println "add included bundles " + it.moduleName + " to " + project.name
+                    def bundles = [group: it.moduleGroup, name: "${it.moduleName}", version: it.moduleVersion]
+
+                    project.dependencies.add('featureBundles', bundles)
+                }
+
+            }
         }
+    }
+
+    void configureSubprojects(Project project, includedBuilds) {
 
         project.subprojects { Project subproject ->
 
             subproject.plugins.apply('java-library')
             subproject.plugins.apply('maven-publish')
-            if (subproject.name == 'xtraplatform-runtime') {
+            if (subproject.name == XTRAPLATFORM_RUNTIME) {
                 subproject.plugins.apply(RuntimePlugin.class)
             } else {
                 subproject.plugins.apply(BundlePlugin.class)
@@ -115,8 +117,6 @@ class FeaturePlugin implements Plugin<Project> {
                 exclude group: 'org.osgi', module: 'org.osgi.compendium'
             }
 
-
-
             subproject.afterEvaluate {
                 if (subproject.version != null && subproject.version  != 'unspecified') {
                     LOGGER.warn("Warning: Bundle version '{}' is set for '{}'. Bundle versions are ignored, the feature version '{}' from '{}' is used instead.", subproject.version, subproject.name, project.version, project.name)
@@ -124,87 +124,40 @@ class FeaturePlugin implements Plugin<Project> {
                 subproject.version = project.version
             }
 
-
-
-            //println subproject.name
-            //println isIncludedBuild ? 'COMPOSITE' : 'STANDALONE'
-
+            // apply feature boms
             project.configurations.feature.incoming.beforeResolve {
                 project.configurations.feature.dependencies.collect().each {
-                    if (!it.name.endsWith("-bundles")) {
-                        def isIncludedBuild = includedBuilds.contains(it.name)
-                        if (isIncludedBuild) {
-                            //println 'IGNORE'
-                        } else {
-                            //println 'SPLIT'
-                            def bom = [group: it.group, name: "${it.name}", version: it.version]
-                            def bundles = [group: it.group, name: "${it.name}-bundles", version: it.version]
+                    def isIncludedBuild = includedBuilds.contains(it.name)
+                    if (!isIncludedBuild) {
+                        def bom = [group: it.group, name: "${it.name}", version: it.version]
 
-                            //println 'platform: ' + bom
-                            /*subproject.configurations.provided.incoming.afterResolve {
-                                println "resolved provided for ${subproject.name}"
-
-                                subproject.configurations.provided.incoming.dependencies.each({
-                                    println it
-                                    println it.attributes
-                                    it.artifacts.each {a -> println "${a.name} ${a.type} ${a.extension} ${a.url} "}
-                                })
-                            }*/
-                            subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
-
-                            //println "added platform for ${subproject.name}"
-
-                            //project.dependencies.add('feature', bundles)
-                        }
+                        subproject.dependencies.add('provided', subproject.dependencies.enforcedPlatform(bom))
                     }
                 }
             }
 
             project.afterEvaluate {
-
-                // add all bundles from xtraplatform-base with all transitive dependencies to compileOnly
-                project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.each({
-                    if (it.moduleName == 'xtraplatform-base' || it.moduleName == 'xtraplatform-base-bundles') {
-                    	it.children.each { bundle ->
-                            //TODO
-                            //if (bundle.moduleGroup == 'de.interactive_instruments' || bundle.moduleName.startsWith("org.apache.felix.ipojo")) {
-                                subproject.dependencies.add('compileOnly', bundle.name)
-                                subproject.dependencies.add('testImplementation', bundle.name)
-                                //subproject.dependencies.add('implementation', bundle.name)
-                            //}
-                        }
-                    }
-                })
+                // add all bundles from all features with all transitive dependencies to compileOnly
                 project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.each({
-                    if (it.moduleName == 'xtraplatform-base' || it.moduleName == 'xtraplatform-base-bundles') {
                         it.children.each { bundle ->
-                            //TODO
-                            //if (bundle.moduleGroup == 'de.interactive_instruments' || bundle.moduleName.startsWith("org.apache.felix.ipojo")) {
                             subproject.dependencies.add('compileOnly', bundle.name)
                             subproject.dependencies.add('testImplementation', bundle.name)
-                            //subproject.dependencies.add('implementation', bundle.name)
-                            //}
                         }
-                    }
                 })
 
-                if (project.name == 'xtraplatform-base' && subproject.name != 'xtraplatform-runtime') {
-
-                    def runtime = project.subprojects.find {it.name == 'xtraplatform-runtime'}
-                    //println 'RUNTIME ' + runtime + ' ' + subproject
+                // special handling for xtraplatform-core bundles
+                if (project.name == XTRAPLATFORM_CORE && subproject.name != XTRAPLATFORM_RUNTIME) {
+                    def runtime = project.subprojects.find {it.name == XTRAPLATFORM_RUNTIME}
 
                     subproject.dependencies.add('compileOnly', runtime)
                     subproject.dependencies.add('testImplementation', runtime)
-                    //subproject.dependencies.add('implementation', runtime)
 
-
-                    // add all bundles from xtraplatform-base with all transitive dependencies to compileOnly
+                    // add all bundles from xtraplatform-core with all transitive dependencies to compileOnly
                     project.configurations.bundle.resolvedConfiguration.firstLevelModuleDependencies.each({ bundle ->
-                                if (bundle.moduleName.startsWith('org.apache.felix.ipojo')) {
-                                    subproject.dependencies.add('compileOnly', bundle.name)
-                                    subproject.dependencies.add('testImplementation', bundle.name)
-                                    //subproject.dependencies.add('implementation', bundle.name)
-                                }
+                        if (bundle.moduleName.startsWith('org.apache.felix.ipojo')) {
+                            subproject.dependencies.add('compileOnly', bundle.name)
+                            subproject.dependencies.add('testImplementation', bundle.name)
+                        }
                     })
                 }
             }

@@ -2,6 +2,6 @@
 version = '2.0.0'
 
 dependencies {
-    provided project(':xtraplatform-entity-api')
+    provided project(':xtraplatform-entities')
     provided project(':xtraplatform-service-api')
 }

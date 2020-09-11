@@ -1,7 +1,0 @@
-
-dependencies {
-
-    provided group: 'de.interactive_instruments', name: 'xtraplatform-akka'
-
-    embeddedFlat group: 'com.typesafe.akka', name: 'akka-osgi_2.12',   version: '2.5.25'
-}

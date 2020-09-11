@@ -1,0 +1,23 @@
+
+ext {
+    swaggerVersion='2.1.2'
+}
+
+dependencies {
+    provided project(':xtraplatform-dropwizard')
+
+    embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: swaggerVersion
+    embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-models', version: swaggerVersion
+    embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-annotations', version: swaggerVersion
+    embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-integration', version: swaggerVersion
+    embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-core', version: swaggerVersion
+    embeddedFlatExport 'io.github.classgraph:classgraph:4.8.65'
+} 
+
+jar {
+    manifest {
+        instructionFirst 'Import-Package', '!com.google.gson'
+        instructionFirst 'Import-Package', '!org.dom4j'
+        instructionFirst 'Import-Package', '!org.dom4j.io'
+    }
+}

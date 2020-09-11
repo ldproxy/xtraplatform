@@ -1,0 +1,7 @@
+
+dependencies {
+    //TODO
+    provided group: 'org.osgi', name: 'org.osgi.service.http.whiteboard', version: '1.1.0'
+
+    embedded group: 'org.apache.felix', name: 'org.apache.felix.http.proxy', version: '3.0.2'
+}

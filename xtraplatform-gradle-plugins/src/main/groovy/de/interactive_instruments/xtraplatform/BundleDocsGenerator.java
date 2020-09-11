@@ -1,31 +1,10 @@
 package de.interactive_instruments.xtraplatform;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.sun.javadoc.ClassDoc;
-import com.sun.javadoc.ExecutableMemberDoc;
-import com.sun.javadoc.ProgramElementDoc;
-import com.sun.javadoc.Type;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 /**
  * @author zahnen
  */
 public class BundleDocsGenerator {
-
+/* TODO: does not work with Java 11 in Intellij, seems to work in console
     private final List<ClassDoc> classes;
     private final Map<String, String> manifest;
 
@@ -199,4 +178,5 @@ public class BundleDocsGenerator {
     private Predicate<String> ignorablePackages() {
         return pkg -> !pkg.startsWith("java.") && !pkg.equals("void");
     }
+    */
 }

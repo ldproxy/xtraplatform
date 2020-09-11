@@ -1,0 +1,19 @@
+
+dependencies {    
+    provided project(':xtraplatform-dropwizard')
+
+    embeddedExport group: 'org.scala-lang', name: 'scala-library', version: '2.12.12'
+    embeddedExport group: 'org.scala-lang', name: 'scala-reflect', version: '2.12.12'
+    embeddedExport group: 'com.typesafe.akka', name: 'akka-actor_2.12', version: '2.5.31'
+    embeddedExport group: 'com.typesafe.akka', name: 'akka-stream_2.12', version: '2.5.31'
+    embeddedExport group: 'com.typesafe.akka', name: 'akka-http_2.12',   version: '10.1.12'
+    embeddedExport group: 'com.typesafe.akka', name: 'akka-slf4j_2.12', version: '2.5.31'
+    embeddedFlatExport group: 'com.typesafe.akka', name: 'akka-osgi_2.12',   version: '2.5.31'
+}
+ 
+jar {
+    manifest {
+        instruction 'Embed-Excludes', 'slf4j-api'
+        instructionReplace 'Require-Capability', 'osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"'
+    }
+}
