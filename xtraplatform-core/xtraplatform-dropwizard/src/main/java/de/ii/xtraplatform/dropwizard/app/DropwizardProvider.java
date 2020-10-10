@@ -86,6 +86,8 @@ public class DropwizardProvider implements Dropwizard {
 
   @Validate
   public void start() {
+    Thread.currentThread().setName("startup");
+
     Path cfgFile = Paths.get(context.getProperty(USER_CONFIG_PATH_KEY));
     ENV env = Constants.ENV.valueOf(context.getProperty(ENV_KEY));
 

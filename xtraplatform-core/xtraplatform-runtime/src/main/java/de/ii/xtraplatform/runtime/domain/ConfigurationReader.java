@@ -41,7 +41,7 @@ public class ConfigurationReader {
   private static final String LOGGING_CFG_KEY = "/logging";
   private static final Map<Constants.ENV, String> LOG_FORMATS =
       ImmutableMap.of(
-          Constants.ENV.DEVELOPMENT, "%-5p [%d{ISO8601,UTC}] %-48.48c{44} | %m%n%rEx",
+          Constants.ENV.DEVELOPMENT, "%highlight(%-5p) %gray([%d{ISO8601,UTC}] %-48.48c{44}) %cyan(%-24.-24mdc{service}) %cyan(%-24.24t) | %m%n%rEx",
           Constants.ENV.PRODUCTION, "%-5p [%d{ISO8601,UTC}] %m%n%rEx",
           Constants.ENV.CONTAINER, "%-5p [%d{ISO8601,UTC}] %m%n%rEx");
 

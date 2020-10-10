@@ -131,6 +131,7 @@ public class ServicesEndpoint {
       @QueryParam("f") String f,
       @Context UriInfo uriInfo,
       @Context ContainerRequestContext containerRequestContext) {
+    MDC.remove("service");
     List<ServiceData> services =
         entityRegistry.getEntitiesForType(Service.class).stream()
             .map(Service::getData)
@@ -194,6 +195,7 @@ public class ServicesEndpoint {
       @PathParam("version") Integer version) {
     try {
       MDC.put("service", id);
+LOGGER.debug("TEST");
 
       Service service = getService(id, callback);
 
@@ -229,7 +231,7 @@ public class ServicesEndpoint {
 
       return getServiceResource(service);
     } finally {
-      MDC.remove("service");
+      //MDC.remove("service");
     }
   }
 
