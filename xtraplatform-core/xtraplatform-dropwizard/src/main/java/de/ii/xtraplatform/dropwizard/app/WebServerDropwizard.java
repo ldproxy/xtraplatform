@@ -61,7 +61,7 @@ public class WebServerDropwizard {
             new ThreadFactory() {
               @Override
               public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
+                Thread t = new Thread(r, "startup");
                 t.setDaemon(true);
                 return t;
               }

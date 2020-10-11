@@ -1,6 +1,8 @@
 package de.ii.xtraplatform.streams.domain;
 
+import akka.Done;
 import akka.actor.ActorSystem;
+import akka.japi.function.Procedure;
 import akka.stream.ActorMaterializer;
 import akka.stream.ActorMaterializerSettings;
 import akka.stream.javadsl.RunnableGraph;
@@ -35,7 +37,7 @@ public class StreamRunner {
     Config config =
         capacity == DYNAMIC_CAPACITY ? getDefaultConfig(name) : getConfig(name, capacity, capacity);
 
-    ActorSystem system = actorSystemProvider.getActorSystem(context, config, name);
+    ActorSystem system = actorSystemProvider.getActorSystem(context, config, "akka");
     ActorMaterializerSettings settings = ActorMaterializerSettings.create(system)
         .withDispatcher(getDispatcherName(name));
 
@@ -49,6 +51,10 @@ public class StreamRunner {
 
   public <U> CompletionStage<U> run(RunnableGraph<CompletionStage<U>> graph) {
     return graph.run(materializer);
+  }
+
+  public <T> CompletionStage<Done> runForeach(Source<T, ?> source, Procedure<T> procedure) {
+    return source.runForeach(procedure, materializer);
   }
 
   public ExecutionContextExecutor getDispatcher() {
@@ -71,7 +77,8 @@ public class StreamRunner {
         .put("akka.logging-filter", "akka.event.slf4j.Slf4jLoggingFilter")
         //.put("akka.log-config-on-start", true)
         .put(String.format("%s.type", getDispatcherName(name)), "Dispatcher")
-        .put(String.format("%s.executor", getDispatcherName(name)), "fork-join-executor")
+        //.put(String.format("%s.executor", getDispatcherName(name)), "fork-join-executor")
+        .put(String.format("%s.executor", getDispatcherName(name)), "de.ii.xtraplatform.streams.app.StreamExecutorServiceConfigurator")
         .put(String.format("%s.fork-join-executor.parallelism-min", getDispatcherName(name)),
             parallelismMin)
         .put(String.format("%s.fork-join-executor.parallelism-factor", getDispatcherName(name)),
@@ -84,6 +91,6 @@ public class StreamRunner {
   }
 
   private String getDispatcherName(String name) {
-    return String.format("proc.%s", name);
+    return String.format("stream.%s", name);
   }
 }

@@ -9,23 +9,28 @@ package de.ii.xtraplatform.store.app;
 
 import akka.NotUsed;
 import akka.japi.function.Procedure;
-import akka.stream.ActorMaterializer;
 import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.SourceQueueWithComplete;
 import de.ii.xtraplatform.store.domain.Event;
+import de.ii.xtraplatform.streams.app.StreamExecutorServiceConfigurator;
+import de.ii.xtraplatform.streams.domain.StreamRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class EventStream {
 
-  private final ActorMaterializer materializer;
+  private final StreamRunner streamRunner;
   private final CompletableFuture<SourceQueueWithComplete<Event>> eventQueue;
   private final Source<Event, NotUsed> eventStream;
   private CompletableFuture<SourceQueueWithComplete<Event>> eventQueueChain;
   private final String eventType;
 
-  public EventStream(ActorMaterializer materializer, String eventType) {
+  public EventStream(StreamRunner streamRunner, String eventType) {
     this.eventQueue = new CompletableFuture<>();
     this.eventStream =
         Source.<Event>queue(1024, OverflowStrategy.backpressure())
@@ -34,13 +39,13 @@ public class EventStream {
                   eventQueue.complete(queue);
                   return NotUsed.getInstance();
                 });
-    this.materializer = materializer;
+    this.streamRunner = streamRunner;
     this.eventQueueChain = eventQueue;
     this.eventType = eventType;
   }
 
   public void foreach(Consumer<Event> eventConsumer) {
-    eventStream.runForeach((Procedure<Event>) eventConsumer::accept, materializer);
+    streamRunner.runForeach(eventStream, (Procedure<Event>) eventConsumer::accept);
   }
 
   public synchronized void queue(Event event) {

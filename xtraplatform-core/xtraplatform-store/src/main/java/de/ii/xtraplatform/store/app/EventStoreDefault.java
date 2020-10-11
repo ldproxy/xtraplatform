@@ -7,7 +7,6 @@
  */
 package de.ii.xtraplatform.store.app;
 
-import akka.stream.ActorMaterializer;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
 import de.ii.xtraplatform.runtime.domain.StoreConfiguration.StoreMode;
@@ -16,8 +15,7 @@ import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
-import java.io.IOException;
-import java.util.Objects;
+import de.ii.xtraplatform.streams.domain.StreamRunner;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -27,6 +25,9 @@ import org.apache.felix.ipojo.annotations.Validate;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Objects;
 
 @Component
 @Provides
@@ -47,8 +48,7 @@ public class EventStoreDefault implements EventStore {
       @Requires EventStoreDriver eventStoreDriver) {
     this.driver = eventStoreDriver;
     this.subscriptions =
-        new EventSubscriptions(
-            ActorMaterializer.create(actorSystemProvider.getActorSystem(bundleContext)));
+        new EventSubscriptions(new StreamRunner(bundleContext, actorSystemProvider, "events", 1));
     this.storeConfiguration = xtraPlatform.getConfiguration().store;
     this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
   }

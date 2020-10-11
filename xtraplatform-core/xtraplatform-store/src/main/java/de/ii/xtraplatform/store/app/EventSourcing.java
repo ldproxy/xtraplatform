@@ -92,7 +92,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
                 .thenRun(
                     () ->
                         LOGGER.debug(
-                            "Listening for events for {}", ((StateChangeEvent) event).type()));
+                            "Listening for events for {}", started));
           }
           break;
       }
