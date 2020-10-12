@@ -225,6 +225,7 @@ class ApplicationPlugin implements Plugin<Project> {
                             runtime.start();
                             
                             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                                Thread.currentThread().setName("shutdown");
                                 runtime.stop(5000);
                             }));
                         }

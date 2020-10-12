@@ -87,6 +87,9 @@ public class WebServerDropwizard {
       startStopLock.lock();
       try {
         if (started && (action == StartStopAction.STOP || action == StartStopAction.RESTART)) {
+          if (action == StartStopAction.STOP) {
+            Thread.currentThread().setName("shutdown");
+          }
           try {
             String u = getUrl();
 
@@ -162,7 +165,7 @@ public class WebServerDropwizard {
 
     stop();
 
-    startStopThread.shutdownNow();
+    //startStopThread.shutdownNow();
   }
 
   protected void start() {

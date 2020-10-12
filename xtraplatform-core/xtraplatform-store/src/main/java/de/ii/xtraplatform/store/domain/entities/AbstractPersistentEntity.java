@@ -7,12 +7,16 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
+import de.ii.xtraplatform.runtime.domain.Logging;
 import de.ii.xtraplatform.store.domain.entities.handler.Entity;
+import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Property;
 import org.apache.felix.ipojo.annotations.ServiceController;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
 
 /** @author zahnen */
 public abstract class AbstractPersistentEntity<T extends EntityData> implements PersistentEntity {
@@ -26,13 +30,27 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
 
   @Validate // is ignored here, but added by @EntityComponent stereotype
   public final void onValidate() {
-    onStart();
-    if (LOGGER.isTraceEnabled()) {
-      LOGGER.trace("STARTED {} {} {}", getId(), shouldRegister(), register);
+    try(MDC.MDCCloseable closeable = Logging.putCloseable(Logging.CONTEXT.SERVICE, getId())) {
+      onStart();
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("STARTED {} {} {}", getId(), shouldRegister(), register);
+      }
+    }
+  }
+
+  @Invalidate // is ignored here, but added by @EntityComponent stereotype
+  public final void onInvalidate() {
+    try(MDC.MDCCloseable closeable = Logging.putCloseable(Logging.CONTEXT.SERVICE, getId())) {
+      onStop();
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("STOPPED {} {} {}", getId(), shouldRegister(), register);
+      }
     }
   }
 
   protected void onStart() {}
+
+  protected void onStop() {}
 
   @Override
   public T getData() {
