@@ -13,6 +13,7 @@ server:
     timeZone: Europe/Berlin
     appenders: []
   shutdownGracePeriod: 5s
+  enableThreadNameFilter: false
 
 httpClient:
   timeout: 30s

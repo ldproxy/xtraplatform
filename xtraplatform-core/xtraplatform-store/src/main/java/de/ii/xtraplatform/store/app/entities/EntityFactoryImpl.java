@@ -53,6 +53,8 @@ import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static de.ii.xtraplatform.runtime.domain.Logging.withMdc;
+
 /** @author zahnen */
 @Component(publicFactory = false)
 @Provides
@@ -548,7 +550,7 @@ public class EntityFactoryImpl implements EntityFactory {
     this.instanceRegistration.put(instanceId, registration);
     // wait max 5 secs, then proceed
     ScheduledFuture<Boolean> scheduledFuture =
-        executorService.schedule(() -> registration.complete(null), 5, TimeUnit.SECONDS);
+        executorService.schedule(withMdc(() -> registration.complete(null)), 5, TimeUnit.SECONDS);
 
     DeclarationHandle handle = instanceBuilder.build();
     handle.publish();

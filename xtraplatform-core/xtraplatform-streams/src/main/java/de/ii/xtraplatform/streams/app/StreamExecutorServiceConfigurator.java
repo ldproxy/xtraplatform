@@ -9,12 +9,9 @@ import akka.dispatch.MonitorableThreadFactory;
 import akka.dispatch.forkjoin.ForkJoinPool;
 import akka.dispatch.forkjoin.ForkJoinWorkerThread;
 import com.typesafe.config.Config;
-import org.slf4j.MDC;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -22,6 +19,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static de.ii.xtraplatform.runtime.domain.Logging.withMdc;
 
 /**
  * @author zahnen
@@ -61,18 +60,7 @@ public class StreamExecutorServiceConfigurator extends ExecutorServiceConfigurat
 
         @Override
         public void execute(Runnable task) {
-            Map<String, String> copyOfContextMap = MDC.getCopyOfContextMap();
-
-            if (Objects.nonNull(copyOfContextMap)) {
-                Runnable wrapped = () -> {
-                    MDC.setContextMap(copyOfContextMap);
-                    task.run();
-                };
-
-                delegate.execute(wrapped);
-            } else {
-                delegate.execute(task);
-            }
+            delegate.execute(withMdc(task));
         }
 
         @Override

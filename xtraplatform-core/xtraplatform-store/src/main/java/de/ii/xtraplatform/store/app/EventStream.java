@@ -13,11 +13,7 @@ import akka.stream.OverflowStrategy;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.SourceQueueWithComplete;
 import de.ii.xtraplatform.store.domain.Event;
-import de.ii.xtraplatform.streams.app.StreamExecutorServiceConfigurator;
 import de.ii.xtraplatform.streams.domain.StreamRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
