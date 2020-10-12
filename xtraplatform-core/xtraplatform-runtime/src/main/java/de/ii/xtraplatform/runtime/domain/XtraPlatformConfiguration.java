@@ -9,9 +9,15 @@ package de.ii.xtraplatform.runtime.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import de.ii.xtraplatform.runtime.app.ThirdPartyLoggingFilter;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
+import io.dropwizard.logging.DefaultLoggingFactory;
+import io.dropwizard.logging.LoggingFactory;
+import io.dropwizard.logging.LoggingUtil;
 import io.dropwizard.server.ServerFactory;
+
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -20,6 +26,8 @@ public class XtraPlatformConfiguration extends Configuration {
   public XtraPlatformConfiguration() {}
 
   @Valid @NotNull private XtraPlatformServerFactory server = new XtraPlatformServerFactory();
+  @Valid @Nullable
+  private XtraPlatformLoggingFactory logging;
 
   @Override
   @JsonProperty("server")
@@ -34,6 +42,22 @@ public class XtraPlatformConfiguration extends Configuration {
   @JsonProperty("server")
   public void setServerFactory(XtraPlatformServerFactory factory) {
     this.server = factory;
+  }
+
+  @Override
+  @JsonProperty("logging")
+  public synchronized LoggingFactory getLoggingFactory() {
+    return logging;
+  }
+
+  @Override
+  @JsonIgnore
+  public synchronized void setLoggingFactory(LoggingFactory factory) {
+  }
+
+  @JsonProperty("logging")
+  public synchronized void setLoggingFactory(XtraPlatformLoggingFactory factory) {
+    this.logging = factory;
   }
 
   // TODO: not used anymore, but removing breaks backwards compatibility

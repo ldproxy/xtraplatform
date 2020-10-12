@@ -20,6 +20,7 @@ import com.google.common.io.Resources;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.logging.AbstractAppenderFactory;
+import io.dropwizard.logging.ConsoleAppenderFactory;
 import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.util.Duration;
 import java.io.ByteArrayInputStream;
@@ -34,16 +35,28 @@ import java.util.Optional;
 
 public class ConfigurationReader {
 
+  enum APPENDER {CONSOLE, OTHER}
   public static final String CONFIG_FILE_NAME = "cfg.yml";
   public static final String CONFIG_FILE_NAME_LEGACY = "xtraplatform.json";
 
   private static final String BASE_CFG_FILE = "/cfg.base.yml";
   private static final String LOGGING_CFG_KEY = "/logging";
-  private static final Map<Constants.ENV, String> LOG_FORMATS =
+  private static final Map<Constants.ENV, Map<APPENDER, String>> LOG_FORMATS =
       ImmutableMap.of(
-          Constants.ENV.DEVELOPMENT, "%highlight(%-5p) %gray([%d{ISO8601,UTC}] %-48.48c{44}) %cyan(%-24.-24mdc{service}) %cyan(%-24.24t) | %m%n%rEx",
-          Constants.ENV.PRODUCTION, "%-5p [%d{ISO8601,UTC}] %m%n%rEx",
-          Constants.ENV.CONTAINER, "%-5p [%d{ISO8601,UTC}] %m%n%rEx");
+          Constants.ENV.DEVELOPMENT, ImmutableMap.of(
+                  APPENDER.CONSOLE, "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %gray([%c{44}]) %n%rEx",
+                  APPENDER.OTHER, "%-5p [%d{ISO8601,UTC} %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} [%c{44}] %n%rEx"
+              ),
+          Constants.ENV.PRODUCTION, ImmutableMap.of(
+                      APPENDER.CONSOLE, "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
+                      APPENDER.OTHER, "%-5p [%d{ISO8601,UTC} %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"
+              ),
+          //TODO: is this needed?
+          Constants.ENV.CONTAINER, ImmutableMap.of(
+                      APPENDER.CONSOLE, "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
+                      APPENDER.OTHER, "%-5p [%d{ISO8601,UTC} %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"
+              )
+      );
 
   private final List<ByteSource> configsToMergeAfterBase;
   private final ObjectMapper mapper;
@@ -116,13 +129,13 @@ public class ConfigurationReader {
   }
 
   public void loadMergedLogging(Path userConfig, Constants.ENV env) {
-    DefaultLoggingFactory loggingFactory;
+    XtraPlatformLoggingFactory loggingFactory;
 
     try {
       JsonNode jsonNodeBase = mapper.readTree(getBaseConfig().openStream());
 
       loggingFactory =
-          mapper.readerFor(DefaultLoggingFactory.class).readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
+          mapper.readerFor(XtraPlatformLoggingFactory.class).readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
 
       for (ByteSource byteSource : configsToMergeAfterBase) {
         JsonNode jsonNodeMerge = mapper.readTree(byteSource.openStream());
@@ -135,7 +148,7 @@ public class ConfigurationReader {
       mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNodeUser.at(LOGGING_CFG_KEY));
     } catch (Throwable e) {
       // use defaults
-      loggingFactory = new DefaultLoggingFactory();
+      loggingFactory = new XtraPlatformLoggingFactory();
     }
 
     applyLogFormat(loggingFactory, env);
@@ -162,6 +175,8 @@ public class ConfigurationReader {
     loggingFactory.configure(new MetricRegistry(), "xtraplatform");
   }
 
+  //TODO: special console pattern
+  //TODO: only set format if default is set, so custom format in cfg.yml is possible
   private static void applyLogFormat(DefaultLoggingFactory loggingFactory, Constants.ENV env) {
     loggingFactory.getAppenders().stream()
         .filter(
@@ -173,7 +188,11 @@ public class ConfigurationReader {
                   (AbstractAppenderFactory) iLoggingEventAppenderFactory;
 
               if (LOG_FORMATS.containsKey(env)) {
-                abstractAppenderFactory.setLogFormat(LOG_FORMATS.get(env));
+                if (iLoggingEventAppenderFactory instanceof ConsoleAppenderFactory) {
+                  abstractAppenderFactory.setLogFormat(LOG_FORMATS.get(env).get(APPENDER.CONSOLE));
+                } else {
+                  abstractAppenderFactory.setLogFormat(LOG_FORMATS.get(env).get(APPENDER.OTHER));
+                }
               }
             });
   }
