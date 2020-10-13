@@ -48,7 +48,7 @@ public class EventStoreDefault implements EventStore {
       @Requires EventStoreDriver eventStoreDriver) {
     this.driver = eventStoreDriver;
     this.subscriptions =
-        new EventSubscriptions(new StreamRunner(bundleContext, actorSystemProvider, "events", 1));
+        new EventSubscriptions(new StreamRunner(bundleContext, actorSystemProvider, "events"));
     this.storeConfiguration = xtraPlatform.getConfiguration().store;
     this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
   }
