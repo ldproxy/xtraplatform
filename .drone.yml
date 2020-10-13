@@ -1,8 +1,17 @@
 pipeline:
 
+load-cache:
+    image: drillster/drone-volume-cache
+    volumes: [/tmp:/cache]
+    restore: true
+    mount:
+      - .gradle/caches
+      - .gradle/wrapper
+
   build:
     image: openjdk:11-slim
     commands:
+      - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew checkAll assembleAll -PisSnapshot=true
     when:
       event: [push, pull_request]
@@ -10,6 +19,7 @@ pipeline:
   build-release:
     image: openjdk:11-slim
     commands:
+      - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew checkAll assembleAll
     when:
       event: tag
@@ -17,6 +27,7 @@ pipeline:
   publish-snapshot:
     image: openjdk:11-slim
     commands:
+      - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew publishAll -PisSnapshot=true
     when:
       event: push
@@ -25,10 +36,19 @@ pipeline:
   publish-release:
     image: openjdk:11-slim
     commands:
+      - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ../gradlew bintrayUploadAll --continue -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
     secrets: [ bintray_user, bintray_pass]
     when:
       event: tag
+
+  save-cache:
+    image: drillster/drone-volume-cache
+    volumes: [/tmp:/cache]
+    rebuild: true
+    mount:
+      - .gradle/caches
+      - .gradle/wrapper
 
   notify:
     image: plugins/slack:1.3.0
@@ -43,7 +63,7 @@ pipeline:
       {{/if}}
       Commit: <https://github.com/{{ repo.owner }}/{{ repo.name }}/commit/{{ build.commit }}|{{ truncate build.commit 8 }}>
       Branch: <https://github.com/{{ repo.owner }}/{{ repo.name }}/commits/{{ build.branch }}|{{ build.branch }}>
-      Author: {{ build.author }}
+      Author: <@{{ build.author }}>
       Duration: {{ since build.created }}
       <{{ build.link }}|Visit build page ↗>
     when:
