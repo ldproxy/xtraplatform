@@ -1,6 +1,6 @@
 pipeline:
 
-load-cache:
+  load-cache:
     image: drillster/drone-volume-cache
     volumes: [/tmp:/cache]
     restore: true
