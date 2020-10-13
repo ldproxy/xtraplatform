@@ -46,15 +46,28 @@ public class ActorSystemProviderImpl implements ActorSystemProvider {
 
   @Override
   public ActorSystem getActorSystem(final BundleContext context, final Config config) {
-    LOGGER.trace("Starting Akka for bundle {} ...", context.getBundle().getSymbolicName());
+    return getActorSystem(context, config, context.getBundle().getSymbolicName().substring(context.getBundle().getSymbolicName().lastIndexOf(".")+1));
+  }
+
+  @Override
+  public ActorSystem getActorSystem(BundleContext context, Config config, String name) {
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Starting Akka for bundle {} ...", context.getBundle().getSymbolicName());
+    }
     try {
       final ActorSystem system =
           new OsgiActorSystemFactory(context, scala.Option.empty(), ConfigFactory.load(config))
-              .createActorSystem(scala.Option.empty());
-      LOGGER.trace("... Akka started");
+              .createActorSystem(name);
+
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("... Akka started");
+      }
+
       return system;
     } catch (Throwable e) {
-      LOGGER.debug("AKKA START FAILED", e);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("AKKA START FAILED", e);
+      }
     }
     return null;
   }

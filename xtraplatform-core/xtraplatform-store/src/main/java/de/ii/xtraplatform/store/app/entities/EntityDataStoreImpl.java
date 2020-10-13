@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
+import de.ii.xtraplatform.runtime.domain.Logging;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
 import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
@@ -52,6 +53,7 @@ import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /** @author zahnen */
 @Component(publicFactory = false)
@@ -268,39 +270,44 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected CompletableFuture<Void> onCreate(Identifier identifier, EntityData entityData) {
-    EntityData hydratedData = entityData;
+    try(MDC.MDCCloseable closeable = Logging.putCloseable(Logging.CONTEXT.SERVICE, identifier.id())) {
+      EntityData hydratedData = entityData;
 
-    if (entityData instanceof AutoEntity) {
-      AutoEntity autoEntity = (AutoEntity) entityData;
-      if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
-        hydratedData = hydrate(identifier, hydratedData);
+      if (entityData instanceof AutoEntity) {
+        AutoEntity autoEntity = (AutoEntity) entityData;
+        if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
+          hydratedData = hydrate(identifier, hydratedData);
 
-        if (!isEventStoreReadOnly) {
-          Map<String, Object> map = valueEncodingMap
-              .deserialize(identifier, valueEncoding.serialize(hydratedData), valueEncoding.getDefaultFormat());
+          if (!isEventStoreReadOnly) {
+            Map<String, Object> map = valueEncodingMap
+                    .deserialize(identifier, valueEncoding.serialize(hydratedData), valueEncoding.getDefaultFormat());
 
-          Map<String, Object> withoutDefaults = defaultsStore
-              .subtractDefaults(identifier, entityData.getEntitySubType(), map);
+            Map<String, Object> withoutDefaults = defaultsStore
+                    .subtractDefaults(identifier, entityData.getEntitySubType(), map);
 
-          putPartialWithoutTrigger(identifier, withoutDefaults).join();
-          LOGGER.info(
-              "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-              identifier.path().get(0),
-              entityData.getId());
-        } else {
-          LOGGER.warn("Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
-              identifier.path().get(0),
-              entityData.getId());
+            putPartialWithoutTrigger(identifier, withoutDefaults).join();
+            LOGGER.info(
+                    "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
+                    identifier.path()
+                              .get(0),
+                    entityData.getId());
+          } else {
+            LOGGER.warn("Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
+                    identifier.path()
+                              .get(0),
+                    entityData.getId());
+          }
         }
       }
+
+      hydratedData = hydrate(identifier, hydratedData);
+
+      return entityFactory
+              .createInstance(identifier.path()
+                                        .get(0), identifier.id(), hydratedData)
+              .whenComplete((entity, throwable) -> LOGGER.debug("Entity created: {}", identifier))
+              .thenAccept(ignore -> CompletableFuture.completedFuture(null));
     }
-
-    hydratedData = hydrate(identifier, hydratedData);
-
-    return entityFactory
-        .createInstance(identifier.path().get(0), identifier.id(), hydratedData)
-        .whenComplete((entity, throwable) -> LOGGER.debug("Entity created: {}", identifier))
-        .thenAccept(ignore -> CompletableFuture.completedFuture(null));
   }
 
   @Override

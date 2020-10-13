@@ -54,6 +54,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
   private final EventPaths eventPaths;
   private final List<EventPaths> additionalEventPaths;
   private final boolean isEnabled;
+  private final boolean isReadOnly;
 
   EventStoreDriverFs(@Context BundleContext bundleContext, @Requires XtraPlatform xtraPlatform) {
     this.storeDirectory =
@@ -67,6 +68,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
             xtraPlatform.getConfiguration().store.overridesPathPatterns,
             this::adjustPathPattern);
     this.isEnabled = true; // TODO: xtraPlatform.getConfiguration().store.driver = StoreDriver.FS
+    this.isReadOnly = xtraPlatform.getConfiguration().store.mode == StoreConfiguration.StoreMode.READ_ONLY;
 
     List<Path> additionalDirectories =
         getAdditionalDirectories(
@@ -90,8 +92,8 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
   @Validate
   private void onInit() {
-    if (!Files.exists(storeDirectory)) {
-      throw new IllegalArgumentException("Store path does not exist");
+    if (!Files.exists(storeDirectory) && isReadOnly) {
+      throw new IllegalArgumentException("Store path does not exist and cannot be created because store is read-only");
     }
     if (isEnabled) {
       this.publish = true;

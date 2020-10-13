@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 @Component
 @Provides(
     properties = {
-      @StaticServiceProperty(name = "alias", type = "java.lang.String", value = "/robots.txt")
+      @StaticServiceProperty(name = "osgi.http.whiteboard.servlet.pattern", type = "java.lang.String", value = "/robots.txt")
     })
 @Instantiate
 public class RobotsServlet extends HttpServlet implements ContainerResponseFilter {

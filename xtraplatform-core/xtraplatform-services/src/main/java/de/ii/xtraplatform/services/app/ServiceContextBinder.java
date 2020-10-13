@@ -30,7 +30,7 @@ public class ServiceContextBinder extends AbstractBinder
   // TODO: bind every subtype
   @Override
   protected void configure() {
-    bindFactory(ServiceFactory.class).to(Service.class).in(RequestScoped.class);
+    bindFactory(ServiceFactory.class).proxy(true).proxyForSameScope(false).to(Service.class).in(RequestScoped.class);
   }
 
   @Override

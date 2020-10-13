@@ -10,6 +10,7 @@ package de.ii.xtraplatform.services.app;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.dropwizard.domain.MediaTypeCharset;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
+import de.ii.xtraplatform.runtime.domain.Logging;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceEndpoint;
@@ -46,7 +47,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 /** @author zahnen */
 @Component
@@ -131,6 +131,8 @@ public class ServicesEndpoint {
       @QueryParam("f") String f,
       @Context UriInfo uriInfo,
       @Context ContainerRequestContext containerRequestContext) {
+    openLoggingContext(containerRequestContext);
+
     List<ServiceData> services =
         entityRegistry.getEntitiesForType(Service.class).stream()
             .map(Service::getData)
@@ -192,8 +194,6 @@ public class ServicesEndpoint {
       @QueryParam("callback") String callback,
       @Context ContainerRequestContext containerRequestContext,
       @PathParam("version") Integer version) {
-    try {
-      MDC.put("service", id);
 
       Service service = getService(id, callback);
 
@@ -225,12 +225,11 @@ public class ServicesEndpoint {
         throw new NotFoundException();
       }
 
-      serviceContext.inject(containerRequestContext, service);
+    openLoggingContext(id, containerRequestContext);
+
+    serviceContext.inject(containerRequestContext, service);
 
       return getServiceResource(service);
-    } finally {
-      MDC.remove("service");
-    }
   }
 
   // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory
@@ -251,5 +250,42 @@ public class ServicesEndpoint {
 
   private Optional<URI> getExternalUri() {
     return Optional.ofNullable(xtraPlatform.getServicesUri());
+  }
+
+  private void openLoggingContext(ContainerRequestContext containerRequestContext) {
+    openLoggingContext(null, containerRequestContext);
+  }
+
+  private void openLoggingContext(String serviceId, ContainerRequestContext containerRequestContext) {
+    if (Objects.nonNull(serviceId)) {
+      Logging.put(Logging.CONTEXT.SERVICE, serviceId);
+    } else {
+      Logging.remove(Logging.CONTEXT.SERVICE);
+    }
+
+    if (LOGGER.isDebugEnabled()) {
+      Logging.put(Logging.CONTEXT.REQUEST, Logging.generateRandomUuid().toString());
+      LOGGER.debug("Processing request: {} {}", containerRequestContext.getMethod(), formatUri(containerRequestContext.getUriInfo().getRequestUri(), serviceId));
+    } else {
+      Logging.remove(Logging.CONTEXT.REQUEST);
+    }
+  }
+
+  private static String formatUri(URI uri, String serviceId) {
+    String path = uri.getPath();
+
+    if (Objects.nonNull(serviceId)) {
+      path = path.substring(path.indexOf(serviceId) + serviceId.length());
+    }
+
+    if (path.isEmpty()) {
+      path = "/";
+    }
+
+    if (uri.getQuery() == null) {
+      return path;
+    }
+
+    return path + "?" + uri.getQuery();
   }
 }

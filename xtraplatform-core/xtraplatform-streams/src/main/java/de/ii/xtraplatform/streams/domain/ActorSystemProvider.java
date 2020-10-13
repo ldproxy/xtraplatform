@@ -16,4 +16,6 @@ public interface ActorSystemProvider {
   ActorSystem getActorSystem(BundleContext context);
 
   ActorSystem getActorSystem(BundleContext context, Config config);
+
+  ActorSystem getActorSystem(BundleContext context, Config config, String name);
 }

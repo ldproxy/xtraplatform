@@ -38,11 +38,15 @@ class FeaturePlugin implements Plugin<Project> {
         project.configurations.feature.setTransitive(true)
         project.configurations.featureBundles.setTransitive(true)
         project.configurations.feature.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
+        project.configurations.featureBundles.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
 
         project.repositories {
             jcenter()
             maven {
                 url "https://dl.bintray.com/iide/maven"
+            }
+            maven {
+                url "https://pkgs2.ci.interactive-instruments.de/repository/maven-snapshots/"
             }
         }
 
@@ -109,6 +113,9 @@ class FeaturePlugin implements Plugin<Project> {
                 jcenter()
                 maven {
                     url "https://dl.bintray.com/iide/maven"
+                }
+                maven {
+                    url "https://pkgs2.ci.interactive-instruments.de/repository/maven-snapshots/"
                 }
             }
 
