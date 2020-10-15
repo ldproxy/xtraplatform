@@ -1,27 +1,47 @@
 package de.ii.xtraplatform.runtime.domain;
 
 import org.slf4j.MDC;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+import org.slf4j.helpers.BasicMarker;
 
 import java.net.URI;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 /**
  * @author zahnen
  */
-public class Logging {
+public class LogContext {
 
     public enum CONTEXT {
         SERVICE,
         REQUEST
     }
 
-    public enum MARKER {
-        SQL
+    public enum MARKER implements MyMarker {
+        DEV,
+        SQL,
+        SQL_RESULT,
+        STACKTRACE,
+        DUMP;
+
+        @Override
+        public String toString() {
+            return "#" + super.toString();
+        }
+
+        @Override
+        public String getName() {
+            return toString();
+        }
     }
 
     public static boolean has(CONTEXT context) {
@@ -68,6 +88,30 @@ public class Logging {
         return callable;
     }
 
+    public static <U> Consumer<U> withMdc(Consumer<U> consumer) {
+        Map<String, String> mdc = MDC.getCopyOfContextMap();
+
+        if (Objects.nonNull(mdc)) {
+            return (u) -> {
+                MDC.setContextMap(mdc);
+                consumer.accept(u);
+            };
+        }
+        return consumer;
+    }
+
+    public static <T,U,V> BiFunction<T,U,V> withMdc(BiFunction<T,U,V> biFunction) {
+        Map<String, String> mdc = MDC.getCopyOfContextMap();
+
+        if (Objects.nonNull(mdc)) {
+            return (t,u) -> {
+                MDC.setContextMap(mdc);
+                return biFunction.apply(t,u);
+            };
+        }
+        return biFunction;
+    }
+
     /**
      * Generate a random UUID v4 that will perform reasonably when used by
      * multiple threads under load.
@@ -90,5 +134,43 @@ public class Logging {
         leastSig |= 0x8000000000000000L;
 
         return new UUID(mostSig, leastSig);
+    }
+
+    private interface MyMarker extends Marker {
+
+        @Override
+        default void add(Marker reference) {
+
+        }
+
+        @Override
+        default boolean remove(Marker reference) {
+            return false;
+        }
+
+        @Override
+        default boolean hasChildren() {
+            return false;
+        }
+
+        @Override
+        default boolean hasReferences() {
+            return false;
+        }
+
+        @Override
+        default Iterator<Marker> iterator() {
+            return null;
+        }
+
+        @Override
+        default boolean contains(Marker other) {
+            return false;
+        }
+
+        @Override
+        default boolean contains(String name) {
+            return false;
+        }
     }
 }

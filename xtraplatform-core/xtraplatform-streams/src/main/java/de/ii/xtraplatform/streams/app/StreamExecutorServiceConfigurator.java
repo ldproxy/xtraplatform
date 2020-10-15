@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static de.ii.xtraplatform.runtime.domain.Logging.withMdc;
+import static de.ii.xtraplatform.runtime.domain.LogContext.withMdc;
 
 /**
  * @author zahnen
@@ -57,7 +57,7 @@ public class StreamExecutorServiceConfigurator extends ExecutorServiceConfigurat
             this.delegate = delegate;
         }
 
-
+        //TODO: is this really needed? otherwise we can remove MyForkJoinPool + MyExecutorServiceFactory
         @Override
         public void execute(Runnable task) {
             delegate.execute(withMdc(task));

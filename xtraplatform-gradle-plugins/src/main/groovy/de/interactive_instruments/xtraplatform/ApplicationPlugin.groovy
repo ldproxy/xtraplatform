@@ -101,8 +101,9 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }
 
+        //suppress java 9+ illegal access warnings for felix and jackson afterburner as well as geotools/hsqldb
         if (JavaVersion.current().isJava9Compatible()) {
-            project.application.applicationDefaultJvmArgs  = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED']
+            project.application.applicationDefaultJvmArgs  = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED']
         }
 
         project.tasks.run.with {
@@ -114,9 +115,9 @@ class ApplicationPlugin implements Plugin<Project> {
             args dataDir.absolutePath
             standardInput = System.in
             environment 'XTRAPLATFORM_ENV', 'DEVELOPMENT'
-            //suppress java 9+ illegal access warnings for felix and jackson afterburner
+            //suppress java 9+ illegal access warnings for felix and jackson afterburner as well as geotools/hsqldb
             if (JavaVersion.current().isJava9Compatible()) {
-                jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED'
+                jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED'
             }
         }
     }

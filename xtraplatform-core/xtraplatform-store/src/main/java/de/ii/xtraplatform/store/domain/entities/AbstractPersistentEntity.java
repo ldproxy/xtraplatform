@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
-import de.ii.xtraplatform.runtime.domain.Logging;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.domain.entities.handler.Entity;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Property;
@@ -30,7 +30,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
 
   @Validate // is ignored here, but added by @EntityComponent stereotype
   public final void onValidate() {
-    try(MDC.MDCCloseable closeable = Logging.putCloseable(Logging.CONTEXT.SERVICE, getId())) {
+    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       onStart();
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STARTED {} {} {}", getId(), shouldRegister(), register);
@@ -40,7 +40,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
 
   @Invalidate // is ignored here, but added by @EntityComponent stereotype
   public final void onInvalidate() {
-    try(MDC.MDCCloseable closeable = Logging.putCloseable(Logging.CONTEXT.SERVICE, getId())) {
+    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       onStop();
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STOPPED {} {} {}", getId(), shouldRegister(), register);

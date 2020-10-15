@@ -10,7 +10,7 @@ package de.ii.xtraplatform.services.app;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.dropwizard.domain.MediaTypeCharset;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.runtime.domain.Logging;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceEndpoint;
@@ -225,7 +225,7 @@ public class ServicesEndpoint {
         throw new NotFoundException();
       }
 
-    openLoggingContext(id, containerRequestContext);
+    openLoggingContext(id, version, containerRequestContext);
 
     serviceContext.inject(containerRequestContext, service);
 
@@ -253,29 +253,33 @@ public class ServicesEndpoint {
   }
 
   private void openLoggingContext(ContainerRequestContext containerRequestContext) {
-    openLoggingContext(null, containerRequestContext);
+    openLoggingContext(null, null, containerRequestContext);
   }
 
-  private void openLoggingContext(String serviceId, ContainerRequestContext containerRequestContext) {
+  private void openLoggingContext(String serviceId, Integer version, ContainerRequestContext containerRequestContext) {
     if (Objects.nonNull(serviceId)) {
-      Logging.put(Logging.CONTEXT.SERVICE, serviceId);
+      LogContext.put(LogContext.CONTEXT.SERVICE, serviceId);
     } else {
-      Logging.remove(Logging.CONTEXT.SERVICE);
+      LogContext.remove(LogContext.CONTEXT.SERVICE);
     }
 
     if (LOGGER.isDebugEnabled()) {
-      Logging.put(Logging.CONTEXT.REQUEST, Logging.generateRandomUuid().toString());
-      LOGGER.debug("Processing request: {} {}", containerRequestContext.getMethod(), formatUri(containerRequestContext.getUriInfo().getRequestUri(), serviceId));
+      LogContext.put(LogContext.CONTEXT.REQUEST, LogContext.generateRandomUuid().toString());
+      LOGGER.debug("Processing request: {} {}", containerRequestContext.getMethod(), formatUri(containerRequestContext.getUriInfo().getRequestUri(), serviceId, version));
     } else {
-      Logging.remove(Logging.CONTEXT.REQUEST);
+      LogContext.remove(LogContext.CONTEXT.REQUEST);
     }
   }
 
-  private static String formatUri(URI uri, String serviceId) {
+  private static String formatUri(URI uri, String serviceId, Integer version) {
     String path = uri.getPath();
 
     if (Objects.nonNull(serviceId)) {
       path = path.substring(path.indexOf(serviceId) + serviceId.length());
+    }
+    if (Objects.nonNull(version)) {
+      String versionString = "v"+version;
+      path = path.substring(path.indexOf(versionString) + versionString.length());
     }
 
     if (path.isEmpty()) {

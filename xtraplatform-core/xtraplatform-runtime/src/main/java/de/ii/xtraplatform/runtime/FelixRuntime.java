@@ -16,6 +16,7 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.runtime.domain.ConfigurationReader;
 import de.ii.xtraplatform.runtime.domain.Constants;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.util.Duration;
@@ -85,7 +86,7 @@ public class FelixRuntime {
       LOGGER.debug("Base configs: {}", baseConfigs);
       try {
         String cfg = configurationReader.loadMergedConfig(configurationFile, env);
-        LOGGER.debug("Application configuration: {}", cfg);
+        LOGGER.debug(LogContext.MARKER.DUMP, "Application configuration: \n{}", cfg);
       } catch (IOException e) {
         // ignore
       }

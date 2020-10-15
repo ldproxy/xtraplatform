@@ -11,7 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
-import de.ii.xtraplatform.runtime.domain.Logging;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
 import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
@@ -270,7 +270,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected CompletableFuture<Void> onCreate(Identifier identifier, EntityData entityData) {
-    try(MDC.MDCCloseable closeable = Logging.putCloseable(Logging.CONTEXT.SERVICE, identifier.id())) {
+    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
       EntityData hydratedData = entityData;
 
       if (entityData instanceof AutoEntity) {

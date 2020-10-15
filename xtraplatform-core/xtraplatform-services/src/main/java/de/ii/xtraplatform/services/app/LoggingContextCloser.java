@@ -1,6 +1,6 @@
 package de.ii.xtraplatform.services.app;
 
-import de.ii.xtraplatform.runtime.domain.Logging;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -27,9 +27,9 @@ public class LoggingContextCloser implements ContainerResponseFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
-        if (Logging.has(Logging.CONTEXT.REQUEST)) {
+        if (LogContext.has(LogContext.CONTEXT.REQUEST)) {
             responseContext.getHeaders()
-                    .putSingle(REQUEST_ID, Logging.get(Logging.CONTEXT.REQUEST));
+                    .putSingle(REQUEST_ID, LogContext.get(LogContext.CONTEXT.REQUEST));
 
             if (responseContext.getEntity() instanceof StreamingOutput && !(responseContext.getEntityStream() instanceof OutputStreamCloseListener)) {
                 responseContext.setEntityStream(new OutputStreamCloseListener(responseContext));
@@ -42,7 +42,7 @@ public class LoggingContextCloser implements ContainerResponseFilter {
     private void closeLoggingContext(ContainerResponseContext responseContext) {
         LOGGER.debug("Sending response: {} {}", responseContext.getStatus(), responseContext.getStatusInfo());
 
-        Logging.remove(Logging.CONTEXT.REQUEST);
+        LogContext.remove(LogContext.CONTEXT.REQUEST);
     }
 
     private class OutputStreamCloseListener extends OutputStream {
