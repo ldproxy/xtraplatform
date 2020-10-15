@@ -9,6 +9,10 @@ allprojects {
         repositories {
             maven {
                 url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
+                credentials {
+                    username project.snapshotUser
+                    password project.snapshotPassword
+                }
             }
         }
     }
