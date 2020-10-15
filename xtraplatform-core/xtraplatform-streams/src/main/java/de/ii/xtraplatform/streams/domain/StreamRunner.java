@@ -2,6 +2,7 @@ package de.ii.xtraplatform.streams.domain;
 
 import akka.Done;
 import akka.actor.ActorSystem;
+import akka.japi.function.Function2;
 import akka.japi.function.Procedure;
 import akka.stream.ActorMaterializer;
 import akka.stream.ActorMaterializerSettings;
@@ -13,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,52 +65,65 @@ public class StreamRunner {
     this.queueSize = queueSize;
     this.queue = new ConcurrentLinkedQueue<>();
     this.running = new AtomicInteger(0);
-    //LOGGER.info("RUNNER {} {}", capacity, queueSize);
   }
 
-  public <T, U> CompletionStage<U> run(Source<T, ?> source, Sink<T, CompletionStage<U>> sink) {
-    return run(source.toMat(sink, Keep.right()));
-    //return source.runWith(sink, materializer);
+  public <T, U, V> CompletionStage<V> run(Source<T, U> source, Sink<T, CompletionStage<V>> sink) {
+    return run(source, sink, Keep.right());
   }
 
-  //TODO: dynamic capacity
-  public <U> CompletionStage<U> run(RunnableGraph<CompletionStage<U>> graph) {
+  public <T, U, V, W> CompletionStage<W> run(Source<T, U> source, Sink<T, CompletionStage<V>> sink, Function2<U,CompletionStage<V>,CompletionStage<W>> combiner) {
+    return run(LogContextStream.graphWithMdc(source, sink, combiner));
+  }
+
+  public <T,U> CompletionStage<Done> runForeach(Source<T, U> source, Procedure<T> procedure) {
+    return run(source, Sink.foreach(procedure), Keep.right());
+  }
+
+  public <U> CompletionStage<U> run(RunnableGraphWithMdc<CompletionStage<U>> graph) {
+    return runGraph(graph.getGraph());
+  }
+
+  private <U> CompletionStage<U> runGraph(RunnableGraph<CompletionStage<U>> graph) {
     if (getCapacity() == DYNAMIC_CAPACITY) {
       return graph.run(materializer);
     }
+
     CompletableFuture<U> completableFuture = new CompletableFuture<>();
-    Runnable task = () -> {
-      //LOGGER.debug("STARTED STREAM {}-{}", name, running);
-      //TODO: throwable case (exceptionally?)
-      graph.run(materializer).thenAccept(t -> {
-        //LOGGER.debug("FINISHING STREAM {}-{}", name, running);
-        completableFuture.complete(t);
 
-        running.decrementAndGet();
-        //LOGGER.debug("FINISHED STREAM {}-{}", name, running);
+    Runnable task = () -> graph.run(materializer).thenAccept(LogContext.withMdc(t -> {
+      completableFuture.complete(t);
 
-        checkQueue();
-      });
-    };
+      runNext();
+    }));
 
-    queue.offer(task);
-    checkQueue();
+    run(task);
 
     return completableFuture;
   }
 
-  //TODO: can we remove synchronized?
-  private synchronized void checkQueue() {
-    if (running.get() < queueSize && Objects.nonNull(queue.peek())) {
-      running.incrementAndGet();
-      //LOGGER.debug("STARTING STREAM {}-{}", name, running);
-      queue.poll().run();
+  private void run(Runnable task) {
+    synchronized (running) {
+      if (running.get() < queueSize) {
+        running.incrementAndGet();
+        task.run();
+      } else {
+        queue.offer(task);
+      }
     }
   }
 
-  public <T> CompletionStage<Done> runForeach(Source<T, ?> source, Procedure<T> procedure) {
-    return run(source, Sink.foreach(procedure));
-    //return source.runForeach(procedure, materializer);
+  private void runNext() {
+    synchronized (running) {
+      int current = running.get() - 1;
+      if (current < queueSize) {
+        Runnable task = queue.poll();
+        if (Objects.nonNull(task)) {
+          task.run();
+        } else {
+          running.decrementAndGet();
+        }
+      }
+    }
   }
 
   public ExecutionContextExecutor getDispatcher() {
@@ -119,11 +134,11 @@ public class StreamRunner {
     return capacity;
   }
 
-  private Config getDefaultConfig(String name) {
+  private static Config getDefaultConfig(String name) {
     return getConfig(name, 8, 64);
   }
 
-  private Config getConfig(String name, int parallelismMin, int parallelismMax) {
+  private static Config getConfig(String name, int parallelismMin, int parallelismMax) {
     return ConfigFactory.parseMap(new ImmutableMap.Builder<String, Object>()
         .put("akka.stdout-loglevel", "OFF")
         .put("akka.loglevel", "INFO")
@@ -144,7 +159,8 @@ public class StreamRunner {
         .build());
   }
 
-  private String getDispatcherName(String name) {
+  private static String getDispatcherName(String name) {
     return String.format("stream.%s", name);
   }
+
 }

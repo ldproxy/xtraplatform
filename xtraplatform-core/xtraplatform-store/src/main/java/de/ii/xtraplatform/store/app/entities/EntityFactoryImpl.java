@@ -53,7 +53,7 @@ import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static de.ii.xtraplatform.runtime.domain.Logging.withMdc;
+import static de.ii.xtraplatform.runtime.domain.LogContext.withMdc;
 
 /** @author zahnen */
 @Component(publicFactory = false)

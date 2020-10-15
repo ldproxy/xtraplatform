@@ -44,17 +44,17 @@ public class ConfigurationReader {
   private static final Map<Constants.ENV, Map<APPENDER, String>> LOG_FORMATS =
       ImmutableMap.of(
           Constants.ENV.DEVELOPMENT, ImmutableMap.of(
-                  APPENDER.CONSOLE, "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %gray([%c{44}]) %n%rEx",
-                  APPENDER.OTHER, "%-5p [%d{ISO8601,UTC} %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} [%c{44}] %n%rEx"
+                  APPENDER.CONSOLE, "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %gray([%c{44}]) %magenta([%t]) %blue(%marker) %n%rEx",
+                  APPENDER.OTHER, "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} [%c{44}] [%t] %n%rEx"
               ),
           Constants.ENV.PRODUCTION, ImmutableMap.of(
                       APPENDER.CONSOLE, "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
-                      APPENDER.OTHER, "%-5p [%d{ISO8601,UTC} %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"
+                      APPENDER.OTHER, "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"
               ),
           //TODO: is this needed?
           Constants.ENV.CONTAINER, ImmutableMap.of(
                       APPENDER.CONSOLE, "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
-                      APPENDER.OTHER, "%-5p [%d{ISO8601,UTC} %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"
+                      APPENDER.OTHER, "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"
               )
       );
 

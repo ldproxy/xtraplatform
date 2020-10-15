@@ -47,9 +47,6 @@ class FeaturePlugin implements Plugin<Project> {
             maven {
                 url "https://dl.bintray.com/iide/maven"
             }
-            maven {
-                url "https://pkgs2.ci.interactive-instruments.de/repository/maven-snapshots/"
-            }
         }
 
 
@@ -115,9 +112,6 @@ class FeaturePlugin implements Plugin<Project> {
                 jcenter()
                 maven {
                     url "https://dl.bintray.com/iide/maven"
-                }
-                maven {
-                    url "https://pkgs2.ci.interactive-instruments.de/repository/maven-snapshots/"
                 }
             }
 
