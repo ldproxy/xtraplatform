@@ -8,13 +8,26 @@
 package de.ii.xtraplatform.services.domain;
 
 import de.ii.xtraplatform.store.domain.entities.AbstractPersistentEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 public abstract class AbstractService<T extends ServiceData> extends AbstractPersistentEntity<T>
     implements Service {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractService.class);
 
   @Override
   protected boolean shouldRegister() {
     return getData() != null && getData().getEnabled();
+  }
+
+  @Override
+  protected void onStart() {
+      LOGGER.info("Service with id '{}' started successfully.", getId());
+  }
+
+  @Override
+  protected void onStop() {
+      LOGGER.info("Service with id '{}' stopped.", getId());
   }
 }
