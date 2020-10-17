@@ -15,6 +15,10 @@ import java.util.concurrent.CompletableFuture;
 public interface TaskQueue {
   CompletableFuture<TaskStatus> launch(Task task);
 
+  CompletableFuture<TaskStatus> launch(Task task, long delay);
+
+  void remove(Task task);
+
   List<Task> getFutureTasks();
 
   Optional<TaskStatus> getCurrentTask();
