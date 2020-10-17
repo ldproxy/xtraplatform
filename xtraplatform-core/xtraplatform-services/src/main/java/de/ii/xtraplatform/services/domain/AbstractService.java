@@ -15,6 +15,6 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
 
   @Override
   protected boolean shouldRegister() {
-    return getData() != null && getData().getShouldStart();
+    return getData() != null && getData().getEnabled();
   }
 }
