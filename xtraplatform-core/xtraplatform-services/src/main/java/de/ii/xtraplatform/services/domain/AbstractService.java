@@ -23,11 +23,15 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
 
   @Override
   protected void onStart() {
-      LOGGER.info("Service with id '{}' started successfully.", getId());
+      if (shouldRegister()) {
+        LOGGER.info("Service with id '{}' started successfully.", getId());
+      }
   }
 
   @Override
   protected void onStop() {
+    if (shouldRegister()) {
       LOGGER.info("Service with id '{}' stopped.", getId());
+    }
   }
 }
