@@ -10,7 +10,11 @@ package de.ii.xtraplatform.services.app;
 import de.ii.xtraplatform.services.domain.TaskStatus;
 import it.sauronsoftware.cron4j.TaskExecutor;
 import it.sauronsoftware.cron4j.TaskExecutorListener;
+
 import java.time.Instant;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /** @author zahnen */
 public class TaskStatusCron4j implements TaskStatus {
@@ -86,7 +90,7 @@ public class TaskStatusCron4j implements TaskStatus {
   }
 
   @Override
-  public void onDone(Runnable runnable) {
+  public void onDone(Consumer<Optional<Throwable>> runnable) {
     taskExecutor.addTaskExecutorListener(
         new TaskExecutorListener() {
           @Override
@@ -100,7 +104,7 @@ public class TaskStatusCron4j implements TaskStatus {
 
           @Override
           public void executionTerminated(TaskExecutor taskExecutor, Throwable throwable) {
-            runnable.run();
+            runnable.accept(Optional.ofNullable(throwable));
           }
 
           @Override
@@ -110,4 +114,52 @@ public class TaskStatusCron4j implements TaskStatus {
           public void completenessValueChanged(TaskExecutor taskExecutor, double v) {}
         });
   }
+
+    @Override
+    public void onChange(BiConsumer<Double, String> statusConsumer, long minInterval) {
+        taskExecutor.addTaskExecutorListener(
+                new TaskExecutorListener() {
+                    private long last = Instant.now().toEpochMilli();
+                    @Override
+                    public void executionPausing(TaskExecutor taskExecutor) {}
+
+                    @Override
+                    public void executionResuming(TaskExecutor taskExecutor) {}
+
+                    @Override
+                    public void executionStopping(TaskExecutor taskExecutor) {}
+
+                    @Override
+                    public void executionTerminated(TaskExecutor taskExecutor, Throwable throwable) {
+
+                    }
+
+                    @Override
+                    public void statusMessageChanged(TaskExecutor taskExecutor, String s) {
+                        synchronized (this) {
+                            long now = Instant.now().toEpochMilli();
+                            if (now - last > minInterval) {
+                                statusConsumer.accept(taskExecutor.getCompleteness(), s);
+                                last = now;
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void completenessValueChanged(TaskExecutor taskExecutor, double v) {
+                        synchronized (this) {
+                            long now = Instant.now().toEpochMilli();
+                            if (now - last > minInterval) {
+                                statusConsumer.accept(v, taskExecutor.getStatusMessage());
+                                last = now;
+                            }
+                        }
+                    }
+                });
+    }
+
+    @Override
+    public void stop() {
+        taskExecutor.stop();
+    }
 }

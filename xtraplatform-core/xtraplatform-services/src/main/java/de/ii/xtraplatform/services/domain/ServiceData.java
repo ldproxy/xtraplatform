@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.services.domain;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -35,8 +36,9 @@ public interface ServiceData extends EntityData, AutoEntity {
 
   Optional<String> getDescription();
 
+  @JsonAlias("shouldStart")
   @Value.Default
-  default boolean getShouldStart() {
+  default boolean getEnabled() {
     return true;
   }
 

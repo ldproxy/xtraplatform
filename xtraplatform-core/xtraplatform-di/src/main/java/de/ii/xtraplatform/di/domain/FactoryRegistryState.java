@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.di.domain;
 
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +40,11 @@ public final class FactoryRegistryState<T> implements Registry.State<Factory>, F
         new RegistryState<>(
             String.format("%s factory", shortName), bundleContext, componentProperties);
     this.instances = new ConcurrentHashMap<>();
+  }
+
+  @Override
+  public Collection<Factory> get() {
+    return factories.get();
   }
 
   @Override

@@ -9,7 +9,7 @@ group = 'de.interactive_instruments'
 
 version = '3.4.0'
 
-sourceCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
     jcenter()

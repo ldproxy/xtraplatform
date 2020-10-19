@@ -17,6 +17,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -42,11 +44,13 @@ public class EntityRegistryImpl implements EntityRegistry {
   private final BundleContext context;
   private final Set<PersistentEntity> entities;
   private final List<BiConsumer<String, PersistentEntity>> entityListeners;
+  private final List<Consumer<PersistentEntity>> entityGoneListeners;
 
   public EntityRegistryImpl(@Context BundleContext context) {
     this.context = context;
     this.entities = new HashSet<>();
     this.entityListeners = new ArrayList<>();
+    this.entityGoneListeners = new ArrayList<>();
   }
 
   private synchronized void onEntityArrival(ServiceReference<PersistentEntity> ref) {
@@ -72,6 +76,8 @@ public class EntityRegistryImpl implements EntityRegistry {
     final PersistentEntity entity = context.getService(ref);
 
     if (Objects.nonNull(entity)) {
+      entityGoneListeners.forEach(listener -> listener.accept(entity));
+
       entities.remove(entity);
 
       if (LOGGER.isDebugEnabled()) {
@@ -84,26 +90,47 @@ public class EntityRegistryImpl implements EntityRegistry {
 
   @Override
   public <T extends PersistentEntity> List<T> getEntitiesForType(Class<T> type) {
-    return (List<T>)
-        entities.stream()
-            .filter(persistentEntity -> type.isAssignableFrom(persistentEntity.getClass()))
-            .collect(ImmutableList.toImmutableList());
+    return entities.stream()
+               .filter(persistentEntity -> type.isAssignableFrom(persistentEntity.getClass()))
+               .map(type::cast)
+               .collect(ImmutableList.toImmutableList());
   }
 
   @Override
   public <T extends PersistentEntity> Optional<T> getEntity(Class<T> type, String id) {
-    return (Optional<T>)
-        entities.stream()
-            .filter(
-                persistentEntity ->
-                    type.isAssignableFrom(persistentEntity.getClass())
-                        && persistentEntity.getId().equals(id))
-            .findFirst();
+    return entities.stream()
+               .filter(
+            persistentEntity ->
+                type.isAssignableFrom(persistentEntity.getClass())
+                    && persistentEntity.getId().equals(id))
+               .map(type::cast)
+               .findFirst();
   }
 
   @Override
   public void addEntityListener(BiConsumer<String, PersistentEntity> listener) {
     this.entityListeners.add(listener);
     // entities.forEach(entity -> listener.accept(entity.getId(), entity));
+  }
+
+  @Override
+  public <T extends PersistentEntity> void addEntityListener(Class<T> type, Consumer<T> listener, boolean existing) {
+    this.entityListeners.add((id, entity) -> {
+      if (type.isAssignableFrom(entity.getClass())) {
+        listener.accept(type.cast(entity));
+      }
+    });
+    if (existing) {
+      getEntitiesForType(type).forEach(listener);
+    }
+  }
+
+  @Override
+  public <T extends PersistentEntity> void addEntityGoneListener(Class<T> type, Consumer<T> listener) {
+    this.entityGoneListeners.add((entity) -> {
+      if (type.isAssignableFrom(entity.getClass())) {
+        listener.accept(type.cast(entity));
+      }
+    });
   }
 }

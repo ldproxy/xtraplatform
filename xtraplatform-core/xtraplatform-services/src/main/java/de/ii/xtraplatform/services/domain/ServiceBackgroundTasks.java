@@ -11,6 +11,11 @@ import java.util.Optional;
 
 /** @author zahnen */
 public interface ServiceBackgroundTasks {
+
+  String COMMON_QUEUE = "COMMON_QUEUE";
+
+  TaskQueue createQueue(String taskType);
+
   Optional<TaskStatus> getCurrentTask();
 
   Optional<TaskStatus> getCurrentTaskForService(String id);
