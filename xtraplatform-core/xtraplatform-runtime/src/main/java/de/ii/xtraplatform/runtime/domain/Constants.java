@@ -8,6 +8,8 @@
 package de.ii.xtraplatform.runtime.domain;
 
 public class Constants {
+  public static final String APPLICATION_KEY = "de.ii.xtraplatform.application.name";
+  public static final String VERSION_KEY = "de.ii.xtraplatform.application.version";
   public static final String DATA_DIR_KEY = "de.ii.xtraplatform.directories.data";
   public static final String ENV_KEY = "de.ii.xtraplatform.environment";
   public static final String USER_CONFIG_PATH_KEY = "de.ii.xtraplatform.userConfigPath";

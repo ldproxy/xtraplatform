@@ -137,6 +137,8 @@ public class FelixRuntime {
         Joiner.on(',').withKeyValueSeparator(";version=").join(Exports.EXPORTS));
     felixConfig.put(FelixConstants.FRAMEWORK_BOOTDELEGATION, "sun.misc");
 
+    felixConfig.put(Constants.APPLICATION_KEY, name);
+    felixConfig.put(Constants.VERSION_KEY, version);
     felixConfig.put(Constants.DATA_DIR_KEY, dataDir.toAbsolutePath().toString());
     felixConfig.put(Constants.ENV_KEY, env.name());
     felixConfig.put(Constants.USER_CONFIG_PATH_KEY, configurationFile.toAbsolutePath().toString());
