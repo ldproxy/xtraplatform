@@ -41,8 +41,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ValueEncodingJackson.class);
 
-  private static final byte[] JSON_NULL = "null".getBytes();
-  private static final byte[] YAML_NULL = "--- null\n".getBytes();
+  public static final byte[] JSON_NULL = "null".getBytes();
+  public static final byte[] YAML_NULL = "--- null\n".getBytes();
   private static final Pattern JSON_EMPTY = Pattern.compile("(\\s)*");
   private static final Pattern YAML_EMPTY = Pattern.compile("---(\\s)*");
 

@@ -71,7 +71,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             ImmutableList.of(EntityDataDefaultsStore.EVENT_TYPE),
             valueEncoding,
             this::onStart,
-            Optional.of(this::processEvent));
+            Optional.of(this::processEvent), Optional.empty());
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
     valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getDefaults, eventSourcing));

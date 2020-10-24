@@ -14,7 +14,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Value.Style(get = "*", deepImmutablesDetection = true)
 @JsonDeserialize(builder = ImmutableMutationEvent.Builder.class)
-public interface MutationEvent extends Event, Comparable<MutationEvent> {
+public interface MutationEvent extends TypedEvent, Comparable<MutationEvent> {
 
   String type();
 

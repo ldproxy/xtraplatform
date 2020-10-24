@@ -7,14 +7,26 @@
  */
 package de.ii.xtraplatform.dropwizard.domain;
 
+import de.ii.xtraplatform.runtime.domain.Constants.ENV;
 import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
+
 import java.net.URI;
 
 public interface XtraPlatform {
+
+  String getApplicationName();
+
+  String getApplicationVersion();
+
+  ENV getApplicationEnvironment();
 
   XtraPlatformConfiguration getConfiguration();
 
   URI getUri();
 
   URI getServicesUri();
+
+  default boolean isDevEnv() {
+    return getApplicationEnvironment() == ENV.DEVELOPMENT;
+  }
 }

@@ -7,9 +7,8 @@
  */
 package de.ii.xtraplatform.dropwizard.app;
 
+import static de.ii.xtraplatform.runtime.domain.Constants.*;
 import static de.ii.xtraplatform.runtime.domain.Constants.ENV.DEVELOPMENT;
-import static de.ii.xtraplatform.runtime.domain.Constants.ENV_KEY;
-import static de.ii.xtraplatform.runtime.domain.Constants.USER_CONFIG_PATH_KEY;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Appender;
@@ -23,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import de.ii.xtraplatform.dropwizard.domain.ApplicationProvider;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.dropwizard.domain.MustacheResolverRegistry;
+import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.runtime.domain.Constants.ENV;
 import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
@@ -69,6 +69,9 @@ public class DropwizardProvider implements Dropwizard {
   private final BundleContext context;
   private final ApplicationProvider<XtraPlatformConfiguration> applicationProvider;
   private final MustacheResolverRegistry mustacheResolverRegistry;
+  private final String applicationName;
+  private final String applicationVersion;
+  private final ENV applicationEnvironment;
 
   private XtraPlatformConfiguration configuration;
   private Environment environment;
@@ -82,6 +85,9 @@ public class DropwizardProvider implements Dropwizard {
     this.context = context;
     this.applicationProvider = applicationProvider;
     this.mustacheResolverRegistry = mustacheResolverRegistry;
+    this.applicationName = context.getProperty(APPLICATION_KEY);
+    this.applicationVersion = context.getProperty(VERSION_KEY);
+    this.applicationEnvironment = Constants.ENV.valueOf(context.getProperty(ENV_KEY));
   }
 
   @Validate
@@ -89,19 +95,18 @@ public class DropwizardProvider implements Dropwizard {
     Thread.currentThread().setName("startup");
 
     Path cfgFile = Paths.get(context.getProperty(USER_CONFIG_PATH_KEY));
-    ENV env = Constants.ENV.valueOf(context.getProperty(ENV_KEY));
 
     try {
-      start(cfgFile, env);
+      start(cfgFile, applicationEnvironment);
 
       // publish the service once the initialization
       // is completed.
       controller = true;
 
-      LOGGER.debug("Initialized XtraPlatform with configuration file {}", cfgFile);
+      LOGGER.debug("Initialized {} with configuration file {}", applicationName, cfgFile);
 
     } catch (Throwable ex) {
-      LOGGER.error("Error initializing XtraPlatform with configuration file {}", cfgFile, ex);
+      LOGGER.error("Error initializing {} with configuration file {}", applicationName, cfgFile, ex);
       System.exit(1);
     }
   }
@@ -144,7 +149,7 @@ public class DropwizardProvider implements Dropwizard {
   private void initBootstrap(Bootstrap<XtraPlatformConfiguration> bootstrap) {
     this.mustacheRenderer = new FallbackMustacheViewRenderer(mustacheResolverRegistry);
 
-    boolean cacheTemplates = Constants.ENV.valueOf(context.getProperty(ENV_KEY)) != DEVELOPMENT;
+    boolean cacheTemplates = !isDevEnv();
 
     bootstrap.addBundle(
         new ViewBundle<XtraPlatformConfiguration>(ImmutableSet.of(mustacheRenderer)) {
@@ -156,6 +161,21 @@ public class DropwizardProvider implements Dropwizard {
                 ImmutableMap.of("cache", Boolean.toString(cacheTemplates)));
           }
         });
+  }
+
+  @Override
+  public String getApplicationName() {
+    return applicationName;
+  }
+
+  @Override
+  public String getApplicationVersion() {
+    return applicationVersion;
+  }
+
+  @Override
+  public ENV getApplicationEnvironment() {
+    return applicationEnvironment;
   }
 
   @Override
