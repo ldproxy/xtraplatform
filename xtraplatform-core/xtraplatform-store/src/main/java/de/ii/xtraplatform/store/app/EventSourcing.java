@@ -9,11 +9,13 @@ package de.ii.xtraplatform.store.app;
 
 import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.store.domain.Event;
+import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
 import de.ii.xtraplatform.store.domain.MutationEvent;
+import de.ii.xtraplatform.store.domain.ReloadEvent;
 import de.ii.xtraplatform.store.domain.StateChangeEvent;
 import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
@@ -26,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -44,17 +47,19 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   private final ValueEncoding<T> valueEncoding;
   private final Supplier<CompletableFuture<Void>> onStart;
   private final Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor;
+  private final Optional<BiConsumer<Identifier, T>> updateHook;
   private final Set<String> started;
 
   public EventSourcing(
-      EventStore eventStore,
-      List<String> eventTypes,
-      ValueEncoding<T> valueEncoding,
-      Supplier<CompletableFuture<Void>> onStart,
-      Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor) {
+          EventStore eventStore,
+          List<String> eventTypes,
+          ValueEncoding<T> valueEncoding,
+          Supplier<CompletableFuture<Void>> onStart,
+          Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor, Optional<BiConsumer<Identifier, T>> updateHook) {
     this.eventStore = eventStore;
     this.eventTypes = eventTypes;
     this.eventProcessor = eventProcessor;
+    this.updateHook = updateHook;
     this.cache = new ConcurrentSkipListMap<>();
     this.queue = new ConcurrentHashMap<>();
     this.valueEncoding = valueEncoding;
@@ -96,6 +101,13 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
           }
           break;
       }
+    } else if (event instanceof ReloadEvent && updateHook.isPresent()) {
+      List<Identifier> identifiers = getIdentifiers(((ReloadEvent) event).filter());
+      identifiers.forEach(identifier -> {
+        T data = getFromCache(identifier);
+        updateHook.get()
+                  .accept(identifier, data);
+      });
     }
   }
 
@@ -201,5 +213,16 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
         LOGGER.trace("Added value: {}", value);
         //LOGGER.trace("CACHE {}", cache);
     }*/
+  }
+
+  private List<Identifier> getIdentifiers(EventFilter filter) {
+
+    return getIdentifiers().stream().filter(identifier -> {
+      if (filter.getEntityTypes().contains("*") || (!identifier.path().isEmpty() && filter.getEntityTypes().contains(identifier.path().get(0)))) {
+        return filter.getIds().contains("*") || filter.getIds().contains(identifier.id());
+      }
+
+      return false;
+    }).collect(Collectors.toList());
   }
 }

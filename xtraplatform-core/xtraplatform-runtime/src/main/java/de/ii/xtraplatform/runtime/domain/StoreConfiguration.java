@@ -28,6 +28,8 @@ public class StoreConfiguration {
 
   @Valid @NotNull @JsonProperty public List<String> additionalLocations = ImmutableList.of();
 
+  @Valid @NotNull @JsonProperty public boolean watch = false;
+
   @Valid @NotNull @JsonProperty public boolean secured = false;
 
   // defaultValuesPathPattern

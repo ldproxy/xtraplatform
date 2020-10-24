@@ -7,10 +7,12 @@
  */
 package de.ii.xtraplatform.store.app;
 
+import akka.stream.QueueOfferResult;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.ImmutableStateChangeEvent;
 import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.StateChangeEvent;
+import de.ii.xtraplatform.store.domain.TypedEvent;
 import de.ii.xtraplatform.streams.domain.StreamRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +62,16 @@ public class EventSubscriptions {
                     // LOGGER.debug("{} STARTED", eventType);
                     cmp.complete(null);
                   }
-                  subscriber.onEmit(event);
+                  //only emit one event at a time
+                  synchronized (streamRunner) {
+                    if (event instanceof MutationEvent) {
+                      LOGGER.trace("EMIT: {} {}", ((MutationEvent) event).type(), ((MutationEvent) event).identifier());
+                    }
+                    subscriber.onEmit(event);
+                    if (event instanceof MutationEvent) {
+                      LOGGER.trace("EMITTED: {} {}", ((MutationEvent) event).type(), ((MutationEvent) event).identifier());
+                    }
+                  }
                 });
             cmp.join();
             // LOGGER.debug("NEXT");
@@ -70,13 +81,13 @@ public class EventSubscriptions {
         TimeUnit.SECONDS);
   }
 
-  public void emitEvent(MutationEvent event) {
-    if (LOGGER.isTraceEnabled()) {
-      LOGGER.trace("Emitting event: {} {}", event.type(), event.identifier());
+  public synchronized CompletableFuture<QueueOfferResult> emitEvent(TypedEvent event) {
+    if (LOGGER.isTraceEnabled() && event instanceof MutationEvent) {
+      LOGGER.trace("Emitting event: {} {}", event.type(), ((MutationEvent) event).identifier());
     }
     final EventStream eventStream = getEventStream(event.type());
 
-    eventStream.queue(event);
+    return eventStream.queue(event);
   }
 
   public void startListening() {

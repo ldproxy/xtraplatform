@@ -10,6 +10,7 @@ package de.ii.xtraplatform.store.app;
 import akka.NotUsed;
 import akka.japi.function.Procedure;
 import akka.stream.OverflowStrategy;
+import akka.stream.QueueOfferResult;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.SourceQueueWithComplete;
 import de.ii.xtraplatform.store.domain.Event;
@@ -44,17 +45,20 @@ public class EventStream {
     streamRunner.runForeach(eventStream, (Procedure<Event>) eventConsumer::accept);
   }
 
-  public synchronized void queue(Event event) {
+  public synchronized CompletableFuture<QueueOfferResult> queue(Event event) {
     // eventQueue = eventQueue.thenComposeAsync(queue ->
     // queue.offer(event).handleAsync((queueOfferResult, throwable) -> queue));
     // TODO: to apply backpressure join queue as well as offer; but then we block indefinitely if
     // there is no subscriber for a pathPrefix
+      CompletableFuture<QueueOfferResult> cmp = new CompletableFuture<>();
     eventQueueChain =
         eventQueueChain.thenApply(
             queue -> {
-              queue.offer(event);
+              queue.offer(event).thenAccept(cmp::complete);
               return queue;
             });
+
+    return cmp;
   }
 
   public String getEventType() {

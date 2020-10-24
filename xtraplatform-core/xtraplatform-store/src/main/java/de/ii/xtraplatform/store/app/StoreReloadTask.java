@@ -1,8 +1,10 @@
 package de.ii.xtraplatform.store.app;
 
-import ch.qos.logback.classic.Level;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMultimap;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
+import de.ii.xtraplatform.store.domain.EventStore;
+import de.ii.xtraplatform.store.domain.ImmutableEventFilter;
 import io.dropwizard.servlets.tasks.Task;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -11,9 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
+import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author zahnen
@@ -23,11 +26,13 @@ import java.util.Optional;
 public class StoreReloadTask extends Task {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StoreReloadTask.class);
+    private static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
 
+    private final EventStore eventStore;
 
-
-    protected StoreReloadTask(@Requires Dropwizard dropwizard) {
-        super("reload-entity");
+    protected StoreReloadTask(@Requires Dropwizard dropwizard, @Requires EventStore eventStore) {
+        super("reload-entities");
+        this.eventStore = eventStore;
 
         dropwizard.getEnvironment().admin().addTask(this);
     }
@@ -36,37 +41,44 @@ public class StoreReloadTask extends Task {
     public void execute(ImmutableMultimap<String, String> parameters, PrintWriter output) throws Exception {
         LOGGER.debug("RELOAD {}", parameters);
 
-        Optional<String> entityType = getEntityType(parameters);
+        List<String> entityTypes = getEntityTypes(parameters);
 
-        if (!entityType.isPresent()) {
+        if (entityTypes.isEmpty()) {
             output.println("No entity type given");
             output.flush();
             return;
         }
-        Optional<String> id = getId(parameters);
-        boolean reloadAll = getReloadAll(parameters);
+        List<String> ids = getIds(parameters);
 
-        if (!id.isPresent() && !reloadAll) {
-            output.println("Neither 'id' nor 'all' given");
+        if (ids.isEmpty()) {
+            output.println("No id given");
             output.flush();
             return;
         }
 
-        //TODO: create EventFilter + trigger reload
+        ImmutableEventFilter filter = ImmutableEventFilter.builder()
+                                                            .eventType("entities")
+                                                            .entityTypes(entityTypes)
+                                                            .ids(ids)
+                                                            .build();
+
+        eventStore.replay(filter);
     }
 
-    private Optional<String> getEntityType(ImmutableMultimap<String, String> parameters) {
-        final List<String> entityTypes = parameters.get("type").asList();
-        return entityTypes.isEmpty() ? Optional.empty() : Optional.ofNullable(entityTypes.get(0));
+    private List<String> getEntityTypes(ImmutableMultimap<String, String> parameters) {
+        return getValueList(parameters.get("types"));
     }
 
-    private Optional<String> getId(ImmutableMultimap<String, String> parameters) {
-        final List<String> ids = parameters.get("id").asList();
-        return ids.isEmpty() ? Optional.empty() : Optional.ofNullable(ids.get(0));
+    private List<String> getIds(ImmutableMultimap<String, String> parameters) {
+        return getValueList(parameters.get("ids"));
     }
 
-    private boolean getReloadAll(ImmutableMultimap<String, String> parameters) {
-        final List<String> all = parameters.get("all").asList();
-        return !all.isEmpty() && Objects.equals(all.get(0), "true");
+    private List<String> getValueList(Collection<String> values) {
+        return values.stream().flatMap(value -> {
+            if (value.contains(",")) {
+                return SPLITTER.splitToList(value).stream();
+            }
+            return Stream.of(value);
+        }).collect(Collectors.toList());
     }
 }

@@ -85,7 +85,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.valueEncodingMap = new ValueEncodingJackson<>(jackson);
     this.eventSourcing =
         new EventSourcing<>(
-            eventStore, EVENT_TYPES, valueEncoding, this::onStart, Optional.of(this::processEvent));
+            eventStore, EVENT_TYPES, valueEncoding, this::onStart, Optional.of(this::processEvent), Optional.of(this::onUpdate));
     this.defaultsStore = defaultsStore;
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
@@ -312,6 +312,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected void onUpdate(Identifier identifier, EntityData entityData) {
+    LOGGER.debug("Reloading entity: {}", identifier);
     entityFactory.updateInstance(identifier.path().get(0), identifier.id(), entityData);
   }
 
