@@ -201,7 +201,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
     return true;
   }
 
-  //TODO: stopWatching, move watchService to class
+  //TODO: stopWatching, move watchService to class, watch new directories, file extension filter
   @Override
   public void startWatching(Consumer<Path> watchEventConsumer) {
 

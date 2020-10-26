@@ -271,36 +271,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   @Override
   protected CompletableFuture<Void> onCreate(Identifier identifier, EntityData entityData) {
     try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
-      EntityData hydratedData = entityData;
-
-      if (entityData instanceof AutoEntity) {
-        AutoEntity autoEntity = (AutoEntity) entityData;
-        if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
-          hydratedData = hydrate(identifier, hydratedData);
-
-          if (!isEventStoreReadOnly) {
-            Map<String, Object> map = valueEncodingMap
-                    .deserialize(identifier, valueEncoding.serialize(hydratedData), valueEncoding.getDefaultFormat());
-
-            Map<String, Object> withoutDefaults = defaultsStore
-                    .subtractDefaults(identifier, entityData.getEntitySubType(), map);
-
-            putPartialWithoutTrigger(identifier, withoutDefaults).join();
-            LOGGER.info(
-                    "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-                    identifier.path()
-                              .get(0),
-                    entityData.getId());
-          } else {
-            LOGGER.warn("Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
-                    identifier.path()
-                              .get(0),
-                    entityData.getId());
-          }
-        }
-      }
-
-      hydratedData = hydrate(identifier, hydratedData);
+      EntityData hydratedData = hydrateData(identifier, entityData);
 
       return entityFactory
               .createInstance(identifier.path()
@@ -312,8 +283,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected void onUpdate(Identifier identifier, EntityData entityData) {
-    LOGGER.debug("Reloading entity: {}", identifier);
-    entityFactory.updateInstance(identifier.path().get(0), identifier.id(), entityData);
+    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
+      LOGGER.debug("Reloading entity: {}", identifier);
+      EntityData hydratedData = hydrateData(identifier, entityData);
+
+      entityFactory.updateInstance(identifier.path().get(0), identifier.id(), hydratedData);
+    }
   }
 
   @Override
@@ -339,5 +314,40 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         return ObjectArrays.concat(typeCollectionName, path);
       }
     };
+  }
+
+  private EntityData hydrateData(Identifier identifier, EntityData entityData) {
+    EntityData hydratedData = entityData;
+
+    if (entityData instanceof AutoEntity) {
+      AutoEntity autoEntity = (AutoEntity) entityData;
+      if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
+        hydratedData = hydrate(identifier, hydratedData);
+
+        if (!isEventStoreReadOnly) {
+          Map<String, Object> map = valueEncodingMap
+                  .deserialize(identifier, valueEncoding.serialize(hydratedData), valueEncoding.getDefaultFormat());
+
+          Map<String, Object> withoutDefaults = defaultsStore
+                  .subtractDefaults(identifier, entityData.getEntitySubType(), map);
+
+          putPartialWithoutTrigger(identifier, withoutDefaults).join();
+          LOGGER.info(
+                  "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
+                  identifier.path()
+                            .get(0),
+                  entityData.getId());
+        } else {
+          LOGGER.warn("Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
+                  identifier.path()
+                            .get(0),
+                  entityData.getId());
+        }
+      }
+    }
+
+    hydratedData = hydrate(identifier, hydratedData);
+
+    return hydratedData;
   }
 }
