@@ -15,9 +15,11 @@ import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.Identifier;
+import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
 import de.ii.xtraplatform.store.domain.ImmutableReloadEvent;
 import de.ii.xtraplatform.store.domain.MutationEvent;
+import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
 import de.ii.xtraplatform.streams.domain.StreamRunner;
 import org.apache.felix.ipojo.annotations.Component;
@@ -142,6 +144,19 @@ public class EventStoreDefault implements EventStore {
                                                 .path()
                                                 .get(0), id);
           }*/
+        } else {
+          String id = EntityDataDefaultsStore.EVENT_TYPE;
+          boolean deleted = deleteEvents.add(ImmutableMutationEvent.builder()
+                                                                   .type(EntityDataDefaultsStore.EVENT_TYPE)
+                                                                   .deleted(true)
+                                                                   .identifier(ImmutableIdentifier.builder().id(id).path(event.identifier()
+                                                                                                                              .path()).build())
+                                                                   .payload(ValueEncodingJackson.YAML_NULL)
+                                                                   .build());
+          /*if (deleted) {
+            LOGGER.debug("DELETING {} {}", event.identifier()
+                                                .path(), id);
+          }*/
         }
         return true;
       }
@@ -154,6 +169,11 @@ public class EventStoreDefault implements EventStore {
 
     deleteEvents.forEach(event -> {
       subscriptions.emitEvent(event).join();
+      try {
+        Thread.sleep(50);
+      } catch (InterruptedException e) {
+        //ignore
+      }
     });
     eventStream.forEach(event -> {
       subscriptions.emitEvent(event).join();
