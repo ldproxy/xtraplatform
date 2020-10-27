@@ -38,7 +38,7 @@ pipeline:
     image: openjdk:11-slim
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
-      - ../gradlew bintrayUploadAll --continue -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
+      - ./gradlew bintrayUploadAll --continue -PbintrayUser=$BINTRAY_USER -PbintrayApiKey=$BINTRAY_PASS
     secrets: [ bintray_user, bintray_pass]
     when:
       event: tag
