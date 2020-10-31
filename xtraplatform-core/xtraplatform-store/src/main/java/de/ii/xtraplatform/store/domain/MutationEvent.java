@@ -41,4 +41,10 @@ public interface MutationEvent extends TypedEvent, Comparable<MutationEvent> {
 
     return identifier().compareTo(mutationEvent.identifier());
   }
+
+  @Value.Derived
+  @Value.Auxiliary
+  default String asPath() {
+    return String.format("%s/%s.%s", type(), identifier().asPath(), format());
+  }
 }

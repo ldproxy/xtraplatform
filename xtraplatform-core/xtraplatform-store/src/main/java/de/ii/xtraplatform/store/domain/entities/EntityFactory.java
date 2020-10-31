@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
+import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import java.util.List;
@@ -21,7 +22,7 @@ public interface EntityFactory {
 
   Optional<KeyPathAlias> getKeyPathAlias(String keyPath);
 
-  List<List<String>> getSubTypes(String entityType, List<String> entitySubType);
+  List<String> getSubTypes(String entityType, List<String> entitySubType);
 
   EntityDataBuilder<EntityData> getDataBuilders(
       String entityType, long entitySchemaVersion, Optional<String> entitySubType);

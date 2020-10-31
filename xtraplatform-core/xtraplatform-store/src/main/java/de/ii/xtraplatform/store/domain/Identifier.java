@@ -9,6 +9,8 @@ package de.ii.xtraplatform.store.domain;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
+
+import com.google.common.base.Joiner;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -42,5 +44,17 @@ public interface Identifier extends Comparable<Identifier> {
     }
 
     return id().compareTo(identifier.id());
+  }
+
+  Joiner JOINER = Joiner.on('/').skipNulls();
+
+  @Value.Derived
+  @Value.Auxiliary
+  default String asPath() {
+    if (path().isEmpty()) {
+      return id();
+    }
+
+    return JOINER.join(path()) + "/" + id();
   }
 }

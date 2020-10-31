@@ -96,6 +96,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     valueEncoding.addDecoderMiddleware(
         new ValueDecoderEntityDataMigration(
             eventSourcing, entityFactory, this::addAdditionalEvent));
+    valueEncoding.addDecoderMiddleware(new ValueDecoderIdValidator());
 
     valueEncodingMap.addDecoderMiddleware(new ValueDecoderBase<>(identifier -> new LinkedHashMap<>(), new ValueCache<Map<String, Object>>() {
       @Override
@@ -162,6 +163,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             .id(overridesPath.getEntityId())
             .build();
 
+    // override without matching entity
+    if (!eventSourcing.isInCache(cacheKey)) {
+      LOGGER.warn("Ignoring override '{}', no matching entity found", event.asPath());
+      return ImmutableList.of();
+    }
+
     ImmutableMutationEvent.Builder builder =
         ImmutableMutationEvent.builder().from(event).identifier(cacheKey);
     if (!overridesPath.getKeyPath().isEmpty()) {
@@ -186,13 +193,13 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, String entitySubtype) {
-    List<String> subtypePath = entityFactory.getTypeAsList(entitySubtype);
+    //List<String> subtypePath = entityFactory.getTypeAsList(entitySubtype);
 
     ImmutableIdentifier defaultsIdentifier =
         ImmutableIdentifier.builder()
             .from(identifier)
             .id(EntityDataDefaultsStore.EVENT_TYPE)
-            .addAllPath(subtypePath)
+            .addPath(entitySubtype.toLowerCase())
             .build();
     if (defaultsStore.has(defaultsIdentifier)) {
       return defaultsStore.getBuilder(defaultsIdentifier);
@@ -325,18 +332,28 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         hydratedData = hydrate(identifier, hydratedData);
 
         if (!isEventStoreReadOnly) {
-          Map<String, Object> map = valueEncodingMap
-                  .deserialize(identifier, valueEncoding.serialize(hydratedData), valueEncoding.getDefaultFormat());
+          try {
+            Map<String, Object> map = valueEncodingMap
+                    .deserialize(identifier, valueEncoding.serialize(hydratedData), valueEncoding.getDefaultFormat());
 
-          Map<String, Object> withoutDefaults = defaultsStore
-                  .subtractDefaults(identifier, entityData.getEntitySubType(), map);
+            Map<String, Object> withoutDefaults = defaultsStore
+                    .subtractDefaults(identifier, entityData.getEntitySubType(), map);
 
-          putPartialWithoutTrigger(identifier, withoutDefaults).join();
-          LOGGER.info(
-                  "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-                  identifier.path()
-                            .get(0),
-                  entityData.getId());
+            putPartialWithoutTrigger(identifier, withoutDefaults).join();
+            LOGGER.info(
+                    "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
+                    identifier.path()
+                              .get(0),
+                    entityData.getId());
+          } catch (IOException e) {
+            LOGGER.error(
+                    "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved: {}",
+                    identifier.path()
+                              .get(0),
+                    entityData.getId(),
+                    e.getMessage());
+          }
+
         } else {
           LOGGER.warn("Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
                   identifier.path()

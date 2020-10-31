@@ -246,13 +246,11 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
   private Stream<Path> loadPathStream(Path directory) {
     try {
-      int parentCount = directory.getNameCount();
-      // TODO: 3 depends on pattern
       return Files.find(
           directory,
           32,
           (path, basicFileAttributes) ->
-              basicFileAttributes.isRegularFile() && path.getNameCount() - parentCount >= 3);
+              basicFileAttributes.isRegularFile());
     } catch (IOException e) {
       throw new IllegalStateException("Reading event from store path failed", e);
     }
