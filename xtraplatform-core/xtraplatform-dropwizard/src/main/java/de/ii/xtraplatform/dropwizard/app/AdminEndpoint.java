@@ -4,11 +4,18 @@ import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.codahale.metrics.servlets.PingServlet;
 import com.codahale.metrics.servlets.ThreadDumpServlet;
+import de.ii.xtraplatform.dropwizard.domain.AdminSubEndpoint;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import org.apache.felix.ipojo.annotations.Component;
+import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.whiteboard.Wbp;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -18,6 +25,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author zahnen
@@ -25,7 +38,14 @@ import java.text.MessageFormat;
 @Component
 @Provides(specifications = {AdminEndpoint.class})
 @Instantiate
+@Wbp(
+        filter = "(objectClass=de.ii.xtraplatform.dropwizard.domain.AdminSubEndpoint)",
+        onArrival = "onArrival",
+        onDeparture = "onDeparture")
 public class AdminEndpoint extends HttpServlet {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminEndpoint.class);
+
     public static final String DEFAULT_HEALTHCHECK_URI = "/healthcheck";
     public static final String DEFAULT_METRICS_URI = "/metrics";
     public static final String DEFAULT_PING_URI = "/ping";
@@ -57,14 +77,35 @@ public class AdminEndpoint extends HttpServlet {
     private final PingServlet pingServlet;
     private final ThreadDumpServlet threadDumpServlet;
     private final String serviceName;
+    private final Set<AdminSubEndpoint> subEndpoints;
+    private final BundleContext bundleContext;
+    private ServletConfig servletConfig;
 
-    public AdminEndpoint(@Requires XtraPlatform xtraPlatform) {
+    public AdminEndpoint(@Requires XtraPlatform xtraPlatform, @Context BundleContext bundleContext) {
         this.serviceName = xtraPlatform.getApplicationName();
         this.healthCheckServlet = new HealthCheckServlet();
         this.metricsServlet = new MetricsServlet();
         this.pingServlet = new PingServlet();
         this.threadDumpServlet = new ThreadDumpServlet();
+        this.subEndpoints = new LinkedHashSet<>();
+        this.bundleContext = bundleContext;
     }
+
+  public synchronized void onArrival(ServiceReference<AdminSubEndpoint> ref) {
+      AdminSubEndpoint subEndpoint = bundleContext.getService(ref);
+      subEndpoints.add(subEndpoint);
+      if (Objects.nonNull(servletConfig)) {
+          try {
+              subEndpoint.getServlet().init(servletConfig);
+          } catch (ServletException e) {
+              // ignore
+          }
+      }
+  }
+
+  public synchronized void onDeparture(ServiceReference<AdminSubEndpoint> ref) {
+      subEndpoints.remove(bundleContext.getService(ref));
+  }
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -74,6 +115,13 @@ public class AdminEndpoint extends HttpServlet {
         metricsServlet.init(config);
         pingServlet.init(config);
         threadDumpServlet.init(config);
+
+        for (AdminSubEndpoint adminSubEndpoint : subEndpoints) {
+            adminSubEndpoint.getServlet()
+                            .init(config);
+        }
+
+        this.servletConfig = config;
     }
 
     @Override
@@ -104,7 +152,14 @@ public class AdminEndpoint extends HttpServlet {
         } else if (uri.equals(DEFAULT_THREADS_URI)) {
             threadDumpServlet.service(req, resp);
         } else {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            Optional<AdminSubEndpoint> subEndpoint = subEndpoints.stream()
+                                                           .filter(endpoint -> Objects.equals(endpoint.getPath(), uri))
+                                                           .findFirst();
+            if (subEndpoint.isPresent()) {
+                subEndpoint.get().getServlet().service(req, resp);
+            } else {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
         }
     }
 }
