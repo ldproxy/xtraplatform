@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.store.domain;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -24,10 +25,14 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
   // TODO: an in-progress event (e.g. drop) might invalidate this one, do we need distributed
   // locks???
   private boolean isUpdateValid(Identifier identifier, byte[] payload) {
-    return getEventSourcing().isInCache(identifier)
-        && Objects.nonNull(
-            getValueEncoding()
-                .deserialize(identifier, payload, getValueEncoding().getDefaultFormat()));
+    try {
+      return getEventSourcing().isInCache(identifier)
+          && Objects.nonNull(
+              getValueEncoding()
+                  .deserialize(identifier, payload, getValueEncoding().getDefaultFormat()));
+    } catch (Throwable e) {
+      return false;
+    }
   }
 
   @Override
@@ -43,22 +48,26 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
     }
 
     // TODO: SnapshotProvider???
-    byte[] merged =
-        getValueEncoding()
-            .serialize(
-                getValueEncoding()
-                    .deserialize(identifier, payload, getValueEncoding().getDefaultFormat()));
+    try {
+      byte[] merged = getValueEncoding()
+          .serialize(
+              getValueEncoding()
+                  .deserialize(identifier, payload, getValueEncoding().getDefaultFormat()));
 
-    return getEventSourcing()
-        .pushMutationEventRaw(identifier, merged)
-        .whenComplete(
-            (entityData, throwable) -> {
-              if (Objects.nonNull(entityData)) {
-                onUpdate(identifier, entityData);
-              } else if (Objects.nonNull(throwable)) {
-                onFailure(identifier, throwable);
-              }
-            });
+      return getEventSourcing()
+              .pushMutationEventRaw(identifier, merged)
+              .whenComplete(
+                      (entityData, throwable) -> {
+                        if (Objects.nonNull(entityData)) {
+                          onUpdate(identifier, entityData);
+                        } else if (Objects.nonNull(throwable)) {
+                          onFailure(identifier, throwable);
+                        }
+                      });
+    } catch (IOException e) {
+      //never reached, will fail in isUpdateValid
+      return CompletableFuture.failedFuture(e);
+    }
   }
 
   protected Map<String, Object> modifyPatch(Map<String, Object> partialData) {

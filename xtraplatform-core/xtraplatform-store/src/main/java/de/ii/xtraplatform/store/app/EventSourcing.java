@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -48,6 +49,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   private final Supplier<CompletableFuture<Void>> onStart;
   private final Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor;
   private final Optional<BiConsumer<Identifier, T>> updateHook;
+  private final Optional<BiConsumer<Identifier, T>> valueValidator;
   private final Set<String> started;
 
   public EventSourcing(
@@ -56,6 +58,15 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
           ValueEncoding<T> valueEncoding,
           Supplier<CompletableFuture<Void>> onStart,
           Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor, Optional<BiConsumer<Identifier, T>> updateHook) {
+    this(eventStore, eventTypes, valueEncoding, onStart, eventProcessor, updateHook, Optional.empty());
+  }
+
+  public EventSourcing(
+          EventStore eventStore,
+          List<String> eventTypes,
+          ValueEncoding<T> valueEncoding,
+          Supplier<CompletableFuture<Void>> onStart,
+          Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor, Optional<BiConsumer<Identifier, T>> updateHook, Optional<BiConsumer<Identifier, T>> valueValidator) {
     this.eventStore = eventStore;
     this.eventTypes = eventTypes;
     this.eventProcessor = eventProcessor;
@@ -64,6 +75,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     this.queue = new ConcurrentHashMap<>();
     this.valueEncoding = valueEncoding;
     this.onStart = onStart;
+    this.valueValidator = valueValidator;
     this.started = new HashSet<>();
 
     eventStore.subscribe(this);
@@ -77,10 +89,20 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   @Override
   public void onEmit(Event event) {
     if (event instanceof MutationEvent) {
-      if (eventProcessor.isPresent()) {
-        eventProcessor.get().apply((MutationEvent) event).forEach(this::onEmit);
-      } else {
-        onEmit((MutationEvent) event);
+      try {
+        if (eventProcessor.isPresent()) {
+          for (MutationEvent mutationEvent : eventProcessor.get()
+                                                           .apply((MutationEvent) event)) {
+            onEmit(mutationEvent);
+          }
+        } else {
+          onEmit((MutationEvent) event);
+        }
+      } catch (Throwable e) {
+        LOGGER.error("Cannot load '{}': {}", ((MutationEvent) event).asPath(), e.getMessage());
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Stacktrace:", e);
+        }
       }
 
     } else if (event instanceof StateChangeEvent) {
@@ -175,7 +197,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     return completableFuture;
   }
 
-  private void onEmit(MutationEvent event) {
+  private void onEmit(MutationEvent event) throws Throwable {
     Identifier key = event.identifier();
     ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(event.format());
 
@@ -191,12 +213,23 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     }
 
     T value;
+    Throwable error = null;
 
     try {
       value = valueEncoding.deserialize(event.identifier(), event.payload(), payloadFormat);
 
     } catch (Throwable e) {
+      error = e;
       value = cache.getOrDefault(key, null);
+    }
+
+    if (Objects.isNull(error) && !Objects.isNull(value) && valueValidator.isPresent()) {
+      try {
+        valueValidator.get().accept(key, value);
+      } catch (Throwable e) {
+        error = e.getCause();
+        value = cache.getOrDefault(key, null);
+      }
     }
 
     if (Objects.isNull(value)) {
@@ -209,10 +242,9 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       queue.remove(key).complete(value);
     }
 
-    /*if (LOGGER.isTraceEnabled()) {
-        LOGGER.trace("Added value: {}", value);
-        //LOGGER.trace("CACHE {}", cache);
-    }*/
+    if (!Objects.isNull(error)) {
+      throw error;
+    }
   }
 
   private List<Identifier> getIdentifiers(EventFilter filter) {

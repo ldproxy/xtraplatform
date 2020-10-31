@@ -363,7 +363,7 @@ public class EntityFactoryImpl implements EntityFactory {
   }
 
   @Override
-  public List<List<String>> getSubTypes(String entityType, List<String> entitySubType) {
+  public List<String> getSubTypes(String entityType, List<String> entitySubType) {
     String specificEntityType = getSpecificEntityType(entityType, getTypeAsString(entitySubType));
 
     return entityDataBuilders.keySet().stream()
@@ -372,7 +372,7 @@ public class EntityFactoryImpl implements EntityFactory {
         .map(this::getEntitySubType)
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .map(subType -> Splitter.on('/').splitToList(subType))
+        //.map(subType -> Splitter.on('/').splitToList(subType))
         .collect(ImmutableList.toImmutableList());
   }
 

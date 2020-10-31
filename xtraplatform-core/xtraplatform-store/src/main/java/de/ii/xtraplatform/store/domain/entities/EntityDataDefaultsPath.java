@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.store.domain.Identifier;
@@ -37,22 +38,23 @@ public interface EntityDataDefaultsPath {
       pathSegments = identifier.path().subList(1, identifier.path().size());
     }
 
+    //TODO: describe cases, how would catch happen?
     if (!pathSegments.isEmpty()) {
-      for (int i = pathSegments.size(); i > 0; i--) {
+      //for (int i = pathSegments.size(); i > 0; i--) {
         try {
-          List<String> subtype = pathSegments.subList(0, i);
-          defaultsPath.setEntitySubtype(subtype);
+          List<String> subtype = pathSegments.subList(0, pathSegments.size());
+          defaultsPath.setEntitySubtype(ImmutableList.of(Joiner.on('/').join(subtype)));
 
           if (!identifier.path().isEmpty()) {
             defaultsPath.setKeyPath(ImmutableList.of(identifier.id()));
           }
         } catch (Throwable e) {
-          List<String> keyPath = pathSegments.subList(i - 1, pathSegments.size());
+          List<String> keyPath = pathSegments.subList(pathSegments.size() - 1, pathSegments.size());
 
           defaultsPath.setKeyPath(keyPath);
           defaultsPath.addKeyPath(identifier.id());
         }
-      }
+      //}
     }
 
     return defaultsPath;

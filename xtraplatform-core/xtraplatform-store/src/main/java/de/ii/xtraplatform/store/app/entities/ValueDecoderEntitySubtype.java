@@ -36,6 +36,12 @@ public class ValueDecoderEntitySubtype implements ValueDecoderMiddleware<EntityD
       EntityDataBuilder<EntityData> builder =
           newBuilderSupplier.apply(identifier, data.getEntitySubType().get());
 
+      //TODO: happens because providers declare subtypes despite not having any
+      // no builder found for subtype
+      if (builder == null) {
+        return data;
+      }
+
       if (eventSourcing.isInCache(identifier)) {
         builder.from(eventSourcing.getFromCache(identifier));
       }
