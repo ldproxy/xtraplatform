@@ -16,6 +16,7 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.runtime.domain.ConfigurationReader;
 import de.ii.xtraplatform.runtime.domain.Constants;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.util.Duration;
@@ -71,9 +72,6 @@ public class FelixRuntime {
 
     configurationReader.loadMergedLogging(configurationFile, env);
 
-    // preloadLoggingConfiguration(dataDir.resolve(CONFIG_FILE_NAME),
-    // dataDir.resolve(CONFIG_FILE_NAME_LEGACY));
-
     LOGGER.info("--------------------------------------------------");
     LOGGER.info("Starting {} {}", name, version);
 
@@ -88,7 +86,7 @@ public class FelixRuntime {
       LOGGER.debug("Base configs: {}", baseConfigs);
       try {
         String cfg = configurationReader.loadMergedConfig(configurationFile, env);
-        LOGGER.debug("Application configuration: {}", cfg);
+        LOGGER.debug(LogContext.MARKER.DUMP, "Application configuration: \n{}", cfg);
       } catch (IOException e) {
         // ignore
       }
@@ -139,6 +137,8 @@ public class FelixRuntime {
         Joiner.on(',').withKeyValueSeparator(";version=").join(Exports.EXPORTS));
     felixConfig.put(FelixConstants.FRAMEWORK_BOOTDELEGATION, "sun.misc");
 
+    felixConfig.put(Constants.APPLICATION_KEY, name);
+    felixConfig.put(Constants.VERSION_KEY, version);
     felixConfig.put(Constants.DATA_DIR_KEY, dataDir.toAbsolutePath().toString());
     felixConfig.put(Constants.ENV_KEY, env.name());
     felixConfig.put(Constants.USER_CONFIG_PATH_KEY, configurationFile.toAbsolutePath().toString());
@@ -176,12 +176,14 @@ public class FelixRuntime {
   }
 
   public void stop(long timeout) {
+    LOGGER.info("Shutting down {}", name);
+
     try {
       felix.stop();
       felix.waitForStop(timeout);
 
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Felix stopped");
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Felix stopped");
       }
     } catch (Exception ex) {
       LOGGER.error("Could not stop felix: {}", ex.getMessage());
@@ -189,6 +191,9 @@ public class FelixRuntime {
         LOGGER.debug("", ex);
       }
     }
+
+    LOGGER.info("Stopped {}", name);
+    LOGGER.info("--------------------------------------------------");
   }
 
   private Optional<Path> getDataDir(String[] args) {
@@ -225,54 +230,6 @@ public class FelixRuntime {
     }
 
     return Optional.of(bundlesDir);
-  }
-
-  private void preloadLoggingConfiguration(Path configFile, Path fallbackConfigFile) {
-    DefaultLoggingFactory loggingFactory;
-
-    try {
-      ObjectMapper objectMapper = null;
-      ObjectMapper mergeMapper = null;
-      JsonNode jsonNodeBase = null;
-      JsonNode jsonNode = null;
-
-      // TODO: refactor MergingSourceProvider etc into ConfigurationReader, use here
-      if (Files.isReadable(configFile)) {
-        objectMapper = Jackson.newObjectMapper(new YAMLFactory());
-
-        mergeMapper = objectMapper.copy().setDefaultMergeable(true);
-        mergeMapper.configOverride(List.class).setMergeable(false);
-        mergeMapper.configOverride(Map.class).setMergeable(false);
-        mergeMapper.configOverride(Duration.class).setMergeable(false);
-
-        ByteSource byteSource =
-            Resources.asByteSource(Resources.getResource(getClass(), "/cfg.base.yml"));
-        jsonNodeBase = objectMapper.readTree(byteSource.openStream());
-        jsonNode = objectMapper.readTree(configFile.toFile());
-      } else if (Files.isReadable(fallbackConfigFile)) {
-        objectMapper = Jackson.newObjectMapper();
-        jsonNode = objectMapper.readTree(fallbackConfigFile.toFile());
-      }
-
-      if (jsonNodeBase != null) {
-        loggingFactory =
-            Objects.requireNonNull(objectMapper)
-                .readerFor(DefaultLoggingFactory.class)
-                .readValue(jsonNodeBase.at("/logging"));
-
-        mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNode.at("/logging"));
-      } else {
-        loggingFactory =
-            Objects.requireNonNull(objectMapper)
-                .readerFor(DefaultLoggingFactory.class)
-                .readValue(jsonNode.at("/logging"));
-      }
-    } catch (Throwable e) {
-      // use defaults
-      loggingFactory = new DefaultLoggingFactory();
-    }
-
-    loggingFactory.configure(new MetricRegistry(), "xtraplatform");
   }
 
   private Constants.ENV parseEnvironment() {

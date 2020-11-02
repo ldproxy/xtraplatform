@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
 import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
@@ -52,6 +53,7 @@ import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /** @author zahnen */
 @Component(publicFactory = false)
@@ -83,7 +85,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.valueEncodingMap = new ValueEncodingJackson<>(jackson);
     this.eventSourcing =
         new EventSourcing<>(
-            eventStore, EVENT_TYPES, valueEncoding, this::onStart, Optional.of(this::processEvent));
+            eventStore, EVENT_TYPES, valueEncoding, this::onStart, Optional.of(this::processEvent), Optional.of(this::onUpdate));
     this.defaultsStore = defaultsStore;
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
@@ -94,6 +96,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     valueEncoding.addDecoderMiddleware(
         new ValueDecoderEntityDataMigration(
             eventSourcing, entityFactory, this::addAdditionalEvent));
+    valueEncoding.addDecoderMiddleware(new ValueDecoderIdValidator());
 
     valueEncodingMap.addDecoderMiddleware(new ValueDecoderBase<>(identifier -> new LinkedHashMap<>(), new ValueCache<Map<String, Object>>() {
       @Override
@@ -160,6 +163,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             .id(overridesPath.getEntityId())
             .build();
 
+    // override without matching entity
+    if (!eventSourcing.isInCache(cacheKey)) {
+      LOGGER.warn("Ignoring override '{}', no matching entity found", event.asPath());
+      return ImmutableList.of();
+    }
+
     ImmutableMutationEvent.Builder builder =
         ImmutableMutationEvent.builder().from(event).identifier(cacheKey);
     if (!overridesPath.getKeyPath().isEmpty()) {
@@ -184,13 +193,13 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, String entitySubtype) {
-    List<String> subtypePath = entityFactory.getTypeAsList(entitySubtype);
+    //List<String> subtypePath = entityFactory.getTypeAsList(entitySubtype);
 
     ImmutableIdentifier defaultsIdentifier =
         ImmutableIdentifier.builder()
             .from(identifier)
             .id(EntityDataDefaultsStore.EVENT_TYPE)
-            .addAllPath(subtypePath)
+            .addPath(entitySubtype.toLowerCase())
             .build();
     if (defaultsStore.has(defaultsIdentifier)) {
       return defaultsStore.getBuilder(defaultsIdentifier);
@@ -268,44 +277,25 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected CompletableFuture<Void> onCreate(Identifier identifier, EntityData entityData) {
-    EntityData hydratedData = entityData;
+    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
+      EntityData hydratedData = hydrateData(identifier, entityData);
 
-    if (entityData instanceof AutoEntity) {
-      AutoEntity autoEntity = (AutoEntity) entityData;
-      if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
-        hydratedData = hydrate(identifier, hydratedData);
-
-        if (!isEventStoreReadOnly) {
-          Map<String, Object> map = valueEncodingMap
-              .deserialize(identifier, valueEncoding.serialize(hydratedData), valueEncoding.getDefaultFormat());
-
-          Map<String, Object> withoutDefaults = defaultsStore
-              .subtractDefaults(identifier, entityData.getEntitySubType(), map);
-
-          putPartialWithoutTrigger(identifier, withoutDefaults).join();
-          LOGGER.info(
-              "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-              identifier.path().get(0),
-              entityData.getId());
-        } else {
-          LOGGER.warn("Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
-              identifier.path().get(0),
-              entityData.getId());
-        }
-      }
+      return entityFactory
+              .createInstance(identifier.path()
+                                        .get(0), identifier.id(), hydratedData)
+              .whenComplete((entity, throwable) -> LOGGER.debug("Entity created: {}", identifier))
+              .thenAccept(ignore -> CompletableFuture.completedFuture(null));
     }
-
-    hydratedData = hydrate(identifier, hydratedData);
-
-    return entityFactory
-        .createInstance(identifier.path().get(0), identifier.id(), hydratedData)
-        .whenComplete((entity, throwable) -> LOGGER.debug("Entity created: {}", identifier))
-        .thenAccept(ignore -> CompletableFuture.completedFuture(null));
   }
 
   @Override
   protected void onUpdate(Identifier identifier, EntityData entityData) {
-    entityFactory.updateInstance(identifier.path().get(0), identifier.id(), entityData);
+    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
+      LOGGER.debug("Reloading entity: {}", identifier);
+      EntityData hydratedData = hydrateData(identifier, entityData);
+
+      entityFactory.updateInstance(identifier.path().get(0), identifier.id(), hydratedData);
+    }
   }
 
   @Override
@@ -331,5 +321,50 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         return ObjectArrays.concat(typeCollectionName, path);
       }
     };
+  }
+
+  private EntityData hydrateData(Identifier identifier, EntityData entityData) {
+    EntityData hydratedData = entityData;
+
+    if (entityData instanceof AutoEntity) {
+      AutoEntity autoEntity = (AutoEntity) entityData;
+      if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
+        hydratedData = hydrate(identifier, hydratedData);
+
+        if (!isEventStoreReadOnly) {
+          try {
+            Map<String, Object> map = valueEncodingMap
+                    .deserialize(identifier, valueEncoding.serialize(hydratedData), valueEncoding.getDefaultFormat());
+
+            Map<String, Object> withoutDefaults = defaultsStore
+                    .subtractDefaults(identifier, entityData.getEntitySubType(), map);
+
+            putPartialWithoutTrigger(identifier, withoutDefaults).join();
+            LOGGER.info(
+                    "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
+                    identifier.path()
+                              .get(0),
+                    entityData.getId());
+          } catch (IOException e) {
+            LOGGER.error(
+                    "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved: {}",
+                    identifier.path()
+                              .get(0),
+                    entityData.getId(),
+                    e.getMessage());
+          }
+
+        } else {
+          LOGGER.warn("Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
+                  identifier.path()
+                            .get(0),
+                  entityData.getId());
+        }
+      }
+    }
+
+    hydratedData = hydrate(identifier, hydratedData);
+
+    return hydratedData;
   }
 }

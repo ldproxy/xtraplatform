@@ -38,6 +38,9 @@ class FeaturePlugin implements Plugin<Project> {
         project.configurations.feature.setTransitive(true)
         project.configurations.featureBundles.setTransitive(true)
         project.configurations.feature.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
+        project.configurations.featureBundles.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
+        project.configurations.feature.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
+        project.configurations.featureBundles.resolutionStrategy.cacheChangingModulesFor(5, 'minutes')
 
         project.repositories {
             jcenter()

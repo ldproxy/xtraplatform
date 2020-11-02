@@ -151,7 +151,7 @@ class BundlePlugin implements Plugin<Project> {
             project.jar.manifest.instruction("Export-Package", "*.domain*,*.api*,!*")
             project.jar.manifest.instruction("Import-Package", "*")
 
-
+            project.jar.manifest.instruction("-noee", "true")
             //}
         }
     }

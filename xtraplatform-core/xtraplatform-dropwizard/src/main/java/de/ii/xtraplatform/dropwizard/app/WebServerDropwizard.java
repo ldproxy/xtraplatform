@@ -7,7 +7,12 @@
  */
 package de.ii.xtraplatform.dropwizard.app;
 
+import com.codahale.metrics.servlets.AdminServlet;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.MessageFormat;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -15,7 +20,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import javax.servlet.ServletRegistration;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import io.dropwizard.jetty.NonblockingServletHolder;
+import io.dropwizard.setup.AdminEnvironment;
 import org.apache.felix.http.proxy.ProxyServlet;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
@@ -24,7 +36,9 @@ import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.MultiException;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +55,8 @@ public class WebServerDropwizard {
   @Context private BundleContext context;
 
   @Requires private Dropwizard dw;
+
+  @Requires private AdminEndpoint adminEndpoint;
 
   private boolean initialized;
   private Server server;
@@ -61,7 +77,7 @@ public class WebServerDropwizard {
             new ThreadFactory() {
               @Override
               public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
+                Thread t = new Thread(r, "startup");
                 t.setDaemon(true);
                 return t;
               }
@@ -87,6 +103,9 @@ public class WebServerDropwizard {
       startStopLock.lock();
       try {
         if (started && (action == StartStopAction.STOP || action == StartStopAction.RESTART)) {
+          if (action == StartStopAction.STOP) {
+            Thread.currentThread().setName("shutdown");
+          }
           try {
             String u = getUrl();
 
@@ -162,7 +181,7 @@ public class WebServerDropwizard {
 
     stop();
 
-    startStopThread.shutdownNow();
+    //startStopThread.shutdownNow();
   }
 
   protected void start() {
@@ -199,7 +218,31 @@ public class WebServerDropwizard {
       ServletRegistration.Dynamic servlet = dw.getServlets().addServlet("osgi", new ProxyServlet());
       servlet.addMapping(APP_ENDPOINT);
 
+      addAdminEndpoint();
+
       this.initialized = true;
+    }
+  }
+
+  private void addAdminEndpoint() {
+    ServletHolder[] admin = dw.getEnvironment().getAdminContext().getServletHandler().getServlets();
+
+    int ai = -1;
+    for (int i = 0; i < admin.length; i++) {
+      if (admin[i].getName()
+                  .contains("Admin")) {
+        ai = i;
+      }
+    }
+    if (ai >= 0) {
+      String name = admin[ai].getName();
+      admin[ai] = new NonblockingServletHolder(adminEndpoint);
+      admin[ai].setName(name);
+
+      dw.getEnvironment()
+        .getAdminContext()
+        .getServletHandler()
+        .setServlets(admin);
     }
   }
 

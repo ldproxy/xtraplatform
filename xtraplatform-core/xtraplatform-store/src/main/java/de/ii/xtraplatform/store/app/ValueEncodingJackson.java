@@ -41,8 +41,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ValueEncodingJackson.class);
 
-  private static final byte[] JSON_NULL = "null".getBytes();
-  private static final byte[] YAML_NULL = "--- null\n".getBytes();
+  public static final byte[] JSON_NULL = "null".getBytes();
+  public static final byte[] YAML_NULL = "--- null\n".getBytes();
   private static final Pattern JSON_EMPTY = Pattern.compile("(\\s)*");
   private static final Pattern YAML_EMPTY = Pattern.compile("---(\\s)*");
 
@@ -124,7 +124,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
   }
 
   @Override
-  public final T deserialize(Identifier identifier, byte[] payload, FORMAT format) {
+  public final T deserialize(Identifier identifier, byte[] payload, FORMAT format) throws IOException {
     // "null" as payload means delete
     if (isNull(payload)) {
       return null;
@@ -135,15 +135,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     ObjectMapper objectMapper = getMapper(payloadFormat);
     T data = null;
 
-    try {
-      for (ValueDecoderMiddleware<byte[]> preProcessor : decoderPreProcessor) {
-        rawData = preProcessor.process(identifier, rawData, objectMapper, null);
-      }
-    } catch (Throwable e) {
-      LOGGER.error("Deserialization error: {}", e.getMessage());
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Stacktrace:", e);
-      }
+    for (ValueDecoderMiddleware<byte[]> preProcessor : decoderPreProcessor) {
+      rawData = preProcessor.process(identifier, rawData, objectMapper, null);
     }
 
     try {
@@ -152,18 +145,18 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
       }
 
     } catch (Throwable e) {
-      try {
         Optional<ValueDecoderMiddleware<T>> recovery =
             decoderMiddleware.stream().filter(ValueDecoderMiddleware::canRecover).findFirst();
         if (recovery.isPresent()) {
-          data = recovery.get().recover(identifier, rawData, objectMapper);
+          try {
+            data = recovery.get()
+                           .recover(identifier, rawData, objectMapper);
+          } catch (Throwable e2) {
+            throw e;
+          }
+        } else {
+          throw e;
         }
-      } catch (Throwable e2) {
-        LOGGER.error("Deserialization error: {}", e.getMessage());
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Stacktrace:", e);
-        }
-      }
     }
 
     return data;

@@ -7,27 +7,19 @@
  */
 package de.ii.xtraplatform.store.infra;
 
-import static de.ii.xtraplatform.dropwizard.domain.LambdaWithException.consumerMayThrow;
-
 import com.google.common.collect.ImmutableList;
+import com.sun.nio.file.SensitivityWatchEventModifier;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
 import de.ii.xtraplatform.store.app.EventPaths;
+import de.ii.xtraplatform.store.app.ValueEncodingJackson;
+import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.Identifier;
+import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
+import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
 import de.ii.xtraplatform.store.domain.MutationEvent;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -38,6 +30,35 @@ import org.apache.felix.ipojo.annotations.Validate;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.google.common.io.Files.*;
+import static de.ii.xtraplatform.dropwizard.domain.LambdaWithException.consumerMayThrow;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 @Component
 @Provides
@@ -54,6 +75,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
   private final EventPaths eventPaths;
   private final List<EventPaths> additionalEventPaths;
   private final boolean isEnabled;
+  private final boolean isReadOnly;
 
   EventStoreDriverFs(@Context BundleContext bundleContext, @Requires XtraPlatform xtraPlatform) {
     this.storeDirectory =
@@ -67,6 +89,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
             xtraPlatform.getConfiguration().store.overridesPathPatterns,
             this::adjustPathPattern);
     this.isEnabled = true; // TODO: xtraPlatform.getConfiguration().store.driver = StoreDriver.FS
+    this.isReadOnly = xtraPlatform.getConfiguration().store.mode == StoreConfiguration.StoreMode.READ_ONLY;
 
     List<Path> additionalDirectories =
         getAdditionalDirectories(
@@ -90,8 +113,8 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
   @Validate
   private void onInit() {
-    if (!Files.exists(storeDirectory)) {
-      throw new IllegalArgumentException("Store path does not exist");
+    if (!Files.exists(storeDirectory) && isReadOnly) {
+      throw new IllegalArgumentException("Store path does not exist and cannot be created because store is read-only");
     }
     if (isEnabled) {
       this.publish = true;
@@ -173,15 +196,61 @@ public class EventStoreDriverFs implements EventStoreDriver {
     return Stream.empty();
   }
 
+  @Override
+  public boolean supportsWatch() {
+    return true;
+  }
+
+  //TODO: stopWatching, move watchService to class, watch new directories, file extension filter
+  @Override
+  public void startWatching(Consumer<Path> watchEventConsumer) {
+
+    try {
+      WatchService watchService = FileSystems.getDefault().newWatchService();
+      final Map<WatchKey, Path> keys = new HashMap<>();
+
+      Files.walkFileTree(storeDirectory, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+          //LOGGER.debug("registering " + dir + " in watcher service");
+          WatchKey watchKey = dir.register(watchService, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE}, SensitivityWatchEventModifier.HIGH);
+          keys.put(watchKey, dir);
+          return FileVisitResult.CONTINUE;
+        }
+      });
+      //LOGGER.debug("Watching directory for changes {}", storeDirectory);
+      WatchKey key;
+      while ((key = watchService.take()) != null) {
+        final Path dir = keys.get(key);
+        if (dir == null) {
+          LOGGER.error("WatchKey " + key + " not recognized!");
+          continue;
+        }
+        for (WatchEvent<?> event : key.pollEvents()) {
+          if (event.context() instanceof Path) {
+            String fileExtension = getFileExtension(event.context()
+                                                         .toString());
+            if (Objects.equals(fileExtension, "yml") || Objects.equals(fileExtension, "yaml") || Objects.equals(fileExtension, "json")) {
+              Path file = dir.resolve((Path) event.context());
+              //LOGGER.debug("FILE {}", storeDirectory.relativize(file));
+              watchEventConsumer.accept(storeDirectory.relativize(file));
+            }
+          }
+        }
+        key.reset();
+      }
+    } catch (IOException | InterruptedException e) {
+      LOGGER.error("Could not watch directory {}: {}", storeDirectory, e.getMessage());
+    }
+  }
+
   private Stream<Path> loadPathStream(Path directory) {
     try {
-      int parentCount = directory.getNameCount();
-      // TODO: 3 depends on pattern
       return Files.find(
           directory,
           32,
           (path, basicFileAttributes) ->
-              basicFileAttributes.isRegularFile() && path.getNameCount() - parentCount >= 3);
+              basicFileAttributes.isRegularFile());
     } catch (IOException e) {
       throw new IllegalStateException("Reading event from store path failed", e);
     }

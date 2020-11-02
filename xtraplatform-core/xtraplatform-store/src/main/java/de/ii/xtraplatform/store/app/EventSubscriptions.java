@@ -7,11 +7,16 @@
  */
 package de.ii.xtraplatform.store.app;
 
-import akka.stream.ActorMaterializer;
+import akka.stream.QueueOfferResult;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.ImmutableStateChangeEvent;
 import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.StateChangeEvent;
+import de.ii.xtraplatform.store.domain.TypedEvent;
+import de.ii.xtraplatform.streams.domain.StreamRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -19,8 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 // TODO
 public class EventSubscriptions {
@@ -28,13 +31,13 @@ public class EventSubscriptions {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventSubscriptions.class);
 
   private final Map<String, EventStream> eventStreams;
-  private final ActorMaterializer materializer;
+  private final StreamRunner streamRunner;
   private final ScheduledExecutorService executorService;
   private boolean isStarted;
 
-  protected EventSubscriptions(ActorMaterializer materializer) {
+  protected EventSubscriptions(StreamRunner streamRunner) {
     this.eventStreams = new ConcurrentHashMap<>();
-    this.materializer = materializer;
+    this.streamRunner = streamRunner;
     this.executorService = new ScheduledThreadPoolExecutor(1);
   }
 
@@ -42,6 +45,8 @@ public class EventSubscriptions {
     // TODO: we need the 10 second delay to wait for all JacksonSubTypeIds, find a better solution
     executorService.schedule(
         () -> {
+          Thread.currentThread().setName("startup");
+
           if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(
                 "New event store subscriber: {} {}", subscriber.getEventTypes(), subscriber);
@@ -57,7 +62,16 @@ public class EventSubscriptions {
                     // LOGGER.debug("{} STARTED", eventType);
                     cmp.complete(null);
                   }
-                  subscriber.onEmit(event);
+                  //only emit one event at a time
+                  synchronized (streamRunner) {
+                    if (event instanceof MutationEvent) {
+                      LOGGER.trace("EMIT: {} {}", ((MutationEvent) event).type(), ((MutationEvent) event).identifier());
+                    }
+                    subscriber.onEmit(event);
+                    if (event instanceof MutationEvent) {
+                      LOGGER.trace("EMITTED: {} {}", ((MutationEvent) event).type(), ((MutationEvent) event).identifier());
+                    }
+                  }
                 });
             cmp.join();
             // LOGGER.debug("NEXT");
@@ -67,13 +81,13 @@ public class EventSubscriptions {
         TimeUnit.SECONDS);
   }
 
-  public void emitEvent(MutationEvent event) {
-    if (LOGGER.isTraceEnabled()) {
-      LOGGER.trace("Emitting event: {} {}", event.type(), event.identifier());
+  public synchronized CompletableFuture<QueueOfferResult> emitEvent(TypedEvent event) {
+    if (LOGGER.isTraceEnabled() && event instanceof MutationEvent) {
+      LOGGER.trace("Emitting event: {} {}", event.type(), ((MutationEvent) event).identifier());
     }
     final EventStream eventStream = getEventStream(event.type());
 
-    eventStream.queue(event);
+    return eventStream.queue(event);
   }
 
   public void startListening() {
@@ -92,7 +106,7 @@ public class EventSubscriptions {
   }
 
   private EventStream createEventStream(String eventType) {
-    EventStream eventStream = new EventStream(materializer, eventType);
+    EventStream eventStream = new EventStream(streamRunner, eventType);
 
     emitStateChange(eventStream, StateChangeEvent.STATE.REPLAYING, eventType);
 

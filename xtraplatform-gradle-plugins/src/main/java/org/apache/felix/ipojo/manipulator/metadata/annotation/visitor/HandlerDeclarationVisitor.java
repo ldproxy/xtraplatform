@@ -34,6 +34,8 @@ import javax.xml.parsers.DocumentBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Parse the @HandlerDeclaration annotation.
@@ -53,7 +55,7 @@ public class HandlerDeclarationVisitor extends AnnotationVisitor {
     private Reporter reporter;
 
     public HandlerDeclarationVisitor(ComponentWorkbench workbench, DocumentBuilder builder, Reporter reporter) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM7);
         this.workbench = workbench;
         this.builder = builder;
         this.reporter = reporter;
@@ -82,7 +84,16 @@ public class HandlerDeclarationVisitor extends AnnotationVisitor {
         try {
             document = builder.parse(is);
             Element e = convertDOMElements(document.getDocumentElement());
-            workbench.getElements().put(e, null);
+            if (Objects.equals(e.getName(), "callbacks")) {
+                Element[] callbacks = e.getElements("callback");
+                for (int i = 0; i < callbacks.length; i++) {
+                    workbench.getElements()
+                             .put(callbacks[i], null);
+                }
+            } else {
+                workbench.getElements()
+                         .put(e, null);
+            }
         } catch (Exception e) {
             reporter.warn("Cannot convert {} to iPOJO Elements.", m_value, e);
         } finally {

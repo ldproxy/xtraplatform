@@ -14,4 +14,6 @@ public interface EventStore {
   void push(MutationEvent event);
 
   boolean isReadOnly();
+
+  void replay(EventFilter filter);
 }

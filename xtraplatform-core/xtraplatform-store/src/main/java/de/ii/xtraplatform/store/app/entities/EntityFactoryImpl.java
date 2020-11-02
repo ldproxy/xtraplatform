@@ -12,6 +12,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
@@ -52,6 +53,9 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
+import static de.ii.xtraplatform.runtime.domain.LogContext.withMdc;
 
 /** @author zahnen */
 @Component(publicFactory = false)
@@ -359,7 +363,7 @@ public class EntityFactoryImpl implements EntityFactory {
   }
 
   @Override
-  public List<List<String>> getSubTypes(String entityType, List<String> entitySubType) {
+  public List<String> getSubTypes(String entityType, List<String> entitySubType) {
     String specificEntityType = getSpecificEntityType(entityType, getTypeAsString(entitySubType));
 
     return entityDataBuilders.keySet().stream()
@@ -368,7 +372,7 @@ public class EntityFactoryImpl implements EntityFactory {
         .map(this::getEntitySubType)
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .map(subType -> Splitter.on('/').splitToList(subType))
+        //.map(subType -> Splitter.on('/').splitToList(subType))
         .collect(ImmutableList.toImmutableList());
   }
 
@@ -548,7 +552,7 @@ public class EntityFactoryImpl implements EntityFactory {
     this.instanceRegistration.put(instanceId, registration);
     // wait max 5 secs, then proceed
     ScheduledFuture<Boolean> scheduledFuture =
-        executorService.schedule(() -> registration.complete(null), 5, TimeUnit.SECONDS);
+        executorService.schedule(withMdc(() -> registration.complete(null)), 5, TimeUnit.SECONDS);
 
     DeclarationHandle handle = instanceBuilder.build();
     handle.publish();
@@ -560,14 +564,15 @@ public class EntityFactoryImpl implements EntityFactory {
   @Override
   public CompletableFuture<PersistentEntity> updateInstance(
       String entityType, String id, EntityData entityData) {
-    if (LOGGER.isTraceEnabled()) {
-      LOGGER.trace("UPDATING ENTITY {} {} {}", entityType, id /*, entityData*/);
+    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
+
+      LOGGER.info("Reloading configuration for entity of type '{}' with id '{}'", entityType, id);
+
+      String instanceId = entityType + "/" + id;
+
+      deleteInstance(entityType, id);
+      return createInstance(entityType, id, entityData);
     }
-
-    String instanceId = entityType + "/" + id;
-
-    deleteInstance(entityType, id);
-    return createInstance(entityType, id, entityData);
 
     /*if (instanceHandles.containsKey(instanceId)) {
         Dictionary<String, Object> configuration = new Hashtable<>();

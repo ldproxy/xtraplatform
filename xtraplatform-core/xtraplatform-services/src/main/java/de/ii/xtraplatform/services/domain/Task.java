@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.services.domain;
 
+import org.slf4j.MDC;
+
 /** @author zahnen */
 public interface Task {
 
@@ -15,4 +17,8 @@ public interface Task {
   String getLabel();
 
   void run(TaskContext taskContext);
+
+  default void logContext() {
+    MDC.clear();
+  }
 }

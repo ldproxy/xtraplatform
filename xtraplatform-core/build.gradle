@@ -1,5 +1,5 @@
 plugins {
-    id 'de.interactive_instruments.xtraplatform-feature' version '3.0.0'
+    id 'de.interactive_instruments.xtraplatform-feature' version '3.4.0'
     id "com.diffplug.spotless" version "5.1.2" apply false
     id 'com.jfrog.bintray' version '1.8.4' apply false
     //id 'com.github.hierynomus.license-report' version '0.15.0' apply false
@@ -9,7 +9,11 @@ allprojects {
     group = 'de.interactive_instruments'
 }
 
-version = '3.0.0'
+ext {
+    versionSuffix = project.findProperty('isSnapshot') == 'true' ? '-SNAPSHOT' : ''
+}
+
+version = '3.2.0' + versionSuffix
 
 dependencies {
     bundle subprojects
@@ -35,6 +39,8 @@ apply from: '../immutables.gradle'
 
 apply from: '../bintray.gradle'
 
+apply from: '../snapshot.gradle'
+
 //apply from: '../formatting.gradle'
 
 /*
@@ -43,5 +49,5 @@ apply from: '../unit-tests.gradle'
 
 apply from: '../license-report.gradle'
 
-apply from: '../composite-tasks.gradle'
 */
+apply from: '../composite-tasks.gradle'
