@@ -6,51 +6,67 @@ import { validatePropTypes } from '@xtraplatform/core';
 import { servicesFeature, serviceViewActions, serviceEditTabs } from './constants';
 import ServiceIndex from './Index';
 import ServiceEdit from './Edit';
+import ServiceEditGeneral from './Edit/Main/General';
+import ServiceDefaults from './Defaults';
+import ServiceAdd from './Add';
+import ViewActionLandingPage from '../ViewActionLandingPage';
 
 export { servicesFeature, serviceViewActions, serviceEditTabs };
 
 export default createFeature({
-  name: servicesFeature,
+    name: servicesFeature,
 
-  appInit: ({ showStatus }) => {
-    showStatus('Loading services...');
-    return Promise.resolve();
-  },
-
-  fassets: {
-    // provided resources
-    defineUse: {
-      [`${servicesFeature}.routes`]: [
-        {
-          path: '/services',
-          menuLabel: 'Services',
-          content: <ServiceIndex />,
-        },
-        {
-          path: '/services/:id',
-          content: <ServiceEdit />,
-          sidebar: <ServiceIndex isCompact />,
-        },
-      ],
-      [serviceViewActions('noop')]: () => <div>noop</div>,
-      [serviceEditTabs('noop')]: {
-        id: 'noop',
-        label: 'noop',
-        component: () => <div>noop</div>,
-      },
+    appInit: ({ showStatus }) => {
+        showStatus('Loading services...');
+        return Promise.resolve();
     },
-    // consumed resources
-    use: [
-      [serviceViewActions(), { required: false, type: fassetValidations.comp }],
-      [serviceEditTabs(), {
-        required: false,
-        type: validatePropTypes({
-          id: PropTypes.string.isRequired,
-          label: PropTypes.string.isRequired,
-          component: PropTypes.elementType.isRequired,
-        }),
-      }],
-    ],
-  },
 
+    fassets: {
+        // provided resources
+        defineUse: {
+            [`${servicesFeature}.routes`]: [
+                {
+                    path: '/services',
+                    menuLabel: 'Services',
+                    content: <ServiceIndex />,
+                    default: true,
+                },
+                {
+                    path: '/services/_defaults',
+                    content: <ServiceDefaults />,
+                },
+                {
+                    path: '/services/_add',
+                    content: <ServiceAdd />,
+                },
+                {
+                    path: '/services/:id',
+                    content: <ServiceEdit />,
+                    sidebar: <ServiceIndex isCompact />,
+                },
+            ],
+            [serviceViewActions('landingPage')]: ViewActionLandingPage,
+            [serviceEditTabs('general')]: {
+                id: 'general',
+                label: 'General',
+                component: ServiceEditGeneral,
+            },
+        },
+        // consumed resources
+        use: [
+            [serviceViewActions(), { required: false, type: fassetValidations.comp }],
+            [
+                serviceEditTabs(),
+                {
+                    required: false,
+                    type: validatePropTypes({
+                        id: PropTypes.string.isRequired,
+                        label: PropTypes.string.isRequired,
+                        component: PropTypes.elementType.isRequired,
+                        noDefaults: PropTypes.bool,
+                    }),
+                },
+            ],
+        ],
+    },
 });

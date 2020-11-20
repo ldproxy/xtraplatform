@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.store.app.entities;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
@@ -75,7 +76,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             ImmutableList.of(EntityDataDefaultsStore.EVENT_TYPE),
             valueEncoding,
             this::onStart,
-            Optional.of(this::processEvent), Optional.empty(), Optional.of(biConsumerMayThrow(this::validateDefaults)));
+            Optional.of(this::processEvent), Optional.empty(),
+            Optional.of(biConsumerMayThrow(this::validateDefaults)));
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
     valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getDefaults, eventSourcing));
@@ -100,14 +102,14 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
             identifier -> new LinkedHashMap<>(),
-            new ValueCache<Map<String,Object>>() {
+            new ValueCache<Map<String, Object>>() {
               @Override
               public boolean isInCache(Identifier identifier) {
                 return false;
               }
 
               @Override
-              public Map<String,Object> getFromCache(Identifier identifier) {
+              public Map<String, Object> getFromCache(Identifier identifier) {
                 return null;
               }
             }));
@@ -158,7 +160,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             cacheKey -> {
               ImmutableMutationEvent.Builder builder =
                   ImmutableMutationEvent.builder().from(event).identifier(cacheKey);
-              if (!defaultsPath.getKeyPath().isEmpty() && !Objects.equals(defaultsPath.getKeyPath().get(0), EVENT_TYPE)) {
+              if (!defaultsPath.getKeyPath().isEmpty() && !Objects
+                  .equals(defaultsPath.getKeyPath().get(0), EVENT_TYPE)) {
                 Optional<KeyPathAlias> keyPathAlias =
                     entityFactory.getKeyPathAlias(
                         defaultsPath.getKeyPath().get(defaultsPath.getKeyPath().size() - 1));
@@ -202,13 +205,16 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
   @Override
   public Map<String, Object> subtractDefaults(Identifier identifier, Optional<String> subType,
-      Map<String, Object> data) {
+      Map<String, Object> data, List<String> ignoreKeys) {
 
-    Identifier defaultsIdentifier = subType.isPresent() ? ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
-        .addAllPath(identifier.path()).addPath(subType.get().toLowerCase()).build() : ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
-        .addAllPath(identifier.path()).build();
+    Identifier defaultsIdentifier =
+        subType.isPresent() ? ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
+            .addAllPath(identifier.path()).addPath(subType.get().toLowerCase()).build()
+            : ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
+                .addAllPath(identifier.path()).build();
 
-    EntityDataBuilder<EntityData> newBuilder = getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders();
+    EntityDataBuilder<EntityData> newBuilder = getBuilder(defaultsIdentifier)
+        .fillRequiredFieldsWithPlaceholders();
 
     try {
       byte[] payload = valueEncodingEntity.serialize(newBuilder.build());
@@ -216,13 +222,50 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       Map<String, Object> defaults = valueEncodingMap
           .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat());
 
-      return new MapSubtractor().subtract(data, defaults);
+      return new MapSubtractor().subtract(data, defaults, ignoreKeys);
 
     } catch (Throwable e) {
       boolean br = true;
     }
 
     return data;
+  }
+
+  @Override
+  public Optional<Map<String, Object>> getAllDefaults(Identifier identifier,
+      Optional<String> subType) {
+
+    Identifier defaultsIdentifier =
+        subType.isPresent() ? ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
+            .addAllPath(identifier.path()).addPath(subType.get().toLowerCase()).build()
+            : ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
+                .addAllPath(identifier.path()).build();
+
+    Optional<EntityDataBuilder<EntityData>> newBuilder = Optional
+        .ofNullable(getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders());
+
+    if (newBuilder.isPresent()) {
+      try {
+        EntityData data = newBuilder.get().build();
+
+        byte[] payload = valueEncodingEntity.serialize(data);
+
+        Map<String, Object> defaults = valueEncodingMap
+            .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat());
+
+        //TODO
+        defaults = defaults.entrySet().stream()
+            .filter(entry -> !Objects.equals(entry.getValue(), "__DEFAULT__"))
+            .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        return Optional.ofNullable(defaults);
+
+      } catch (Throwable e) {
+        boolean br = true;
+      }
+    }
+
+    return Optional.empty();
   }
 
   private Map<String, Object> getDefaults(Identifier identifier) {
@@ -249,21 +292,22 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       Map<String, Object> defaults = eventSourcing.getFromCache(identifier);
       byte[] payload = valueEncodingBuilder.serialize(defaults);
 
-        try {
-            return valueEncodingBuilder.deserialize(
-                identifier, payload, valueEncodingBuilder.getDefaultFormat());
-        } catch (IOException e) {
-            LOGGER.error("Cannot load defaults for '{}': {}", identifier.asPath(), e.getMessage());
-        }
+      try {
+        return valueEncodingBuilder.deserialize(
+            identifier, payload, valueEncodingBuilder.getDefaultFormat());
+      } catch (IOException e) {
+        LOGGER.error("Cannot load defaults for '{}': {}", identifier.asPath(), e.getMessage());
+      }
     }
 
     return getNewBuilder(identifier);
   }
 
-  private void validateDefaults(Identifier identifier, Map<String,Object> defaults) throws IOException {
-      byte[] payload = valueEncodingBuilder.serialize(defaults);
-      valueEncodingBuilder.deserialize(
-              identifier, payload, valueEncodingBuilder.getDefaultFormat());
+  private void validateDefaults(Identifier identifier, Map<String, Object> defaults)
+      throws IOException {
+    byte[] payload = valueEncodingBuilder.serialize(defaults);
+    valueEncodingBuilder.deserialize(
+        identifier, payload, valueEncodingBuilder.getDefaultFormat());
 
   }
 

@@ -5,8 +5,10 @@
   "author": "interactive instruments GmbH",
   "license": "MPL-2.0",
   "dependencies": {
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
     "deepmerge": "^4.2.2",
     "eslint-config-prettier": "^6.11.0",
-    "pnp-webpack-plugin": "^1.6.4"
+    "pnp-webpack-plugin": "^1.6.4",
+    "react-refresh": "^0.9.0"
   }
 }

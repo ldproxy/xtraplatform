@@ -18,7 +18,9 @@ public class UserAuthorizer implements Authorizer<User> {
 
   @Override
   public boolean authorize(User user, String role) {
-    LOGGER.debug("Authorizing {} for role {}", user, role);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Authorizing {} for role {}", user, role);
+    }
 
     return user.getRole().isGreaterOrEqual(Role.fromString(role));
   }

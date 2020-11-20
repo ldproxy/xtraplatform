@@ -1,85 +1,38 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import styled from 'styled-components';
 
 import { Box, Button, Drop, Text } from 'grommet';
 import { CircleQuestion, Clone } from 'grommet-icons';
-import { useHover } from '../../hooks';
+import TooltipIcon from './TooltipIcon';
 
-// needed for useHover to work correctly
-const HelpIcon = styled(CircleQuestion)`
-    pointer-events: none;
-`;
-const InheritedIcon = styled(Clone)`
-    pointer-events: none;
-`;
 /**
  * InfoLabel can be used in FormField
  */
-const InfoLabel = ({ label, help, inheritedFrom }) => {
-    const [helpHoverRef, isHelpHovered] = useHover();
-    const [inheritedHoverRef, isInheritedHovered] = useHover();
+const InfoLabel = ({ label, help, inheritedFrom, iconSize, color, hoverColor, mono, boxProps }) => {
+    const textProps = mono
+        ? {
+              size: 'small',
+              weight: 'bold',
+              color: color || 'dark-4',
+              style: { fontFamily: '"Roboto Mono", monospace' },
+          }
+        : {};
+    iconSize = mono ? 'list' : iconSize;
 
     return (
-        <Box direction='row' align='center' gap='small'>
-            {label}
+        <Box direction='row' align='center' gap='xsmall' {...boxProps}>
+            <Text {...textProps}>{label}</Text>
             {inheritedFrom && (
-                <Button
-                    plain
-                    focusIndicator={false}
-                    icon={<InheritedIcon size='list' />}
-                    ref={inheritedHoverRef}
-                />
+                <TooltipIcon icon={Clone} iconSize={iconSize} iconColor='text'>
+                    <Text size='small'>
+                        Inherited from: <strong>{inheritedFrom}</strong>
+                    </Text>
+                </TooltipIcon>
             )}
             {help && (
-                <Button
-                    plain
-                    focusIndicator={false}
-                    icon={<HelpIcon color='brand' size='medium' />}
-                    ref={helpHoverRef}
-                />
-            )}
-            {isInheritedHovered && (
-                <Drop
-                    align={{ left: 'right' }}
-                    target={inheritedHoverRef.current}
-                    plain>
-                    <Box
-                        margin='xsmall'
-                        pad='xsmall'
-                        width={{ max: 'large' }}
-                        background='content'
-                        elevation='small'
-                        round='small'
-                        border={{
-                            color: 'brand',
-                            size: 'small',
-                        }}
-                        animation={['fadeIn']}>
-                        <Text size='small'>{`Inherited from: ${inheritedFrom}`}</Text>
-                    </Box>
-                </Drop>
-            )}
-            {isHelpHovered && (
-                <Drop
-                    align={{ left: 'right' }}
-                    target={helpHoverRef.current}
-                    plain>
-                    <Box
-                        margin='xsmall'
-                        pad='xsmall'
-                        width={{ max: 'large' }}
-                        background='content'
-                        elevation='small'
-                        round='small'
-                        border={{
-                            color: 'brand',
-                            size: 'small',
-                        }}
-                        animation={['fadeIn']}>
-                        <Text size='small'>{help}</Text>
-                    </Box>
-                </Drop>
+                <TooltipIcon icon={CircleQuestion} iconSize={iconSize} iconColor='brand'>
+                    <Text size='small'>{help}</Text>
+                </TooltipIcon>
             )}
         </Box>
     );
@@ -100,11 +53,19 @@ InfoLabel.propTypes = {
      * The text shown in the inherited tooltip
      */
     inheritedFrom: PropTypes.string,
+    iconSize: PropTypes.string,
+    color: PropTypes.string,
+    hoverColor: PropTypes.string,
+    mono: PropTypes.bool,
 };
 
 InfoLabel.defaultProps = {
     help: null,
     inheritedFrom: null,
+    iconSize: 'medium',
+    color: null,
+    hoverColor: null,
+    mono: true,
 };
 
 export default InfoLabel;

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { createFeature, assertNoRootAppElm } from 'feature-u';
 
 import { validatePropTypes } from '@xtraplatform/core';
-import Manager from './Container';
+import App from './App';
 
 export default createFeature({
     name: 'manager',
@@ -18,6 +18,7 @@ export default createFeature({
                         content: PropTypes.element.isRequired,
                         menuLabel: PropTypes.string,
                         sidebar: PropTypes.element,
+                        default: PropTypes.bool,
                     }),
                 },
             ],
@@ -32,9 +33,9 @@ export default createFeature({
     // eslint-disable-next-line react/prop-types
     appWillStart: ({ curRootAppElm }) => {
         // ensure no content is clobbered (children NOT supported)
-        assertNoRootAppElm(curRootAppElm, '<Manager>');
+        assertNoRootAppElm(curRootAppElm, '<App>');
 
         // return root app
-        return <Manager />;
+        return <App />;
     },
 });

@@ -1,19 +1,32 @@
 import { grommet, base } from 'grommet/themes';
 import { deepMerge } from 'grommet/utils';
 import { css } from 'styled-components';
+import Color from 'color';
 
 export const customTheme = deepMerge(grommet, {
     global: {
         colors: {
             active: base.global.colors.brand,
+            hover: Color(base.global.colors.brand).lighten(0.4).hex(),
             menu: 'neutral-3',
             content: 'white',
+            overlay: 'rgba(0,0,0,0.15)',
         },
         edgeSize: {
             xxlarge: '192px',
         },
+        breakpoints: {
+            medium: {
+                value: 1024,
+            },
+            large: {
+                value: 1440,
+            },
+            xlarge: {},
+        },
     },
     menu: {
+        background: 'transparent',
         active: {
             color: 'rgba(0,0,0,0.15)',
         },
@@ -54,7 +67,7 @@ export const customTheme = deepMerge(grommet, {
             color: 'light-4',
         },
         extend: {
-            background: 'white',
+            background: 'inherit',
         },
     },
     tab: {
@@ -73,6 +86,24 @@ export const customTheme = deepMerge(grommet, {
             hover: {
                 color: 'control',
             },
+        },
+    },
+    tabs: {
+        extend: css`
+            & > div:nth-child(2) {
+                height: 100%;
+            }
+        `,
+    },
+    checkBox: {
+        toggle: {
+            size: '40px',
+        },
+        size: '20px',
+    },
+    textArea: {
+        extend: {
+            minHeight: base.global.size.xsmall,
         },
     },
 });

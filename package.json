@@ -3,6 +3,7 @@
     "private": true,
     "workspaces": [
         "xtraplatform-core/xtraplatform-manager/src/main/javascript/**",
+        "xtraplatform-core/xtraplatform-services/src/main/javascript",
         "xtraplatform-build-tools/scaffolding/src/main/javascript/**"
     ],
     "scripts": {

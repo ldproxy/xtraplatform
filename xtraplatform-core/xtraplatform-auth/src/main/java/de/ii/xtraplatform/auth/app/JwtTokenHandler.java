@@ -16,8 +16,9 @@ import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.AuthConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.impl.DefaultJwtBuilder;
+import io.jsonwebtoken.impl.DefaultJwtParser;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.time.Instant;
@@ -49,7 +50,7 @@ public class JwtTokenHandler implements TokenHandler {
   @Override
   public String generateToken(User user, int expiresIn, boolean rememberMe) {
     JwtBuilder jwtBuilder =
-        Jwts.builder()
+        new DefaultJwtBuilder()
             .setSubject(user.getName())
             .claim(authConfig.getUserRoleKey, user.getRole().toString())
             .claim("rememberMe", rememberMe)
@@ -65,7 +66,7 @@ public class JwtTokenHandler implements TokenHandler {
     if (authConfig.isActive() && authConfig.isJwt()) {
       try {
         Claims claimsJws =
-            Jwts.parser().setSigningKey(authConfig.jwtSigningKey).parseClaimsJws(token).getBody();
+            new DefaultJwtParser().setSigningKey(authConfig.jwtSigningKey).parseClaimsJws(token).getBody();
 
         return Optional.of(
             ImmutableUser.builder()
@@ -89,7 +90,7 @@ public class JwtTokenHandler implements TokenHandler {
     if (authConfig.isActive() && authConfig.isJwt()) {
       try {
         Claims claimsJws =
-            Jwts.parser().setSigningKey(authConfig.jwtSigningKey).parseClaimsJws(token).getBody();
+            new DefaultJwtParser().setSigningKey(authConfig.jwtSigningKey).parseClaimsJws(token).getBody();
 
         return Optional.ofNullable(claimsJws.get(name, type));
 
@@ -115,7 +116,7 @@ public class JwtTokenHandler implements TokenHandler {
     authConfig.jwtSigningKey = Base64.getEncoder().encodeToString(key.getEncoded());
 
     // TODO
-    LOGGER.warn("No valid jwtSigningKey found in cfg.yml, using {}. ", authConfig.jwtSigningKey);
+    LOGGER.warn("No valid 'jwtSigningKey' found in 'cfg.yml', using '{}'. If you do not set 'jwtSigningKey', it will change on every restart.", authConfig.jwtSigningKey);
 
     return key;
   }

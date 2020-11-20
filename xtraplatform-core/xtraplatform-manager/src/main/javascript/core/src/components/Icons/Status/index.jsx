@@ -7,13 +7,14 @@ import {
     StatusGood,
     StatusUnknown,
     StatusWarning,
+    CircleAlert,
 } from 'grommet-icons';
 
 const VALUE_ICON = {
     unknown: StatusUnknown,
     ok: StatusGood,
     warning: StatusWarning,
-    critical: StatusCritical,
+    critical: CircleAlert,
     disabled: StatusDisabled,
 };
 
@@ -29,8 +30,7 @@ IconsStatus.propTypes = {
     /**
      * The status code
      */
-    value: PropTypes.oneOf(['unknown', 'ok', 'warning', 'critical', 'disabled'])
-        .isRequired,
+    value: PropTypes.oneOf(['unknown', 'ok', 'warning', 'critical', 'disabled']).isRequired,
 };
 
 IconsStatus.defaultProps = {};

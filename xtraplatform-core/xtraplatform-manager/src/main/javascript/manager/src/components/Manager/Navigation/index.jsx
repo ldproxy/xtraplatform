@@ -6,6 +6,8 @@ import { Box } from 'grommet';
 import { Sidebar } from '@xtraplatform/core';
 import NavigationHeader from './Header';
 import NavigationMenu from './Menu';
+import { UserActions } from './User';
+import { useAuth } from '../../../hooks/auth';
 
 const Navigation = ({
     title,
@@ -14,28 +16,22 @@ const Navigation = ({
     onClose,
     isLayer,
     isLayerActive,
-    user /* loginError, loginExpired, secured, onLogin, onLogout, onChangePassword, */,
+    /*user loginError, loginExpired, secured, onLogin, onLogout, onChangePassword, */
 }) => {
     // const [isChangePassword, setChangePassword] = useState(false);
+    const [auth, signin, signout] = useAuth();
+    const { user, error } = auth;
 
     if (isLayer && !isLayerActive) {
         return null;
     }
 
-    if (process.env.NODE_ENV !== 'production') {
-        console.log('USER', user);
-    }
-
     return (
         <Sidebar isLayer={isLayer} hideBorder onClose={onClose}>
             <Box fill='vertical' background='menu'>
-                <NavigationHeader
-                    isLayer={isLayer}
-                    onClose={onClose}
-                    title={title}
-                    logo={logo}
-                />
+                <NavigationHeader isLayer={isLayer} onClose={onClose} title={title} logo={logo} />
                 <NavigationMenu routes={routes} onClick={onClose} />
+                {user && <UserActions name={user.sub} />}
                 {/* (!secured && !user)
                     ? <></>
                     : (user
@@ -62,9 +58,6 @@ Navigation.propTypes = {
     onClose: PropTypes.func,
     isLayer: PropTypes.bool,
     isLayerActive: PropTypes.bool,
-    user: PropTypes.shape({
-        role: PropTypes.string.isRequired,
-    }),
 };
 
 Navigation.defaultProps = {
@@ -74,7 +67,6 @@ Navigation.defaultProps = {
     onClose: null,
     isLayer: false,
     isLayerActive: false,
-    user: null,
 };
 
 export default Navigation;

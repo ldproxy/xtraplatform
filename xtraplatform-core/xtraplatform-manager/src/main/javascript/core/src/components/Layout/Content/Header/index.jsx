@@ -5,10 +5,7 @@ import { Box } from 'grommet';
 
 const ContentHeader = ({ children }) => {
     return (
-        <Box
-            fill='horizontal'
-            flex={false}
-            pad={{ horizontal: 'small', between: 'small' }}>
+        <Box fill='horizontal' flex={false} pad={{ horizontal: 'small', between: 'small' }}>
             <Box
                 direction='row'
                 fill='horizontal'

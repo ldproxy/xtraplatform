@@ -24,7 +24,7 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
 
   // TODO: an in-progress event (e.g. drop) might invalidate this one, do we need distributed
   // locks???
-  private boolean isUpdateValid(Identifier identifier, byte[] payload) {
+  protected boolean isUpdateValid(Identifier identifier, byte[] payload) {
     try {
       return getEventSourcing().isInCache(identifier)
           && Objects.nonNull(

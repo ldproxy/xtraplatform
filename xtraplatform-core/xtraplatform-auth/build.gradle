@@ -6,10 +6,10 @@ ext {
 dependencies {
     provided project(':xtraplatform-streams')
     provided project(':xtraplatform-store')
-    
-    embedded (group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: jjwtVersion) {
-        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
-    }
+
+    embeddedFlat group: 'io.jsonwebtoken', name: 'jjwt-api', version: jjwtVersion
+    embeddedFlat group: 'io.jsonwebtoken', name: 'jjwt-impl', version: jjwtVersion
+    embeddedFlat group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: jjwtVersion
 }
 
 jar {

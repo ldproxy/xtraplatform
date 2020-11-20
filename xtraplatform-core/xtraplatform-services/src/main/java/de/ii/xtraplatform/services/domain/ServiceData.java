@@ -36,6 +36,7 @@ public interface ServiceData extends EntityData, AutoEntity {
 
   Optional<String> getDescription();
 
+  @JsonProperty("enabled")
   @JsonAlias("shouldStart")
   @Value.Default
   default boolean getEnabled() {
@@ -44,6 +45,7 @@ public interface ServiceData extends EntityData, AutoEntity {
 
   List<Notification> getNotifications();
 
+  @JsonProperty("secured")
   @Value.Default
   default boolean getSecured() {
     return false;

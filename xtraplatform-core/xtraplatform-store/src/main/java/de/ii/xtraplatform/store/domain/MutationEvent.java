@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.store.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -42,6 +43,7 @@ public interface MutationEvent extends TypedEvent, Comparable<MutationEvent> {
     return identifier().compareTo(mutationEvent.identifier());
   }
 
+  @JsonIgnore
   @Value.Derived
   @Value.Auxiliary
   default String asPath() {
