@@ -9,6 +9,7 @@ package de.ii.xtraplatform.store.domain.entities;
 
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -81,5 +82,11 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
   @Override
   default ValueEncoding<EntityData> getValueEncoding() {
     return getDecorated().getValueEncoding();
+  }
+
+  @Override
+  default Map<String, Object> asMap(Identifier identifier, EntityData entityData)
+      throws IOException {
+    return getDecorated().asMap(identifier, entityData);
   }
 }

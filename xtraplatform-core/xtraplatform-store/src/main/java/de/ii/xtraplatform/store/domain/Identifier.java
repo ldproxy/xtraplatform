@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.store.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
 
@@ -48,6 +49,7 @@ public interface Identifier extends Comparable<Identifier> {
 
   Joiner JOINER = Joiner.on('/').skipNulls();
 
+  @JsonIgnore
   @Value.Derived
   @Value.Auxiliary
   default String asPath() {

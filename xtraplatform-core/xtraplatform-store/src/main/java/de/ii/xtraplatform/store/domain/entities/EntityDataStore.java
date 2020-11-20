@@ -7,8 +7,10 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
+import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.MergeableKeyValueStore;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -25,4 +27,6 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
   ValueEncoding<EntityData> getValueEncoding();
 
   <U extends T> EntityDataStore<U> forType(Class<U> type);
+
+  Map<String,Object> asMap(Identifier identifier, EntityData entityData) throws IOException;
 }

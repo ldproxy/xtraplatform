@@ -5,16 +5,17 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
 import com.google.common.collect.Maps;
-import com.google.common.primitives.Primitives;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 public class MapSubtractor {
 
-  public Map<String, Object> subtract(Map<String, Object> data, Map<String, Object> defaults) {
+  public Map<String, Object> subtract(Map<String, Object> data, Map<String, Object> defaults,
+      List<String> ignoreKeys) {
 
     if (Objects.equals(data, defaults)) {
       return ImmutableMap.of();
@@ -29,7 +30,11 @@ public class MapSubtractor {
 
     //result.putAll(newEntries);
 
-    for (String key: data.keySet()) {
+    for (String key : data.keySet()) {
+      if (ignoreKeys.contains(key)) {
+        result.put(key, data.get(key));
+      }
+
       if (newEntries.containsKey(key)) {
         result.put(key, newEntries.get(key));
       }
@@ -38,17 +43,20 @@ public class MapSubtractor {
         ValueDifference<Object> diff = differingEntries.get(key);
 
         if (diff.leftValue() instanceof Map) {
-          result.put(key, subtract((Map<String, Object>) diff.leftValue(), (Map<String, Object>) diff.rightValue()));
+          result.put(key, subtract((Map<String, Object>) diff.leftValue(),
+              (Map<String, Object>) diff.rightValue(),
+              ignoreKeys));
 
           continue;
         }
         if (diff.leftValue() instanceof Collection) {
-          result.put(key, subtract((Collection<Object>) diff.leftValue(), (Collection<Object>) diff.rightValue()));
+          result.put(key, subtract((Collection<Object>) diff.leftValue(),
+              (Collection<Object>) diff.rightValue()));
 
           continue;
         }
 
-        result.put(key, diff.leftValue());
+          result.put(key, diff.leftValue());
       }
     }
 
@@ -58,14 +66,14 @@ public class MapSubtractor {
   private Collection<Object> subtract(Collection<Object> left, Collection<Object> right) {
     ArrayList<Object> diff = Lists.newArrayList(left);
 
-    for (Object item: right) {
+    for (Object item : right) {
       diff.remove(item);
     }
 
     return diff;
   }
 
-  private Map<String,Object> entriesDiffering(MapDifference<String, Object> difference) {
+  private Map<String, Object> entriesDiffering(MapDifference<String, Object> difference) {
     return difference.entriesDiffering().entrySet().stream()
         .map(entry -> new SimpleEntry<>(entry.getKey(), entry.getValue().rightValue()))
         .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));

@@ -13,10 +13,14 @@ import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_MER
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.core.io.IOContext;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
 import de.ii.xtraplatform.store.domain.Identifier;
@@ -24,6 +28,7 @@ import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.ValueDecoderMiddleware;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import java.io.IOException;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +40,8 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.DumperOptions.Version;
 
 // TODO: make default format and supported formats configurable
 public class ValueEncodingJackson<T> implements ValueEncoding<T> {
@@ -69,7 +76,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     ObjectMapper yamlMapper =
         jackson
             .getNewObjectMapper(
-                new YAMLFactory()
+                new EmptyStringFixYAMLFactory()
                     .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
                     .disable(YAMLGenerator.Feature.USE_NATIVE_OBJECT_ID)
                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
@@ -124,7 +131,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
   }
 
   @Override
-  public final T deserialize(Identifier identifier, byte[] payload, FORMAT format) throws IOException {
+  public final T deserialize(Identifier identifier, byte[] payload, FORMAT format)
+      throws IOException {
     // "null" as payload means delete
     if (isNull(payload)) {
       return null;
@@ -145,18 +153,18 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
       }
 
     } catch (Throwable e) {
-        Optional<ValueDecoderMiddleware<T>> recovery =
-            decoderMiddleware.stream().filter(ValueDecoderMiddleware::canRecover).findFirst();
-        if (recovery.isPresent()) {
-          try {
-            data = recovery.get()
-                           .recover(identifier, rawData, objectMapper);
-          } catch (Throwable e2) {
-            throw e;
-          }
-        } else {
+      Optional<ValueDecoderMiddleware<T>> recovery =
+          decoderMiddleware.stream().filter(ValueDecoderMiddleware::canRecover).findFirst();
+      if (recovery.isPresent()) {
+        try {
+          data = recovery.get()
+              .recover(identifier, rawData, objectMapper);
+        } catch (Throwable e2) {
           throw e;
         }
+      } else {
+        throw e;
+      }
     }
 
     return data;
@@ -187,7 +195,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     ObjectMapper mapper = getMapper(format);
 
     Map<String, Object> data =
-        mapper.readValue(payload, new TypeReference<LinkedHashMap<String, Object>>() {});
+        mapper.readValue(payload, new TypeReference<LinkedHashMap<String, Object>>() {
+        });
 
     for (int i = nestingPath.size() - 1; i >= 0; i--) {
       if (i == nestingPath.size() - 1 && keyPathAlias.isPresent()) {
@@ -218,5 +227,32 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     String payloadString = new String(payload, StandardCharsets.UTF_8);
     return JSON_EMPTY.matcher(payloadString).matches()
         || YAML_EMPTY.matcher(payloadString).matches();
+  }
+
+  @Deprecated // can be removed after upgrade to Jackson 2.10 / Dropwizard 2.x
+  static class EmptyStringFixYAMLGenerator extends YAMLGenerator {
+
+    public EmptyStringFixYAMLGenerator(IOContext ctxt, int jsonFeatures, int yamlFeatures,
+        ObjectCodec codec, Writer out, Version version) throws IOException {
+      super(ctxt, jsonFeatures, yamlFeatures, codec, out, version);
+    }
+
+    @Override
+    protected void _writeScalar(String value, String type, Character style) throws IOException {
+      if (type.equals("string") && value.isEmpty()) {
+        super._writeScalar(value, type, Character.valueOf('"'));
+      } else {
+        super._writeScalar(value, type, style);
+      }
+    }
+  }
+
+  @Deprecated // can be removed after upgrade to Jackson 2.10 / Dropwizard 2.x
+  static class EmptyStringFixYAMLFactory extends YAMLFactory {
+    @Override
+    protected YAMLGenerator _createGenerator(Writer out, IOContext ctxt) throws IOException {
+      return new EmptyStringFixYAMLGenerator(ctxt, _generatorFeatures, _yamlGeneratorFeatures,
+          _objectCodec, out, _version);
+    }
   }
 }

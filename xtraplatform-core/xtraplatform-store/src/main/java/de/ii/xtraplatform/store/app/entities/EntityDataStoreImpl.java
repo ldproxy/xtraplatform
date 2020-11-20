@@ -7,8 +7,10 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
 import de.ii.xtraplatform.runtime.domain.LogContext;
@@ -131,14 +133,14 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   protected Map<String, Object> modifyPatch(Map<String, Object> partialData) {
     if (Objects.nonNull(partialData) && !partialData.isEmpty()) {
       // use mutable copy of map to allow null values
-      /*Map<String, Object> modified = Maps.newHashMap(partialData);
+      Map<String, Object> modified = Maps.newHashMap(partialData);
       modified.put("lastModified", Instant.now()
                                           .toEpochMilli());
-      return modified;*/
-      return ImmutableMap.<String, Object>builder()
+      return modified;
+      /*return ImmutableMap.<String, Object>builder()
           .putAll(partialData)
           .put("lastModified", Instant.now().toEpochMilli())
-          .build();
+          .build();*/
     }
 
     return partialData;
@@ -323,6 +325,52 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     };
   }
 
+  @Override
+  public Map<String,Object> asMap(Identifier identifier, EntityData entityData) throws IOException {
+    return valueEncodingMap
+        .deserialize(identifier, valueEncoding.serialize(entityData), valueEncoding.getDefaultFormat());
+  }
+
+  @Override
+  public CompletableFuture<EntityData> patch(String id, Map<String, Object> partialData,
+      String... path) {
+    final Identifier identifier = Identifier.from(id, path);
+
+    Map<String, Object> patch = modifyPatch(partialData);
+
+    byte[] payload = getValueEncoding().serialize(patch);
+
+    // validate
+    if (!isUpdateValid(identifier, payload)) {
+      throw new IllegalArgumentException("Partial update for ... not valid");
+    }
+
+    try {
+      EntityData merged =
+              getValueEncoding()
+                  .deserialize(identifier, payload, getValueEncoding().getDefaultFormat());
+
+      Map<String, Object> map = asMap(identifier, merged);
+
+      Map<String, Object> withoutDefaults = defaultsStore
+          .subtractDefaults(identifier, merged.getEntitySubType(), map, ImmutableList.of("enabled"));
+
+      return getEventSourcing()
+          .pushPartialMutationEvent(identifier, withoutDefaults)
+          .whenComplete(
+              (entityData, throwable) -> {
+                if (Objects.nonNull(entityData)) {
+                  onUpdate(identifier, entityData);
+                } else if (Objects.nonNull(throwable)) {
+                  onFailure(identifier, throwable);
+                }
+              });
+    } catch (IOException e) {
+      //never reached, will fail in isUpdateValid
+      return CompletableFuture.failedFuture(e);
+    }
+  }
+
   private EntityData hydrateData(Identifier identifier, EntityData entityData) {
     EntityData hydratedData = entityData;
 
@@ -333,11 +381,11 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
         if (!isEventStoreReadOnly) {
           try {
-            Map<String, Object> map = valueEncodingMap
-                    .deserialize(identifier, valueEncoding.serialize(hydratedData), valueEncoding.getDefaultFormat());
+            Map<String, Object> map = asMap(identifier, hydratedData);
 
             Map<String, Object> withoutDefaults = defaultsStore
-                    .subtractDefaults(identifier, entityData.getEntitySubType(), map);
+                    .subtractDefaults(identifier, entityData.getEntitySubType(), map,
+                        ImmutableList.of());
 
             putPartialWithoutTrigger(identifier, withoutDefaults).join();
             LOGGER.info(
