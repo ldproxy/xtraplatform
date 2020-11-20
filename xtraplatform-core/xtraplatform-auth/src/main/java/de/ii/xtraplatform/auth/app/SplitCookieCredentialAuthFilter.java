@@ -27,15 +27,15 @@ public class SplitCookieCredentialAuthFilter<P extends Principal> extends AuthFi
 
   private SplitCookieCredentialAuthFilter() {
     super();
-    this.prefix = "Bearer";
-    this.realm = "ldproxy";
   }
 
   @Override
   public void filter(final ContainerRequestContext requestContext) throws IOException {
     String credentials = SplitCookie.readToken(requestContext.getCookies()).orElse(null);
 
-    LOGGER.debug("credentials {}", credentials);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("credentials {}", credentials);
+    }
 
     if (!authenticate(requestContext, credentials, SecurityContext.BASIC_AUTH)) {
       throw new WebApplicationException(unauthorizedHandler.buildResponse(prefix, realm));
