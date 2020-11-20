@@ -25,7 +25,7 @@ const TileGrid = ({ children, compact, ...rest }) => {
 TileGrid.displayName = 'TileGrid';
 
 TileGrid.propTypes = {
-    children: PropTypes.element,
+    children: PropTypes.oneOfType([PropTypes.element, PropTypes.arrayOf(PropTypes.element)]),
     compact: PropTypes.bool,
 };
 
