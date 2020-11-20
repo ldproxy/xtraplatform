@@ -3,7 +3,7 @@
     "version": "2.0.0-beta.2",
     "author": "interactive instruments GmbH",
     "license": "MPL-2.0",
-    "module": "src/components/index.jsx",
+    "module": "src/index.js",
     "sideEffects": false,
     "scripts": {
         "test": "mocha \"src/**/*test.js\"",
@@ -12,6 +12,7 @@
     "peerDependencies": {
         "@apollo/client": "^3",
         "@xtraplatform/core": "^2.0.0-beta.4",
+        "@xtraplatform/manager": "^2.0.0-beta.4",
         "feature-u": "^3",
         "grommet": "^2",
         "grommet-icons": "^4",
@@ -27,6 +28,7 @@
         "@neutrinojs/airbnb": "^9.3.0",
         "@neutrinojs/mocha": "^9.3.0",
         "@xtraplatform/core": "^2.0.0-beta.4",
+        "@xtraplatform/manager": "^2.0.0-beta.4",
         "@xtraplatform/neutrino": "^2.0.0-beta.4",
         "core-js": "^3",
         "eslint": "*",

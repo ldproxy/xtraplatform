@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 
 import { Box, Anchor, Paragraph } from 'grommet';
-import {
-  MapLocation, Power as PowerIcon, Trash as TrashIcon, FolderOpen,
-} from 'grommet-icons';
+import { Power as PowerIcon, Trash as TrashIcon } from 'grommet-icons';
 import styled from 'styled-components';
 
-// import LayerForm from '../common/LayerForm';
-const LayerForm = Box;
+import { LayerConfirm } from '@xtraplatform/core';
+import { useHistory } from 'react-router-dom';
 
 const Power = styled(Box)`
     & a {
@@ -19,78 +17,100 @@ const Power = styled(Box)`
     }
 `;
 
-const ServiceActions = (props) => {
-  const [layerOpened, setLayerOpened] = useState(false);
+const ServiceActions = ({
+    id,
+    status,
+    enabled,
+    secured,
+    token,
+    ViewActions,
+    updateService,
+    removeService,
+}) => {
+    const [layerOpened, setLayerOpened] = useState(false);
+    const [deletePending, setDeletePending] = useState(false);
+    const history = useHistory();
 
-  const _onLayerOpen = () => {
-    setLayerOpened(true);
-  };
+    const onLayerOpen = () => setLayerOpened(true);
 
-  const _onLayerClose = () => {
-    setLayerOpened(false);
-  };
+    const onLayerClose = () => setLayerOpened(false);
 
-  const _onPower = (start) => {
-    const { updateService } = props;
+    const onPower = (start) => {
+        updateService({
+            enabled: start,
+        });
+    };
 
-    updateService({
-      shouldStart: start,
-    });
-  };
+    const onRemove = () => {
+        setDeletePending(true);
+        removeService().then(() => {
+            //setLayerOpened(false);
+            //setDeletePending(false);
+            setTimeout(() => history.push('/services'), 2000);
+        });
+    };
 
-  const _onRemove = () => {
-    const { id, removeService } = props;
+    const isOnline = status === 'STARTED';
+    const isDisabled = !isOnline && enabled;
+    // not needed anymore, handled by cookies
+    const parameters = ''; // secured ? `?token=${token}` : ''
 
-    removeService({
-      id,
-    });
-  };
-
-  const {
-    id, status, shouldStart, secured, token, ViewActions,
-  } = props;
-  const isOnline = status === 'STARTED';
-  const isDisabled = !isOnline && shouldStart;
-  // not needed anymore, handled by cookies
-  const parameters = ''; // secured ? `?token=${token}` : ''
-
-  return (
-    <Box flex={false}>
-      <Box direction="row" justify="end">
-        <Power hoverColor={isOnline ? 'status-critical' : isDisabled ? 'status-critical' : 'status-ok'}>
-          <Anchor
-            icon={<PowerIcon />}
-            title={`${isOnline ? 'Hide' : isDisabled ? 'Defective' : 'Publish'}`}
-            color={isOnline ? 'status-ok' : isDisabled ? 'status-critical' : 'status-disabled'}
-            onClick={() => _onPower(!isOnline)}
-            disabled={isDisabled}
-          />
-        </Power>
-        {ViewActions.map((ViewAction) => <ViewAction key={ViewAction.displayName} id={id} isOnline={isOnline} parameters={parameters} />)}
-        <Anchor
-          icon={<TrashIcon />}
-          title="Remove"
-          onClick={_onLayerOpen}
-        />
-      </Box>
-      {layerOpened && (
-      <LayerForm
-        title="Remove"
-        submitLabel="Yes, remove"
-        compact
-        onClose={_onLayerClose}
-        onSubmit={_onRemove}
-      >
-        <Paragraph>
-          Are you sure you want to remove the service with id
-          {' '}
-          <strong>{id}</strong>
-          ?
-        </Paragraph>
-      </LayerForm>
-      )}
-    </Box>
-  );
+    return (
+        <Box flex={false}>
+            <Box direction='row' justify='end'>
+                <Power
+                    key='power'
+                    hoverColor={
+                        isOnline ? 'status-critical' : isDisabled ? 'status-critical' : 'status-ok'
+                    }>
+                    <Anchor
+                        icon={<PowerIcon />}
+                        title={`${
+                            isOnline ? 'Stop service' : isDisabled ? 'Defective' : 'Start service'
+                        }`}
+                        color={
+                            isOnline
+                                ? 'status-ok'
+                                : isDisabled
+                                ? 'status-critical'
+                                : 'status-disabled'
+                        }
+                        onClick={() => onPower(!isOnline)}
+                        disabled={isDisabled}
+                    />
+                </Power>
+                {ViewActions.map((ViewAction) => (
+                    <ViewAction
+                        key={ViewAction.displayName}
+                        id={id}
+                        isOnline={isOnline}
+                        parameters={parameters}
+                    />
+                ))}
+                <Anchor
+                    key='remove'
+                    icon={<TrashIcon />}
+                    title='Remove service'
+                    onClick={onLayerOpen}
+                />
+            </Box>
+            {layerOpened && (
+                <LayerConfirm
+                    labelConfirm='Yes, remove it'
+                    colorConfirm='status-critical'
+                    colorCancel='brand'
+                    isPending={deletePending}
+                    compact
+                    onClose={onLayerClose}
+                    onConfirm={onRemove}>
+                    <Paragraph>
+                        Are you sure you want to remove the service with id <strong>{id}</strong>?
+                        This action cannot be undone.
+                    </Paragraph>
+                </LayerConfirm>
+            )}
+        </Box>
+    );
 };
 
 ServiceActions.displayName = 'ServiceActions';

@@ -2,39 +2,67 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { Box, Text } from 'grommet';
-import { Multiple, Revert } from 'grommet-icons';
+import { Multiple, Menu, Revert, SettingsOption } from 'grommet-icons';
+import { Header, IconLink, NavLink, AsyncIcon } from '@xtraplatform/core';
 
 import AddControl from './Add';
+import { useView } from '@xtraplatform/manager';
 
-// TODO: navControl, icon
-const ServiceIndex = ({ compact, role, serviceTypes }) => {
-  const navControl = <Multiple />;
-  const label = <Text size="large" weight={500}>Services</Text>;
-  let icon;
+const ServiceIndex = ({ isCompact, role, serviceTypes }) => {
+    const showAddControl = !isCompact && role !== 'read only';
+    const [{}, { toggleMenu }] = useView();
 
-  const showAddControl = !compact && role !== 'read only';
+    if (isCompact) {
+        return (
+            <Header
+                icon={<IconLink onClick={toggleMenu} icon={<Menu />} title='Show menu' />}
+                label={
+                    <NavLink
+                        to={{ pathname: '/services' }}
+                        label={
+                            <Box flex={false} direction='row' gap='xxsmall' align='center'>
+                                <Text truncate size='large' weight={500}>
+                                    Services
+                                </Text>
+                                <Revert size='list' color='light-5' />
+                            </Box>
+                        }
+                        title='Go back to services'
+                        flex
+                    />
+                }
+            />
+        );
+    }
 
-  return (
-    <Box direction="row" align="center" justify="between" fill="horizontal">
-      <Box direction="row" gap="small" align="center">
-        {navControl}
-        {label}
-        {showAddControl && <AddControl serviceTypes={serviceTypes} />}
-      </Box>
-      {icon}
-    </Box>
-  );
+    return (
+        <Header
+            icon={<Multiple />}
+            label='Services'
+            actions={
+                <Box direction='row'>
+                    {showAddControl && <AddControl serviceTypes={serviceTypes} />}
+                    <NavLink
+                        to={{ pathname: '/services/_defaults' }}
+                        icon={<SettingsOption />}
+                        title='Edit service defaults'
+                        pad='small'
+                    />
+                </Box>
+            }
+        />
+    );
 };
 
 ServiceIndex.displayName = 'ServiceIndex';
 
 ServiceIndex.propTypes = {
-  compact: PropTypes.bool,
-  serviceTypes: AddControl.propTypes.serviceTypes,
+    isCompact: PropTypes.bool,
+    serviceTypes: AddControl.propTypes.serviceTypes,
 };
 
 ServiceIndex.defaultProps = {
-  compact: false,
+    isCompact: false,
 };
 
 export default ServiceIndex;

@@ -1,3 +1,6 @@
-import Services, { servicesFeature, serviceViewActions, serviceEditTabs } from './Services';
-
-export { Services, servicesFeature, serviceViewActions, serviceEditTabs };
+export {
+    default as Services,
+    servicesFeature,
+    serviceViewActions,
+    serviceEditTabs,
+} from './Services';

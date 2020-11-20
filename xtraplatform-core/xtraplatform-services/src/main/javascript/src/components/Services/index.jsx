@@ -6,6 +6,10 @@ import { validatePropTypes } from '@xtraplatform/core';
 import { servicesFeature, serviceViewActions, serviceEditTabs } from './constants';
 import ServiceIndex from './Index';
 import ServiceEdit from './Edit';
+import ServiceEditGeneral from './Edit/Main/General';
+import ServiceDefaults from './Defaults';
+import ServiceAdd from './Add';
+import ViewActionLandingPage from '../ViewActionLandingPage';
 
 export { servicesFeature, serviceViewActions, serviceEditTabs };
 
@@ -25,6 +29,15 @@ export default createFeature({
                     path: '/services',
                     menuLabel: 'Services',
                     content: <ServiceIndex />,
+                    default: true,
+                },
+                {
+                    path: '/services/_defaults',
+                    content: <ServiceDefaults />,
+                },
+                {
+                    path: '/services/_add',
+                    content: <ServiceAdd />,
                 },
                 {
                     path: '/services/:id',
@@ -32,6 +45,12 @@ export default createFeature({
                     sidebar: <ServiceIndex isCompact />,
                 },
             ],
+            [serviceViewActions('landingPage')]: ViewActionLandingPage,
+            [serviceEditTabs('general')]: {
+                id: 'general',
+                label: 'General',
+                component: ServiceEditGeneral,
+            },
         },
         // consumed resources
         use: [
@@ -44,6 +63,7 @@ export default createFeature({
                         id: PropTypes.string.isRequired,
                         label: PropTypes.string.isRequired,
                         component: PropTypes.elementType.isRequired,
+                        noDefaults: PropTypes.bool,
                     }),
                 },
             ],

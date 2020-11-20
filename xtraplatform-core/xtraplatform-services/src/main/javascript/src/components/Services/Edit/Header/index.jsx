@@ -2,55 +2,64 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useFassets } from 'feature-u';
 
-import { Box, Heading } from 'grommet';
 import { Globe } from 'grommet-icons';
-import { TaskProgress } from '@xtraplatform/core';
+import { Header, TaskProgress, AsyncIcon } from '@xtraplatform/core';
 import { serviceViewActions } from '../../constants';
 import Actions from './Actions';
 
-const ServiceEditHeader = ({ service }) => {
-  const ViewActions = useFassets(serviceViewActions());
+const ServiceEditHeader = ({
+    service,
+    mutationPending,
+    mutationLoading,
+    mutationError,
+    mutationSuccess,
+    onChange,
+    onDelete,
+}) => {
+    const ViewActions = useFassets(serviceViewActions());
 
-  const token = null;
-  const onSidebarClose = () => { };
-  const updateService = () => { };
-  const deleteService = () => { };
+    const token = null;
 
-  return (
-    <>
-      <Box direction="row" gap="small" align="center">
-        <Globe />
-        <Heading
-          level="3"
-          margin="none"
-          strong
-          truncate
-          title={`${service.label} [${service.id}]`}
-        >
-          {service.label}
-        </Heading>
-      </Box>
-      {service.hasBackgroundTask && <TaskProgress progress={service.progress} message={service.message} />}
-      <Actions
-        id={service.id}
-        status={service.status}
-        shouldStart={service.shouldStart}
-        secured={service.secured}
-        token={token}
-        onClose={onSidebarClose}
-        updateService={updateService}
-        removeService={deleteService}
-        ViewActions={ViewActions}
-      />
-    </>
-  );
+    return (
+        <Header
+            icon={<Globe />}
+            label={service.label}
+            title={`${service.label} [${service.id}]`}
+            actions2={
+                <AsyncIcon
+                    size='small'
+                    pending={mutationPending}
+                    loading={mutationLoading}
+                    success={mutationSuccess}
+                    error={mutationError}
+                />
+            }
+            actions={
+                <>
+                    {service.hasBackgroundTask && (
+                        <TaskProgress progress={service.progress} message={service.message} />
+                    )}
+                    <Actions
+                        id={service.id}
+                        status={service.status}
+                        enabled={service.enabled}
+                        secured={service.secured}
+                        token={token}
+                        updateService={onChange}
+                        removeService={onDelete}
+                        ViewActions={ViewActions}
+                    />
+                </>
+            }
+        />
+    );
 };
 
 ServiceEditHeader.displayName = 'ServiceEditHeader';
 
 ServiceEditHeader.propTypes = {
-  compact: PropTypes.bool,
-  role: PropTypes.string,
+    compact: PropTypes.bool,
+    role: PropTypes.string,
 };
 
 export default ServiceEditHeader;
