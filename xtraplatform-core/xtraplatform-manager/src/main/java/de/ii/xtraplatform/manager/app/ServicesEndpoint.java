@@ -9,17 +9,22 @@ package de.ii.xtraplatform.manager.app;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.dropwizard.domain.Endpoint;
+import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.services.domain.ImmutableServiceDataCommon;
 import de.ii.xtraplatform.services.domain.ImmutableServiceStatus;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceStatus;
 import de.ii.xtraplatform.services.domain.TaskStatus;
+import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
+import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import io.dropwizard.auth.Auth;
@@ -28,6 +33,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,15 +72,18 @@ public class ServicesEndpoint implements Endpoint {
 
   private final EntityDataStore<ServiceData> serviceRepository;
   private final EntityRegistry entityRegistry;
+  private final EntityDataDefaultsStore defaultsStore;
   private final ServiceBackgroundTasks serviceBackgroundTasks;
   private final ObjectMapper objectMapper;
 
   ServicesEndpoint(
       @Requires EntityDataStore<EntityData> entityRepository,
-      @Requires EntityRegistry entityRegistry
-      /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/ ) {
+      @Requires EntityRegistry entityRegistry,
+      @Requires EntityDataDefaultsStore defaultsStore
+      /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/) {
     this.serviceRepository = entityRepository.forType(ServiceData.class);
     this.entityRegistry = entityRegistry;
+    this.defaultsStore = defaultsStore;
     this.serviceBackgroundTasks = null; // serviceBackgroundTasks;
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);
   }
@@ -105,16 +114,22 @@ public class ServicesEndpoint implements Endpoint {
     }
 
     try {
-      MDC.put("service", id);
+      LogContext.put(LogContext.CONTEXT.SERVICE, id);
+
+      LOGGER.debug("ADD SERVICE {}: {}", id, request);
+
+      ServiceData added = new ImmutableServiceDataCommon.Builder().id(id)
+          .label(Optional.ofNullable(request.get("label")).orElse(id))
+          .serviceType(Optional.ofNullable(request.get("serviceType")).orElse("OGC_API")).build();
 
       // TODO: how to get ServiceData from POST body
-      ServiceData serviceData = null;
+      //ServiceData serviceData = null;
 
-      ServiceData added = serviceRepository.put(id, serviceData).get();
+      //ServiceData added = serviceRepository.put(id, serviceData).get();
 
       return Response.ok().entity(getServiceStatus(added)).build();
 
-    } catch (InterruptedException | ExecutionException e) {
+    }/* catch (InterruptedException | ExecutionException e) {
       if (serviceRepository.has(id)) {
         try {
           serviceRepository.delete(id);
@@ -125,10 +140,10 @@ public class ServicesEndpoint implements Endpoint {
 
       throw new BadRequestException(e.getCause().getMessage());
       // throw new InternalServerErrorException(e.getCause());
-    } catch (Throwable e) {
+    }*/ catch (Throwable e) {
       throw new BadRequestException(e.getCause().getMessage());
     } finally {
-      MDC.remove("service");
+      LogContext.remove(LogContext.CONTEXT.SERVICE);
     }
   }
 
@@ -140,7 +155,7 @@ public class ServicesEndpoint implements Endpoint {
       @PathParam("id") String id) {
 
     if (!serviceRepository.has(id)) {
-      throw new NotFoundException();
+      throw new BadRequestException();
     }
 
     ServiceData serviceData =
@@ -149,10 +164,19 @@ public class ServicesEndpoint implements Endpoint {
             .map(Service::getData)
             .orElseGet(() -> serviceRepository.get(id));
 
-    // ServiceData serviceData = serviceRepository.get(id);
+    Map<String, Object> dataWithoutDefaults;
+    try {
+      Identifier identifier = Identifier.from(id, Service.TYPE);
+      Map<String, Object> serviceDataMap = serviceRepository.asMap(identifier, serviceData);
+      dataWithoutDefaults = defaultsStore
+          .subtractDefaults(identifier, serviceData.getEntitySubType(), serviceDataMap,
+              ImmutableList.of());
+    } catch (IOException e) {
+      throw new InternalServerErrorException();
+    }
 
     try {
-      return Response.ok().entity(objectMapper.writeValueAsString(serviceData)).build();
+      return Response.ok().entity(objectMapper.writeValueAsString(dataWithoutDefaults)).build();
     } catch (JsonProcessingException e) {
       throw new InternalServerErrorException();
     }
@@ -179,8 +203,8 @@ public class ServicesEndpoint implements Endpoint {
       @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
       @PathParam("id") String id,
       @RequestBody(
-              required = true,
-              content = {@Content()})
+          required = true,
+          content = {@Content()})
           Map<String, Object> request) {
 
     if (!serviceRepository.has(id)) {
@@ -188,15 +212,18 @@ public class ServicesEndpoint implements Endpoint {
     }
 
     try {
-      MDC.put("service", id);
+      LogContext.put(LogContext.CONTEXT.SERVICE, id);
 
-      ServiceData updated = serviceRepository.patch(id, request).get();
+      LOGGER.debug("PATCH SERVICE {}: {}", id, request);
 
-      return Response.ok().entity(objectMapper.writeValueAsString(updated)).build();
+      return getService(user, id);
+      //ServiceData updated = serviceRepository.patch(id, request).get();
+
+      //return Response.ok().entity(objectMapper.writeValueAsString(updated)).build();
     } catch (Throwable e) {
       throw new BadRequestException("Invalid request body: " + e.getMessage());
     } finally {
-      MDC.remove("service");
+      LogContext.remove(LogContext.CONTEXT.SERVICE);
     }
   }
 
@@ -206,15 +233,17 @@ public class ServicesEndpoint implements Endpoint {
       @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
       @PathParam("id") String id) {
     try {
-      MDC.put("service", id);
+      LogContext.put(LogContext.CONTEXT.SERVICE, id);
 
-      serviceRepository.delete(id).get();
+      LOGGER.debug("DELETE SERVICE {}", id);
+
+      //serviceRepository.delete(id).get();
 
       return Response.noContent().build();
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (Throwable e) {
       throw new InternalServerErrorException();
     } finally {
-      MDC.remove("service");
+      LogContext.remove(LogContext.CONTEXT.SERVICE);
     }
   }
 
