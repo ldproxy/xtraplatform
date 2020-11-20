@@ -11,7 +11,7 @@ const NavigationHeader = ({ isLayer, title, logo, onClose }) => {
                 direction='row'
                 fill='horizontal'
                 height='xsmall'
-                gap='small'
+                gap='large'
                 justify='between'
                 align='center'
                 alignContent='center'
