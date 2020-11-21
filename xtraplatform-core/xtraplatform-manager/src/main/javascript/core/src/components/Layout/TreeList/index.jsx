@@ -4,21 +4,21 @@ import PropTypes from 'prop-types';
 import { List } from '../../List';
 import Item from './Item';
 
-const getItemsForTree = (tree, parent, expanded) => {
+const getItemsForTree = (tree, parent, expanded, showRoot = true, expandAll = true) => {
     const leafList = [];
     const roots = tree && tree.length ? tree.filter((leaf) => leaf.parent === parent) : [];
     roots.forEach((root) => {
-        const leafs = getItemsForLeaf(tree, root, expanded);
+        const leafs = getItemsForLeaf(tree, root, expanded, showRoot, expandAll);
         leafList.push(...leafs);
     });
 
     return leafList;
 };
 
-const getItemsForLeaf = (tree, leaf, expanded, showRoot = true, depth = -1) => {
+const getItemsForLeaf = (tree, leaf, expanded, showRoot, expandAll, depth = -1) => {
     const leafList = [];
     const children = tree.filter((child) => child.parent === leaf.id);
-    const isExpanded = expanded.indexOf(leaf.id) > -1;
+    const isExpanded = expandAll || expanded.indexOf(leaf.id) > -1;
 
     if (depth === -1 && showRoot) depth = 0;
 
@@ -33,14 +33,23 @@ const getItemsForLeaf = (tree, leaf, expanded, showRoot = true, depth = -1) => {
 
     if (isExpanded) {
         children
-            .map((child) => getItemsForLeaf(tree, child, expanded, showRoot, depth + 1))
+            .map((child) => getItemsForLeaf(tree, child, expanded, showRoot, expandAll, depth + 1))
             .forEach((childLeafList) => leafList.push(...childLeafList));
     }
 
     return leafList;
 };
 
-const TreeList = ({ tree, expanded, selected, parent, hideRoot, hideRootExpander, onSelect }) => {
+const TreeList = ({
+    tree,
+    expanded,
+    selected,
+    parent,
+    hideRoot,
+    noRootExpander,
+    noExpanders,
+    onSelect,
+}) => {
     const [currentExpanded, setExpanded] = useState(expanded);
     const [currentSelected, setSelected] = useState(selected);
 
@@ -63,7 +72,7 @@ const TreeList = ({ tree, expanded, selected, parent, hideRoot, hideRootExpander
         [setSelected, onSelect]
     );
 
-    const items = getItemsForTree(tree, parent, currentExpanded, !hideRoot);
+    const items = getItemsForTree(tree, parent, currentExpanded, !hideRoot, noExpanders);
 
     return (
         <List>
@@ -74,7 +83,7 @@ const TreeList = ({ tree, expanded, selected, parent, hideRoot, hideRootExpander
                     isFirst={i === 0}
                     isLast={i === items.length - 1}
                     isSelected={currentSelected === leaf.id}
-                    noExpander={i === 0 && hideRootExpander}
+                    noExpander={(i === 0 && noRootExpander) || noExpanders}
                     onExpand={onExpand}
                     onSelect={onSelectWrapper}
                 />
@@ -89,7 +98,8 @@ TreeList.propTypes = {
     selected: PropTypes.string,
     onSelect: PropTypes.func,
     hideRoot: PropTypes.bool,
-    hideRootExpander: PropTypes.bool,
+    noRootExpander: PropTypes.bool,
+    noExpanders: PropTypes.bool,
     parent: PropTypes.string,
 };
 
@@ -98,7 +108,8 @@ TreeList.defaultProps = {
     selected: null,
     onSelect: () => {},
     hideRoot: false,
-    hideRootExpander: false,
+    noRootExpander: false,
+    noExpanders: false,
     parent: null,
 };
 

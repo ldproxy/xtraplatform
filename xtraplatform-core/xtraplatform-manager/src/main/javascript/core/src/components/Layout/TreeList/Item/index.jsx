@@ -1,9 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import styled from 'styled-components';
 
 import { Box, Text } from 'grommet';
 import { Next as NextIcon, Down as DownIcon, Blank as StatusIcon } from 'grommet-icons';
-import { ListItem } from '../../../List';
+import { ListItem, StyledListItem, StyledListItemSelected } from '../../../List';
+
+const HoverIcon = styled(Box)`
+    ${StyledListItem}:hover & svg, ${StyledListItemSelected} & svg {
+        stroke: ${(props) => props.theme.global.colors.icon.dark};
+        fill: ${(props) => props.theme.global.colors.icon.dark};
+    }
+    ${StyledListItem}:hover & span, ${StyledListItemSelected} & span {
+        color: ${(props) => props.theme.global.colors.icon.dark};
+    }
+`;
 
 const TreeListItem = ({
     id,
@@ -54,28 +65,30 @@ const TreeListItem = ({
                                     : 'Expand'
                                 : iconTooltip
                         }>
-                        {!isExpandable || noExpander ? (
-                            icon || <StatusIcon size='list' />
-                        ) : isExpanded ? (
-                            <DownIcon
-                                size='list'
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    onExpand(id);
-                                }}
-                            />
-                        ) : (
-                            <NextIcon
-                                size='list'
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    onExpand(id);
-                                }}
-                            />
-                        )}
+                        <HoverIcon>
+                            {!isExpandable || noExpander ? (
+                                icon || <StatusIcon size='list' />
+                            ) : isExpanded ? (
+                                <DownIcon
+                                    size='list'
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        onExpand(id);
+                                    }}
+                                />
+                            ) : (
+                                <NextIcon
+                                    size='list'
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        onExpand(id);
+                                    }}
+                                />
+                            )}
+                        </HoverIcon>
                     </Box>
                     <Box>
-                        <Text size='list'>{label}</Text>
+                        <Text size='small'>{label}</Text>
                     </Box>
                     {badge}
                 </Box>

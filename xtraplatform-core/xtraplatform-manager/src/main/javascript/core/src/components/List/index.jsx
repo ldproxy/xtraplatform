@@ -1,38 +1,38 @@
 import React from 'react';
-
-import { Box } from 'grommet';
 import styled from 'styled-components';
 
-const StyledBox = styled(Box)`
-    background-color: ${(props) =>
-        props.selected ? props.theme.global.colors.active : props.background};
-    color: ${(props) =>
-        props.selected
-            ? props.theme.global.colors.text.dark
-            : props.theme.global.colors.text.light};
+import { Box } from 'grommet';
+
+export const StyledListItem = styled(Box)`
+    background-color: ${(props) => props.background};
+    color: ${(props) => props.theme.global.colors.text.light};
     cursor: ${(props) => (props.onClick ? 'pointer' : 'default')};
 
     &:hover {
-        background-color: ${(props) =>
-            props.selected ? props.theme.global.colors.active : props.theme.global.colors.hover};
+        background-color: ${(props) => props.theme.global.colors.hover};
         color: ${(props) => props.theme.global.colors.text.dark};
 
-        svg {
+        /*svg {
             stroke: ${(props) => props.theme.global.colors.icon.dark};
             fill: ${(props) => props.theme.global.colors.icon.dark};
-        }
+        }*/
     }
 
-    & svg {
+    /*& svg {
         stroke: ${(props) =>
-            props.selected
-                ? props.theme.global.colors.icon.dark
-                : props.theme.global.colors.icon.light};
+        props.selected
+            ? props.theme.global.colors.icon.dark
+            : props.theme.global.colors.icon.light};
         fill: ${(props) =>
-            props.selected
-                ? props.theme.global.colors.icon.dark
-                : props.theme.global.colors.icon.light};
-    }
+        props.selected
+            ? props.theme.global.colors.icon.dark
+            : props.theme.global.colors.icon.light};
+    }*/
+`;
+
+export const StyledListItemSelected = styled(Box)`
+    background-color: ${(props) => props.theme.global.colors.active};
+    color: ${(props) => props.theme.global.colors.text.dark};
 `;
 
 export const List = (props) => (
@@ -47,7 +47,7 @@ export const List = (props) => (
 );
 
 export const ListItem = (props) => {
-    const Li = props.hover ? StyledBox : Box;
+    const Li = props.hover ? (props.selected ? StyledListItemSelected : StyledListItem) : Box;
     return (
         <Li
             tag='li'

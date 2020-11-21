@@ -14,7 +14,15 @@ const ServiceEditMain = ({ service, defaults, debounce, onPending, onChange }) =
     return (
         <Tabs
             tabs={editTabs}
-            tabProps={{ ...service, defaults, debounce, token, onPending, onChange }}
+            tabProps={{
+                ...service,
+                defaults,
+                inheritedLabel: 'Service Defaults',
+                debounce,
+                token,
+                onPending,
+                onChange,
+            }}
         />
     );
 };

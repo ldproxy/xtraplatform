@@ -51,6 +51,7 @@ const TextInputField = ({
                 readOnly={readOnly}
                 disabled={disabled}
                 value={readOnly ? value : undefined}
+                resize='vertical'
                 ref={ref}
                 {...rest}
             />

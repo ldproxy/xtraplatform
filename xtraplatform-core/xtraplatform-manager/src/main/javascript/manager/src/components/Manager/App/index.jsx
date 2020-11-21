@@ -47,6 +47,7 @@ const ManagerApp = () => {
     const defaultRoute = routes.find((route) => route.default);
     const theme = useFassets(`${activeTheme}.theme`);
     const themeMode = 'light';
+    console.log('THEME', theme);
 
     return (
         <AuthProvider baseUrl={baseUrl} allowAnonymousAccess={!secured}>
