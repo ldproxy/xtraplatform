@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
@@ -31,7 +32,9 @@ import org.osgi.service.http.whiteboard.HttpWhiteboardConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Component
 // @Provides(specifications=StaticResourceRegistry.class)
 @Instantiate
@@ -57,6 +60,9 @@ public class StaticResourceRegistry {
       DefaultPages defaultPages =
           DefaultPageParser.parseDefaultPages(
               bundle.getHeaders().get(StaticResourceConstants.WEB_RESOURCE_DEFAULT_PAGE));
+      Optional<String> rootRedirect = Optional
+          .ofNullable(bundle.getHeaders().get(StaticResourceConstants.WEB_RESOURCE_ROOT_REDIRECT));
+
       List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
 
       for (ResourceEntry entry : entryMap.values()) {
@@ -72,7 +78,7 @@ public class StaticResourceRegistry {
                 entry.getAlias(),
                 StandardCharsets.UTF_8,
                 bundle,
-                defaultPages);
+                defaultPages, rootRedirect);
         Hashtable<String, Object> props = new Hashtable<>();
         props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN, entry.getAlias());
         props.put(
