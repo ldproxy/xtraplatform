@@ -51,7 +51,8 @@ export const customTheme = deepMerge(grommet, {
             size: '24px',
         },
         list: {
-            size: '16px',
+            size: '12px',
+            height: '18px',
         },
     },
     icon: {

@@ -1,5 +1,4 @@
-import StatusIcon from './Status';
-import SpinnerIcon from './Spinner';
-import AsyncIcon from './Async';
-
-export { StatusIcon, SpinnerIcon, AsyncIcon };
+export { default as StatusIcon } from './Status';
+export { default as SpinnerIcon } from './Spinner';
+export { default as AsyncIcon } from './Async';
+export { default as TextIcon } from './Text';

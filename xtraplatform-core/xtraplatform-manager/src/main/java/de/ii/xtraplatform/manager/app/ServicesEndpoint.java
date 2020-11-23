@@ -10,6 +10,7 @@ package de.ii.xtraplatform.manager.app;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.dropwizard.domain.Endpoint;
@@ -21,12 +22,14 @@ import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceStatus;
 import de.ii.xtraplatform.services.domain.TaskStatus;
+import de.ii.xtraplatform.store.app.entities.EntityDataStoreImpl;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
+import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -81,11 +84,27 @@ public class ServicesEndpoint implements Endpoint {
       @Requires EntityRegistry entityRegistry,
       @Requires EntityDataDefaultsStore defaultsStore
       /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/) {
-    this.serviceRepository = entityRepository.forType(ServiceData.class);
+    //TODO: relies on EntityFactory, ServiceData might not be registered yet
+    //this.serviceRepository = entityRepository.forType(ServiceData.class);
+    this.serviceRepository = getServiceRepository(entityRepository);
     this.entityRegistry = entityRegistry;
     this.defaultsStore = defaultsStore;
     this.serviceBackgroundTasks = null; // serviceBackgroundTasks;
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);
+  }
+
+  EntityDataStore<ServiceData> getServiceRepository(EntityDataStore<EntityData> entityRepository) {
+    return new EntityStoreDecorator<EntityData, ServiceData>() {
+      @Override
+      public EntityDataStore<EntityData> getDecorated() {
+        return entityRepository;
+      }
+
+      @Override
+      public String[] transformPath(String... path) {
+        return ObjectArrays.concat("services", path);
+      }
+    };
   }
 
   @GET
@@ -206,7 +225,6 @@ public class ServicesEndpoint implements Endpoint {
           required = true,
           content = {@Content()})
           Map<String, Object> request) {
-
     if (!serviceRepository.has(id)) {
       throw new NotFoundException();
     }
