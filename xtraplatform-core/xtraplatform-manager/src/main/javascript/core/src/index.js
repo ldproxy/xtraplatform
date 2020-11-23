@@ -1,3 +1,4 @@
 export * from './components';
 export * from './hooks';
-export { validatePropTypes } from './featureUtils';
+export * from './feature-u';
+export * from './theme';

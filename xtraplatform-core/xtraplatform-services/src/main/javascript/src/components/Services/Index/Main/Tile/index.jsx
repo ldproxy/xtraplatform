@@ -61,7 +61,7 @@ const ServiceIndexMainTile = ({
             onClick={() => history.push({ pathname: `${route}/${id}`, search: location.search })}
             selected={isSelected}
             focusIndicator={false}
-            background='content'
+            background='background-front'
             hoverStyle='border'
             hoverColorIndex='accent-1'
             hoverBorderSize='large'>

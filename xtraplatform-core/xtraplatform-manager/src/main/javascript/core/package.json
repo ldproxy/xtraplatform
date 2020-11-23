@@ -3,7 +3,7 @@
     "version": "2.0.0-beta.6",
     "author": "interactive instruments GmbH",
     "license": "MPL-2.0",
-    "module": "src/index.jsx",
+    "module": "src/index.js",
     "sideEffects": false,
     "scripts": {
         "test": "mocha \"src/**/*test.js\"",
@@ -52,6 +52,7 @@
     "dependencies": {
         "check-prop-types": "^1.1.2",
         "deepmerge": "^4.2.2",
+        "polished": "^4.0.4",
         "qs": "^6.9.4",
         "use-deep-compare-effect": "^1.3.1"
     }

@@ -29,7 +29,7 @@ const TooltipIcon = ({ icon, iconSize, iconColor, children }) => {
                         margin='xsmall'
                         pad='xsmall'
                         width={{ max: 'large' }}
-                        background='content'
+                        background='background-front'
                         elevation='small'
                         round='small'
                         border={{

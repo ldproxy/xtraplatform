@@ -64,6 +64,7 @@ const ServiceAddOgcApi = ({ isBasicAuth, loading, errors, featureProviderType })
                         help='TODO'
                         disabled={loading}
                         error={errors['password']}
+                        type='password'
                     />
                     <TextField
                         name='schemas'

@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { createFeature, fassetValidations } from 'feature-u';
 import { validatePropTypes } from '@xtraplatform/core';
+import { routes } from '@xtraplatform/manager';
 
 import { servicesFeature, serviceViewActions, serviceEditTabs } from './constants';
 import ServiceIndex from './Index';
@@ -24,7 +25,7 @@ export default createFeature({
     fassets: {
         // provided resources
         defineUse: {
-            [`${servicesFeature}.routes`]: [
+            [routes(servicesFeature)]: [
                 {
                     path: '/services',
                     menuLabel: 'Services',

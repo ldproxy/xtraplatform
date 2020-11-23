@@ -28,7 +28,7 @@ const Navigation = ({
 
     return (
         <Sidebar isLayer={isLayer} hideBorder onClose={onClose}>
-            <Box fill='vertical' background='menu'>
+            <Box fill='vertical' background='navigation'>
                 <NavigationHeader isLayer={isLayer} onClose={onClose} title={title} logo={logo} />
                 <NavigationMenu routes={routes} onClick={onClose} />
                 {user && <UserActions name={user.sub} />}

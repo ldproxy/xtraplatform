@@ -17,7 +17,7 @@ const UserActions = ({ name, onLogout, onChangePassword }) => {
             icon={<User color='light-1' />}
             margin={{ vertical: 'medium', horizontal: 'small' }}
             dropProps={{ align: { bottom: 'bottom', left: 'left' }, plain: true }}
-            dropBackground='overlay'
+            dropBackground='navigationOverlay'
             items={items}
         />
         /*<Box pad={{ vertical: 'medium', horizontal: 'small' }}>

@@ -9,6 +9,7 @@ import { AuthProvider } from '../Auth';
 import { ViewProvider } from '../View';
 import Layout from '../Layout';
 import DefaultRoute from './DefaultRoute';
+import { theme, routes } from '../../../feature-u';
 
 const baseUrl = '../rest/admin';
 
@@ -24,7 +25,8 @@ const client = new ApolloClient({
 const ManagerApp = () => {
     // TODO: set in ldproxy-manager (via fasset)
     const appName = 'ldproxy';
-    const activeTheme = 'default';
+    const themeName = 'default';
+    const themeMode = 'light';
     const secured = false;
     const isAdvanced = true;
 
@@ -35,25 +37,24 @@ const ManagerApp = () => {
 
     // TODO: role not available here, move routing to subcomponent, can use useAuth there
     const role = 'admin';
-    const routes = useFassets('*.routes')
+    const allowedRoutes = useFassets(routes())
         .flat(1)
         .filter((route) => !route.roles || route.roles.some((allowedRole) => allowedRole === role));
 
     if (process.env.NODE_ENV !== 'production') {
-        console.log('ROUTES', routes);
+        console.log('ROUTES', allowedRoutes);
     }
 
-    const menuRoutes = routes.filter((route) => route.menuLabel);
-    const defaultRoute = routes.find((route) => route.default);
-    const theme = useFassets(`${activeTheme}.theme`);
-    const themeMode = 'light';
-    console.log('THEME', theme);
+    const menuRoutes = allowedRoutes.filter((route) => route.menuLabel);
+    const defaultRoute = allowedRoutes.find((route) => route.default);
+    const activeTheme = useFassets(theme(themeName));
+    console.log('THEME', activeTheme);
 
     return (
         <AuthProvider baseUrl={baseUrl} allowAnonymousAccess={!secured}>
             <ViewProvider isAdvanced={isAdvanced}>
                 <ApolloProvider client={client}>
-                    <Grommet full theme={theme} themeMode={themeMode}>
+                    <Grommet full theme={activeTheme} themeMode={themeMode}>
                         <Router>
                             <Switch>
                                 <Route path='/' exact>
@@ -61,7 +62,7 @@ const ManagerApp = () => {
                                         <Layout appName={appName} menuRoutes={menuRoutes} />
                                     </DefaultRoute>
                                 </Route>
-                                {routes.map(({ path, content, sidebar }) => (
+                                {allowedRoutes.map(({ path, content, sidebar }) => (
                                     <Route key={path} path={path} exact>
                                         <Layout
                                             appName={appName}
