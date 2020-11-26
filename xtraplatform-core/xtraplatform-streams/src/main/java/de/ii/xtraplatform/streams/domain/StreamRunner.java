@@ -15,16 +15,15 @@ import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import de.ii.xtraplatform.runtime.domain.LogContext;
-import org.osgi.framework.BundleContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import scala.concurrent.ExecutionContextExecutor;
-
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.osgi.framework.BundleContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scala.concurrent.ExecutionContextExecutor;
 
 public class StreamRunner {
 
@@ -45,16 +44,16 @@ public class StreamRunner {
   }
 
   public StreamRunner(BundleContext context,
-                      ActorSystemProvider actorSystemProvider,
-                      String name,
-                      int capacity, int queueSize) {
+      ActorSystemProvider actorSystemProvider,
+      String name,
+      int capacity, int queueSize) {
     Config config =
         capacity == DYNAMIC_CAPACITY ? getDefaultConfig(name) : getConfig(name, capacity, capacity);
 
     if (capacity != 0) {
       ActorSystem system = actorSystemProvider.getActorSystem(context, config, "akka");
       ActorMaterializerSettings settings = ActorMaterializerSettings.create(system)
-                                                                    .withDispatcher(getDispatcherName(name));
+          .withDispatcher(getDispatcherName(name));
 
       this.materializer = ActorMaterializer.create(settings, system);
     } else {
@@ -71,11 +70,12 @@ public class StreamRunner {
     return run(source, sink, Keep.right());
   }
 
-  public <T, U, V, W> CompletionStage<W> run(Source<T, U> source, Sink<T, CompletionStage<V>> sink, Function2<U,CompletionStage<V>,CompletionStage<W>> combiner) {
+  public <T, U, V, W> CompletionStage<W> run(Source<T, U> source, Sink<T, CompletionStage<V>> sink,
+      Function2<U, CompletionStage<V>, CompletionStage<W>> combiner) {
     return run(LogContextStream.graphWithMdc(source, sink, combiner));
   }
 
-  public <T,U> CompletionStage<Done> runForeach(Source<T, U> source, Procedure<T> procedure) {
+  public <T, U> CompletionStage<Done> runForeach(Source<T, U> source, Procedure<T> procedure) {
     return run(source, Sink.foreach(procedure), Keep.right());
   }
 
@@ -90,11 +90,19 @@ public class StreamRunner {
 
     CompletableFuture<U> completableFuture = new CompletableFuture<>();
 
-    Runnable task = () -> graph.run(materializer).thenAccept(LogContext.withMdc(t -> {
-      completableFuture.complete(t);
+    Runnable task = () -> graph.run(materializer)
+        .thenAccept(LogContext.withMdc(t -> {
+          completableFuture.complete(t);
 
-      runNext();
-    }));
+          runNext();
+        }))
+        .exceptionally(throwable -> {
+          completableFuture.completeExceptionally(throwable);
+
+          runNext();
+
+          return null;
+        });
 
     run(task);
 
@@ -147,7 +155,8 @@ public class StreamRunner {
         //.put("akka.log-config-on-start", true)
         .put(String.format("%s.type", getDispatcherName(name)), "Dispatcher")
         //.put(String.format("%s.executor", getDispatcherName(name)), "fork-join-executor")
-        .put(String.format("%s.executor", getDispatcherName(name)), "de.ii.xtraplatform.streams.app.StreamExecutorServiceConfigurator")
+        .put(String.format("%s.executor", getDispatcherName(name)),
+            "de.ii.xtraplatform.streams.app.StreamExecutorServiceConfigurator")
         .put(String.format("%s.fork-join-executor.parallelism-min", getDispatcherName(name)),
             parallelismMin)
         .put(String.format("%s.fork-join-executor.parallelism-factor", getDispatcherName(name)),
