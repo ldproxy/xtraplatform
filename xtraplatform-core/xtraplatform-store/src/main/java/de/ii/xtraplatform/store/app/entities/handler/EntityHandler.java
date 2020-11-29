@@ -12,6 +12,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
 import de.ii.xtraplatform.store.domain.entities.handler.Entity;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Map;
@@ -30,6 +31,7 @@ import org.apache.felix.ipojo.handlers.configuration.ConfigurationListener;
 import org.apache.felix.ipojo.handlers.providedservice.ProvidedServiceHandler;
 import org.apache.felix.ipojo.metadata.Attribute;
 import org.apache.felix.ipojo.metadata.Element;
+import org.apache.felix.ipojo.parser.MethodMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,10 +156,25 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
     configurationHandler.addListener(this);
     this.providedServiceHandler =
         (ProvidedServiceHandler) getHandler(HandlerFactory.IPOJO_NAMESPACE + ":provides");
+
+    Element onStart = new Element("onStart", null);
+    onStart.addAttribute(new Attribute("name", "onStart"));
+    getInstanceManager().register(new MethodMetadata(onStart), this);
+  }
+
+  @Override
+  public void onExit(Object pojo, Member method, Object returnedObj) {
+    if (Objects.equals(method.getName(), "onStart")) {
+      checkRegistration();
+    }
   }
 
   @Override
   public void configurationChanged(ComponentInstance instance, Map<String, Object> configuration) {
+    checkRegistration();
+  }
+
+  private void checkRegistration() {
     // TODO: could directly ask shouldRegister()
     try {
       Field field = getInstanceManager().getPojoObject().getClass().getField("register");
