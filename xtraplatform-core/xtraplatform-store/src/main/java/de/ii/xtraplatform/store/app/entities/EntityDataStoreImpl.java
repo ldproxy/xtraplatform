@@ -234,8 +234,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         .thenCompose(
             ignore ->
                 identifiers().stream()
-                    // TODO: set priority per entity type (for now alphabetic works: codelists <
-                    // providers < services)
+                    // TODO: set priority per entity type (for now alphabetic works:
+                    //  codelists < providers < services)
                     .sorted(Comparator.comparing(identifier -> identifier.path().get(0)))
                     .reduce(
                         CompletableFuture.completedFuture((Void) null),
