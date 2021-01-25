@@ -43,10 +43,10 @@ apply from: '../snapshot.gradle'
 
 //apply from: '../formatting.gradle'
 
-/*
+
 apply from: '../unit-tests.gradle'
 
-
+/*
 apply from: '../license-report.gradle'
 
 */
