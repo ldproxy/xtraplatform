@@ -28,6 +28,7 @@ import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
+import de.ii.xtraplatform.store.domain.entities.AbstractPersistentEntity;
 import de.ii.xtraplatform.store.domain.entities.AutoEntity;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
@@ -234,8 +235,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         .thenCompose(
             ignore ->
                 identifiers().stream()
-                    // TODO: set priority per entity type (for now alphabetic works: codelists <
-                    // providers < services)
+                    // TODO: set priority per entity type (for now alphabetic works:
+                    //  codelists < providers < services)
                     .sorted(Comparator.comparing(identifier -> identifier.path().get(0)))
                     .reduce(
                         CompletableFuture.completedFuture((Void) null),
@@ -280,13 +281,22 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   @Override
   protected CompletableFuture<Void> onCreate(Identifier identifier, EntityData entityData) {
     try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
-      EntityData hydratedData = hydrateData(identifier, entityData);
-
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Entity creating: {}", identifier);
+      }
       return entityFactory
-              .createInstance(identifier.path()
-                                        .get(0), identifier.id(), hydratedData)
-              .whenComplete((entity, throwable) -> LOGGER.debug("Entity created: {}", identifier))
-              .thenAccept(ignore -> CompletableFuture.completedFuture(null));
+          .createInstance(identifier.path().get(0), identifier.id(), entityData)
+          .whenComplete(
+              (entity, throwable) -> {
+                if (Objects.nonNull(entity)) {
+                  EntityData hydratedData = hydrateData(identifier, entityData);
+                  ((AbstractPersistentEntity<EntityData>) entity).setData(hydratedData);
+                }
+                if (LOGGER.isTraceEnabled()) {
+                  LOGGER.trace("Entity created: {}", identifier);
+                }
+              })
+          .thenAccept(ignore -> CompletableFuture.completedFuture(null));
     }
   }
 

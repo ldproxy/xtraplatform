@@ -37,7 +37,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.felix.ipojo.ComponentFactory;
+import org.apache.felix.ipojo.ComponentInstance;
 import org.apache.felix.ipojo.Factory;
+import org.apache.felix.ipojo.FactoryStateListener;
+import org.apache.felix.ipojo.InstanceStateListener;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -90,7 +93,7 @@ public class EntityFactoryImpl implements EntityFactory {
   private final DeclarationBuilderService declarationBuilderService;
   private final Map<String, DeclarationHandle> instanceHandles;
   private final Map<String, CompletableFuture<PersistentEntity>> instanceRegistration;
-  // private final Map<String, Factory> componentFactories;
+  private final Map<String, ComponentFactory> componentFactories;
   private final Map<String, String> entityClasses;
   private final Map<Class<?>, String> entityDataTypes;
   private final Map<String, Class<EntityDataBuilder<EntityData>>> entityDataBuilders;
@@ -107,7 +110,7 @@ public class EntityFactoryImpl implements EntityFactory {
     this.declarationBuilderService = declarationBuilderService;
     this.instanceHandles = new ConcurrentHashMap<>();
     this.instanceRegistration = new ConcurrentHashMap<>();
-    // this.componentFactories = new ConcurrentHashMap<>();
+    this.componentFactories = new ConcurrentHashMap<>();
     this.entityClasses = new ConcurrentHashMap<>();
     this.entityDataTypes = new ConcurrentHashMap<>();
     this.entityDataBuilders = new ConcurrentHashMap<>();
@@ -152,7 +155,7 @@ public class EntityFactoryImpl implements EntityFactory {
         }
       }
 
-      // this.componentFactories.put(type, factory);
+      this.componentFactories.put(specificEntityType, factory);
       this.entityClasses.put(specificEntityType, entityClassName.get());
 
       if (LOGGER.isDebugEnabled()) {
@@ -204,7 +207,7 @@ public class EntityFactoryImpl implements EntityFactory {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Deregistered entity type: {}", specificEntityType);
       }
-      // this.componentFactories.remove(entityDataType.get());
+      this.componentFactories.remove(entityDataType.get());
       this.entityClasses.remove(entityDataType.get());
     }
   }
@@ -550,9 +553,20 @@ public class EntityFactoryImpl implements EntityFactory {
 
     CompletableFuture<PersistentEntity> registration = new CompletableFuture<>();
     this.instanceRegistration.put(instanceId, registration);
-    // wait max 5 secs, then proceed
-    ScheduledFuture<Boolean> scheduledFuture =
-        executorService.schedule(withMdc(() -> registration.complete(null)), 5, TimeUnit.SECONDS);
+
+    // check every 2 secs for started but unregistered entity, then proceed with null
+    ComponentFactory componentFactory = componentFactories.get(specificEntityType);
+    ScheduledFuture<?> scheduledFuture =
+        executorService.scheduleAtFixedRate(
+            withMdc(
+                () -> {
+                  if (Objects.nonNull(componentFactory.getInstanceByName(instanceId))) {
+                    registration.complete(null);
+                  }
+                }),
+            2,
+            2,
+            TimeUnit.SECONDS);
 
     DeclarationHandle handle = instanceBuilder.build();
     handle.publish();

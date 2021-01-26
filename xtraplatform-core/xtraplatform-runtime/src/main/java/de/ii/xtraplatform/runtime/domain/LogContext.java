@@ -1,5 +1,7 @@
 package de.ii.xtraplatform.runtime.domain;
 
+import java.util.Arrays;
+import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -110,6 +112,16 @@ public class LogContext {
             };
         }
         return biFunction;
+    }
+
+    public static void error(String messagePrefix, Throwable throwable, Logger logger, String... messagePrefixArgs) {
+      String[] strings = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
+      strings[messagePrefixArgs.length] = throwable.getMessage();
+
+      logger.error(messagePrefix + ": {}", (Object[]) strings);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Stacktrace:", throwable);
+      }
     }
 
     /**

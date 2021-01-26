@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import org.apache.felix.ipojo.ComponentInstance;
 import org.apache.felix.ipojo.ConfigurationException;
 import org.apache.felix.ipojo.HandlerFactory;
-import org.apache.felix.ipojo.PrimitiveHandler;
 import org.apache.felix.ipojo.annotations.Handler;
 import org.apache.felix.ipojo.architecture.ComponentTypeDescription;
 import org.apache.felix.ipojo.architecture.PropertyDescription;
@@ -39,10 +38,11 @@ import org.slf4j.LoggerFactory;
  * <p>level has to be smaller than the ones of ConfigurationHandler and ProvidedServiceHandler
  */
 @Handler(name = "Entity", namespace = EntityHandler.NAMESPACE, level = 0)
-public class EntityHandler extends PrimitiveHandler implements ConfigurationListener {
+public class EntityHandler extends LifecycleCallbackHandler implements ConfigurationListener {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(EntityHandler.class);
 
   static final String NAMESPACE = "de.ii.xtraplatform.store.domain.entities.handler";
-  private static final Logger LOGGER = LoggerFactory.getLogger(EntityHandler.class);
 
   private ProvidedServiceHandler providedServiceHandler;
 
@@ -99,6 +99,9 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
     providedServices[0].addElement(controller);
     controller.addAttribute(new Attribute("field", "register"));
     controller.addAttribute(new Attribute("value", "false"));
+    // add @PostRegistration and @PostUnregistration for methods onStarted and onStopped in class AbstractPersistentEntity
+    providedServices[0].addAttribute(new Attribute("post-registration", "onPostRegistration"));
+    providedServices[0].addAttribute(new Attribute("post-unregistration", "onPostUnregistration"));
 
     // add @Property(name = Entity.DATA_KEY) for method setData in class AbstractPersistentEntity
     Element properties;
@@ -142,10 +145,32 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
   }
 
   @Override
-  public void configure(Element metadata, Dictionary configuration) throws ConfigurationException {}
+  public void configure(Element metadata, Dictionary configuration) throws ConfigurationException {
+    Element metadataWithCallbacks = new Element(metadata.getName(), metadata.getNameSpace());
+    for (Attribute attribute: metadata.getAttributes()) {
+      metadataWithCallbacks.addAttribute(attribute);
+    }
+    for (Element element: metadata.getElements()) {
+      metadataWithCallbacks.addElement(element);
+    }
+
+    Element validate = new Element("callback", null);
+    validate.addAttribute(new Attribute("method", "onValidate"));
+    validate.addAttribute(new Attribute("transition", "validate"));
+    metadataWithCallbacks.addElement(validate);
+
+    Element invalidate = new Element("callback", null);
+    invalidate.addAttribute(new Attribute("method", "onInvalidate"));
+    invalidate.addAttribute(new Attribute("transition", "invalidate"));
+    metadataWithCallbacks.addElement(invalidate);
+
+    super.configure(metadataWithCallbacks,configuration);
+  }
 
   @Override
-  public void stop() {}
+  public void stop() {
+    super.stop();
+  }
 
   @Override
   public void start() {
@@ -154,18 +179,27 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
     configurationHandler.addListener(this);
     this.providedServiceHandler =
         (ProvidedServiceHandler) getHandler(HandlerFactory.IPOJO_NAMESPACE + ":provides");
+
+    super.start();
+  }
+
+  @Override
+  public void stateChanged(int state) {
+    super.stateChanged(state);
+    checkRegistration();
   }
 
   @Override
   public void configurationChanged(ComponentInstance instance, Map<String, Object> configuration) {
-    // TODO: could directly ask shouldRegister()
+  }
+
+  private void checkRegistration() {
     try {
       Field field = getInstanceManager().getPojoObject().getClass().getField("register");
       if (!field.isAccessible()) {
         field.setAccessible(true);
       }
       boolean register = (boolean) field.get(getInstanceManager().getPojoObject());
-      // LOGGER.debug("UPDATE {}", register);
 
       providedServiceHandler.onSet(null, "register", register);
     } catch (SecurityException
@@ -175,4 +209,5 @@ public class EntityHandler extends PrimitiveHandler implements ConfigurationList
       // LOGGER.error("ERR", e);
     }
   }
+
 }

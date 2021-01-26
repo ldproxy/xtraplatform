@@ -17,19 +17,17 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractService.class);
 
   @Override
-  protected boolean shouldRegister() {
+  protected final boolean shouldRegister() {
     return getData() != null && getData().getEnabled();
   }
 
   @Override
-  protected void onStart() {
-      if (shouldRegister()) {
-        LOGGER.info("Service with id '{}' started successfully.", getId());
-      }
+  protected void onStarted() {
+    LOGGER.info("Service with id '{}' started successfully.", getId());
   }
 
   @Override
-  protected void onStop() {
+  protected void onShutdown() {
     if (shouldRegister()) {
       LOGGER.info("Service with id '{}' stopped.", getId());
     }
