@@ -4,7 +4,7 @@ import { createFeature, assertNoRootAppElm } from 'feature-u';
 
 import { validatePropTypes } from '@xtraplatform/core';
 import App from './App';
-import { theme, routes } from '../../feature-u';
+import { theme, routes, i18n } from '../../feature-u';
 
 export default createFeature({
     name: 'manager',
@@ -24,6 +24,7 @@ export default createFeature({
                 },
             ],
             [theme(), {}],
+            [i18n(), {}],
         ],
     },
     appInit: ({ showStatus }) => {

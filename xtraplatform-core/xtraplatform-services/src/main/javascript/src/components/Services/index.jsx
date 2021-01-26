@@ -28,7 +28,7 @@ export default createFeature({
             [routes(servicesFeature)]: [
                 {
                     path: '/services',
-                    menuLabel: 'Services',
+                    menuLabel: 'services/ogc_api:services._label',
                     content: <ServiceIndex />,
                     default: true,
                 },
@@ -49,7 +49,7 @@ export default createFeature({
             [serviceViewActions('landingPage')]: ViewActionLandingPage,
             [serviceEditTabs('general')]: {
                 id: 'general',
-                label: 'General',
+                label: 'services/ogc_api:services.general._label',
                 component: ServiceEditGeneral,
             },
         },

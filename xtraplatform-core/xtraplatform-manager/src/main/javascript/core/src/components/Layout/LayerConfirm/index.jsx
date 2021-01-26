@@ -9,6 +9,7 @@ const LayerConfirm = ({
     title,
     labelConfirm,
     colorConfirm,
+    labelCancel,
     colorCancel,
     isPending,
     children,
@@ -48,7 +49,7 @@ const LayerConfirm = ({
                             justify='end'>
                             <Button
                                 secondary
-                                label='Cancel'
+                                label={labelCancel}
                                 color={colorCancel}
                                 onClick={onClose}
                                 disabled={isPending}
@@ -83,6 +84,7 @@ LayerConfirm.defaultProps = {
     title: 'Confirmation',
     labelConfirm: 'Confirm',
     colorConfirm: null,
+    labelCancel: 'Cancel',
     colorCancel: 'status-critical',
     isPending: false,
     children: null,

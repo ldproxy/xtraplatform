@@ -28,7 +28,7 @@ const TooltipIcon = ({ icon, iconSize, iconColor, children }) => {
                     <Box
                         margin='xsmall'
                         pad='xsmall'
-                        width={{ max: 'large' }}
+                        width={{ max: 'medium' }}
                         background='background-front'
                         elevation='small'
                         round='small'

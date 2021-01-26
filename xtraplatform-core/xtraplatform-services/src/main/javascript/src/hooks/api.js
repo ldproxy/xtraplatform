@@ -46,7 +46,9 @@ const SERVICE = gql`
             secured
             label
             description
+            apiVersion
             metadata
+            defaultExtent
             api
             collections
         }
@@ -80,7 +82,9 @@ const PATCH_SERVICE = gql`
             serviceType
             label
             description
+            apiVersion
             metadata
+            defaultExtent
             api
             collections
         }

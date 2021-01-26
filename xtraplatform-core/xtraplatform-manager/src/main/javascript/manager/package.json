@@ -18,6 +18,7 @@
         "prop-types": "^15",
         "react": "^16",
         "react-dom": "^16",
+        "react-i18next": "^11.8.5",
         "react-is": "^16",
         "react-router-dom": "^5",
         "styled-components": "^5"
@@ -44,6 +45,7 @@
         "prop-types": "^15",
         "react": "^16",
         "react-dom": "^16",
+        "react-i18next": "^11.8.5",
         "react-is": "^16",
         "react-router-dom": "^5",
         "regenerator-runtime": "^0.13.3",
@@ -53,6 +55,8 @@
         "apollo-link-rest": "^0.8.0-beta.0",
         "graphql": "^15.3.0",
         "graphql-anywhere": "^4.2.7",
+        "i18next": "^19.8.4",
+        "i18next-browser-languagedetector": "^6.0.1",
         "jwt-decode": "^2.2.0",
         "qs": "^6.9.4"
     }

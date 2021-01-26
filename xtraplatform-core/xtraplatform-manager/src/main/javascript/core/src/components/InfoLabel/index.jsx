@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Button, Drop, Text } from 'grommet';
+import { Box, Text, Markdown } from 'grommet';
 import { CircleQuestion, Clone } from 'grommet-icons';
 import TooltipIcon from './TooltipIcon';
 
@@ -31,7 +31,9 @@ const InfoLabel = ({ label, help, inheritedFrom, iconSize, color, hoverColor, mo
             )}
             {help && (
                 <TooltipIcon icon={CircleQuestion} iconSize={iconSize} iconColor='brand'>
-                    <Text size='small'>{help}</Text>
+                    <Text size='small'>
+                        <Markdown>{help}</Markdown>
+                    </Text>
                 </TooltipIcon>
             )}
         </Box>

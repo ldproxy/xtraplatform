@@ -17,6 +17,7 @@
         "prop-types": "^15",
         "react": "^16",
         "react-dom": "^16",
+        "react-i18next": "^11.8.5",
         "react-is": "^16",
         "react-router-dom": "^5",
         "styled-components": "^5"
@@ -44,6 +45,7 @@
         "prop-types": "^15",
         "react": "^16",
         "react-dom": "^16",
+        "react-i18next": "^11.8.5",
         "react-is": "^16",
         "react-router-dom": "^5",
         "regenerator-runtime": "^0.13.3",
