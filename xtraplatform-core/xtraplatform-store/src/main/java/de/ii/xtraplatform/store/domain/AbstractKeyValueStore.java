@@ -88,7 +88,7 @@ public abstract class AbstractKeyValueStore<T> implements KeyValueStore<T> {
                 onFailure(identifier, throwable);
               } else if (Objects.nonNull(entityData)) {
                 if (exists) onUpdate(identifier, entityData);
-                else onCreate(identifier, entityData);
+                else onCreate(identifier, entityData).join();
               }
             });
   }

@@ -89,4 +89,10 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
       throws IOException {
     return getDecorated().asMap(identifier, entityData);
   }
+
+  @Override
+  default EntityData fromMap(Identifier identifier, Map<String, Object> entityData)
+      throws IOException {
+    return getDecorated().fromMap(identifier, entityData);
+  }
 }

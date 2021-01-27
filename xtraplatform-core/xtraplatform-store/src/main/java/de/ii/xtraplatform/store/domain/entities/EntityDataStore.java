@@ -22,6 +22,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface EntityDataStore<T extends EntityData> extends MergeableKeyValueStore<T> {
 
+  EntityData fromMap(Identifier identifier, Map<String, Object> entityData) throws IOException;
+
   CompletableFuture<T> patch(String id, Map<String, Object> partialData, String... path);
 
   ValueEncoding<EntityData> getValueEncoding();

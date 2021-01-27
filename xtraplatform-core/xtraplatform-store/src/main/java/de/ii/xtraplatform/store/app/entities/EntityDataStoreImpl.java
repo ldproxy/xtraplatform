@@ -316,7 +316,9 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   @Override
-  protected void onFailure(Identifier identifier, Throwable throwable) {}
+  protected void onFailure(Identifier identifier, Throwable throwable) {
+    LOGGER.error("Could not save entity with id '{}': {}", identifier, throwable.getMessage());
+  }
 
   @Override
   public <U extends EntityData> EntityDataStore<U> forType(Class<U> type) {
@@ -342,6 +344,38 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   @Override
+  public EntityData fromMap(Identifier identifier, Map<String, Object> entityData) throws IOException {
+    return valueEncoding
+        .deserialize(identifier, valueEncoding.serialize(entityData), valueEncoding.getDefaultFormat());
+  }
+
+  @Override
+  public CompletableFuture<EntityData> put(String id, EntityData data, String... path) {
+    final Identifier identifier = Identifier.from(id, path);
+
+    try {
+      Map<String, Object> map = asMap(identifier, data);
+
+      Map<String, Object> withoutDefaults = defaultsStore
+          .subtractDefaults(identifier, data.getEntitySubType(), map, ImmutableList.of());
+
+      return getEventSourcing()
+          .pushPartialMutationEvent(identifier, withoutDefaults)
+          .whenComplete(
+              (entityData, throwable) -> {
+                if (Objects.nonNull(entityData)) {
+                  onCreate(identifier, entityData).join();
+                } else if (Objects.nonNull(throwable)) {
+                  onFailure(identifier, throwable);
+                }
+              });
+    } catch (IOException e) {
+      //never reached, will fail in isUpdateValid
+      return CompletableFuture.failedFuture(e);
+    }
+  }
+
+  @Override
   public CompletableFuture<EntityData> patch(String id, Map<String, Object> partialData,
       String... path) {
     final Identifier identifier = Identifier.from(id, path);
@@ -357,8 +391,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
     try {
       EntityData merged =
-              getValueEncoding()
-                  .deserialize(identifier, payload, getValueEncoding().getDefaultFormat());
+          getValueEncoding()
+              .deserialize(identifier, payload, getValueEncoding().getDefaultFormat());
 
       Map<String, Object> map = asMap(identifier, merged);
 
