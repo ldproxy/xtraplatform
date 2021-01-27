@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useLocation, useHistory } from 'react-router-dom';
 import { useQuery } from '@xtraplatform/core';
+import { useTranslation } from 'react-i18next';
 
 import { Box, Tabs as Tabs2, Tab } from 'grommet';
 
@@ -9,6 +10,7 @@ const Tabs = ({ tabs, tabProps }) => {
     const urlQuery = useQuery();
     const location = useLocation();
     const history = useHistory();
+    const { t } = useTranslation();
 
     const selectedTab = urlQuery.tab
         ? Math.max(
@@ -34,7 +36,7 @@ const Tabs = ({ tabs, tabProps }) => {
                 tabs.map((tab) => {
                     const TabContent = tab.component;
                     return (
-                        <Tab title={tab.label} key={tab.id} focusIndicator={false}>
+                        <Tab title={t(tab.label)} key={tab.id} focusIndicator={false}>
                             <Box fill overflow={{ vertical: 'auto' }}>
                                 <TabContent {...tabProps} />
                             </Box>

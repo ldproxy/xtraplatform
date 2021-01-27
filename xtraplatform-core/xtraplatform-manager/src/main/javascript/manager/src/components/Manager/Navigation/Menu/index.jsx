@@ -1,10 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 import { Box } from 'grommet';
 import Link from './Link';
 
 const NavigationMenu = ({ routes, onClick }) => {
+    const { t } = useTranslation();
+
     return (
         <Box flex='grow' justify='start'>
             {routes.map((route) => (
@@ -12,7 +15,7 @@ const NavigationMenu = ({ routes, onClick }) => {
                 <Link
                     key={route.path}
                     path={route.path}
-                    label={route.menuLabel}
+                    label={t(route.menuLabel)}
                     onClick={onClick}
                 />
             ))}

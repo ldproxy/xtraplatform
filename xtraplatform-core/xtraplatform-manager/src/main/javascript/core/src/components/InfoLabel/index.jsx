@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
-import { Box, Button, Drop, Text } from 'grommet';
+import { Box, Text, Markdown } from 'grommet';
 import { CircleQuestion, Clone } from 'grommet-icons';
 import TooltipIcon from './TooltipIcon';
 
@@ -9,6 +10,7 @@ import TooltipIcon from './TooltipIcon';
  * InfoLabel can be used in FormField
  */
 const InfoLabel = ({ label, help, inheritedFrom, iconSize, color, hoverColor, mono, boxProps }) => {
+    const { t } = useTranslation();
     const textProps = mono
         ? {
               size: 'small',
@@ -25,13 +27,19 @@ const InfoLabel = ({ label, help, inheritedFrom, iconSize, color, hoverColor, mo
             {inheritedFrom && (
                 <TooltipIcon icon={Clone} iconSize={iconSize} iconColor='text'>
                     <Text size='small'>
-                        Inherited from: <strong>{inheritedFrom}</strong>
+                        <Markdown>
+                            {t('services/ogc_api:manager.inheritedFrom._label', {
+                                parent: inheritedFrom,
+                            })}
+                        </Markdown>
                     </Text>
                 </TooltipIcon>
             )}
             {help && (
                 <TooltipIcon icon={CircleQuestion} iconSize={iconSize} iconColor='brand'>
-                    <Text size='small'>{help}</Text>
+                    <Text size='small'>
+                        <Markdown>{help}</Markdown>
+                    </Text>
                 </TooltipIcon>
             )}
         </Box>

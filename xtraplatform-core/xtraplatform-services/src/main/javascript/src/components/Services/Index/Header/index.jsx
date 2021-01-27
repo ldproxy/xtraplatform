@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 import { Box, Text } from 'grommet';
 import { Multiple, Menu, Revert, SettingsOption } from 'grommet-icons';
@@ -11,23 +12,32 @@ import { useView } from '@xtraplatform/manager';
 const ServiceIndex = ({ isCompact, role, serviceTypes }) => {
     const showAddControl = !isCompact && role !== 'read only';
     const [{}, { toggleMenu }] = useView();
+    const { t } = useTranslation();
 
     if (isCompact) {
         return (
             <Header
-                icon={<IconLink onClick={toggleMenu} icon={<Menu />} title='Show menu' />}
+                icon={
+                    <IconLink
+                        onClick={toggleMenu}
+                        icon={<Menu />}
+                        title={t('services/ogc_api:manager.menu._label')}
+                    />
+                }
                 label={
                     <NavLink
                         to={{ pathname: '/services' }}
                         label={
                             <Box flex={false} direction='row' gap='xxsmall' align='center'>
                                 <Text truncate size='large' weight={500}>
-                                    Services
+                                    {t('services/ogc_api:services._label')}
                                 </Text>
                                 <Revert size='list' color='light-5' />
                             </Box>
                         }
-                        title='Go back to services'
+                        title={t('services/ogc_api:manager.back._label', {
+                            label: t('services/ogc_api:services._label'),
+                        })}
                         flex
                     />
                 }
@@ -38,14 +48,14 @@ const ServiceIndex = ({ isCompact, role, serviceTypes }) => {
     return (
         <Header
             icon={<Multiple />}
-            label='Services'
+            label={t('services/ogc_api:services._label')}
             actions={
                 <Box direction='row'>
                     {showAddControl && <AddControl serviceTypes={serviceTypes} />}
                     <NavLink
                         to={{ pathname: '/services/_defaults' }}
                         icon={<SettingsOption />}
-                        title='Edit service defaults'
+                        title={t('services/ogc_api:services.editDefaults._label')}
                         pad='small'
                     />
                 </Box>

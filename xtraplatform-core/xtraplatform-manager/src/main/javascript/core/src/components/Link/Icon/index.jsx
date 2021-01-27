@@ -11,7 +11,7 @@ const StyledAnchor = styled(Anchor)`
     ${(props) => props.iconSize && `height: ${props.theme.icon.size[props.iconSize]};`}
     &:hover {
         & svg {
-            stroke: ${(props) => props.theme.global.colors.active};
+            stroke: ${(props) => props.theme.normalizeColor('control')};
         }
     }
 `;

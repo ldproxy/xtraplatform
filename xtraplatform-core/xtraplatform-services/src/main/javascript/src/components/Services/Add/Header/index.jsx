@@ -1,15 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 import { Box, Anchor } from 'grommet';
 import { ChapterAdd, Close } from 'grommet-icons';
 import { Header, SpinnerIcon } from '@xtraplatform/core';
 
 const ServiceAddHeader = ({ loading, onCancel }) => {
+    const { t } = useTranslation();
+
     return (
         <Header
             icon={<ChapterAdd />}
-            label='Add New Service'
+            label={t('services/ogc_api:services.add._label')}
             actions={
                 <Box direction='row'>
                     {loading ? (
@@ -17,7 +20,13 @@ const ServiceAddHeader = ({ loading, onCancel }) => {
                             <SpinnerIcon size='medium' />
                         </Box>
                     ) : (
-                        <Anchor icon={<Close />} title='Back to services' onClick={onCancel} />
+                        <Anchor
+                            icon={<Close />}
+                            title={t('services/ogc_api:manager.back._label', {
+                                label: t('services/ogc_api:services._label'),
+                            })}
+                            onClick={onCancel}
+                        />
                     )}
                 </Box>
             }

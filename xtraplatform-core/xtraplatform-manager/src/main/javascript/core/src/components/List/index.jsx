@@ -9,29 +9,15 @@ export const StyledListItem = styled(Box)`
     cursor: ${(props) => (props.onClick ? 'pointer' : 'default')};
 
     &:hover {
-        background-color: ${(props) => props.theme.global.colors.hover};
+        background-color: ${(props) =>
+            props.theme.normalizeColor(props.theme.list.hover.background)};
         color: ${(props) => props.theme.global.colors.text.dark};
-
-        /*svg {
-            stroke: ${(props) => props.theme.global.colors.icon.dark};
-            fill: ${(props) => props.theme.global.colors.icon.dark};
-        }*/
     }
-
-    /*& svg {
-        stroke: ${(props) =>
-        props.selected
-            ? props.theme.global.colors.icon.dark
-            : props.theme.global.colors.icon.light};
-        fill: ${(props) =>
-        props.selected
-            ? props.theme.global.colors.icon.dark
-            : props.theme.global.colors.icon.light};
-    }*/
 `;
 
 export const StyledListItemSelected = styled(Box)`
-    background-color: ${(props) => props.theme.global.colors.active};
+    background-color: ${(props) =>
+        props.theme.normalizeColor(props.theme.list.selected.background)};
     color: ${(props) => props.theme.global.colors.text.dark};
 `;
 

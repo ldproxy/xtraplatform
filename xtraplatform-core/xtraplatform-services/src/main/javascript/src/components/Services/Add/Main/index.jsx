@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 import { Box, Form, Button } from 'grommet';
 import {
@@ -35,6 +36,8 @@ const ServiceAddMain = ({ loading, error, addService }) => {
 
     const { valid, errors } = validate(values, fieldsValidation);
 
+    const { t } = useTranslation();
+
     const onSubmit = () => {
         if (type) {
             if (valid) {
@@ -58,8 +61,8 @@ const ServiceAddMain = ({ loading, error, addService }) => {
             <Form value={values} onChange={setValues} onSubmit={onSubmit}>
                 <TextField
                     name='id'
-                    label='Id'
-                    help='The unique identifier of the new service'
+                    label={t('services/ogc_api:services.add.id._label')}
+                    help={t('services/ogc_api:services.add.id._description')}
                     disabled={loading}
                     autofocus
                     required
@@ -68,7 +71,12 @@ const ServiceAddMain = ({ loading, error, addService }) => {
                 />
                 <OgcApi {...values} loading={loading} errors={errors} />
                 <Box pad={{ vertical: 'medium' }}>
-                    <Button label='Add' primary={true} onClick={onSubmit} disabled={loading} />
+                    <Button
+                        label={t('services/ogc_api:services.add._short')}
+                        primary={true}
+                        onClick={onSubmit}
+                        disabled={loading}
+                    />
                 </Box>
             </Form>
         </Box>

@@ -5,16 +5,20 @@ import { useHistory, useParams } from 'react-router-dom';
 import { Content, Async } from '@xtraplatform/core';
 import Header from './Header';
 import Main from './Main';
-import { useServiceAdd, useServiceDefaults, useServicePatch } from '../../../hooks';
+import { useServiceAdd, useServices } from '../../../hooks';
 
 const ServiceAdd = () => {
     const history = useHistory();
     const [addService, { loading, error }] = useServiceAdd();
+    const { refetch } = useServices();
 
     const onCancel = () => history.push('/services');
     const onChange = (service) => {
         addService(service).then(() => {
-            if (!error) history.push('/services');
+            if (!error) {
+                refetch();
+                history.push('/services');
+            }
         });
     };
     return (

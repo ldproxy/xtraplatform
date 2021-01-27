@@ -22,6 +22,8 @@ public interface StaticResourceConstants {
   /** The (array of) string(s) that indicate the default pages to use for certain paths. */
   String WEB_RESOURCE_DEFAULT_PAGE = "X-Web-Resource-Default-Page";
 
+  String WEB_RESOURCE_ROOT_REDIRECT = "X-Web-Resource-Root-Redirect";
+
   /** Defines a filter clause for bundles that want to register a resource using this bundle. */
   String WEB_RESOURCE_FILTER =
       String.format(

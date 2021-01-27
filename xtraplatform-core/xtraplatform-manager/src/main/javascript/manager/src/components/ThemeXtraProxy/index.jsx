@@ -1,19 +1,17 @@
 import { createFeature } from 'feature-u';
 import { createTheme } from '@xtraplatform/core';
 
-import themeDefault from './theme';
+import themeXtraProxy from './theme';
 import { theme } from '../../feature-u';
 
-export { themeDefault };
-
 export default createFeature({
-    name: 'theme-base',
+    name: 'theme-xtraproxy',
 
     fassets: {
         // provided resources
         define: {
             // KEY: supply content under contract of the app feature
-            [theme('default')]: createTheme(themeDefault),
+            [theme('xtraproxy')]: createTheme(themeXtraProxy),
         },
     },
 });

@@ -1,12 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 
 import { Content, Async, useDebounce } from '@xtraplatform/core';
 import ServiceEditHeader from './Header';
 import ServiceEditMain from './Main';
 import {
     useService,
+    useServices,
     useServiceStatus,
     useServicePatch,
     useServiceDefaults,
@@ -16,6 +17,7 @@ import {
 
 const ServiceEdit = () => {
     const { id } = useParams();
+    const history = useHistory();
     const { loading, error, data } = useServiceStatus(id);
     const { loading: loading2, error: error2, data: data2 } = useService(id);
     const { loading: loading3, error: error3, data: data3 } = useServiceDefaults();
@@ -24,6 +26,7 @@ const ServiceEdit = () => {
         { loading: mutationLoading, error: mutationError, data: mutationSuccess },
     ] = useServicePatch(id);
     const [deleteService] = useServiceDelete(id);
+    const { refetch } = useServices();
     const [mutationPending, setPending] = useState(false);
 
     const onPending = () => setPending(true);
@@ -37,6 +40,17 @@ const ServiceEdit = () => {
         },
         [patchService]
     );
+
+    const onDelete = () => {
+        deleteService().then(() => {
+            //setLayerOpened(false);
+            //setDeletePending(false);
+            setTimeout(() => {
+                refetch();
+                history.push('/services');
+            }, 2000);
+        });
+    };
 
     const status = data ? data.status : {};
     const service = data2 ? data2.service : {};
@@ -53,7 +67,7 @@ const ServiceEdit = () => {
                         mutationError={mutationError}
                         mutationSuccess={mutationSuccess}
                         onChange={onChange}
-                        onDelete={deleteService}
+                        onDelete={onDelete}
                     />
                 }
                 main={

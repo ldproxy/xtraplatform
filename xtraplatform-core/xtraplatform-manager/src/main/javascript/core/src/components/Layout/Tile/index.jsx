@@ -5,11 +5,10 @@ import { Button, Box } from 'grommet';
 import styled from 'styled-components';
 
 const SelectableBox = styled(Box)`
-    ${(props) =>
-        props.selected && `border-color: ${props.theme.global.colors.active};`}
+    ${(props) => props.selected && `border-color: ${props.theme.normalizeColor('control')};`}
 
     &:hover {
-        border-color: ${(props) => props.theme.global.colors.active};
+        border-color: ${(props) => props.theme.normalizeColor('control')};
     }
 `;
 

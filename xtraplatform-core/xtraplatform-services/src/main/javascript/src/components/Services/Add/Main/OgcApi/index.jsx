@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 import { Box, Form } from 'grommet';
 import {
@@ -26,12 +27,13 @@ export const fieldsValidation = {
 
 //TODO: providers from fassets
 const ServiceAddOgcApi = ({ isBasicAuth, loading, errors, featureProviderType }) => {
+    const { t } = useTranslation();
+
     return (
         <>
             <RadioField
                 name='featureProviderType'
-                label='Data Source Type'
-                help='TODO'
+                label={t('services/ogc_api:services.add.type._label')}
                 options={['SQL', 'WFS']}
                 disabled={loading}
             />
@@ -39,36 +41,37 @@ const ServiceAddOgcApi = ({ isBasicAuth, loading, errors, featureProviderType })
                 <>
                     <TextField
                         name='host'
-                        label='Host'
-                        help='TODO'
+                        label={t('services/ogc_api:services.add.host._label')}
+                        help={t('services/ogc_api:services.add.host._description')}
                         disabled={loading}
                         error={errors['host']}
                     />
                     <TextField
                         name='database'
-                        label='Database'
-                        help='TODO'
+                        label={t('services/ogc_api:services.add.database._label')}
+                        help={t('services/ogc_api:services.add.database._description')}
                         disabled={loading}
                         error={errors['database']}
                     />
                     <TextField
                         name='user'
-                        label='User'
-                        help='TODO'
+                        label={t('services/ogc_api:services.add.user._label')}
+                        help={t('services/ogc_api:services.add.user._description')}
                         disabled={loading}
                         error={errors['user']}
                     />
                     <TextField
                         name='password'
-                        label='Password'
-                        help='TODO'
+                        label={t('services/ogc_api:services.add.password._label')}
+                        help={t('services/ogc_api:services.add.password._description')}
                         disabled={loading}
                         error={errors['password']}
+                        type='password'
                     />
                     <TextField
                         name='schemas'
-                        label='Additional schemas'
-                        help='TODO'
+                        label={t('services/ogc_api:services.add.schemas._label')}
+                        help={t('services/ogc_api:services.add.schemas._description')}
                         disabled={loading}
                     />
                 </>
@@ -77,31 +80,31 @@ const ServiceAddOgcApi = ({ isBasicAuth, loading, errors, featureProviderType })
                 <>
                     <TextField
                         name='url'
-                        label='WFS URL'
-                        help='The GetCapabilities endpoint of the existing service'
+                        label={t('services/ogc_api:services.add.url._label')}
+                        help={t('services/ogc_api:services.add.url._description')}
                         disabled={loading}
                         error={errors['url']}
                     />
                     <ToggleField
                         name='isBasicAuth'
-                        label='Basic Auth'
-                        help='Is the WFS secured with HTTP Basic Authentication?'
+                        label={t('services/ogc_api:services.add.isBasicAuth._label')}
+                        help={t('services/ogc_api:services.add.isBasicAuth._description')}
                         truthful={isBasicAuth}
                         disabled={loading}
                     />
                     {isBasicAuth && (
                         <TextField
                             name='user'
-                            label='User'
-                            help='The HTTP Basic Authentication user name'
+                            label={t('services/ogc_api:services.add.basicAuthUser._label')}
+                            help={t('services/ogc_api:services.add.basicAuthUser._description')}
                             disabled={loading}
                         />
                     )}
                     {isBasicAuth && (
                         <TextField
                             name='password'
-                            label='Password'
-                            help='The HTTP Basic Authentication password'
+                            label={t('services/ogc_api:services.add.basicAuthPassword._label')}
+                            help={t('services/ogc_api:services.add.basicAuthPassword._description')}
                             type='password'
                             disabled={loading}
                         />

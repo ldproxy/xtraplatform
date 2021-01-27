@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 import { Anchor } from 'grommet';
 import { Home } from 'grommet-icons';
@@ -8,10 +9,12 @@ import { Home } from 'grommet-icons';
 const VIEW_URL = '../rest/services/';
 
 const ViewActionLandingPage = ({ id, isOnline, parameters }) => {
+    const { t } = useTranslation();
+
     return (
         <Anchor
             icon={<Home />}
-            title='Show landing page'
+            title={t('services/ogc_api:services.show._label')}
             href={`${VIEW_URL}${id}/${parameters}`}
             target='_blank'
             disabled={!isOnline}

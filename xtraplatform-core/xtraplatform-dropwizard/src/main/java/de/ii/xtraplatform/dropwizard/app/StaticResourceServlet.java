@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Optional;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -65,6 +66,7 @@ public class StaticResourceServlet extends HttpServlet {
   private final Charset defaultCharset;
   private final Bundle bundle;
   private final DefaultPages defaultPages;
+  private final Optional<String> rootRedirect;
 
   /**
    * Creates a new {@code AssetServlet} that serves static assets loaded from {@code resourceURL}
@@ -75,19 +77,19 @@ public class StaticResourceServlet extends HttpServlet {
    * requested and {@code indexFile} is defined, then {@code AssetServlet} will attempt to serve a
    * file with that name in that directory. If a directory is requested and {@code indexFile} is
    * null, it will serve a 404.
-   *
+   *  @param indexFile the filename to use when directories are requested, or null to serve no
+   *     indexes
    * @param resourcePath the base URL from which assets are loaded
    * @param uriPath the URI path fragment in which all requests are rooted
-   * @param indexFile the filename to use when directories are requested, or null to serve no
-   *     indexes
    * @param defaultCharset the default character set
+   * @param rootRedirect
    */
   public StaticResourceServlet(
       String resourcePath,
       String uriPath,
       Charset defaultCharset,
       Bundle bundle,
-      DefaultPages defaultPages) {
+      DefaultPages defaultPages, Optional<String> rootRedirect) {
     final String trimmedPath = SLASHES.trimFrom(resourcePath);
     this.resourcePath = trimmedPath.isEmpty() ? trimmedPath : trimmedPath + '/';
     final String trimmedUri = SLASHES.trimTrailingFrom(uriPath);
@@ -95,6 +97,7 @@ public class StaticResourceServlet extends HttpServlet {
     this.defaultCharset = defaultCharset;
     this.bundle = bundle;
     this.defaultPages = defaultPages;
+    this.rootRedirect = rootRedirect;
   }
 
   /*public URL getResourceURL() {
@@ -118,7 +121,13 @@ public class StaticResourceServlet extends HttpServlet {
       // }
       if (req.getPathInfo() != null) {
         builder.append(req.getPathInfo());
+      } else if (rootRedirect.isPresent()) {
+        builder.append(rootRedirect.get());
+        resp.setHeader(HttpHeaders.LOCATION, builder.toString());
+        resp.sendError(HttpServletResponse.SC_MOVED_PERMANENTLY);
+        return;
       }
+
       final CachedAsset cachedAsset = loadAsset(builder.toString());
       if (cachedAsset == null) {
         resp.sendError(HttpServletResponse.SC_NOT_FOUND);
