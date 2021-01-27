@@ -8,40 +8,47 @@ import Tile from './Tile';
 
 // TODO: messages
 const ServiceIndexMain = ({ isCompact, services }) => {
-  const { id } = useParams();
+    const { id } = useParams();
 
-  return (
-    <ResponsiveContext.Consumer>
-      {(size) => {
-        const isSmall = isCompact || size === 'small';
+    return (
+        <ResponsiveContext.Consumer>
+            {(size) => {
+                const isSmall = isCompact || size === 'small';
 
-        return (
-          <Box fill="vertical" overflow={{ vertical: 'auto' }}>
-            <Box pad="none" background="content" flex={false}>
-              <TileGrid compact={isSmall}>
-                {services.map((service) => <Tile {...service} key={service.id} isCompact={isSmall} isSelected={service.id === id} />)}
-              </TileGrid>
-            </Box>
-          </Box>
-        );
-      }}
-    </ResponsiveContext.Consumer>
-  );
+                return (
+                    <Box fill='vertical' overflow={{ vertical: 'auto' }}>
+                        <Box pad='none' background='content' flex={false}>
+                            <TileGrid compact={isSmall}>
+                                {services.map((service) => (
+                                    <Tile
+                                        {...service}
+                                        key={service.id}
+                                        isCompact={isSmall}
+                                        isSelected={service.id === id}
+                                    />
+                                ))}
+                            </TileGrid>
+                        </Box>
+                    </Box>
+                );
+            }}
+        </ResponsiveContext.Consumer>
+    );
 };
 
 ServiceIndexMain.displayName = 'ServiceIndexMain';
 
 ServiceIndexMain.propTypes = {
-  isCompact: PropTypes.bool,
-  services: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-    }),
-  ).isRequired,
+    isCompact: PropTypes.bool,
+    services: PropTypes.arrayOf(
+        PropTypes.shape({
+            id: PropTypes.string.isRequired,
+        })
+    ).isRequired,
 };
 
 ServiceIndexMain.defaultProps = {
-  isCompact: false,
+    isCompact: false,
 };
 
 export default ServiceIndexMain;

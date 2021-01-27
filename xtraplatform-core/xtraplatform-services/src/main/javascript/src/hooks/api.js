@@ -6,6 +6,7 @@ const SERVICES = gql`
     query {
         services @rest(type: "[ServiceStatus]", path: "/services") {
             id
+            createtAt
             lastModified
             serviceType
             label
@@ -23,6 +24,7 @@ const SERVICE_STATUS = gql`
     query($id: String!) {
         status(id: $id) @rest(type: "ServiceStatus", path: "/services/{args.id}/status") {
             id
+            createtAt
             lastModified
             serviceType
             label
@@ -40,6 +42,7 @@ const SERVICE = gql`
     query($id: String!) {
         service(id: $id) @rest(type: "Service", path: "/services/{args.id}") {
             id
+            createtAt
             lastModified
             serviceType
             enabled
@@ -60,6 +63,7 @@ const ADD_SERVICE = gql`
         patchService(input: $input)
             @rest(type: "ServiceStatus", path: "/services", method: "POST", bodyKey: "input") {
             id
+            createtAt
             lastModified
             serviceType
             label
@@ -78,6 +82,7 @@ const PATCH_SERVICE = gql`
         patchService(id: $id, input: $input)
             @rest(type: "Service", path: "/services/{args.id}", method: "POST", bodyKey: "input") {
             id
+            createtAt
             lastModified
             serviceType
             label

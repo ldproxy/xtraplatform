@@ -55,7 +55,7 @@ const ServiceIndex = ({ isCompact, role, serviceTypes }) => {
                     <NavLink
                         to={{ pathname: '/services/_defaults' }}
                         icon={<SettingsOption />}
-                        title={t('services/ogc_api:services.defaults._label')}
+                        title={t('services/ogc_api:services.editDefaults._label')}
                         pad='small'
                     />
                 </Box>

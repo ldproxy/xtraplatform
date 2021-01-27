@@ -10,24 +10,24 @@ package de.ii.xtraplatform.manager.app;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.runtime.domain.LogContext;
-import de.ii.xtraplatform.services.domain.ImmutableServiceDataCommon;
 import de.ii.xtraplatform.services.domain.ImmutableServiceStatus;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceStatus;
 import de.ii.xtraplatform.services.domain.TaskStatus;
-import de.ii.xtraplatform.store.app.entities.EntityDataStoreImpl;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
+import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
 import io.dropwizard.auth.Auth;
@@ -37,10 +37,11 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.BadRequestException;
@@ -61,7 +62,6 @@ import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 @Component
 @Provides
@@ -73,8 +73,10 @@ public class ServicesEndpoint implements Endpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServicesEndpoint.class);
 
+  private final EntityDataStore<EntityData> entityRepository;
   private final EntityDataStore<ServiceData> serviceRepository;
   private final EntityRegistry entityRegistry;
+  private final EntityFactory entityFactory;
   private final EntityDataDefaultsStore defaultsStore;
   private final ServiceBackgroundTasks serviceBackgroundTasks;
   private final ObjectMapper objectMapper;
@@ -82,12 +84,15 @@ public class ServicesEndpoint implements Endpoint {
   ServicesEndpoint(
       @Requires EntityDataStore<EntityData> entityRepository,
       @Requires EntityRegistry entityRegistry,
+      @Requires EntityFactory entityFactory,
       @Requires EntityDataDefaultsStore defaultsStore
       /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/) {
     //TODO: relies on EntityFactory, ServiceData might not be registered yet
     //this.serviceRepository = entityRepository.forType(ServiceData.class);
+    this.entityRepository = entityRepository;
     this.serviceRepository = getServiceRepository(entityRepository);
     this.entityRegistry = entityRegistry;
+    this.entityFactory = entityFactory;
     this.defaultsStore = defaultsStore;
     this.serviceBackgroundTasks = null; // serviceBackgroundTasks;
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);
@@ -113,6 +118,7 @@ public class ServicesEndpoint implements Endpoint {
       @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user) {
     return serviceRepository.ids().stream()
         .map(this::getServiceStatus)
+        //.sorted(Comparator.comparingLong(ServiceStatus::getCreatedAt).reversed())
         .collect(Collectors.toList());
   }
 
@@ -137,14 +143,59 @@ public class ServicesEndpoint implements Endpoint {
 
       LOGGER.debug("ADD SERVICE {}: {}", id, request);
 
-      ServiceData added = new ImmutableServiceDataCommon.Builder().id(id)
-          .label(Optional.ofNullable(request.get("label")).orElse(id))
-          .serviceType(Optional.ofNullable(request.get("serviceType")).orElse("OGC_API")).build();
+      Map<String, Object> autoProvider = Objects.equals(request.get("featureProviderType"), "WFS")
+          ? new ImmutableMap.Builder<String, Object>()
+          .putAll(request)
+          .put("auto", "true")
+          .put("autoPersist", "true")
+          .put("entityStorageVersion", "2")
+          .put("connectionInfo", new ImmutableMap.Builder<String, Object>()
+              .put("connectorType", "HTTP")
+              .put("uri", request.get("url"))
+              .put("user", Optional.ofNullable(request.get("user")))
+              .put("password", Optional.ofNullable(request.get("password")))
+              .build())
+          .build()
+          : new ImmutableMap.Builder<String, Object>()
+              .putAll(request)
+              .put("auto", "true")
+              .put("autoPersist", "true")
+              .put("entityStorageVersion", "2")
+              .put("connectionInfo", new ImmutableMap.Builder<String, Object>()
+                  .put("connectorType", "SLICK")
+                  .put("host", request.get("host"))
+                  .put("database", request.get("database"))
+                  .put("user", request.get("user"))
+                  .put("password", request.get("password"))
+                  .build())
+              .build();
 
-      // TODO: how to get ServiceData from POST body
-      //ServiceData serviceData = null;
+      Identifier identifier = Identifier.from(id, "providers");
+      Identifier identifier2 = Identifier.from(id, "services");
 
-      //ServiceData added = serviceRepository.put(id, serviceData).get();
+      //TODO: error notification in manager
+      EntityData provider = entityRepository.fromMap(identifier, autoProvider);
+      //EntityData service = null;
+
+      //TODO: background task, while running return status on GET
+      EntityData provider2 = entityFactory.hydrateData(identifier, "providers", provider);
+
+      EntityData provider3 = entityRepository.put(identifier, provider2).join();
+
+      Map<String, Object> autoService = new ImmutableMap.Builder<String, Object>()
+          .putAll(request)
+          .put("auto", "true")
+          .put("autoPersist", "true")
+          .put("entityStorageVersion", "2")
+          .build();
+
+      EntityData serviceData = entityRepository.fromMap(identifier2, autoService);
+
+      //TODO: background task, while running return status on GET
+      ServiceData service2 = (ServiceData) entityFactory
+          .hydrateData(identifier2, "services", serviceData);
+
+      ServiceData added = serviceRepository.put(id, service2).join();
 
       return Response.ok().entity(getServiceStatus(added)).build();
 
@@ -160,7 +211,8 @@ public class ServicesEndpoint implements Endpoint {
       throw new BadRequestException(e.getCause().getMessage());
       // throw new InternalServerErrorException(e.getCause());
     }*/ catch (Throwable e) {
-      throw new BadRequestException(e.getCause().getMessage());
+      throw new BadRequestException(
+          Objects.nonNull(e.getCause()) ? e.getCause().getMessage() : e.getMessage());
     } finally {
       LogContext.remove(LogContext.CONTEXT.SERVICE);
     }
@@ -255,7 +307,9 @@ public class ServicesEndpoint implements Endpoint {
 
       LOGGER.debug("DELETE SERVICE {}", id);
 
-      //serviceRepository.delete(id).get();
+      serviceRepository.delete(id).join();
+
+      entityRepository.delete(id, "providers").join();
 
       return Response.noContent().build();
     } catch (Throwable e) {

@@ -24,7 +24,10 @@ const transformSplit = (field, values, transformers) => {
     return values;
 };
 
-const isEmpty = (field) => field === undefined || field === null;
+const isEmpty = (field) =>
+    field === undefined ||
+    field === null ||
+    (typeof field === 'object' && Object.keys(field).length === 0);
 
 const isSplitted = (field, fieldsTransformation) =>
     fieldsTransformation && fieldsTransformation[field] && fieldsTransformation[field].split;

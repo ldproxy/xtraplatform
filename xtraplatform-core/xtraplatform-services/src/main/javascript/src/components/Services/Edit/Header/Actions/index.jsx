@@ -45,11 +45,11 @@ const ServiceActions = ({
 
     const onRemove = () => {
         setDeletePending(true);
-        removeService().then(() => {
+        removeService(); /*.then(() => {
             //setLayerOpened(false);
             //setDeletePending(false);
             setTimeout(() => history.push('/services'), 2000);
-        });
+        });*/
     };
 
     const isOnline = status === 'STARTED';

@@ -11,6 +11,7 @@ import ServiceEditGeneral from './Edit/Main/General';
 import ServiceDefaults from './Defaults';
 import ServiceAdd from './Add';
 import ViewActionLandingPage from '../ViewActionLandingPage';
+import ServiceEditProvider from './Edit/Main/Provider';
 
 export { servicesFeature, serviceViewActions, serviceEditTabs };
 
@@ -50,7 +51,15 @@ export default createFeature({
             [serviceEditTabs('general')]: {
                 id: 'general',
                 label: 'services/ogc_api:services.general._label',
+                sortPriority: 10,
                 component: ServiceEditGeneral,
+            },
+            [serviceEditTabs('provider')]: {
+                id: 'provider',
+                label: 'services/ogc_api:services.datasource._label',
+                sortPriority: 60,
+                component: ServiceEditProvider,
+                noDefaults: true,
             },
         },
         // consumed resources
