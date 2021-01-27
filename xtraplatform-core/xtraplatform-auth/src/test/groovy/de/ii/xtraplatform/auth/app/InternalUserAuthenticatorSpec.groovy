@@ -111,6 +111,11 @@ class InternalUserAuthenticatorSpec extends Specification {
         }
 
         @Override
+        EntityData fromMap(Identifier identifier, Map<String, Object> entityData) throws IOException {
+            return null 
+        }
+
+        @Override
         List<String> ids(String... path) {
             return ImmutableList.of("testAdmin", "testUser")
         }
