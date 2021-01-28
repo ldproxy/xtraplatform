@@ -27,7 +27,7 @@ public abstract class AbstractKeyValueStore<T> implements KeyValueStore<T> {
   }
 
   protected CompletableFuture<Void> onCreate(Identifier identifier, T entityData) {
-    return null;
+    return CompletableFuture.completedFuture(null);
   }
 
   protected void onUpdate(Identifier identifier, T entityData) {}

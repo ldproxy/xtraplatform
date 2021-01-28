@@ -284,13 +284,16 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("Entity creating: {}", identifier);
       }
+      //TODO: why did we move this to whenComplete in the first place? any new issues since reverting?
+      EntityData hydratedData = hydrateData(identifier, entityData);
+
       return entityFactory
-          .createInstance(identifier.path().get(0), identifier.id(), entityData)
+          .createInstance(identifier.path().get(0), identifier.id(), hydratedData)
           .whenComplete(
               (entity, throwable) -> {
                 if (Objects.nonNull(entity)) {
-                  EntityData hydratedData = hydrateData(identifier, entityData);
-                  ((AbstractPersistentEntity<EntityData>) entity).setData(hydratedData);
+                  //EntityData hydratedData = hydrateData(identifier, entityData);
+                  //((AbstractPersistentEntity<EntityData>) entity).setData(hydratedData);
                 }
                 if (LOGGER.isTraceEnabled()) {
                   LOGGER.trace("Entity created: {}", identifier);

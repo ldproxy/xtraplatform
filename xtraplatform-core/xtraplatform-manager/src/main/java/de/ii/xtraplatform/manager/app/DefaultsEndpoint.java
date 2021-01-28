@@ -9,6 +9,7 @@ package de.ii.xtraplatform.manager.app;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.dropwizard.domain.Endpoint;
@@ -25,6 +26,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -83,7 +85,8 @@ public class DefaultsEndpoint implements Endpoint {
       @PathParam("entityType") String entityType, @PathParam("subType") String subType) {
 
     //TODO: subType
-    Optional<Map<String, Object>> defaults = defaultsStore.getAllDefaults(Identifier.from(EntityDataDefaultsStore.EVENT_TYPE, entityType),
+    Optional<Map<String, Object>> defaults = defaultsStore
+        .getAllDefaults(Identifier.from(EntityDataDefaultsStore.EVENT_TYPE, entityType),
             Optional.ofNullable(subType));
 
     if (!defaults.isPresent()) {
@@ -108,10 +111,13 @@ public class DefaultsEndpoint implements Endpoint {
           content = {@Content()})
           Map<String, Object> request) {
 
+    Map<String, Object> patch = defaultsStore
+        .patch(EntityDataDefaultsStore.EVENT_TYPE, request, entityType, subType).join();
 
-      LOGGER.debug("PATCH DEFAULTS FOR {}: {}", entityType, request);
-
-      return getEntity(user, entityType, subType);
-
+    try {
+      return Response.ok().entity(objectMapper.writeValueAsString(patch)).build();
+    } catch (JsonProcessingException e) {
+      throw new InternalServerErrorException();
+    }
   }
 }

@@ -7,8 +7,12 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
+import com.fasterxml.jackson.core.JsonParser.Feature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
@@ -39,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -348,5 +353,86 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             });
 
     return super.onStart();
+  }
+
+  @Override
+  public CompletableFuture<Map<String, Object>> patch(String id, Map<String, Object> partialData,
+      String... path) {
+    String defaultId = Joiner.on('.').join(path);
+    Map<String, Object> defaults = partialData;
+
+    if (has(id, path)) {
+      Identifier defaultsIdentifier = Identifier.from(id, path);
+
+      Optional<EntityDataBuilder<EntityData>> newBuilder = Optional
+          .ofNullable(getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders());
+
+      if (newBuilder.isPresent()) {
+        try {
+
+          ObjectMapper mapper = valueEncodingEntity
+              .getMapper(valueEncodingEntity.getDefaultFormat());
+
+          byte[] serialize = valueEncodingEntity.serialize(partialData);
+
+          mapper.readerForUpdating(newBuilder.get()).readValue(serialize);
+
+          byte[] payload = valueEncodingEntity.serialize(newBuilder.get().build());
+
+          defaults = valueEncodingMap
+              .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat());
+
+          //TODO
+          defaults = defaults.entrySet().stream()
+              .filter(entry -> !Objects.equals(entry.getValue(), "__DEFAULT__"))
+              .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        } catch (Throwable e) {
+          LOGGER.debug("ERROR", e);
+        }
+      }
+    }
+
+    //TODO: trigger replay in eventStore
+    //TODO: does not return
+    put(defaultId, defaults);
+
+    return CompletableFuture.completedFuture(defaults);
+  }
+
+  private Map<String, Object> mergeApi(
+      Map<String, Object> origDefaults, Map<String, Object> orig,
+      ObjectMapper mapper) {
+    if (!orig.containsKey("api") || !origDefaults.containsKey("api")) {
+      return orig;
+    }
+
+    Map<String, Object> mergedExtensions = new LinkedHashMap<>();
+
+    ((List<Map<String, Object>>) origDefaults.get("api")).forEach(extensionConfiguration -> {
+      String buildingBlock = (String) extensionConfiguration.get("buildingBlock");
+      mergedExtensions.put(buildingBlock, extensionConfiguration);
+    });
+
+    ((List<Map<String, Object>>) orig.get("api")).forEach(extensionConfiguration -> {
+      String buildingBlock = (String) extensionConfiguration.get("buildingBlock");
+      if (mergedExtensions.containsKey(buildingBlock)) {
+        try {
+          Map<String, Object> merged = mapper.enable(Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER)
+              .readerForUpdating(mergedExtensions.get(buildingBlock))
+              .readValue(mapper.writeValueAsBytes(extensionConfiguration));
+          mergedExtensions.put(buildingBlock, merged);
+        } catch (Throwable e) {
+          LOGGER.debug("ERROR", e);
+        }
+      } else {
+        mergedExtensions.put(buildingBlock, extensionConfiguration);
+      }
+    });
+
+    LinkedHashMap<String, Object> fin = Maps.newLinkedHashMap(orig);
+    fin.put("api", mergedExtensions.values());
+
+    return fin;
   }
 }
