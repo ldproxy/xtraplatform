@@ -13,6 +13,8 @@ import java.util.Map;
 
 public interface EntityDataDefaults<T extends EntityData> {
 
+  String PLACEHOLDER = "__DEFAULT__";
+
   int getSortPriority();
 
   EntityDataBuilder<T> getBuilderWithDefaults();
