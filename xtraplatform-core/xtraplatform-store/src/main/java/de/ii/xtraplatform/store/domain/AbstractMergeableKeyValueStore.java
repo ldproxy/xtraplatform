@@ -29,7 +29,7 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
       return getEventSourcing().isInCache(identifier)
           && Objects.nonNull(
               getValueEncoding()
-                  .deserialize(identifier, payload, getValueEncoding().getDefaultFormat()));
+                  .deserialize(identifier, payload, getValueEncoding().getDefaultFormat(), false));
     } catch (Throwable e) {
       return false;
     }
@@ -52,7 +52,7 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
       byte[] merged = getValueEncoding()
           .serialize(
               getValueEncoding()
-                  .deserialize(identifier, payload, getValueEncoding().getDefaultFormat()));
+                  .deserialize(identifier, payload, getValueEncoding().getDefaultFormat(), false));
 
       return getEventSourcing()
               .pushMutationEventRaw(identifier, merged)

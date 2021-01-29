@@ -15,7 +15,7 @@ public class ValueDecoderIdValidator implements ValueDecoderMiddleware<EntityDat
     private static final Logger LOGGER = LoggerFactory.getLogger(ValueDecoderIdValidator.class);
 
     @Override
-    public EntityData process(Identifier identifier, byte[] payload, ObjectMapper objectMapper, EntityData data) throws IOException {
+    public EntityData process(Identifier identifier, byte[] payload, ObjectMapper objectMapper, EntityData data, boolean ignoreCache) throws IOException {
 
         if (!Objects.equals(identifier.id(), data.getId())) {
             LOGGER.error("Id mismatch: ignored entity '{}' because 'id' is set to '{}'", identifier.asPath(), data.getId());

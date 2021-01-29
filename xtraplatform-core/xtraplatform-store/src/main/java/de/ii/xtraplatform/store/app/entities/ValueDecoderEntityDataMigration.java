@@ -40,7 +40,7 @@ public class ValueDecoderEntityDataMigration implements ValueDecoderMiddleware<E
 
   @Override
   public EntityData process(
-      Identifier identifier, byte[] payload, ObjectMapper objectMapper, EntityData entityData)
+          Identifier identifier, byte[] payload, ObjectMapper objectMapper, EntityData entityData, boolean ignoreCache)
       throws IOException {
     if (entityData.getEntityStorageVersion() < entityData.getEntitySchemaVersion()) {
       migrateSchema(
@@ -95,7 +95,7 @@ public class ValueDecoderEntityDataMigration implements ValueDecoderMiddleware<E
     ValueDecoderWithBuilder<EntityData> valueDecoderWithBuilder =
         new ValueDecoderWithBuilder<>(identifier1 -> builderOld, eventSourcing);
     EntityData entityDataOld =
-        valueDecoderWithBuilder.process(identifier, payload, objectMapper, null);
+        valueDecoderWithBuilder.process(identifier, payload, objectMapper, null, false);
 
     String entityType = identifier.path().get(0);
 

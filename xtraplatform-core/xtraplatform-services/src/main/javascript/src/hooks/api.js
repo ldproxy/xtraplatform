@@ -128,6 +128,18 @@ const CODELISTS = gql`
     }
 `;
 
+const CODELIST = gql`
+    query($id: String!) {
+        codelist(id: $id) @rest(type: "Codelist", path: "/entities/codelists/{args.id}") {
+            id
+            createtAt
+            lastModified
+            label
+            entries
+        }
+    }
+`;
+
 const SERVICE_DEFAULTS = gql`
     query($id: String!) {
         defaults(id: $id) @rest(type: "Defaults", path: "/defaults/services/{args.id}") {
@@ -213,6 +225,7 @@ export const useServicePatch = (id) => useApiMutation(PATCH_SERVICE, id);
 export const useServiceDelete = (id) => useApiMutation(DELETE_SERVICE, id);
 export const useProvider = (id) => useApiQuery(PROVIDER, id);
 export const useCodelists = () => useApiQuery(CODELISTS);
+export const useCodelist = (id) => useApiQuery(CODELIST, id);
 export const useServiceDefaults = () => useApiQuery(SERVICE_DEFAULTS, 'ogc_api');
 export const useServiceDefaultsPatch = () => useApiMutation(PATCH_SERVICE_DEFAULTS, 'ogc_api');
 export const patchDebounce = 2500;

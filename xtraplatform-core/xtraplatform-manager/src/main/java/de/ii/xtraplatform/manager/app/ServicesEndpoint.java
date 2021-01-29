@@ -141,7 +141,7 @@ public class ServicesEndpoint implements Endpoint {
     try {
       LogContext.put(LogContext.CONTEXT.SERVICE, id);
 
-      LOGGER.debug("ADD SERVICE {}: {}", id, request);
+      //LOGGER.debug("ADD SERVICE {}: {}", id, request);
 
       Map<String, Object> autoProvider = Objects.equals(request.get("featureProviderType"), "WFS")
           ? new ImmutableMap.Builder<String, Object>()
@@ -284,12 +284,11 @@ public class ServicesEndpoint implements Endpoint {
     try {
       LogContext.put(LogContext.CONTEXT.SERVICE, id);
 
-      LOGGER.debug("PATCH SERVICE {}: {}", id, request);
+      //LOGGER.debug("PATCH SERVICE {}: {}", id, request);
 
-      return getService(user, id);
-      //ServiceData updated = serviceRepository.patch(id, request).get();
+      ServiceData updated = serviceRepository.patch(id, request).get();
 
-      //return Response.ok().entity(objectMapper.writeValueAsString(updated)).build();
+      return Response.ok().entity(objectMapper.writeValueAsString(updated)).build();
     } catch (Throwable e) {
       throw new BadRequestException("Invalid request body: " + e.getMessage());
     } finally {
@@ -305,7 +304,7 @@ public class ServicesEndpoint implements Endpoint {
     try {
       LogContext.put(LogContext.CONTEXT.SERVICE, id);
 
-      LOGGER.debug("DELETE SERVICE {}", id);
+      //LOGGER.debug("DELETE SERVICE {}", id);
 
       serviceRepository.delete(id).join();
 

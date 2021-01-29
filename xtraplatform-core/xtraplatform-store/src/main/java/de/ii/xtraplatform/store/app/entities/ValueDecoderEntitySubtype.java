@@ -30,7 +30,8 @@ public class ValueDecoderEntitySubtype implements ValueDecoderMiddleware<EntityD
 
   @Override
   public EntityData process(
-      Identifier identifier, byte[] payload, ObjectMapper objectMapper, EntityData data)
+      Identifier identifier, byte[] payload, ObjectMapper objectMapper, EntityData data,
+      boolean ignoreCache)
       throws IOException {
     if (data.getEntitySubType().isPresent()) {
       EntityDataBuilder<EntityData> builder =
@@ -42,7 +43,7 @@ public class ValueDecoderEntitySubtype implements ValueDecoderMiddleware<EntityD
         return data;
       }
 
-      if (eventSourcing.isInCache(identifier)) {
+      if (eventSourcing.isInCache(identifier) && !ignoreCache) {
         builder.from(eventSourcing.getFromCache(identifier));
       }
 

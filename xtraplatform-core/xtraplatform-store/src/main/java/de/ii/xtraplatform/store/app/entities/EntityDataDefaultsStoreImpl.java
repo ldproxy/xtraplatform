@@ -43,7 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -225,7 +224,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       byte[] payload = valueEncodingEntity.serialize(newBuilder.build());
 
       Map<String, Object> defaults = valueEncodingMap
-          .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat());
+          .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
       return new MapSubtractor().subtract(data, defaults, ignoreKeys);
 
@@ -256,7 +255,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         byte[] payload = valueEncodingEntity.serialize(data);
 
         Map<String, Object> defaults = valueEncodingMap
-            .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat());
+            .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
         //TODO
         defaults = defaults.entrySet().stream()
@@ -299,7 +298,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
       try {
         return valueEncodingBuilder.deserialize(
-            identifier, payload, valueEncodingBuilder.getDefaultFormat());
+            identifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
       } catch (IOException e) {
         LOGGER.error("Cannot load defaults for '{}': {}", identifier.asPath(), e.getMessage());
       }
@@ -312,7 +311,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       throws IOException {
     byte[] payload = valueEncodingBuilder.serialize(defaults);
     valueEncodingBuilder.deserialize(
-        identifier, payload, valueEncodingBuilder.getDefaultFormat());
+        identifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
   }
 
@@ -380,7 +379,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
           byte[] payload = valueEncodingEntity.serialize(newBuilder.get().build());
 
           defaults = valueEncodingMap
-              .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat());
+              .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
           //TODO
           defaults = defaults.entrySet().stream()
@@ -398,41 +397,5 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     put(defaultId, defaults);
 
     return CompletableFuture.completedFuture(defaults);
-  }
-
-  private Map<String, Object> mergeApi(
-      Map<String, Object> origDefaults, Map<String, Object> orig,
-      ObjectMapper mapper) {
-    if (!orig.containsKey("api") || !origDefaults.containsKey("api")) {
-      return orig;
-    }
-
-    Map<String, Object> mergedExtensions = new LinkedHashMap<>();
-
-    ((List<Map<String, Object>>) origDefaults.get("api")).forEach(extensionConfiguration -> {
-      String buildingBlock = (String) extensionConfiguration.get("buildingBlock");
-      mergedExtensions.put(buildingBlock, extensionConfiguration);
-    });
-
-    ((List<Map<String, Object>>) orig.get("api")).forEach(extensionConfiguration -> {
-      String buildingBlock = (String) extensionConfiguration.get("buildingBlock");
-      if (mergedExtensions.containsKey(buildingBlock)) {
-        try {
-          Map<String, Object> merged = mapper.enable(Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER)
-              .readerForUpdating(mergedExtensions.get(buildingBlock))
-              .readValue(mapper.writeValueAsBytes(extensionConfiguration));
-          mergedExtensions.put(buildingBlock, merged);
-        } catch (Throwable e) {
-          LOGGER.debug("ERROR", e);
-        }
-      } else {
-        mergedExtensions.put(buildingBlock, extensionConfiguration);
-      }
-    });
-
-    LinkedHashMap<String, Object> fin = Maps.newLinkedHashMap(orig);
-    fin.put("api", mergedExtensions.values());
-
-    return fin;
   }
 }

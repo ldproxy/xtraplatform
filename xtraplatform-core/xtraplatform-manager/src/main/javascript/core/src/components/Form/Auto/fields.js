@@ -91,11 +91,12 @@ const reverseTransformedFields = (fields, defaulted, changed, fieldsTransformati
     });
     //console.log('TRANS3', transformed);
 
-    Object.keys(transformed).forEach((field) => {
+    // defaults are subtracted by backend, so sending null is no longer needed
+    /*Object.keys(transformed).forEach((field) => {
         if (defaulted[field]) {
             transformed[field] = null;
         }
-    });
+    });*/
     //console.log('TRANS4', transformed);
 
     return transformed;

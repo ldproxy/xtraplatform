@@ -7,9 +7,7 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
@@ -28,7 +26,6 @@ import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
-import de.ii.xtraplatform.store.domain.entities.AbstractPersistentEntity;
 import de.ii.xtraplatform.store.domain.entities.AutoEntity;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
@@ -343,13 +340,15 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   @Override
   public Map<String,Object> asMap(Identifier identifier, EntityData entityData) throws IOException {
     return valueEncodingMap
-        .deserialize(identifier, valueEncoding.serialize(entityData), valueEncoding.getDefaultFormat());
+        .deserialize(identifier, valueEncoding.serialize(entityData), valueEncoding.getDefaultFormat(),
+            false);
   }
 
   @Override
   public EntityData fromMap(Identifier identifier, Map<String, Object> entityData) throws IOException {
     return valueEncoding
-        .deserialize(identifier, valueEncoding.serialize(entityData), valueEncoding.getDefaultFormat());
+        .deserialize(identifier, valueEncoding.serialize(entityData), valueEncoding.getDefaultFormat(),
+            false);
   }
 
   @Override
@@ -395,7 +394,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     try {
       EntityData merged =
           getValueEncoding()
-              .deserialize(identifier, payload, getValueEncoding().getDefaultFormat());
+              .deserialize(identifier, payload, getValueEncoding().getDefaultFormat(), false);
 
       Map<String, Object> map = asMap(identifier, merged);
 

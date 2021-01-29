@@ -28,11 +28,11 @@ public class ValueDecoderWithBuilder<T extends Value> implements ValueDecoderMid
   }
 
   @Override
-  public T process(Identifier identifier, byte[] payload, ObjectMapper objectMapper, T data)
+  public T process(Identifier identifier, byte[] payload, ObjectMapper objectMapper, T data, boolean ignoreCache)
       throws IOException {
     Builder<T> builder = newBuilderSupplier.apply(identifier);
 
-    if (valueCache.isInCache(identifier)) {
+    if (valueCache.isInCache(identifier) && !ignoreCache) {
       builder.from(valueCache.getFromCache(identifier));
     }
 
