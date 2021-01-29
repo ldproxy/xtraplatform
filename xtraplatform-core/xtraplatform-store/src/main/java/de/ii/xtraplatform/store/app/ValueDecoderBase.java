@@ -25,11 +25,12 @@ public class ValueDecoderBase<T> implements ValueDecoderMiddleware<T> {
   }
 
   @Override
-  public T process(Identifier identifier, byte[] payload, ObjectMapper objectMapper, T data)
+  public T process(Identifier identifier, byte[] payload, ObjectMapper objectMapper, T data,
+      boolean ignoreCache)
       throws IOException {
     T data2 = null;
 
-    if (valueCache.isInCache(identifier)) {
+    if (valueCache.isInCache(identifier) && !ignoreCache) {
       data2 = valueCache.getFromCache(identifier);
     } else {
       data2 = newInstanceSupplier.apply(identifier);

@@ -50,7 +50,7 @@ public interface ValueEncoding<T> {
 
   byte[] serialize(Map<String, Object> data);
 
-  T deserialize(Identifier identifier, byte[] payload, FORMAT format) throws IOException;
+  T deserialize(Identifier identifier, byte[] payload, FORMAT format, boolean ignoreCache) throws IOException;
 
   byte[] nestPayload(
       byte[] payload, String format, List<String> nestingPath, Optional<KeyPathAlias> keyPathAlias)

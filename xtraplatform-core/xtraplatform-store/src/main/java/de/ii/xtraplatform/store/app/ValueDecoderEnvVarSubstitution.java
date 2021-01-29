@@ -25,7 +25,7 @@ public class ValueDecoderEnvVarSubstitution implements ValueDecoderMiddleware<by
 
   @Override
   public byte[] process(
-      Identifier identifier, byte[] payload, ObjectMapper objectMapper, byte[] data)
+          Identifier identifier, byte[] payload, ObjectMapper objectMapper, byte[] data, boolean ignoreCache)
       throws IOException {
 
     final String config = new String(payload, StandardCharsets.UTF_8);

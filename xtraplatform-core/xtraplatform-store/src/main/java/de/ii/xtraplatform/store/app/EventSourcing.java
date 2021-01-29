@@ -29,7 +29,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -181,6 +180,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
               .payload(payload)
               .deleted(isDelete ? true : null)
               .format(valueEncoding.getDefaultFormat().toString())
+              .ignoreCache(true)
               .build();
 
       queue.put(identifier, completableFuture);
@@ -216,7 +216,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     Throwable error = null;
 
     try {
-      value = valueEncoding.deserialize(event.identifier(), event.payload(), payloadFormat);
+      value = valueEncoding.deserialize(event.identifier(), event.payload(), payloadFormat, Objects.equals(event.ignoreCache(), true));
 
     } catch (Throwable e) {
       error = e;

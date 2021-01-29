@@ -31,6 +31,9 @@ public interface MutationEvent extends TypedEvent, Comparable<MutationEvent> {
   @Nullable
   String format();
 
+  @Nullable
+  Boolean ignoreCache();
+
   @Override
   default int compareTo(MutationEvent mutationEvent) {
 

@@ -16,11 +16,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.io.IOContext;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
 import de.ii.xtraplatform.store.domain.Identifier;
@@ -40,7 +38,6 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.DumperOptions.Version;
 
 // TODO: make default format and supported formats configurable
@@ -131,7 +128,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
   }
 
   @Override
-  public final T deserialize(Identifier identifier, byte[] payload, FORMAT format)
+  public final T deserialize(Identifier identifier, byte[] payload, FORMAT format,
+      boolean ignoreCache)
       throws IOException {
     // "null" as payload means delete
     if (isNull(payload)) {
@@ -144,12 +142,12 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     T data = null;
 
     for (ValueDecoderMiddleware<byte[]> preProcessor : decoderPreProcessor) {
-      rawData = preProcessor.process(identifier, rawData, objectMapper, null);
+      rawData = preProcessor.process(identifier, rawData, objectMapper, null, ignoreCache);
     }
 
     try {
       for (ValueDecoderMiddleware<T> middleware : decoderMiddleware) {
-        data = middleware.process(identifier, rawData, objectMapper, data);
+        data = middleware.process(identifier, rawData, objectMapper, data, ignoreCache);
       }
 
     } catch (Throwable e) {
