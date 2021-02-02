@@ -43,7 +43,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     private final List<ValueDecoderMiddleware<byte[]>> decoderPreProcessor;
     private final List<ValueDecoderMiddleware<T>> decoderMiddleware;
 
-    ValueEncodingJackson(Jackson jackson) {
+    public ValueEncodingJackson(Jackson jackson) {
 
         ObjectMapper jsonMapper = jackson.getDefaultObjectMapper()
                                          .copy()

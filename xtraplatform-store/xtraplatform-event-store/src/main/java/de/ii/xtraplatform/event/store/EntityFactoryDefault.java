@@ -303,7 +303,7 @@ public class EntityFactoryDefault implements EntityFactory {
         String specificEntityType = getSpecificEntityType(entityType, entitySubType);
 
         if (!entityDataBuilders.containsKey(specificEntityType)) {
-            throw new IllegalStateException("no builder found for entity type " + entityType);
+            throw new IllegalStateException("no builder found for entity type " + specificEntityType);
         }
 
         try {

@@ -34,17 +34,17 @@ class ApplicationPlugin implements Plugin<Project> {
         project.afterEvaluate {
             def baseFound = false
             project.configurations.feature.dependencies.each {
-                if (it.name == 'xtraplatform-base') {
+                if (it.name == FeaturePlugin.XTRAPLATFORM_CORE) {
                     if (!includedBuilds.contains(it.name)) {
                         project.dependencies.add('app', project.dependencies.enforcedPlatform(it))
                     }
 
-                    project.dependencies.add('app', 'de.interactive_instruments:xtraplatform-runtime')
+                    project.dependencies.add('app', "de.interactive_instruments:${FeaturePlugin.XTRAPLATFORM_RUNTIME}")
                     baseFound = true
                 }
             }
             if (!baseFound) {
-                throw new IllegalStateException("You have to add 'xtraplatform-base' to configuration 'feature'")
+                throw new IllegalStateException("You have to add '${FeaturePlugin.XTRAPLATFORM_CORE}' to configuration 'feature'")
             }
         }
 
@@ -101,8 +101,9 @@ class ApplicationPlugin implements Plugin<Project> {
             }
         }
 
+        //suppress java 9+ illegal access warnings for felix and jackson afterburner as well as geotools/hsqldb
         if (JavaVersion.current().isJava9Compatible()) {
-            project.application.applicationDefaultJvmArgs  = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED']
+            project.application.applicationDefaultJvmArgs  = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED']
         }
 
         project.tasks.run.with {
@@ -114,9 +115,9 @@ class ApplicationPlugin implements Plugin<Project> {
             args dataDir.absolutePath
             standardInput = System.in
             environment 'XTRAPLATFORM_ENV', 'DEVELOPMENT'
-            //suppress java 9+ illegal access warnings for felix and jackson afterburner
+            //suppress java 9+ illegal access warnings for felix and jackson afterburner as well as geotools/hsqldb
             if (JavaVersion.current().isJava9Compatible()) {
-                jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED'
+                jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED'
             }
         }
     }
@@ -154,12 +155,12 @@ class ApplicationPlugin implements Plugin<Project> {
 
     List<File> getBundleFiles(Project project) {
         def bundlesFromFeature = project.configurations.feature.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
-            it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != 'xtraplatform-runtime' }).collect({
+            it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != FeaturePlugin.XTRAPLATFORM_RUNTIME }).collect({
                 it.file
             })
         })
         def bundlesFromFeatures = project.configurations.featureBundles.resolvedConfiguration.firstLevelModuleDependencies.collectMany({
-            it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != 'xtraplatform-runtime' }).collect({
+            it.children.collectMany({ it.moduleArtifacts }).findAll({ it.name != FeaturePlugin.XTRAPLATFORM_RUNTIME }).collect({
                 it.file
             })
         })
@@ -225,6 +226,7 @@ class ApplicationPlugin implements Plugin<Project> {
                             runtime.start();
                             
                             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                                Thread.currentThread().setName("shutdown");
                                 runtime.stop(5000);
                             }));
                         }
@@ -306,9 +308,9 @@ class ApplicationPlugin implements Plugin<Project> {
                 it.file
             })
 
-            delayedBundles += bundles.findAll({ bundle -> manifestContains(project, bundle, lateStartManifestPattern) })
-            lastBundles += bundles.findAll({ bundle -> lateStartNames.any({ bundle.name.startsWith(it) }) })
             firstBundles += bundles.findAll({ bundle -> earlyStartNames.any({ bundle.name.startsWith(it) }) })
+            lastBundles += bundles.findAll({ bundle -> !(bundle in firstBundles) && lateStartNames.any({ bundle.name.startsWith(it) }) })
+            delayedBundles += bundles.findAll({ bundle -> !(bundle in firstBundles) && !(bundle in lastBundles) && manifestContains(project, bundle, lateStartManifestPattern) })
 
             featureBundles += createBundleList(bundles.findAll({ bundle -> !(bundle in delayedBundles) && !(bundle in lastBundles) && !(bundle in firstBundles) }))
 

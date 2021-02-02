@@ -76,6 +76,11 @@ public class XtraPlatformConfiguration extends Configuration {
     public StoreConfiguration store = new StoreConfiguration();
 
     @Valid
+    @NotNull
+    @JsonProperty
+    public AuthConfig auth = new AuthConfig();
+
+    @Valid
     @JsonProperty
     public ClusterConfiguration cluster;
 

@@ -20,8 +20,6 @@ public class SplitCookieCredentialAuthFilter<P extends Principal> extends AuthFi
 
     private SplitCookieCredentialAuthFilter() {
         super();
-        this.prefix = "Bearer";
-        this.realm = "ldproxy";
     }
 
     @Override

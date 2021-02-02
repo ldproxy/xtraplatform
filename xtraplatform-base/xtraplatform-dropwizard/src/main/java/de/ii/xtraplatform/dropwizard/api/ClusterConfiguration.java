@@ -31,7 +31,7 @@ public class ClusterConfiguration {
         public Integer nodeId;
 
         @Valid
-        @Pattern(regexp = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}")
+        //@Pattern(regexp = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}")
         @JsonProperty
         public String host;
 

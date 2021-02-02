@@ -240,8 +240,10 @@ public class EntityStore extends AbstractMergeableKeyValueStore<EntityData> impl
 
     @Override
     protected void onUpdate(Identifier identifier, EntityData entityData) {
+        EntityData hydratedData = hydrate(identifier, entityData);
+
         entityFactory.updateInstance(identifier.path()
-                                               .get(0), identifier.id(), entityData);
+                                               .get(0), identifier.id(), hydratedData);
     }
 
     @Override

@@ -31,7 +31,8 @@ import org.apache.felix.ipojo.annotations.StaticServiceProperty;
 @Component
 @Provides(properties = {@StaticServiceProperty(name = "type", type = "java.lang.String", value = "auth"),
         @StaticServiceProperty(name = "ranking", type = "int", value = "1")})
-@Instantiate
+//TODO: ranking mechanism not working
+//@Instantiate
 public class ExternalBearerAuthProvider implements AuthProvider<User> {
 
     private final Dropwizard dropwizard;

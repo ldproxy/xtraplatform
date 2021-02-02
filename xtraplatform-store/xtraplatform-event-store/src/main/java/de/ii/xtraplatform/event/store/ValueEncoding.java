@@ -9,7 +9,13 @@ import java.util.Optional;
 public interface ValueEncoding<T> {
 
     enum FORMAT {
-        UNKNOWN, JSON, YML, YAML/*, ION*/;
+        UNKNOWN(""), JSON("json"), YML("yml"), YAML("yaml")/*, ION*/;
+
+        private final String extension;
+
+        FORMAT(String extension) {
+            this.extension = extension;
+        }
 
         static FORMAT fromString(String format) {
             if (Objects.isNull(format)) {
@@ -17,12 +23,17 @@ public interface ValueEncoding<T> {
             }
 
             for (FORMAT f: values()) {
-                if (Objects.equals(f.name(), format.toUpperCase())) {
+                if (Objects.equals(f.extension, format.toLowerCase())) {
                     return f;
                 }
             }
 
             throw new IllegalArgumentException();
+        }
+
+        @Override
+        public String toString() {
+            return extension;
         }
     }
 

@@ -146,7 +146,7 @@ public class FileSystemEvents {
     }
 
     private Path getEventFilePath(String type, Identifier identifier, String format, String pathPattern) {
-        return rootPath.resolve(Paths.get(String.format(pathPattern, type, Joiner.on('/').join(identifier.path()), identifier.id()) + (Objects.nonNull(format) ? "." + format.toLowerCase() : "")));
+        return rootPath.resolve(Paths.get(String.format(pathPattern, type, Joiner.on('/').join(identifier.path()), identifier.id()) + (Objects.nonNull(format) && !format.isEmpty() ? "." + format.toLowerCase() : "")));
     }
 
     private Stream<MutationEvent> loadEventStream(Pattern pathPattern) {

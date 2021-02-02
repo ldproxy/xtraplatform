@@ -31,12 +31,12 @@ import java.util.Collection;
 @Component
 @Provides
 @Instantiate
-@Whiteboards(whiteboards = {
+/*@Whiteboards(whiteboards = {
         @Wbp(
                 filter = "(objectClass=de.ii.xtraplatform.service.api.AdminServiceResource)",
                 onArrival = "onServiceResourceArrival",
                 onDeparture = "onServiceResourceDeparture")
-})
+})*/
 
 @Path("/admin/")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)

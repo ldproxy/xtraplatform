@@ -54,12 +54,15 @@ public class InternalBearerAuthProvider implements AuthProvider<User> {
         AuthFilter<String, User> authFilter = new SplitCookieCredentialAuthFilter.Builder<User>()
                 .setAuthenticator(cachingAuthenticator)
                 .setAuthorizer(new UserAuthorizer())
+                .setPrefix("Bearer")
+                .setRealm("xtraplatform")
                 .buildAuthFilter();
 
         AuthFilter<String, User> authFilter2 = new OAuthCredentialAuthFilter.Builder<User>()
                 .setAuthenticator(cachingAuthenticator)
                 .setAuthorizer(new UserAuthorizer())
                 .setPrefix("Bearer")
+                .setRealm("xtraplatform")
                 .buildAuthFilter();
 
         return new AuthDynamicFeature(new ChainedAuthFilter<String, User>(Lists.newArrayList(authFilter, authFilter2)));

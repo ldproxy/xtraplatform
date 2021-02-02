@@ -112,8 +112,7 @@ public class JwtTokenHandler implements TokenHandler {
         authConfig.jwtSigningKey = Base64.getEncoder()
                                           .encodeToString(key.getEncoded());
 
-        //TODO
-        LOGGER.warn("No valid jwtSigningKey found in cfg.yml, using {}. ", authConfig.jwtSigningKey);
+        LOGGER.warn("No valid 'jwtSigningKey' found in 'cfg.yml', using '{}'. If you do not set 'jwtSigningKey', it will change on every restart.", authConfig.jwtSigningKey);
 
         return key;
     }
