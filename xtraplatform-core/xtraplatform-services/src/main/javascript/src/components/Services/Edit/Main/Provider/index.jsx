@@ -67,7 +67,7 @@ const ServiceEditProvider = ({ id, api, debounce, onPending, onChange }) => {
                             <TextField
                                 name='schemas'
                                 label={t('services/ogc_api:services.datasource.schemas')}
-                                value={connectionInfo.schemas}
+                                value={connectionInfo.schemas && connectionInfo.schemas.join()}
                                 readOnly
                             />
                             <TextField

@@ -33,6 +33,7 @@ const ServiceEditGeneral = ({
     return (
         <Box pad={{ horizontal: 'small', vertical: 'medium' }} fill='horizontal'>
             <AutoForm
+                key={id}
                 fields={fields}
                 fieldsDefault={fieldsDefault}
                 inheritedLabel={inheritedLabel}
