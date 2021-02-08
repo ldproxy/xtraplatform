@@ -61,8 +61,10 @@ public class XtraPlatformConfiguration extends Configuration {
   }
 
   // TODO: not used anymore, but removing breaks backwards compatibility
+  @Deprecated
   @JsonProperty public boolean useFormattedJsonOutput;
 
+  @Deprecated
   @JsonProperty public boolean allowServiceReAdding;
 
   /*

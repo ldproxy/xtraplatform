@@ -33,7 +33,7 @@ public class AuthConfig {
     }
   }
 
-  @Valid @NotNull @JsonProperty public boolean isAnonymousAccessAllowed = false;
+  @Valid @NotNull @JsonProperty public boolean allowAnonymousAccess = false;
 
   @Valid
   // @NotNull

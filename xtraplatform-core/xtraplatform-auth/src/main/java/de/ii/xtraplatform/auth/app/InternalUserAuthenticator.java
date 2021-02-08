@@ -14,6 +14,7 @@ import de.ii.xtraplatform.auth.domain.UserAuthenticator;
 import de.ii.xtraplatform.dropwizard.domain.ConfigurationProvider;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -35,6 +36,7 @@ public class InternalUserAuthenticator implements UserAuthenticator {
           .id("admin")
           .password(PasswordHash.createHash("admin"))
           .role(Role.SUPERADMIN)
+          .passwordExpiresAt(0)
           .build();
 
   private final boolean isAccessRestricted;
@@ -44,9 +46,9 @@ public class InternalUserAuthenticator implements UserAuthenticator {
       @Requires ConfigurationProvider configurationProvider,
       @Requires EntityDataStore<EntityData> entityRepository) {
     this.isAccessRestricted =
-        Optional.ofNullable(configurationProvider.getConfiguration().store)
-            .map(storeConfiguration -> storeConfiguration.secured)
-            .orElse(false);
+        Optional.ofNullable(configurationProvider.getConfiguration().auth)
+            .map(authConfig -> !authConfig.allowAnonymousAccess)
+            .orElse(true);
     this.userRepository = entityRepository.forType(de.ii.xtraplatform.auth.app.User.UserData.class);
   }
 
@@ -64,8 +66,11 @@ public class InternalUserAuthenticator implements UserAuthenticator {
             userData.getRole(),
             PasswordHash.createHash(password));
 
+        long now = Instant.now().toEpochMilli();
+
         return Optional.of(
-            ImmutableUser.builder().name(userData.getId()).role(userData.getRole()).build());
+            ImmutableUser.builder().name(userData.getId()).role(userData.getRole())
+                .forceChangePassword(userData.getPasswordExpiresAt().orElse(now) < now).build());
       }
     }
 

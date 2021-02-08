@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect } from 'react';
-import { gql, useQuery, useMutation } from '@apollo/client';
-import { useAuth } from '@xtraplatform/manager';
+import React from 'react';
+import { gql } from '@apollo/client';
+import { useApiQuery, useApiMutation } from '@xtraplatform/manager';
 
 const SERVICES = gql`
     query {
@@ -171,51 +171,6 @@ const PATCH_SERVICE_DEFAULTS = gql`
         }
     }
 `;
-
-const signoutIfNotAuthorized = (result) => {
-    const [auth, signin, signout] = useAuth();
-
-    useEffect(() => {
-        if (
-            result.error &&
-            result.error.networkError &&
-            result.error.networkError.statusCode === 401 &&
-            auth.user
-        ) {
-            signout(auth.user);
-        }
-    }, [result, auth, signout]);
-};
-
-const useApiQuery = (query, id) => {
-    const result = useQuery(query, { variables: { id } });
-
-    signoutIfNotAuthorized(result);
-
-    return result;
-};
-
-const useApiMutation = (query, id) => {
-    const [doPatch, result] = useMutation(query);
-
-    const patchWrapper = (patch) => {
-        //useCallback(
-        console.log('CHANGE REQUEST', id, patch);
-        return doPatch({ variables: { id, input: patch } })
-            .then((result2) => {
-                console.log('CHANGE RESPONSE', result2);
-
-                signoutIfNotAuthorized(result2);
-            })
-            .catch((error) => {
-                if (error && error.networkError && error.networkError.statusCode) {
-                    console.log('CHANGE ERROR', error.networkError.statusCode);
-                }
-            });
-    };
-    //,[doPatch, id]);
-    return [patchWrapper, result];
-};
 
 export const useServices = () => useApiQuery(SERVICES);
 export const useService = (id) => useApiQuery(SERVICE, id);

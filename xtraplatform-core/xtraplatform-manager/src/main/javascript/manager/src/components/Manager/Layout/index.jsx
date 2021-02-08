@@ -12,8 +12,8 @@ const ManagerLayout = ({ appName, menuRoutes, sidebar, content }) => {
     const [{ isMenuOpen }, { toggleMenu }] = useView();
     const history = useHistory();
 
-    const isLoggedIn = !!auth.user;
-    const isLoggingIn = !!auth.loading;
+    const isLoggedIn = !!auth.user && !auth.user.forceChangePassword;
+    const isLoggingIn = !!auth.loading || (!!auth.user && !!auth.user.forceChangePassword);
     const isNotAuthorized = !!auth.error;
 
     if (process.env.NODE_ENV !== 'production') {
