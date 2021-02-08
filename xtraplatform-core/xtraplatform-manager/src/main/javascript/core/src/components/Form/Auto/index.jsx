@@ -23,10 +23,11 @@ const AutoForm = ({
     children,
     onPending,
     onChange,
+    onSubmit: extOnSubmit,
+    onCancel: extOnCancel,
 }) => {
-    const [intValues, setIntState] = useState(
-        mergedFields(fields, fieldsDefault, fieldsTransformation)
-    );
+    const initialFields = mergedFields(fields, fieldsDefault, fieldsTransformation);
+    const [intValues, setIntState] = useState(initialFields);
 
     const values = extValues && setExtValues ? extValues : intValues;
     const setValues = (change) => {
@@ -40,8 +41,10 @@ const AutoForm = ({
     // workaround with hidden button because Safari does not support form.requestSubmit()
     const submitButton = useRef(null);
     const submit = useCallback(() => submitButton.current.click(), [submitButton]);
+    const resetButton = useRef(null);
+    const reset = useCallback(() => resetButton.current.click(), [resetButton]);
 
-    const useSubmit = debounce > 0 ? useDebounce : useOnChange;
+    const useSubmit = debounce > 0 ? useDebounce : extOnSubmit ? () => {} : useOnChange;
 
     useSubmit(values, submit, debounce);
 
@@ -58,6 +61,11 @@ const AutoForm = ({
         }
         console.log('SAVE', value, touched, defaulted);
         const changes = changedFields(value, touched, defaulted, fieldsTransformation);
+
+        if (extOnSubmit) {
+            extOnSubmit(changes, reset);
+            return;
+        }
 
         if (onChange && changes) onChange(changes);
     };
@@ -79,8 +87,9 @@ const AutoForm = ({
     });
 
     return (
-        <Form value={values} onChange={setValues} onSubmit={onSubmit}>
+        <Form value={values} onChange={setValues} onSubmit={onSubmit} onReset={extOnCancel}>
             <HiddenButton type='submit' ref={submitButton} onClick={(e) => e.stopPropagation()} />
+            <HiddenButton type='reset' ref={resetButton} onClick={(e) => e.stopPropagation()} />
             {newChildren}
         </Form>
     );

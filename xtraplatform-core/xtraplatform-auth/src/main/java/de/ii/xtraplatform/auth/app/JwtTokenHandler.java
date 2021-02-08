@@ -49,12 +49,17 @@ public class JwtTokenHandler implements TokenHandler {
 
   @Override
   public String generateToken(User user, int expiresIn, boolean rememberMe) {
+    return generateToken(user, Date.from(Instant.now().plus(expiresIn, ChronoUnit.MINUTES)), rememberMe);
+  }
+
+  @Override
+  public String generateToken(User user, Date expiration, boolean rememberMe) {
     JwtBuilder jwtBuilder =
         new DefaultJwtBuilder()
             .setSubject(user.getName())
             .claim(authConfig.getUserRoleKey, user.getRole().toString())
             .claim("rememberMe", rememberMe)
-            .setExpiration(Date.from(Instant.now().plus(expiresIn, ChronoUnit.MINUTES)));
+            .setExpiration(expiration);
     if (user.getForceChangePassword()) {
       jwtBuilder.claim("forceChangePassword", true);
     }

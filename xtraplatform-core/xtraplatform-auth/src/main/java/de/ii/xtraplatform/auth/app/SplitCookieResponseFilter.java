@@ -7,17 +7,21 @@
  */
 package de.ii.xtraplatform.auth.app;
 
+import de.ii.xtraplatform.auth.app.User.UserData;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.SecurityContext;
+import de.ii.xtraplatform.store.domain.entities.EntityData;
+import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -33,13 +37,14 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
   private static final Logger LOGGER = LoggerFactory.getLogger(SplitCookieResponseFilter.class);
 
   private final XtraPlatform xtraPlatform;
-
   private final TokenHandler tokenHandler;
+  private final EntityDataStore<UserData> userRepository;
 
   public SplitCookieResponseFilter(
-      @Requires XtraPlatform xtraPlatform, @Requires TokenHandler tokenHandler) {
+      @Requires XtraPlatform xtraPlatform, @Requires TokenHandler tokenHandler, @Requires EntityDataStore<EntityData> entityRepository) {
     this.xtraPlatform = xtraPlatform;
     this.tokenHandler = tokenHandler;
+    this.userRepository = entityRepository.forType(de.ii.xtraplatform.auth.app.User.UserData.class);
   }
 
   @Override
@@ -70,12 +75,17 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
       boolean rememberMe =
           tokenHandler.parseTokenClaim(token.get(), "rememberMe", Boolean.class).orElse(false);
 
+      // if forceChangePassword was enabled but userData no longer contains passwordExpiresAt, disable forceChangePassword
       if (forceChangePassword) {
         Optional<User> user = tokenHandler.parseToken(token.get());
-        boolean toggleForceChangePassword = !user.map(User::getForceChangePassword).orElse(false);
+        Optional<UserData> userData = user.flatMap(user1 -> Optional.ofNullable(userRepository.get(user1.getName())));
 
-        if (user.isPresent() && toggleForceChangePassword) {
-          token = Optional.of(tokenHandler.generateToken(user.get(), 60, rememberMe));
+        boolean disableForceChangePassword = !userData.map(user1 -> user1.getPasswordExpiresAt().isPresent()).orElse(false);
+
+        if (user.isPresent() && disableForceChangePassword) {
+          Optional<Date> exp =
+              tokenHandler.parseTokenClaim(token.get(), "exp", Date.class);
+          token = Optional.of(exp.isPresent() ? tokenHandler.generateToken(user.get(), exp.get(), rememberMe) : tokenHandler.generateToken(user.get(), 60, rememberMe));
         }
       }
 

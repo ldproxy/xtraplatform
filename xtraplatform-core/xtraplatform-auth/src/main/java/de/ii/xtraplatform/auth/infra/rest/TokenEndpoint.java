@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -30,6 +31,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -65,17 +67,10 @@ public class TokenEndpoint implements Endpoint {
   public Response authorize(@Context HttpServletRequest request, Map<String, String> body)
       throws IOException {
 
-    Optional<User> user;
-
-    // TODO: get from cfg.yml, makes it easier to set different defaults for different products
-    if (authConfig.isAnonymousAccessAllowed) {
-      user = Optional.of(ImmutableUser.builder().name("admin").role(Role.ADMIN).build());
-    } else {
-      user = authenticator.authenticate(body.get("user"), body.get("password"));
-    }
+    Optional<User> user = authenticator.authenticate(body.get("user"), body.get("password"));
 
     if (!user.isPresent()) {
-      return Response.ok().build();
+      return Response.status(Status.BAD_REQUEST).entity("userOrPasswordInvalid").build();
     }
 
     int expiresIn =

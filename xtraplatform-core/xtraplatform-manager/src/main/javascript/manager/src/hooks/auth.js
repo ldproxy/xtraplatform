@@ -44,11 +44,19 @@ const parseToken = (response) => {
         console.log('NO AUTH', response);
     }
 
-    return {
-        user: null,
-        error: response && response.error ? response.error : 'Not authorized',
-        expired: false,
-    };
+    return response && !response.ok
+        ? response.text().then((text) => {
+              return {
+                  user: null,
+                  error: text || 'Not authorized',
+                  expired: false,
+              };
+          })
+        : {
+              user: null,
+              error: 'Not authorized',
+              expired: false,
+          };
 };
 
 const clearToken = () => {
@@ -71,11 +79,12 @@ export const useProvideAuth = (baseUrl, allowAnonymousAccess) => {
     const [state, setState] = useState({});
 
     const signin = useCallback(
-        (credentials) => {
+        (credentials, ignoreErrors) => {
             setState({ loading: true });
             return getToken(baseUrl, credentials).then((token) => {
-                setState(token);
-                return token;
+                const token2 = ignoreErrors ? { ...token, error: null, ignoredError: true } : token;
+                setState(token2);
+                return token2;
             });
         },
         [baseUrl]
@@ -88,14 +97,21 @@ export const useProvideAuth = (baseUrl, allowAnonymousAccess) => {
         return setState(clearToken());
     }, []);
 
+    const refresh = useCallback(() => {
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('reparsing token');
+        }
+        return setState(parseToken());
+    }, []);
+
     useEffect(() => {
-        if (!state.user && !state.loading && !state.error) {
+        if (!state.user && !state.loading && !state.error && !state.ignoredError) {
             const token = parseToken();
-            // try anonymous signin
+            // try anonymous signin, only once
             if (token.error /*&& allowAnonymousAccess*/) {
                 // eslint-disable-next-line no-inner-declarations
                 async function waitForSignin() {
-                    const auth = await signin({ rememberMe: true });
+                    const auth = await signin({ rememberMe: true }, true);
                 }
                 waitForSignin();
             } else {
@@ -105,5 +121,5 @@ export const useProvideAuth = (baseUrl, allowAnonymousAccess) => {
     }, [allowAnonymousAccess, signin, state]);
 
     // Return the user object and auth methods
-    return [state, signin, signout];
+    return [state, signin, signout, refresh];
 };

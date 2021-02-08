@@ -1,15 +1,32 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 import { Box, Text, DropButton, Button, Menu } from 'grommet';
 import { User } from 'grommet-icons';
 
 const UserActions = ({ name, onLogout, onChangePassword }) => {
+    const { t } = useTranslation();
+    //TODO: i18n for all user forms
     const items = [
         {
-            label: name,
+            label: (
+                <Text color='light-1' weight='bold'>
+                    {name}
+                </Text>
+            ),
+            color: '#ffffff',
+            active: true,
+        },
+        {
+            label: t('services/ogc_api:manager.changePassword._label'),
             color: 'light-1',
-            disabled: true,
+            onClick: onChangePassword,
+        },
+        {
+            label: t('services/ogc_api:manager.logout._label'),
+            color: 'light-1',
+            onClick: onLogout,
         },
     ];
     return (

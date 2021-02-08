@@ -7,11 +7,14 @@
  */
 package de.ii.xtraplatform.auth.domain;
 
+import java.util.Date;
 import java.util.Optional;
 
 public interface TokenHandler {
 
   String generateToken(User user, int expiresIn, boolean rememberMe);
+
+  String generateToken(User user, Date expiration, boolean rememberMe);
 
   Optional<User> parseToken(String token);
 
