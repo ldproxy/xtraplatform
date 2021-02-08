@@ -9,6 +9,7 @@ package de.ii.xtraplatform.manager.app;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ObjectArrays;
@@ -167,6 +168,7 @@ public class ServicesEndpoint implements Endpoint {
                   .put("database", request.get("database"))
                   .put("user", request.get("user"))
                   .put("password", request.get("password"))
+                  .put("schemas", Optional.ofNullable(request.get("schemas")).map(schemas -> Splitter.on(',').trimResults().omitEmptyStrings().split(schemas)).orElse(ImmutableList.of()))
                   .build())
               .build();
 

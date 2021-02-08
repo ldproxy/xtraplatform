@@ -55,7 +55,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Component(publicFactory = false)
 @Provides
 @Instantiate
@@ -85,7 +87,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.valueEncodingMap = new ValueEncodingJackson<>(jackson);
     this.eventSourcing =
         new EventSourcing<>(
-            eventStore, EVENT_TYPES, valueEncoding, this::onStart, Optional.of(this::processEvent), Optional.of(this::onUpdate));
+            eventStore, EVENT_TYPES, valueEncoding, this::onStart, Optional.of(this::processEvent),
+            Optional.of(this::onUpdate));
     this.defaultsStore = defaultsStore;
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
@@ -98,17 +101,19 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             eventSourcing, entityFactory, this::addAdditionalEvent));
     valueEncoding.addDecoderMiddleware(new ValueDecoderIdValidator());
 
-    valueEncodingMap.addDecoderMiddleware(new ValueDecoderBase<>(identifier -> new LinkedHashMap<>(), new ValueCache<Map<String, Object>>() {
-      @Override
-      public boolean isInCache(Identifier identifier) {
-        return false;
-      }
+    valueEncodingMap.addDecoderMiddleware(
+        new ValueDecoderBase<>(identifier -> new LinkedHashMap<>(),
+            new ValueCache<Map<String, Object>>() {
+              @Override
+              public boolean isInCache(Identifier identifier) {
+                return false;
+              }
 
-      @Override
-      public Map<String, Object> getFromCache(Identifier identifier) {
-        return null;
-      }
-    }));
+              @Override
+              public Map<String, Object> getFromCache(Identifier identifier) {
+                return null;
+              }
+            }));
   }
 
   // TODO: it seems this is needed for correct order (defaults < entities)
@@ -133,7 +138,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       // use mutable copy of map to allow null values
       Map<String, Object> modified = Maps.newHashMap(partialData);
       modified.put("lastModified", Instant.now()
-                                          .toEpochMilli());
+          .toEpochMilli());
       return modified;
       /*return ImmutableMap.<String, Object>builder()
           .putAll(partialData)
@@ -277,7 +282,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected CompletableFuture<Void> onCreate(Identifier identifier, EntityData entityData) {
-    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
+    try (MDC.MDCCloseable closeable = LogContext
+        .putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("Entity creating: {}", identifier);
       }
@@ -302,7 +308,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected void onUpdate(Identifier identifier, EntityData entityData) {
-    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
+    try (MDC.MDCCloseable closeable = LogContext
+        .putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
       LOGGER.debug("Reloading entity: {}", identifier);
       EntityData hydratedData = hydrateData(identifier, entityData);
 
@@ -338,16 +345,20 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   @Override
-  public Map<String,Object> asMap(Identifier identifier, EntityData entityData) throws IOException {
+  public Map<String, Object> asMap(Identifier identifier, EntityData entityData)
+      throws IOException {
     return valueEncodingMap
-        .deserialize(identifier, valueEncoding.serialize(entityData), valueEncoding.getDefaultFormat(),
+        .deserialize(identifier, valueEncoding.serialize(entityData),
+            valueEncoding.getDefaultFormat(),
             false);
   }
 
   @Override
-  public EntityData fromMap(Identifier identifier, Map<String, Object> entityData) throws IOException {
+  public EntityData fromMap(Identifier identifier, Map<String, Object> entityData)
+      throws IOException {
     return valueEncoding
-        .deserialize(identifier, valueEncoding.serialize(entityData), valueEncoding.getDefaultFormat(),
+        .deserialize(identifier, valueEncoding.serialize(entityData),
+            valueEncoding.getDefaultFormat(),
             false);
   }
 
@@ -399,10 +410,13 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Map<String, Object> map = asMap(identifier, merged);
 
       Map<String, Object> withoutDefaults = defaultsStore
-          .subtractDefaults(identifier, merged.getEntitySubType(), map, ImmutableList.of("enabled"));
+          .subtractDefaults(identifier, merged.getEntitySubType(), map,
+              ImmutableList.of("enabled"));
+
+      Map<String, Object> withoutResetted = subtractResetted(withoutDefaults, partialData);
 
       return getEventSourcing()
-          .pushPartialMutationEvent(identifier, withoutDefaults)
+          .pushPartialMutationEvent(identifier, withoutResetted)
           .whenComplete(
               (entityData, throwable) -> {
                 if (Objects.nonNull(entityData)) {
@@ -415,6 +429,25 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       //never reached, will fail in isUpdateValid
       return CompletableFuture.failedFuture(e);
     }
+  }
+
+  private Map<String, Object> subtractResetted(Map<String, Object> source,
+      Map<String, Object> potentialNulls) {
+    Map<String, Object> result = new LinkedHashMap<>();
+
+    source.forEach((key, value) -> {
+      if (potentialNulls.containsKey(key) && Objects.isNull(potentialNulls.get(key))) {
+        return;
+      }
+
+      Object newValue =
+          value instanceof Map && potentialNulls.get(key) instanceof Map ? subtractResetted(
+              (Map<String, Object>) value, (Map<String, Object>) potentialNulls.get(key)) : value;
+
+      result.put(key, newValue);
+    });
+
+    return result;
   }
 
   private EntityData hydrateData(Identifier identifier, EntityData entityData) {
@@ -430,29 +463,30 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             Map<String, Object> map = asMap(identifier, hydratedData);
 
             Map<String, Object> withoutDefaults = defaultsStore
-                    .subtractDefaults(identifier, entityData.getEntitySubType(), map,
-                        ImmutableList.of());
+                .subtractDefaults(identifier, entityData.getEntitySubType(), map,
+                    ImmutableList.of());
 
             putPartialWithoutTrigger(identifier, withoutDefaults).join();
             LOGGER.info(
-                    "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-                    identifier.path()
-                              .get(0),
-                    entityData.getId());
+                "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
+                identifier.path()
+                    .get(0),
+                entityData.getId());
           } catch (IOException e) {
             LOGGER.error(
-                    "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved: {}",
-                    identifier.path()
-                              .get(0),
-                    entityData.getId(),
-                    e.getMessage());
+                "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved: {}",
+                identifier.path()
+                    .get(0),
+                entityData.getId(),
+                e.getMessage());
           }
 
         } else {
-          LOGGER.warn("Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
-                  identifier.path()
-                            .get(0),
-                  entityData.getId());
+          LOGGER.warn(
+              "Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
+              identifier.path()
+                  .get(0),
+              entityData.getId());
         }
       }
     }
