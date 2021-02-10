@@ -59,8 +59,10 @@ const AutoForm = ({
             }
             return;
         }
-        console.log('SAVE', value, touched, defaulted);
+
         const changes = changedFields(value, touched, defaulted, fieldsTransformation);
+
+        console.log('SAVE', value, touched, defaulted, changes);
 
         if (extOnSubmit) {
             extOnSubmit(changes, reset);

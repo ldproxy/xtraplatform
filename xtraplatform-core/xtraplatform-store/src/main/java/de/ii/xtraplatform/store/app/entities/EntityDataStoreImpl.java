@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.store.app.entities;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
@@ -23,6 +24,7 @@ import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
+import de.ii.xtraplatform.store.domain.KeyPathAliasUnwrap;
 import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
@@ -37,6 +39,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,6 +49,8 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -442,13 +447,69 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
       Object newValue =
           value instanceof Map && potentialNulls.get(key) instanceof Map ? subtractResetted(
-              (Map<String, Object>) value, (Map<String, Object>) potentialNulls.get(key)) : value;
+              (Map<String, Object>) value, (Map<String, Object>) potentialNulls.get(key))
+              : value instanceof List && potentialNulls.get(key) instanceof List ? subtractResetted(
+                  (List<Object>) value, (List<Object>) potentialNulls.get(key), key)
+                  : value instanceof List && potentialNulls.get(key) instanceof Map
+                      ? subtractResetted(
+                      (List<Object>) value, (Map<String, Object>) potentialNulls.get(key)) : value;
 
       result.put(key, newValue);
     });
 
     return result;
   }
+
+  private List<Object> subtractResetted(List<Object> source,
+      List<Object> potentialNulls, String parentKey) {
+    if (!reverseAliases.containsKey(parentKey)) {
+      return source;
+    }
+
+    List<Object> result = new ArrayList<>();
+    KeyPathAliasUnwrap aliasUnwrap = reverseAliases.get(parentKey);
+
+    Map<String, Object> resetted = subtractResetted(aliasUnwrap.wrapMap(source),
+        aliasUnwrap.wrapMap(potentialNulls));
+    resetted.forEach((s, o) -> {
+      ((Map<String, Object>) o).remove("buildingBlock");
+    });
+
+    List<Object> collect = resetted.entrySet().stream()
+        .flatMap(entry -> {
+          return entityFactory.getKeyPathAlias(entry.getKey())
+              .map(keyPathAlias1 -> {
+                return keyPathAlias1.wrapMap(
+                    (Map<String, Object>) entry.getValue()).values().stream().flatMap(coll -> {
+                  return ((List<Object>) coll).stream();
+                });
+              }).orElse(Stream.empty());
+        }).collect(Collectors.toList());
+
+    return collect;
+  }
+
+  private List<Object> subtractResetted(List<Object> source,
+      Map<String, Object> potentialNulls) {
+    List<Object> result = new ArrayList<>();
+
+    source.forEach(item -> {
+      if (potentialNulls.containsKey(item) && Objects.isNull(potentialNulls.get(item))) {
+        return;
+      }
+
+      result.add(item);
+    });
+
+    return result;
+  }
+
+  //TODO: get from entityFactory
+  private static Map<String, KeyPathAliasUnwrap> reverseAliases = ImmutableMap
+      .of("api", value -> ((List<Map<String, Object>>) value).stream()
+          .map(buildingBlock -> new AbstractMap.SimpleImmutableEntry<String, Object>(
+              ((String) buildingBlock.get("buildingBlock")).toLowerCase(), buildingBlock))
+          .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)));
 
   private EntityData hydrateData(Identifier identifier, EntityData entityData) {
     EntityData hydratedData = entityData;

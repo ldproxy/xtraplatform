@@ -14,6 +14,7 @@ const SelectField = ({
     readOnly,
     disabled,
     value,
+    clear,
     onClose,
     onSearch,
     ...rest
@@ -28,6 +29,7 @@ const SelectField = ({
                 readOnly={readOnly}
                 disabled={disabled}
                 value={readOnly || disabled ? value : undefined}
+                clear={clear}
                 closeOnChange={!multiple}
                 onClose={onClose}
                 onSearch={onSearch}
