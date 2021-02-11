@@ -13,7 +13,7 @@
         "@neutrinojs/eslint": "^9.3.0",
         "@neutrinojs/mocha": "^9.3.0",
         "@storybook/source-loader": "^6.0.14",
-        "@xtraplatform/core": "^2.0.0-beta.7",
+        "@xtraplatform/core": "^2.0.0-beta.8",
         "@xtraplatform/neutrino": "^2.0.0-beta.4",
         "chalk": "^4.1.0",
         "yeoman-environment": "^2.10.3",
