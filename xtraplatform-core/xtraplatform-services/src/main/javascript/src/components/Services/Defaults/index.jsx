@@ -5,7 +5,12 @@ import { useHistory, useParams } from 'react-router-dom';
 import { Content, Async } from '@xtraplatform/core';
 import Header from './Header';
 import Main from './Main';
-import { useServiceDefaults, useServiceDefaultsPatch, patchDebounce } from '../../../hooks';
+import {
+    useServiceDefaults,
+    useServiceDefaultsPatch,
+    useInvalidateCache,
+    patchDebounce,
+} from '../../../hooks';
 
 const ServiceEditDefaults = () => {
     const history = useHistory();
@@ -14,6 +19,7 @@ const ServiceEditDefaults = () => {
         patchDefaults,
         { loading: mutationLoading, error: mutationError, data: mutationSuccess },
     ] = useServiceDefaultsPatch();
+    const invalidateCache = useInvalidateCache();
     const [mutationPending, setPending] = useState(false);
 
     const onCancel = () => history.push('/services');
@@ -23,7 +29,7 @@ const ServiceEditDefaults = () => {
     const onChange = useCallback(
         (finalChanges) => {
             if (Object.keys(finalChanges).length > 0) {
-                patchDefaults(finalChanges);
+                patchDefaults(finalChanges).then(() => invalidateCache());
                 setPending(false);
             }
         },

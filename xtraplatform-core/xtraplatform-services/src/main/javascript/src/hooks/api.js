@@ -1,5 +1,5 @@
 import React from 'react';
-import { gql } from '@apollo/client';
+import { useApolloClient, gql } from '@apollo/client';
 import { useApiQuery, useApiMutation } from '@xtraplatform/manager';
 
 const SERVICES = gql`
@@ -183,4 +183,8 @@ export const useCodelists = () => useApiQuery(CODELISTS);
 export const useCodelist = (id) => useApiQuery(CODELIST, id);
 export const useServiceDefaults = () => useApiQuery(SERVICE_DEFAULTS, 'ogc_api');
 export const useServiceDefaultsPatch = () => useApiMutation(PATCH_SERVICE_DEFAULTS, 'ogc_api');
+export const useInvalidateCache = () => {
+    const client = useApolloClient();
+    return () => client.resetStore();
+};
 export const patchDebounce = 2500;
