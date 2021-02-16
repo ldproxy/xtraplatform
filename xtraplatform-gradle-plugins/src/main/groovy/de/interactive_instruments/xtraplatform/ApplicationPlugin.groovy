@@ -46,6 +46,9 @@ class ApplicationPlugin implements Plugin<Project> {
             if (!baseFound) {
                 throw new IllegalStateException("You have to add '${FeaturePlugin.XTRAPLATFORM_CORE}' to configuration 'feature'")
             }
+        
+            //suppress java 9+ illegal access warnings for felix and jackson afterburner as well as geotools/hsqldb
+            project.application.applicationDefaultJvmArgs  += ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED']
         }
 
         project.repositories {
@@ -99,11 +102,6 @@ class ApplicationPlugin implements Plugin<Project> {
                     into "bundles"
                 }
             }
-        }
-
-        //suppress java 9+ illegal access warnings for felix and jackson afterburner as well as geotools/hsqldb
-        if (JavaVersion.current().isJava9Compatible()) {
-            project.application.applicationDefaultJvmArgs  = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED', '--add-opens', 'java.base/java.net=ALL-UNNAMED', '--add-opens', 'java.base/java.security=ALL-UNNAMED', '--add-opens', 'java.base/java.nio=ALL-UNNAMED']
         }
 
         project.tasks.run.with {
