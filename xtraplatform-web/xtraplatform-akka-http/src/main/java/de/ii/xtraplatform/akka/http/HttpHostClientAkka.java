@@ -12,7 +12,6 @@ import akka.http.scaladsl.model.headers.HttpEncodings;
 import akka.japi.Pair;
 import akka.japi.function.Function2;
 import akka.japi.function.Procedure;
-import akka.japi.pf.FI;
 import akka.japi.pf.PFBuilder;
 import akka.stream.ActorMaterializer;
 import akka.stream.OverflowStrategy;
@@ -24,15 +23,18 @@ import akka.stream.javadsl.Source;
 import akka.stream.javadsl.SourceQueueWithComplete;
 import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import scala.PartialFunction;
-import scala.util.Try;
 
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scala.util.Try;
+
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.ServerErrorException;
 
 public class HttpHostClientAkka implements HttpClient {
 
@@ -107,7 +109,8 @@ public class HttpHostClientAkka implements HttpClient {
     //TODO: next offer is only allowed if previous returned, synchronize (only for OverflowStrategy.backpressure)
     private <T> CompletionStage<T> request(HttpRequest httpRequest, Sink<ByteString, T> sink) {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("HTTP {} request: {}", httpRequest.method().name(), httpRequest.getUri());
+            LOGGER.debug("HTTP {} request: {}", httpRequest.method()
+                                                           .name(), httpRequest.getUri());
         }
 
         CompletableFuture<T> result = new CompletableFuture<>();
@@ -132,7 +135,7 @@ public class HttpHostClientAkka implements HttpClient {
                 result.completeExceptionally(throwable1);
 
                 //if (LOGGER.isDebugEnabled()) {
-                    LOGGER.error("Queuing exception", throwable1);
+                LOGGER.error("Queuing exception", throwable1);
                 //}
             }
         });
@@ -142,7 +145,8 @@ public class HttpHostClientAkka implements HttpClient {
 
     private Source<ByteString, NotUsed> requestSource(HttpRequest httpRequest) {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("HTTP {} request: {}", httpRequest.method().name(), httpRequest.getUri());
+            LOGGER.debug("HTTP {} request: {}", httpRequest.method()
+                                                           .name(), httpRequest.getUri());
         }
 
         CompletableFuture<Source<ByteString, NotUsed>> result = new CompletableFuture<>();
@@ -183,7 +187,8 @@ public class HttpHostClientAkka implements HttpClient {
                                   .recover(new PFBuilder<Throwable, Pair<Try<HttpResponse>, Object>>().matchAny(throwable -> {
                                       LOGGER.error("error queuing request: {}", throwable.getStackTrace(), throwable);
                                       return null;
-                                  }).build())
+                                  })
+                                                                                                      .build())
                                   .toMat(Sink.foreach(handleResponse(materializer)), Keep.left())
                                   .run(materializer);
     }
@@ -196,7 +201,8 @@ public class HttpHostClientAkka implements HttpClient {
                                   .recover(new PFBuilder<Throwable, Pair<Try<HttpResponse>, Object>>().matchAny(throwable -> {
                                       LOGGER.error("error queuing request: {}", throwable.getStackTrace(), throwable);
                                       return null;
-                                  }).build())
+                                  })
+                                                                                                      .build())
                                   .toMat(Sink.foreach(handleResponse(materializer)), Keep.left())
                                   .run(materializer);
     }
@@ -229,6 +235,22 @@ public class HttpHostClientAkka implements HttpClient {
             return;
         }
 
+        if (httpResponse.get()
+                        .status()
+                        .isFailure()) {
+            int status = httpResponse.get()
+                                .status()
+                                .intValue();
+            if (status < 500) {
+                result.completeExceptionally(new ClientErrorException(status));
+            } else {
+                result.completeExceptionally(new ServerErrorException(status));
+            }
+
+            //TODO: do something with sink???
+            return;
+        }
+
         //return source
         if (Objects.isNull(sink)) {
             Source<ByteString, NotUsed> byteStringNotUsedSource = Source.single(httpResponse.get())
@@ -257,12 +279,12 @@ public class HttpHostClientAkka implements HttpClient {
         result.complete(t);
     }
 
-    private static HttpRequest createHttpGet(String url) {
+    protected HttpRequest createHttpGet(String url) {
         return HttpRequest.GET(url)
                           .addHeader(ACCEPT);
     }
 
-    private static HttpRequest createHttpPost(String url, byte[] body, ContentType.NonBinary contentType) {
+    protected HttpRequest createHttpPost(String url, byte[] body, ContentType.NonBinary contentType) {
         return HttpRequest.POST(url)
                           .withEntity(contentType, body)
                           .addHeader(ACCEPT);

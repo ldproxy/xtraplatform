@@ -99,6 +99,7 @@ public class AkkaHttp implements de.ii.xtraplatform.akka.http.Http {
     private final ActorMaterializer materializer;
     private final Http http;
     private final HttpClient defaultClient;
+    private final long idleTimeout;
     private final Optional<URI> proxy;
     private final List<String> nonProxyHosts;
 
@@ -114,6 +115,9 @@ public class AkkaHttp implements de.ii.xtraplatform.akka.http.Http {
             return Supervision.resume();
         }), actorSystem);
         this.http = Http.get(actorSystem);
+
+        this.idleTimeout = configurationProvider.getConfiguration()
+            .getHttpClient().getTimeout().toMilliseconds();
 
         Optional<ProxyConfiguration> proxyConfiguration = Optional.ofNullable(configurationProvider.getConfiguration()
                                                                                                    .getHttpClient()
@@ -144,13 +148,28 @@ public class AkkaHttp implements de.ii.xtraplatform.akka.http.Http {
     }
 
     @Override
-    public HttpClient getHostClient(URI host, int maxParallelRequests, int idleTimeout) {
+    public HttpClient getHostClient(URI host, int maxParallelRequests) {
+        Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool> pool = getPool(host, maxParallelRequests);
+
+        return new HttpHostClientAkka(materializer, pool);
+
+    }
+
+    @Override
+    public HttpClient getHostClient(URI host, int maxParallelRequests,
+        String username, String password) {
+        Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool> pool = getPool(host, maxParallelRequests);
+
+        return new HttpHostClientAkkaBasicAuth(materializer, pool, username, password);
+    }
+
+    private Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool> getPool(URI host, int maxParallelRequests) {
         boolean isHttps = Objects.equals(host.getScheme(), "https");
         int port = host.getPort() > 0 ? host.getPort() : isHttps ? 443 : 80;
 
         ConnectHttp connectHttp = isHttps ? ConnectHttp.toHostHttps(host.getHost(), port) : ConnectHttp.toHost(host.getHost(), port);
         ClientConnectionSettings connectionSettings = ClientConnectionSettings.create(actorSystem)
-                                                                              .withIdleTimeout(Duration.create(idleTimeout, "s"));
+            .withIdleTimeout(Duration.create(idleTimeout, "ms"));
         LOGGER.debug("Creating http client for host: {}", host);
 
         Optional<ClientTransport> proxyForHost = getProxyForHost(host);
@@ -159,16 +178,16 @@ public class AkkaHttp implements de.ii.xtraplatform.akka.http.Http {
         }
 
         ConnectionPoolSettings connectionPoolSettings = ConnectionPoolSettings.create(actorSystem)
-                                                                              .withMaxOpenRequests(maxParallelRequests * 2)//???
-                                                                              .withMinConnections(0)//???
-                                                                              .withMaxConnections(maxParallelRequests)
-                                                                              .withConnectionSettings(connectionSettings);
+            .withMaxOpenRequests(maxParallelRequests * 2)//???
+            .withMinConnections(0)//???
+            .withMaxConnections(maxParallelRequests)
+            .withConnectionSettings(connectionSettings);
 
         Flow<Pair<HttpRequest, Object>, Pair<Try<HttpResponse>, Object>, HostConnectionPool> pool = isHttps
-                ? http.cachedHostConnectionPoolHttps(connectHttp, connectionPoolSettings, actorSystem.log())
-                : http.cachedHostConnectionPool(connectHttp, connectionPoolSettings, actorSystem.log());
+            ? http.cachedHostConnectionPoolHttps(connectHttp, connectionPoolSettings, actorSystem.log())
+            : http.cachedHostConnectionPool(connectHttp, connectionPoolSettings, actorSystem.log());
 
-        return new HttpHostClientAkka(materializer, pool);
+        return pool;
 
     }
 

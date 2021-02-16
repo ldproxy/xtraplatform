@@ -45,6 +45,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -129,8 +130,14 @@ public class ServicesEndpoint implements Endpoint {
                                   .getMessage());
             //throw new InternalServerErrorException(e.getCause());
         } catch (Throwable e) {
-            throw new BadRequest(e.getCause()
+            if (e instanceof BadRequest) {
+                throw e;
+            }
+            if (Objects.nonNull(e.getCause()))
+                throw new BadRequest(e.getCause()
                                   .getMessage());
+            else
+                throw new BadRequest(e.getMessage());
         } finally {
             MDC.remove("service");
         }
