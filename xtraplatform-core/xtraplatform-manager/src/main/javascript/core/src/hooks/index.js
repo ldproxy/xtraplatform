@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import qs from 'qs';
@@ -23,7 +23,7 @@ export const usePrevious = (value) => {
     return ref.current;
 };
 
-export const useDebounceValue = (value, delay, deepCompare) => {
+export const useDebounceValue = (value, deepCompare, delay) => {
     // State and setters for debounced value
     const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -49,9 +49,8 @@ export const useDebounceValue = (value, delay, deepCompare) => {
     return debouncedValue;
 };
 
-export const useDebounce = (value, onChange, delay, deepCompare) => {
-    const change = useDebounceValue(value, delay, deepCompare);
-
+export const useDebounce = (value, onChange, deepCompare, delay) => {
+    const change = useDebounceValue(value, deepCompare, delay);
     const isFirstRun = useRef(true);
 
     useEffect(
@@ -62,14 +61,24 @@ export const useDebounce = (value, onChange, delay, deepCompare) => {
             }
             onChange(change);
         },
-        [onChange, change] // Only call effect if debounced search term changes
+        [change, onChange] // Only call effect if debounced search term changes
     );
-};
 
-export const useOnChange = (value, onChange) => {
-    const isFirstRun = useRef(true);
+    const returnPendingOnUnmount = useRef(() => {});
 
     useEffect(() => {
+        returnPendingOnUnmount.current = () => onChange(value);
+    }, [value, onChange]);
+
+    useEffect(() => () => returnPendingOnUnmount.current(), []);
+};
+
+export const useOnChange = (value, onChange, deepCompare) => {
+    const isFirstRun = useRef(true);
+
+    const useCompareEffect = deepCompare ? useDeepCompareEffect : useEffect;
+
+    useCompareEffect(() => {
         if (isFirstRun.current) {
             isFirstRun.current = false;
             return;
@@ -91,7 +100,7 @@ export const useDebounceFields = (fields, delay, onChange) => {
         state[field] = value;
     }
 
-    useDebounce(state, onChange, delay, true);
+    useDebounce(state, onChange, true, delay);
 
     const setState = (event) => {
         const field = event.target.name;
