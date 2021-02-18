@@ -3914,7 +3914,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@xtraplatform/core@^2.0.0-beta.7, @xtraplatform/core@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/core":
+"@xtraplatform/core@^2.0.0-beta.9, @xtraplatform/core@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/core":
   version: 0.0.0-use.local
   resolution: "@xtraplatform/core@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/core"
   dependencies:
@@ -3974,7 +3974,7 @@ __metadata:
     "@neutrinojs/eslint": ^9.3.0
     "@neutrinojs/mocha": ^9.3.0
     "@storybook/source-loader": ^6.0.14
-    "@xtraplatform/core": ^2.0.0-beta.7
+    "@xtraplatform/core": ^2.0.0-beta.9
     "@xtraplatform/neutrino": ^2.0.0-beta.4
     chalk: ^4.1.0
     yeoman-environment: ^2.10.3
@@ -3982,14 +3982,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@xtraplatform/manager@^2.0.0-beta.7, @xtraplatform/manager@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/manager":
+"@xtraplatform/manager@^2.0.0-beta.9, @xtraplatform/manager@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/manager":
   version: 0.0.0-use.local
   resolution: "@xtraplatform/manager@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/manager"
   dependencies:
     "@apollo/client": ^3
     "@neutrinojs/airbnb": ^9.3.0
     "@neutrinojs/mocha": ^9.3.0
-    "@xtraplatform/core": ^2.0.0-beta.7
+    "@xtraplatform/core": ^2.0.0-beta.9
     "@xtraplatform/neutrino": ^2.0.0-beta.4
     apollo-link-rest: ^0.8.0-beta.0
     core-js: ^3
@@ -4021,7 +4021,7 @@ __metadata:
     styled-components: ^5
   peerDependencies:
     "@apollo/client": ^3
-    "@xtraplatform/core": ^2.0.0-beta.7
+    "@xtraplatform/core": ^2.0.0-beta.9
     feature-u: ^3
     grommet: ^2
     grommet-icons: ^4
@@ -4054,8 +4054,8 @@ __metadata:
     "@apollo/client": ^3
     "@neutrinojs/airbnb": ^9.3.0
     "@neutrinojs/mocha": ^9.3.0
-    "@xtraplatform/core": ^2.0.0-beta.7
-    "@xtraplatform/manager": ^2.0.0-beta.7
+    "@xtraplatform/core": ^2.0.0-beta.9
+    "@xtraplatform/manager": ^2.0.0-beta.9
     "@xtraplatform/neutrino": ^2.0.0-beta.4
     apollo-link-rest: ^0.8.0-beta.0
     core-js: ^3
@@ -4084,8 +4084,8 @@ __metadata:
     styled-components: ^5
   peerDependencies:
     "@apollo/client": ^3
-    "@xtraplatform/core": ^2.0.0-beta.7
-    "@xtraplatform/manager": ^2.0.0-beta.7
+    "@xtraplatform/core": ^2.0.0-beta.9
+    "@xtraplatform/manager": ^2.0.0-beta.9
     feature-u: ^3
     grommet: ^2
     grommet-icons: ^4
@@ -14013,7 +14013,7 @@ fsevents@^1.2.7:
     "@storybook/addon-essentials": ^6.0.13
     "@storybook/addon-links": ^6.0.13
     "@storybook/react": ^6.0.13
-    "@xtraplatform/manager": ^2.0.0-beta.7
+    "@xtraplatform/manager": ^2.0.0-beta.9
     "@xtraplatform/neutrino": ^2.0.0-beta.4
     babel-loader: ^8
     core-js: ^3

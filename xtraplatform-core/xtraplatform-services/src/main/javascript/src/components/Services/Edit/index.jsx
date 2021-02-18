@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useParams, useHistory } from 'react-router-dom';
 
-import { Content, Async, useDebounce } from '@xtraplatform/core';
+import { Content, Async } from '@xtraplatform/core';
 import ServiceEditHeader from './Header';
 import ServiceEditMain from './Main';
 import {

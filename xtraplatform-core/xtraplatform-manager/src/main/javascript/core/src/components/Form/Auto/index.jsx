@@ -1,15 +1,10 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import styled from 'styled-components';
 
-import { Box, Form, Button } from 'grommet';
+import { Form } from 'grommet';
 import { useDebounce, useOnChange } from '../../../hooks';
 import { mergedFields, defaultedFields, changedFields } from './fields';
 import { validate, objectMap } from '../validation';
-
-const HiddenButton = styled(Button)`
-    display: none;
-`;
 
 const AutoForm = ({
     fields,
@@ -28,27 +23,24 @@ const AutoForm = ({
 }) => {
     const initialFields = mergedFields(fields, fieldsDefault, fieldsTransformation);
     const [intValues, setIntState] = useState(initialFields);
+    const [touched, setTouched] = useState({});
 
+    // use external state if given, internal otherwise
     const values = extValues && setExtValues ? extValues : intValues;
-    const setValues = (change) => {
-        onPending();
-        extValues && setExtValues ? setExtValues(change) : setIntState(change);
-    };
+    const setValues = useCallback(
+        (change) => {
+            onPending();
+            extValues && setExtValues ? setExtValues(change) : setIntState(change);
+        },
+        [onPending, extValues, setExtValues, setIntState]
+    );
+
     const defaulted = defaultedFields(values, fieldsDefault, fieldsTransformation);
     const { valid, errors } = validate(values, fieldsValidation);
     //console.log('VALID', valid, errors);
 
-    // workaround with hidden button because Safari does not support form.requestSubmit()
-    const submitButton = useRef(null);
-    const submit = useCallback(() => submitButton.current.click(), [submitButton]);
-    const resetButton = useRef(null);
-    const reset = useCallback(() => resetButton.current.click(), [resetButton]);
-
-    const useSubmit = debounce > 0 ? useDebounce : extOnSubmit ? () => {} : useOnChange;
-
-    useSubmit(values, submit, debounce);
-
-    const onSubmit = ({ value, touched }) => {
+    // initialize validation
+    useEffect(() => {
         if (!valid) {
             const hasMissingKeys =
                 Object.keys(fieldsValidation).filter((key) => !values.hasOwnProperty(key)).length >
@@ -59,19 +51,34 @@ const AutoForm = ({
             }
             return;
         }
+    }, [fieldsValidation, values, setValues, valid]);
 
-        const changes = changedFields(value, touched, defaulted, fieldsTransformation);
+    const form = useRef(null);
+    const reset = useCallback(() => form.current && form.current.reset(), []);
 
-        console.log('SAVE', value, touched, defaulted, changes);
+    const submit = useCallback(
+        (changes) => {
+            if (!changes || Object.keys(changes).length === 0) {
+                return;
+            }
 
-        if (extOnSubmit) {
-            extOnSubmit(changes, reset);
-            return;
-        }
+            if (extOnSubmit) {
+                extOnSubmit(changes, reset);
+            } else if (onChange) {
+                onChange(changes);
+            }
 
-        if (onChange && changes) onChange(changes);
-    };
+            setTouched({});
+        },
+        [setTouched, /*TODO onChange,*/ extOnSubmit, reset]
+    );
 
+    // calculate changes, submit with optional debounce if changes are found
+    const changes = changedFields(values, touched, defaulted, fieldsTransformation);
+    const useSubmit = debounce > 0 ? useDebounce : extOnSubmit ? () => {} : useOnChange;
+    useSubmit(changes, submit, true, debounce);
+
+    //TODO: replace with context
     const newChildren = React.Children.map(children, (child) => {
         if (
             child &&
@@ -89,9 +96,14 @@ const AutoForm = ({
     });
 
     return (
-        <Form value={values} onChange={setValues} onSubmit={onSubmit} onReset={extOnCancel}>
-            <HiddenButton type='submit' ref={submitButton} onClick={(e) => e.stopPropagation()} />
-            <HiddenButton type='reset' ref={resetButton} onClick={(e) => e.stopPropagation()} />
+        <Form
+            ref={form}
+            value={values}
+            onChange={(values, { touched }) => {
+                setValues(values);
+                setTouched(touched);
+            }}
+            onReset={extOnCancel}>
             {newChildren}
         </Form>
     );

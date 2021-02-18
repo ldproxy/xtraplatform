@@ -20,6 +20,7 @@ import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
 import de.ii.xtraplatform.store.app.ValueDecoderWithBuilder;
 import de.ii.xtraplatform.store.app.ValueEncodingJackson;
 import de.ii.xtraplatform.store.domain.AbstractMergeableKeyValueStore;
+import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
@@ -43,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,12 +69,14 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
   private final ValueEncodingJackson<EntityData> valueEncodingEntity;
   private final EventSourcing<Map<String, Object>> eventSourcing;
+  private final EventStore eventStore;
 
   protected EntityDataDefaultsStoreImpl(
       @Requires EventStore eventStore,
       @Requires Jackson jackson,
       @Requires EntityFactory entityFactory) {
     this.entityFactory = entityFactory;
+    this.eventStore = eventStore;
     this.valueEncoding = new ValueEncodingJackson<>(jackson);
     this.eventSourcing =
         new EventSourcing<>(
@@ -392,9 +396,9 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       }
     }
 
-    //TODO: trigger replay in eventStore
-    //TODO: does not return
-    put(defaultId, defaults);
+    put(defaultId, defaults).thenRun(() -> {
+      eventStore.replay(EventFilter.fromPath(Path.of(EntityDataDefaultsStore.EVENT_TYPE, defaultId)));
+    });
 
     return CompletableFuture.completedFuture(defaults);
   }
