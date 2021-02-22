@@ -7,12 +7,15 @@ plugins {
 
 group = 'de.interactive_instruments'
 
-version = '3.4.1'
+version = '3.4.2'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
     jcenter()
+    maven {
+        url "https://plugins.gradle.org/m2/"
+    }
 }
 
 dependencies {
@@ -27,6 +30,8 @@ dependencies {
 
     implementation 'com.google.code.gson:gson:2.3.1'
     implementation 'com.google.guava:guava:23.1-jre'
+
+    implementation 'gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.0'
 }
 
 gradlePlugin {
@@ -50,6 +55,10 @@ gradlePlugin {
         docPlugin {
             id = 'de.interactive_instruments.xtraplatform-doc'
             implementationClass = 'de.interactive_instruments.xtraplatform.DocPlugin'
+        }
+        compositePlugin {
+            id = 'de.interactive_instruments.xtraplatform-composite'
+            implementationClass = 'de.interactive_instruments.xtraplatform.CompositePlugin'
         }
     }
 }
