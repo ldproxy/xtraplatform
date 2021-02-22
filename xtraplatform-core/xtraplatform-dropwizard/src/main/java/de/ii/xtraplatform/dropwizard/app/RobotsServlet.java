@@ -23,16 +23,21 @@ import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.StaticServiceProperty;
+import org.osgi.service.http.whiteboard.HttpWhiteboardConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 
 // TODO
 @Component
 @Provides(
     properties = {
-      @StaticServiceProperty(name = "osgi.http.whiteboard.servlet.pattern", type = "java.lang.String", value = "/robots.txt")
+        @StaticServiceProperty(name = HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN, type = "java.lang.String", value = "/robots.txt"),
+        @StaticServiceProperty(name = HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT, type = "java.lang.String", value =
+            "(" + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME + "=org.osgi.service.http)")
     })
 @Instantiate
 public class RobotsServlet extends HttpServlet implements ContainerResponseFilter {

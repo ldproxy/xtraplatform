@@ -90,5 +90,7 @@ public class XtraPlatformConfiguration extends Configuration {
 
   @Valid @NotNull @JsonProperty public AuthConfig auth = new AuthConfig();
 
+  @Valid @NotNull @JsonProperty public ManagerConfiguration manager = new ManagerConfiguration();
+
   @Valid @JsonProperty public ClusterConfiguration cluster;
 }
