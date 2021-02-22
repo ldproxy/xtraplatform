@@ -35,7 +35,11 @@ import java.util.Optional;
 
 public class ConfigurationReader {
 
-  enum APPENDER {CONSOLE, OTHER}
+  enum APPENDER {
+    CONSOLE,
+    OTHER
+  }
+
   public static final String CONFIG_FILE_NAME = "cfg.yml";
   public static final String CONFIG_FILE_NAME_LEGACY = "xtraplatform.json";
 
@@ -43,20 +47,25 @@ public class ConfigurationReader {
   private static final String LOGGING_CFG_KEY = "/logging";
   private static final Map<Constants.ENV, Map<APPENDER, String>> LOG_FORMATS =
       ImmutableMap.of(
-          Constants.ENV.DEVELOPMENT, ImmutableMap.of(
-                  APPENDER.CONSOLE, "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %gray([%c{44}]) %magenta([%t]) %blue(%marker) %n%rEx",
-                  APPENDER.OTHER, "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} [%c{44}] [%t] %n%rEx"
-              ),
-          Constants.ENV.PRODUCTION, ImmutableMap.of(
-                      APPENDER.CONSOLE, "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
-                      APPENDER.OTHER, "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"
-              ),
-          //TODO: is this needed?
-          Constants.ENV.CONTAINER, ImmutableMap.of(
-                      APPENDER.CONSOLE, "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
-                      APPENDER.OTHER, "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"
-              )
-      );
+          Constants.ENV.DEVELOPMENT,
+              ImmutableMap.of(
+                  APPENDER.CONSOLE,
+                      "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %gray([%c{44}]) %magenta([%t]) %blue(%marker) %n%rEx",
+                  APPENDER.OTHER,
+                      "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} [%c{44}] [%t] %n%rEx"),
+          Constants.ENV.PRODUCTION,
+              ImmutableMap.of(
+                  APPENDER.CONSOLE,
+                      "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
+                  APPENDER.OTHER,
+                      "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"),
+          // TODO: is this needed?
+          Constants.ENV.CONTAINER,
+              ImmutableMap.of(
+                  APPENDER.CONSOLE,
+                      "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
+                  APPENDER.OTHER,
+                      "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"));
 
   private final List<ByteSource> configsToMergeAfterBase;
   private final ObjectMapper mapper;
@@ -135,7 +144,9 @@ public class ConfigurationReader {
       JsonNode jsonNodeBase = mapper.readTree(getBaseConfig().openStream());
 
       loggingFactory =
-          mapper.readerFor(XtraPlatformLoggingFactory.class).readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
+          mapper
+              .readerFor(XtraPlatformLoggingFactory.class)
+              .readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
 
       for (ByteSource byteSource : configsToMergeAfterBase) {
         JsonNode jsonNodeMerge = mapper.readTree(byteSource.openStream());
@@ -175,8 +186,8 @@ public class ConfigurationReader {
     loggingFactory.configure(new MetricRegistry(), "xtraplatform");
   }
 
-  //TODO: special console pattern
-  //TODO: only set format if default is set, so custom format in cfg.yml is possible
+  // TODO: special console pattern
+  // TODO: only set format if default is set, so custom format in cfg.yml is possible
   private static void applyLogFormat(DefaultLoggingFactory loggingFactory, Constants.ENV env) {
     loggingFactory.getAppenders().stream()
         .filter(

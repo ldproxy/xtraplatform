@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
+import static de.ii.xtraplatform.runtime.domain.LogContext.withMdc;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -37,10 +39,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.felix.ipojo.ComponentFactory;
-import org.apache.felix.ipojo.ComponentInstance;
 import org.apache.felix.ipojo.Factory;
-import org.apache.felix.ipojo.FactoryStateListener;
-import org.apache.felix.ipojo.InstanceStateListener;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -57,8 +56,6 @@ import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-
-import static de.ii.xtraplatform.runtime.domain.LogContext.withMdc;
 
 /** @author zahnen */
 @Component(publicFactory = false)
@@ -375,7 +372,7 @@ public class EntityFactoryImpl implements EntityFactory {
         .map(this::getEntitySubType)
         .filter(Optional::isPresent)
         .map(Optional::get)
-        //.map(subType -> Splitter.on('/').splitToList(subType))
+        // .map(subType -> Splitter.on('/').splitToList(subType))
         .collect(ImmutableList.toImmutableList());
   }
 
@@ -578,7 +575,7 @@ public class EntityFactoryImpl implements EntityFactory {
   @Override
   public CompletableFuture<PersistentEntity> updateInstance(
       String entityType, String id, EntityData entityData) {
-    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
+    try (MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
 
       LOGGER.info("Reloading configuration for entity of type '{}' with id '{}'", entityType, id);
 

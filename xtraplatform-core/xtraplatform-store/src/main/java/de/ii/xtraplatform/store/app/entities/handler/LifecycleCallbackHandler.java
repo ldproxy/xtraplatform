@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.store.app.entities.handler;
 
 import java.lang.reflect.InvocationTargetException;
@@ -13,18 +20,12 @@ import org.apache.felix.ipojo.util.Callback;
 
 class LifecycleCallbackHandler extends PrimitiveHandler {
 
-  /**
-   * The list of the callback of the component.
-   */
+  /** The list of the callback of the component. */
   private LifecycleCallback[] m_callbacks = new LifecycleCallback[0];
 
-  /**
-   * State of the instance manager (unresolved at the beginning).
-   */
+  /** State of the instance manager (unresolved at the beginning). */
   private int m_state = InstanceManager.INVALID;
-  /**
-   * Does a POJO object be created at starting.
-   */
+  /** Does a POJO object be created at starting. */
   private boolean m_immediate = false;
 
   /**
@@ -40,25 +41,25 @@ class LifecycleCallbackHandler extends PrimitiveHandler {
     }
 
     if (m_callbacks != null
-        && m_callbacks.length > 0) { //TODO check here if we can improve the test
+        && m_callbacks.length > 0) { // TODO check here if we can improve the test
       LifecycleCallback[] newHk = new LifecycleCallback[m_callbacks.length + 1];
       System.arraycopy(m_callbacks, 0, newHk, 0, m_callbacks.length);
       newHk[m_callbacks.length] = callback;
       m_callbacks = newHk;
     } else {
-      m_callbacks = new LifecycleCallback[]{callback};
+      m_callbacks = new LifecycleCallback[] {callback};
     }
   }
 
   /**
    * Configure the handler.
    *
-   * @param metadata      : the component type metadata
+   * @param metadata : the component type metadata
    * @param configuration : the instance configuration
    * @throws ConfigurationException : one callback metadata is not correct (either the transition or
-   *                                the method are not correct).
+   *     the method are not correct).
    * @see org.apache.felix.ipojo.Handler#configure(org.apache.felix.ipojo.metadata.Element,
-   * java.util.Dictionary)
+   *     java.util.Dictionary)
    */
   public void configure(Element metadata, Dictionary configuration) throws ConfigurationException {
     m_callbacks = new LifecycleCallback[0];
@@ -138,7 +139,8 @@ class LifecycleCallbackHandler extends PrimitiveHandler {
     }
 
     // Manage immediate component
-    if (m_immediate && transition == LifecycleCallback.VALIDATE
+    if (m_immediate
+        && transition == LifecycleCallback.VALIDATE
         && getInstanceManager().getPojoObjects() == null) {
       getInstanceManager().getPojoObject();
     }
@@ -148,17 +150,30 @@ class LifecycleCallbackHandler extends PrimitiveHandler {
         try {
           m_callbacks[i].call();
         } catch (NoSuchMethodException e) {
-          error("[" + getInstanceManager().getInstanceName() + "] The callback method "
-              + m_callbacks[i].getMethod() + " is not found");
+          error(
+              "["
+                  + getInstanceManager().getInstanceName()
+                  + "] The callback method "
+                  + m_callbacks[i].getMethod()
+                  + " is not found");
           throw new IllegalStateException(e);
         } catch (IllegalAccessException e) {
-          error("[" + getInstanceManager().getInstanceName() + "] The callback method "
-              + m_callbacks[i].getMethod() + " is not accessible");
+          error(
+              "["
+                  + getInstanceManager().getInstanceName()
+                  + "] The callback method "
+                  + m_callbacks[i].getMethod()
+                  + " is not accessible");
           throw new IllegalStateException(e);
         } catch (InvocationTargetException e) {
-          error("[" + getInstanceManager().getInstanceName() + "] The callback method "
-              + m_callbacks[i].getMethod() + " has thrown an exception : " + e.getTargetException()
-              .getMessage(), e.getTargetException());
+          error(
+              "["
+                  + getInstanceManager().getInstanceName()
+                  + "] The callback method "
+                  + m_callbacks[i].getMethod()
+                  + " has thrown an exception : "
+                  + e.getTargetException().getMessage(),
+              e.getTargetException());
           throw new IllegalStateException(e.getTargetException());
         }
       }
@@ -169,24 +184,16 @@ class LifecycleCallbackHandler extends PrimitiveHandler {
 
   static class LifecycleCallback {
 
-    /**
-     * Invalid to Valid transition.
-     */
+    /** Invalid to Valid transition. */
     protected static final int VALIDATE = 1;
 
-    /**
-     * Valid to Invalid transition.
-     */
+    /** Valid to Invalid transition. */
     protected static final int INVALIDATE = 0;
 
-    /**
-     * Transition on which calling the callback.
-     */
+    /** Transition on which calling the callback. */
     private int m_transition;
 
-    /**
-     * Callback object.
-     */
+    /** Callback object. */
     private Callback m_callback;
 
     /**
@@ -196,7 +203,8 @@ class LifecycleCallbackHandler extends PrimitiveHandler {
      * @param transition : transition on which calling the callback
      * @param method : method metadata to invoke
      */
-    public LifecycleCallback(LifecycleCallbackHandler handler, int transition, MethodMetadata method) {
+    public LifecycleCallback(
+        LifecycleCallbackHandler handler, int transition, MethodMetadata method) {
       m_transition = transition;
       m_callback = new Callback(method, handler.getInstanceManager());
     }
@@ -214,14 +222,14 @@ class LifecycleCallbackHandler extends PrimitiveHandler {
     }
 
     /**
-     * Call the callback method when the transition from inital tostate is
-     * detected.
+     * Call the callback method when the transition from inital tostate is detected.
      *
      * @throws NoSuchMethodException : Method is not found in the class
      * @throws InvocationTargetException : The method is not static
      * @throws IllegalAccessException : The method can not be invoked
      */
-    protected void call() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    protected void call()
+        throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
       m_callback.call();
     }
 
@@ -231,11 +239,11 @@ class LifecycleCallbackHandler extends PrimitiveHandler {
 
     /**
      * Get the method name of the callback.
+     *
      * @return the method name
      */
     protected String getMethod() {
       return m_callback.getMethod();
     }
-
   }
 }

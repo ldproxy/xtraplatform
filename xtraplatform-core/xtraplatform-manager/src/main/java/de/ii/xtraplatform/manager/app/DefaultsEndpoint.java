@@ -9,7 +9,6 @@ package de.ii.xtraplatform.manager.app;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.dropwizard.domain.Endpoint;
@@ -24,11 +23,11 @@ import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -39,15 +38,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 @Component
 @Provides
@@ -69,7 +65,7 @@ public class DefaultsEndpoint implements Endpoint {
       @Requires EntityDataStore<EntityData> entityRepository,
       @Requires EntityRegistry entityRegistry,
       @Requires EntityDataDefaultsStore defaultsStore
-      /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/) {
+      /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/ ) {
     this.serviceRepository = entityRepository;
     this.entityRegistry = entityRegistry;
     this.defaultsStore = defaultsStore;
@@ -82,11 +78,13 @@ public class DefaultsEndpoint implements Endpoint {
   @CacheControl(noCache = true)
   public Response getEntity(
       @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
-      @PathParam("entityType") String entityType, @PathParam("subType") String subType) {
+      @PathParam("entityType") String entityType,
+      @PathParam("subType") String subType) {
 
-    //TODO: subType
-    Optional<Map<String, Object>> defaults = defaultsStore
-        .getAllDefaults(Identifier.from(EntityDataDefaultsStore.EVENT_TYPE, entityType),
+    // TODO: subType
+    Optional<Map<String, Object>> defaults =
+        defaultsStore.getAllDefaults(
+            Identifier.from(EntityDataDefaultsStore.EVENT_TYPE, entityType),
             Optional.ofNullable(subType));
 
     if (!defaults.isPresent()) {
@@ -105,14 +103,17 @@ public class DefaultsEndpoint implements Endpoint {
   @Consumes(MediaType.APPLICATION_JSON)
   public Response updateEntity(
       @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
-      @PathParam("entityType") String entityType, @PathParam("subType") String subType,
+      @PathParam("entityType") String entityType,
+      @PathParam("subType") String subType,
       @RequestBody(
-          required = true,
-          content = {@Content()})
+              required = true,
+              content = {@Content()})
           Map<String, Object> request) {
 
-    Map<String, Object> patch = defaultsStore
-        .patch(EntityDataDefaultsStore.EVENT_TYPE, request, entityType, subType).join();
+    Map<String, Object> patch =
+        defaultsStore
+            .patch(EntityDataDefaultsStore.EVENT_TYPE, request, entityType, subType)
+            .join();
 
     try {
       return Response.ok().entity(objectMapper.writeValueAsString(patch)).build();

@@ -38,7 +38,6 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -87,9 +86,9 @@ public class ServicesEndpoint implements Endpoint {
       @Requires EntityRegistry entityRegistry,
       @Requires EntityFactory entityFactory,
       @Requires EntityDataDefaultsStore defaultsStore
-      /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/) {
-    //TODO: relies on EntityFactory, ServiceData might not be registered yet
-    //this.serviceRepository = entityRepository.forType(ServiceData.class);
+      /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/ ) {
+    // TODO: relies on EntityFactory, ServiceData might not be registered yet
+    // this.serviceRepository = entityRepository.forType(ServiceData.class);
     this.entityRepository = entityRepository;
     this.serviceRepository = getServiceRepository(entityRepository);
     this.entityRegistry = entityRegistry;
@@ -119,7 +118,7 @@ public class ServicesEndpoint implements Endpoint {
       @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user) {
     return serviceRepository.ids().stream()
         .map(this::getServiceStatus)
-        //.sorted(Comparator.comparingLong(ServiceStatus::getCreatedAt).reversed())
+        // .sorted(Comparator.comparingLong(ServiceStatus::getCreatedAt).reversed())
         .collect(Collectors.toList());
   }
 
@@ -142,77 +141,92 @@ public class ServicesEndpoint implements Endpoint {
     try {
       LogContext.put(LogContext.CONTEXT.SERVICE, id);
 
-      //LOGGER.debug("ADD SERVICE {}: {}", id, request);
+      // LOGGER.debug("ADD SERVICE {}: {}", id, request);
 
-      Map<String, Object> autoProvider = Objects.equals(request.get("featureProviderType"), "WFS")
-          ? new ImmutableMap.Builder<String, Object>()
-          .putAll(request)
-          .put("auto", "true")
-          .put("autoPersist", "true")
-          .put("entityStorageVersion", "2")
-          .put("connectionInfo", new ImmutableMap.Builder<String, Object>()
-              .put("connectorType", "HTTP")
-              .put("uri", request.get("url"))
-              .put("user", Optional.ofNullable(request.get("user")))
-              .put("password", Optional.ofNullable(request.get("password")))
-              .build())
-          .build()
-          : new ImmutableMap.Builder<String, Object>()
-              .putAll(request)
-              .put("auto", "true")
-              .put("autoPersist", "true")
-              .put("entityStorageVersion", "2")
-              .put("connectionInfo", new ImmutableMap.Builder<String, Object>()
-                  .put("connectorType", "SLICK")
-                  .put("host", request.get("host"))
-                  .put("database", request.get("database"))
-                  .put("user", request.get("user"))
-                  .put("password", request.get("password"))
-                  .put("schemas", Optional.ofNullable(request.get("schemas")).map(schemas -> Splitter.on(',').trimResults().omitEmptyStrings().split(schemas)).orElse(ImmutableList.of()))
-                  .build())
-              .build();
+      Map<String, Object> autoProvider =
+          Objects.equals(request.get("featureProviderType"), "WFS")
+              ? new ImmutableMap.Builder<String, Object>()
+                  .putAll(request)
+                  .put("auto", "true")
+                  .put("autoPersist", "true")
+                  .put("entityStorageVersion", "2")
+                  .put(
+                      "connectionInfo",
+                      new ImmutableMap.Builder<String, Object>()
+                          .put("connectorType", "HTTP")
+                          .put("uri", request.get("url"))
+                          .put("user", Optional.ofNullable(request.get("user")))
+                          .put("password", Optional.ofNullable(request.get("password")))
+                          .build())
+                  .build()
+              : new ImmutableMap.Builder<String, Object>()
+                  .putAll(request)
+                  .put("auto", "true")
+                  .put("autoPersist", "true")
+                  .put("entityStorageVersion", "2")
+                  .put(
+                      "connectionInfo",
+                      new ImmutableMap.Builder<String, Object>()
+                          .put("connectorType", "SLICK")
+                          .put("host", request.get("host"))
+                          .put("database", request.get("database"))
+                          .put("user", request.get("user"))
+                          .put("password", request.get("password"))
+                          .put(
+                              "schemas",
+                              Optional.ofNullable(request.get("schemas"))
+                                  .map(
+                                      schemas ->
+                                          Splitter.on(',')
+                                              .trimResults()
+                                              .omitEmptyStrings()
+                                              .split(schemas))
+                                  .orElse(ImmutableList.of()))
+                          .build())
+                  .build();
 
       Identifier identifier = Identifier.from(id, "providers");
       Identifier identifier2 = Identifier.from(id, "services");
 
-      //TODO: error notification in manager
+      // TODO: error notification in manager
       EntityData provider = entityRepository.fromMap(identifier, autoProvider);
-      //EntityData service = null;
+      // EntityData service = null;
 
-      //TODO: background task, while running return status on GET
+      // TODO: background task, while running return status on GET
       EntityData provider2 = entityFactory.hydrateData(identifier, "providers", provider);
 
       EntityData provider3 = entityRepository.put(identifier, provider2).join();
 
-      Map<String, Object> autoService = new ImmutableMap.Builder<String, Object>()
-          .putAll(request)
-          .put("auto", "true")
-          .put("autoPersist", "true")
-          .put("entityStorageVersion", "2")
-          .build();
+      Map<String, Object> autoService =
+          new ImmutableMap.Builder<String, Object>()
+              .putAll(request)
+              .put("auto", "true")
+              .put("autoPersist", "true")
+              .put("entityStorageVersion", "2")
+              .build();
 
       EntityData serviceData = entityRepository.fromMap(identifier2, autoService);
 
-      //TODO: background task, while running return status on GET
-      ServiceData service2 = (ServiceData) entityFactory
-          .hydrateData(identifier2, "services", serviceData);
+      // TODO: background task, while running return status on GET
+      ServiceData service2 =
+          (ServiceData) entityFactory.hydrateData(identifier2, "services", serviceData);
 
       ServiceData added = serviceRepository.put(id, service2).join();
 
       return Response.ok().entity(getServiceStatus(added)).build();
 
-    }/* catch (InterruptedException | ExecutionException e) {
-      if (serviceRepository.has(id)) {
-        try {
-          serviceRepository.delete(id);
-        } catch (Throwable e2) {
-          // ignore
+    } /* catch (InterruptedException | ExecutionException e) {
+        if (serviceRepository.has(id)) {
+          try {
+            serviceRepository.delete(id);
+          } catch (Throwable e2) {
+            // ignore
+          }
         }
-      }
 
-      throw new BadRequestException(e.getCause().getMessage());
-      // throw new InternalServerErrorException(e.getCause());
-    }*/ catch (Throwable e) {
+        throw new BadRequestException(e.getCause().getMessage());
+        // throw new InternalServerErrorException(e.getCause());
+      }*/ catch (Throwable e) {
       throw new BadRequestException(
           Objects.nonNull(e.getCause()) ? e.getCause().getMessage() : e.getMessage());
     } finally {
@@ -241,9 +255,9 @@ public class ServicesEndpoint implements Endpoint {
     try {
       Identifier identifier = Identifier.from(id, Service.TYPE);
       Map<String, Object> serviceDataMap = serviceRepository.asMap(identifier, serviceData);
-      dataWithoutDefaults = defaultsStore
-          .subtractDefaults(identifier, serviceData.getEntitySubType(), serviceDataMap,
-              ImmutableList.of());
+      dataWithoutDefaults =
+          defaultsStore.subtractDefaults(
+              identifier, serviceData.getEntitySubType(), serviceDataMap, ImmutableList.of());
     } catch (IOException e) {
       throw new InternalServerErrorException();
     }
@@ -276,8 +290,8 @@ public class ServicesEndpoint implements Endpoint {
       @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
       @PathParam("id") String id,
       @RequestBody(
-          required = true,
-          content = {@Content()})
+              required = true,
+              content = {@Content()})
           Map<String, Object> request) {
     if (!serviceRepository.has(id)) {
       throw new NotFoundException();
@@ -286,7 +300,7 @@ public class ServicesEndpoint implements Endpoint {
     try {
       LogContext.put(LogContext.CONTEXT.SERVICE, id);
 
-      //LOGGER.debug("PATCH SERVICE {}: {}", id, request);
+      // LOGGER.debug("PATCH SERVICE {}: {}", id, request);
 
       ServiceData updated = serviceRepository.patch(id, request).get();
 
@@ -306,7 +320,7 @@ public class ServicesEndpoint implements Endpoint {
     try {
       LogContext.put(LogContext.CONTEXT.SERVICE, id);
 
-      //LOGGER.debug("DELETE SERVICE {}", id);
+      // LOGGER.debug("DELETE SERVICE {}", id);
 
       serviceRepository.delete(id).join();
 

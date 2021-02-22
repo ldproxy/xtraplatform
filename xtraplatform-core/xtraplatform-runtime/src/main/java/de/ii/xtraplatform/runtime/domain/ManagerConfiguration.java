@@ -8,11 +8,8 @@
 package de.ii.xtraplatform.runtime.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
-import org.hibernate.validator.constraints.NotEmpty;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.List;
 
 public class ManagerConfiguration {
 

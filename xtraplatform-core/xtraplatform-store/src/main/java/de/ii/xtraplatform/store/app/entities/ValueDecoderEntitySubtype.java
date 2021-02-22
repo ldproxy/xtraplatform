@@ -30,14 +30,17 @@ public class ValueDecoderEntitySubtype implements ValueDecoderMiddleware<EntityD
 
   @Override
   public EntityData process(
-      Identifier identifier, byte[] payload, ObjectMapper objectMapper, EntityData data,
+      Identifier identifier,
+      byte[] payload,
+      ObjectMapper objectMapper,
+      EntityData data,
       boolean ignoreCache)
       throws IOException {
     if (data.getEntitySubType().isPresent()) {
       EntityDataBuilder<EntityData> builder =
           newBuilderSupplier.apply(identifier, data.getEntitySubType().get());
 
-      //TODO: happens because providers declare subtypes despite not having any
+      // TODO: happens because providers declare subtypes despite not having any
       // no builder found for subtype
       if (builder == null) {
         return data;

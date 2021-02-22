@@ -12,8 +12,8 @@ import java.io.IOException;
 
 public interface ValueDecoderMiddleware<T> {
 
-  T process(Identifier identifier, byte[] payload, ObjectMapper objectMapper, T data,
-      boolean ignoreCache)
+  T process(
+      Identifier identifier, byte[] payload, ObjectMapper objectMapper, T data, boolean ignoreCache)
       throws IOException;
 
   default T recover(Identifier identifier, byte[] payload, ObjectMapper objectMapper)

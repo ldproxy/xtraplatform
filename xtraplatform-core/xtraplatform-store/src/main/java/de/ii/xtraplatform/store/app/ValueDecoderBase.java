@@ -25,8 +25,8 @@ public class ValueDecoderBase<T> implements ValueDecoderMiddleware<T> {
   }
 
   @Override
-  public T process(Identifier identifier, byte[] payload, ObjectMapper objectMapper, T data,
-      boolean ignoreCache)
+  public T process(
+      Identifier identifier, byte[] payload, ObjectMapper objectMapper, T data, boolean ignoreCache)
       throws IOException {
     T data2 = null;
 

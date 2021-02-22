@@ -27,17 +27,23 @@ import org.osgi.service.http.whiteboard.HttpWhiteboardConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 
 // TODO
 @Component
 @Provides(
     properties = {
-        @StaticServiceProperty(name = HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN, type = "java.lang.String", value = "/robots.txt"),
-        @StaticServiceProperty(name = HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT, type = "java.lang.String", value =
-            "(" + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME + "=org.osgi.service.http)")
+      @StaticServiceProperty(
+          name = HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN,
+          type = "java.lang.String",
+          value = "/robots.txt"),
+      @StaticServiceProperty(
+          name = HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT,
+          type = "java.lang.String",
+          value =
+              "("
+                  + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME
+                  + "=org.osgi.service.http)")
     })
 @Instantiate
 public class RobotsServlet extends HttpServlet implements ContainerResponseFilter {

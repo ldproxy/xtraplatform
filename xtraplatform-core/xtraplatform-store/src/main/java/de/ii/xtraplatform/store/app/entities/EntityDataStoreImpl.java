@@ -60,9 +60,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 @Component(publicFactory = false)
 @Provides
 @Instantiate
@@ -92,7 +90,11 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.valueEncodingMap = new ValueEncodingJackson<>(jackson);
     this.eventSourcing =
         new EventSourcing<>(
-            eventStore, EVENT_TYPES, valueEncoding, this::onStart, Optional.of(this::processEvent),
+            eventStore,
+            EVENT_TYPES,
+            valueEncoding,
+            this::onStart,
+            Optional.of(this::processEvent),
             Optional.of(this::onUpdate));
     this.defaultsStore = defaultsStore;
 
@@ -107,7 +109,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     valueEncoding.addDecoderMiddleware(new ValueDecoderIdValidator());
 
     valueEncodingMap.addDecoderMiddleware(
-        new ValueDecoderBase<>(identifier -> new LinkedHashMap<>(),
+        new ValueDecoderBase<>(
+            identifier -> new LinkedHashMap<>(),
             new ValueCache<Map<String, Object>>() {
               @Override
               public boolean isInCache(Identifier identifier) {
@@ -142,13 +145,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     if (Objects.nonNull(partialData) && !partialData.isEmpty()) {
       // use mutable copy of map to allow null values
       Map<String, Object> modified = Maps.newHashMap(partialData);
-      modified.put("lastModified", Instant.now()
-          .toEpochMilli());
+      modified.put("lastModified", Instant.now().toEpochMilli());
       return modified;
       /*return ImmutableMap.<String, Object>builder()
-          .putAll(partialData)
-          .put("lastModified", Instant.now().toEpochMilli())
-          .build();*/
+      .putAll(partialData)
+      .put("lastModified", Instant.now().toEpochMilli())
+      .build();*/
     }
 
     return partialData;
@@ -203,7 +205,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, String entitySubtype) {
-    //List<String> subtypePath = entityFactory.getTypeAsList(entitySubtype);
+    // List<String> subtypePath = entityFactory.getTypeAsList(entitySubtype);
 
     ImmutableIdentifier defaultsIdentifier =
         ImmutableIdentifier.builder()
@@ -287,12 +289,13 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected CompletableFuture<Void> onCreate(Identifier identifier, EntityData entityData) {
-    try (MDC.MDCCloseable closeable = LogContext
-        .putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
+    try (MDC.MDCCloseable closeable =
+        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("Entity creating: {}", identifier);
       }
-      //TODO: why did we move this to whenComplete in the first place? any new issues since reverting?
+      // TODO: why did we move this to whenComplete in the first place? any new issues since
+      // reverting?
       EntityData hydratedData = hydrateData(identifier, entityData);
 
       return entityFactory
@@ -300,8 +303,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
           .whenComplete(
               (entity, throwable) -> {
                 if (Objects.nonNull(entity)) {
-                  //EntityData hydratedData = hydrateData(identifier, entityData);
-                  //((AbstractPersistentEntity<EntityData>) entity).setData(hydratedData);
+                  // EntityData hydratedData = hydrateData(identifier, entityData);
+                  // ((AbstractPersistentEntity<EntityData>) entity).setData(hydratedData);
                 }
                 if (LOGGER.isTraceEnabled()) {
                   LOGGER.trace("Entity created: {}", identifier);
@@ -313,8 +316,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected void onUpdate(Identifier identifier, EntityData entityData) {
-    try (MDC.MDCCloseable closeable = LogContext
-        .putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
+    try (MDC.MDCCloseable closeable =
+        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
       LOGGER.debug("Reloading entity: {}", identifier);
       EntityData hydratedData = hydrateData(identifier, entityData);
 
@@ -352,19 +355,15 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   @Override
   public Map<String, Object> asMap(Identifier identifier, EntityData entityData)
       throws IOException {
-    return valueEncodingMap
-        .deserialize(identifier, valueEncoding.serialize(entityData),
-            valueEncoding.getDefaultFormat(),
-            false);
+    return valueEncodingMap.deserialize(
+        identifier, valueEncoding.serialize(entityData), valueEncoding.getDefaultFormat(), false);
   }
 
   @Override
   public EntityData fromMap(Identifier identifier, Map<String, Object> entityData)
       throws IOException {
-    return valueEncoding
-        .deserialize(identifier, valueEncoding.serialize(entityData),
-            valueEncoding.getDefaultFormat(),
-            false);
+    return valueEncoding.deserialize(
+        identifier, valueEncoding.serialize(entityData), valueEncoding.getDefaultFormat(), false);
   }
 
   @Override
@@ -374,8 +373,9 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     try {
       Map<String, Object> map = asMap(identifier, data);
 
-      Map<String, Object> withoutDefaults = defaultsStore
-          .subtractDefaults(identifier, data.getEntitySubType(), map, ImmutableList.of());
+      Map<String, Object> withoutDefaults =
+          defaultsStore.subtractDefaults(
+              identifier, data.getEntitySubType(), map, ImmutableList.of());
 
       return getEventSourcing()
           .pushPartialMutationEvent(identifier, withoutDefaults)
@@ -388,14 +388,14 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 }
               });
     } catch (IOException e) {
-      //never reached, will fail in isUpdateValid
+      // never reached, will fail in isUpdateValid
       return CompletableFuture.failedFuture(e);
     }
   }
 
   @Override
-  public CompletableFuture<EntityData> patch(String id, Map<String, Object> partialData,
-      String... path) {
+  public CompletableFuture<EntityData> patch(
+      String id, Map<String, Object> partialData, String... path) {
     final Identifier identifier = Identifier.from(id, path);
 
     Map<String, Object> patch = modifyPatch(partialData);
@@ -414,9 +414,9 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
       Map<String, Object> map = asMap(identifier, merged);
 
-      Map<String, Object> withoutDefaults = defaultsStore
-          .subtractDefaults(identifier, merged.getEntitySubType(), map,
-              ImmutableList.of("enabled"));
+      Map<String, Object> withoutDefaults =
+          defaultsStore.subtractDefaults(
+              identifier, merged.getEntitySubType(), map, ImmutableList.of("enabled"));
 
       Map<String, Object> withoutResetted = subtractResetted(withoutDefaults, partialData);
 
@@ -431,37 +431,41 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 }
               });
     } catch (IOException e) {
-      //never reached, will fail in isUpdateValid
+      // never reached, will fail in isUpdateValid
       return CompletableFuture.failedFuture(e);
     }
   }
 
-  private Map<String, Object> subtractResetted(Map<String, Object> source,
-      Map<String, Object> potentialNulls) {
+  private Map<String, Object> subtractResetted(
+      Map<String, Object> source, Map<String, Object> potentialNulls) {
     Map<String, Object> result = new LinkedHashMap<>();
 
-    source.forEach((key, value) -> {
-      if (potentialNulls.containsKey(key) && Objects.isNull(potentialNulls.get(key))) {
-        return;
-      }
+    source.forEach(
+        (key, value) -> {
+          if (potentialNulls.containsKey(key) && Objects.isNull(potentialNulls.get(key))) {
+            return;
+          }
 
-      Object newValue =
-          value instanceof Map && potentialNulls.get(key) instanceof Map ? subtractResetted(
-              (Map<String, Object>) value, (Map<String, Object>) potentialNulls.get(key))
-              : value instanceof List && potentialNulls.get(key) instanceof List ? subtractResetted(
-                  (List<Object>) value, (List<Object>) potentialNulls.get(key), key)
-                  : value instanceof List && potentialNulls.get(key) instanceof Map
+          Object newValue =
+              value instanceof Map && potentialNulls.get(key) instanceof Map
+                  ? subtractResetted(
+                      (Map<String, Object>) value, (Map<String, Object>) potentialNulls.get(key))
+                  : value instanceof List && potentialNulls.get(key) instanceof List
                       ? subtractResetted(
-                      (List<Object>) value, (Map<String, Object>) potentialNulls.get(key)) : value;
+                          (List<Object>) value, (List<Object>) potentialNulls.get(key), key)
+                      : value instanceof List && potentialNulls.get(key) instanceof Map
+                          ? subtractResetted(
+                              (List<Object>) value, (Map<String, Object>) potentialNulls.get(key))
+                          : value;
 
-      result.put(key, newValue);
-    });
+          result.put(key, newValue);
+        });
 
     return result;
   }
 
-  private List<Object> subtractResetted(List<Object> source,
-      List<Object> potentialNulls, String parentKey) {
+  private List<Object> subtractResetted(
+      List<Object> source, List<Object> potentialNulls, String parentKey) {
     if (!reverseAliases.containsKey(parentKey)) {
       return source;
     }
@@ -469,47 +473,66 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     List<Object> result = new ArrayList<>();
     KeyPathAliasUnwrap aliasUnwrap = reverseAliases.get(parentKey);
 
-    Map<String, Object> resetted = subtractResetted(aliasUnwrap.wrapMap(source),
-        aliasUnwrap.wrapMap(potentialNulls));
-    resetted.forEach((s, o) -> {
-      ((Map<String, Object>) o).remove("buildingBlock");
-    });
+    Map<String, Object> resetted =
+        subtractResetted(aliasUnwrap.wrapMap(source), aliasUnwrap.wrapMap(potentialNulls));
+    resetted.forEach(
+        (s, o) -> {
+          ((Map<String, Object>) o).remove("buildingBlock");
+        });
 
-    List<Object> collect = resetted.entrySet().stream()
-        .flatMap(entry -> {
-          return entityFactory.getKeyPathAlias(entry.getKey())
-              .map(keyPathAlias1 -> {
-                return keyPathAlias1.wrapMap(
-                    (Map<String, Object>) entry.getValue()).values().stream().flatMap(coll -> {
-                  return ((List<Object>) coll).stream();
-                });
-              }).orElse(Stream.empty());
-        }).collect(Collectors.toList());
+    List<Object> collect =
+        resetted.entrySet().stream()
+            .flatMap(
+                entry -> {
+                  return entityFactory
+                      .getKeyPathAlias(entry.getKey())
+                      .map(
+                          keyPathAlias1 -> {
+                            return keyPathAlias1
+                                .wrapMap((Map<String, Object>) entry.getValue())
+                                .values()
+                                .stream()
+                                .flatMap(
+                                    coll -> {
+                                      return ((List<Object>) coll).stream();
+                                    });
+                          })
+                      .orElse(Stream.empty());
+                })
+            .collect(Collectors.toList());
 
     return collect;
   }
 
-  private List<Object> subtractResetted(List<Object> source,
-      Map<String, Object> potentialNulls) {
+  private List<Object> subtractResetted(List<Object> source, Map<String, Object> potentialNulls) {
     List<Object> result = new ArrayList<>();
 
-    source.forEach(item -> {
-      if (potentialNulls.containsKey(item) && Objects.isNull(potentialNulls.get(item))) {
-        return;
-      }
+    source.forEach(
+        item -> {
+          if (potentialNulls.containsKey(item) && Objects.isNull(potentialNulls.get(item))) {
+            return;
+          }
 
-      result.add(item);
-    });
+          result.add(item);
+        });
 
     return result;
   }
 
-  //TODO: get from entityFactory
-  private static Map<String, KeyPathAliasUnwrap> reverseAliases = ImmutableMap
-      .of("api", value -> ((List<Map<String, Object>>) value).stream()
-          .map(buildingBlock -> new AbstractMap.SimpleImmutableEntry<String, Object>(
-              ((String) buildingBlock.get("buildingBlock")).toLowerCase(), buildingBlock))
-          .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)));
+  // TODO: get from entityFactory
+  private static Map<String, KeyPathAliasUnwrap> reverseAliases =
+      ImmutableMap.of(
+          "api",
+          value ->
+              ((List<Map<String, Object>>) value)
+                  .stream()
+                      .map(
+                          buildingBlock ->
+                              new AbstractMap.SimpleImmutableEntry<String, Object>(
+                                  ((String) buildingBlock.get("buildingBlock")).toLowerCase(),
+                                  buildingBlock))
+                      .collect(
+                          ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)));
 
   private EntityData hydrateData(Identifier identifier, EntityData entityData) {
     EntityData hydratedData = entityData;
@@ -523,21 +546,19 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
           try {
             Map<String, Object> map = asMap(identifier, hydratedData);
 
-            Map<String, Object> withoutDefaults = defaultsStore
-                .subtractDefaults(identifier, entityData.getEntitySubType(), map,
-                    ImmutableList.of());
+            Map<String, Object> withoutDefaults =
+                defaultsStore.subtractDefaults(
+                    identifier, entityData.getEntitySubType(), map, ImmutableList.of());
 
             putPartialWithoutTrigger(identifier, withoutDefaults).join();
             LOGGER.info(
                 "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-                identifier.path()
-                    .get(0),
+                identifier.path().get(0),
                 entityData.getId());
           } catch (IOException e) {
             LOGGER.error(
                 "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved: {}",
-                identifier.path()
-                    .get(0),
+                identifier.path().get(0),
                 entityData.getId(),
                 e.getMessage());
           }
@@ -545,8 +566,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         } else {
           LOGGER.warn(
               "Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
-              identifier.path()
-                  .get(0),
+              identifier.path().get(0),
               entityData.getId());
         }
       }

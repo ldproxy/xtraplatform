@@ -7,9 +7,6 @@
  */
 package de.ii.xtraplatform.dropwizard.app;
 
-import static de.ii.xtraplatform.runtime.domain.Constants.*;
-import static de.ii.xtraplatform.runtime.domain.Constants.ENV.DEVELOPMENT;
-
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Appender;
 import com.codahale.metrics.Metric;
@@ -22,7 +19,6 @@ import com.google.common.collect.ImmutableSet;
 import de.ii.xtraplatform.dropwizard.domain.ApplicationProvider;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.dropwizard.domain.MustacheResolverRegistry;
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.runtime.domain.Constants.ENV;
 import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
@@ -85,16 +81,16 @@ public class DropwizardProvider implements Dropwizard {
     this.context = context;
     this.applicationProvider = applicationProvider;
     this.mustacheResolverRegistry = mustacheResolverRegistry;
-    this.applicationName = context.getProperty(APPLICATION_KEY);
-    this.applicationVersion = context.getProperty(VERSION_KEY);
-    this.applicationEnvironment = Constants.ENV.valueOf(context.getProperty(ENV_KEY));
+    this.applicationName = context.getProperty(Constants.APPLICATION_KEY);
+    this.applicationVersion = context.getProperty(Constants.VERSION_KEY);
+    this.applicationEnvironment = Constants.ENV.valueOf(context.getProperty(Constants.ENV_KEY));
   }
 
   @Validate
   public void start() {
     Thread.currentThread().setName("startup");
 
-    Path cfgFile = Paths.get(context.getProperty(USER_CONFIG_PATH_KEY));
+    Path cfgFile = Paths.get(context.getProperty(Constants.USER_CONFIG_PATH_KEY));
 
     try {
       start(cfgFile, applicationEnvironment);
@@ -106,7 +102,8 @@ public class DropwizardProvider implements Dropwizard {
       LOGGER.debug("Initialized {} with configuration file {}", applicationName, cfgFile);
 
     } catch (Throwable ex) {
-      LOGGER.error("Error initializing {} with configuration file {}", applicationName, cfgFile, ex);
+      LOGGER.error(
+          "Error initializing {} with configuration file {}", applicationName, cfgFile, ex);
       System.exit(1);
     }
   }

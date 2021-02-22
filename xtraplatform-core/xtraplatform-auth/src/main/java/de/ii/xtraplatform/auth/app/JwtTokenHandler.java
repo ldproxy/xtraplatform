@@ -49,7 +49,8 @@ public class JwtTokenHandler implements TokenHandler {
 
   @Override
   public String generateToken(User user, int expiresIn, boolean rememberMe) {
-    return generateToken(user, Date.from(Instant.now().plus(expiresIn, ChronoUnit.MINUTES)), rememberMe);
+    return generateToken(
+        user, Date.from(Instant.now().plus(expiresIn, ChronoUnit.MINUTES)), rememberMe);
   }
 
   @Override
@@ -71,7 +72,10 @@ public class JwtTokenHandler implements TokenHandler {
     if (authConfig.isActive() && authConfig.isJwt()) {
       try {
         Claims claimsJws =
-            new DefaultJwtParser().setSigningKey(authConfig.jwtSigningKey).parseClaimsJws(token).getBody();
+            new DefaultJwtParser()
+                .setSigningKey(authConfig.jwtSigningKey)
+                .parseClaimsJws(token)
+                .getBody();
 
         return Optional.of(
             ImmutableUser.builder()
@@ -95,7 +99,10 @@ public class JwtTokenHandler implements TokenHandler {
     if (authConfig.isActive() && authConfig.isJwt()) {
       try {
         Claims claimsJws =
-            new DefaultJwtParser().setSigningKey(authConfig.jwtSigningKey).parseClaimsJws(token).getBody();
+            new DefaultJwtParser()
+                .setSigningKey(authConfig.jwtSigningKey)
+                .parseClaimsJws(token)
+                .getBody();
 
         return Optional.ofNullable(claimsJws.get(name, type));
 
@@ -121,7 +128,9 @@ public class JwtTokenHandler implements TokenHandler {
     authConfig.jwtSigningKey = Base64.getEncoder().encodeToString(key.getEncoded());
 
     // TODO
-    LOGGER.warn("No valid 'jwtSigningKey' found in 'cfg.yml', using '{}'. If you do not set 'jwtSigningKey', it will change on every restart.", authConfig.jwtSigningKey);
+    LOGGER.warn(
+        "No valid 'jwtSigningKey' found in 'cfg.yml', using '{}'. If you do not set 'jwtSigningKey', it will change on every restart.",
+        authConfig.jwtSigningKey);
 
     return key;
   }

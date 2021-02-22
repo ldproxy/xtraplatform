@@ -6,13 +6,9 @@ import org.gradle.api.GradleException
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.attributes.HasAttributes
 import org.gradle.api.plugins.osgi.OsgiPlugin
+import org.gradle.api.tasks.testing.Test
 import org.slf4j.LoggerFactory
-
-import java.util.jar.JarEntry
-import java.util.jar.JarFile
-import java.util.zip.ZipEntry
 
 class BundlePlugin implements Plugin<Project> {
 
@@ -51,6 +47,8 @@ class BundlePlugin implements Plugin<Project> {
         addEmbeddingToJarTask(project);
 
         addIpojoManipulatorToJarTask(project);
+
+        setupUnitTests(project);
 
 
         project.tasks.jar.doLast {
@@ -130,8 +128,8 @@ class BundlePlugin implements Plugin<Project> {
             def pkgsExport = Dependencies.getPackages(depsExport)
 
             //if (doExport) {
-                // export only direct dependencies
-                // pkgs = getPackages(getDependencies(project, embedInstruction, false))
+            // export only direct dependencies
+            // pkgs = getPackages(getDependencies(project, embedInstruction, false))
             pkgsExport.each { pkg ->
                 project.jar.manifest.instruction("Export-Package", "${pkg.name};version=${pkg.version.replaceAll('(-[\\w]+)+$', '')}")
                 project.jar.manifest.instruction("Import-Package", "${pkg.name};version=${pkg.version.replaceAll('(-[\\w]+)+$', '')}")
@@ -141,7 +139,7 @@ class BundlePlugin implements Plugin<Project> {
                 project.jar.manifest.instructionFirst("Export-Package", "!${pkg.name}")
                 project.jar.manifest.instructionFirst("Private-Package", "${pkg.name}")
                 //if (!doImport) {
-                    project.jar.manifest.instructionFirst("Import-Package", "!${pkg.name}")
+                project.jar.manifest.instructionFirst("Import-Package", "!${pkg.name}")
                 //}
             }
             //}
@@ -212,5 +210,69 @@ class BundlePlugin implements Plugin<Project> {
         project.tasks.osgiClasses.finalizedBy project.tasks.noOsgiClasses
     }
 
+    void setupUnitTests(Project project) {
+        project.plugins.apply('groovy')
+
+        project.dependencies.add('testImplementation', "org.spockframework:spock-core:2.+")
+        project.dependencies.add('testImplementation', "com.athaydes:spock-reports:2.+", { transitive = false })
+
+        project.dependencies.add('testImplementation', "net.bytebuddy:byte-buddy:1.10.9")
+        // needed by spock to mock non-interface types
+        project.dependencies.add('testImplementation', "org.objenesis:objenesis:1.2")
+        // needed by spock to mock constructors for non-interface types
+
+        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-templates:3.+")
+        // needed by spock-reports
+        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-xml:3.+")
+        // needed by spock-reports
+        project.dependencies.add('testImplementation', "org.codehaus.groovy:groovy-json:3.+")
+        // needed by spock-reports
+
+        def testConfig = {
+            useJUnitPlatform()
+
+            testLogging.showStandardStreams = true
+            reports {
+                html.enabled false
+                junitXml.enabled = false
+            }
+
+            outputs.dir("${project.rootProject.buildDir}/reports/spock")
+
+            systemProperty 'com.athaydes.spockframework.report.outputDir', "${project.rootProject.buildDir}/reports/spock"
+            systemProperty 'com.athaydes.spockframework.report.showCodeBlocks', 'true'
+            systemProperty 'com.athaydes.spockframework.report.projectName', project.rootProject.name
+            systemProperty 'com.athaydes.spockframework.report.projectVersion', project.rootProject.version
+            systemProperty 'com.athaydes.spockframework.report.projectVersion', project.rootProject.version
+
+            systemProperty 'logback.configurationFile', 'logback-test.xml'
+            systemProperty 'spock.configuration', 'SpockConfig.groovy'
+
+            doLast {
+                println "\nSpock report: file://${project.rootProject.buildDir}/reports/spock/index.html"
+            }
+        }
+
+        project.tasks.test.with testConfig
+
+        project.tasks.register("testSlow", Test) {
+            with testConfig
+            systemProperty 'spock.include.Slow', 'true'
+        }
+
+        /*tasks.withType(Test).configureEach { testTask ->
+        testTask.configure {
+            useJUnitPlatform()
+
+            afterSuite { desc, result ->
+                if (!desc.parent) {
+                    if (result.testCount == 0) {
+                        throw new IllegalStateException("No tests were found. Failing the build")
+                    }
+                }
+            }
+        }
+    }*/
+    }
 
 }

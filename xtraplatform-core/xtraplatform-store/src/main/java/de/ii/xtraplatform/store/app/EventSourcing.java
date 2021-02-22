@@ -64,7 +64,13 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       Supplier<CompletableFuture<Void>> onStart,
       Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor,
       Optional<BiConsumer<Identifier, T>> updateHook) {
-    this(eventStore, eventTypes, valueEncoding, onStart, eventProcessor, updateHook,
+    this(
+        eventStore,
+        eventTypes,
+        valueEncoding,
+        onStart,
+        eventProcessor,
+        updateHook,
         Optional.empty());
   }
 
@@ -86,9 +92,11 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     this.onStart = onStart;
     this.valueValidator = valueValidator;
     this.started = new HashSet<>();
-    this.executorService = MoreExecutors.getExitingExecutorService(
-        (ThreadPoolExecutor) Executors.newFixedThreadPool(2,
-            new ThreadFactoryBuilder().setNameFormat("stream.events-%d").build()));
+    this.executorService =
+        MoreExecutors.getExitingExecutorService(
+            (ThreadPoolExecutor)
+                Executors.newFixedThreadPool(
+                    2, new ThreadFactoryBuilder().setNameFormat("stream.events-%d").build()));
 
     eventStore.subscribe(this);
   }
@@ -104,16 +112,14 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       try {
         if (eventProcessor.isPresent()) {
           CompletableFuture<T> completableFuture = null;
-          //TODO
-          if (queue.containsKey(((MutationEvent) event).identifier()) && ((MutationEvent) event)
-              .type().equals("defaults") && ((MutationEvent) event).identifier().id()
-              .equals("services.ogc_api")) {
-            completableFuture = queue
-                .get(((MutationEvent) event).identifier());
+          // TODO
+          if (queue.containsKey(((MutationEvent) event).identifier())
+              && ((MutationEvent) event).type().equals("defaults")
+              && ((MutationEvent) event).identifier().id().equals("services.ogc_api")) {
+            completableFuture = queue.get(((MutationEvent) event).identifier());
             queue.remove(((MutationEvent) event).identifier());
           }
-          for (MutationEvent mutationEvent : eventProcessor.get()
-              .apply((MutationEvent) event)) {
+          for (MutationEvent mutationEvent : eventProcessor.get().apply((MutationEvent) event)) {
             if (Objects.nonNull(completableFuture)) {
               queue.put(mutationEvent.identifier(), completableFuture);
             }
@@ -138,22 +144,17 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
           started.add(((StateChangeEvent) event).type());
 
           if (started.containsAll(getEventTypes())) {
-            onStart
-                .get()
-                .thenRun(
-                    () ->
-                        LOGGER.debug(
-                            "Listening for events for {}", started));
+            onStart.get().thenRun(() -> LOGGER.debug("Listening for events for {}", started));
           }
           break;
       }
     } else if (event instanceof ReloadEvent && updateHook.isPresent()) {
       List<Identifier> identifiers = getIdentifiers(((ReloadEvent) event).filter());
-      identifiers.forEach(identifier -> {
-        T data = getFromCache(identifier);
-        updateHook.get()
-            .accept(identifier, data);
-      });
+      identifiers.forEach(
+          identifier -> {
+            T data = getFromCache(identifier);
+            updateHook.get().accept(identifier, data);
+          });
     }
   }
 
@@ -181,8 +182,8 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     return pushMutationEventRaw(identifier, payload, Objects.isNull(data));
   }
 
-  public CompletableFuture<T> pushPartialMutationEvent(Identifier identifier,
-      Map<String, Object> data) {
+  public CompletableFuture<T> pushPartialMutationEvent(
+      Identifier identifier, Map<String, Object> data) {
     final byte[] payload = valueEncoding.serialize(data);
 
     return pushMutationEventRaw(identifier, payload, Objects.isNull(data));
@@ -242,8 +243,12 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     Throwable error = null;
 
     try {
-      value = valueEncoding.deserialize(event.identifier(), event.payload(), payloadFormat,
-          Objects.equals(event.ignoreCache(), true));
+      value =
+          valueEncoding.deserialize(
+              event.identifier(),
+              event.payload(),
+              payloadFormat,
+              Objects.equals(event.ignoreCache(), true));
 
     } catch (Throwable e) {
       error = e;
@@ -278,13 +283,17 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
   private List<Identifier> getIdentifiers(EventFilter filter) {
 
-    return getIdentifiers().stream().filter(identifier -> {
-      if (filter.getEntityTypes().contains("*") || (!identifier.path().isEmpty() && filter
-          .getEntityTypes().contains(identifier.path().get(0)))) {
-        return filter.getIds().contains("*") || filter.getIds().contains(identifier.id());
-      }
+    return getIdentifiers().stream()
+        .filter(
+            identifier -> {
+              if (filter.getEntityTypes().contains("*")
+                  || (!identifier.path().isEmpty()
+                      && filter.getEntityTypes().contains(identifier.path().get(0)))) {
+                return filter.getIds().contains("*") || filter.getIds().contains(identifier.id());
+              }
 
-      return false;
-    }).collect(Collectors.toList());
+              return false;
+            })
+        .collect(Collectors.toList());
   }
 }

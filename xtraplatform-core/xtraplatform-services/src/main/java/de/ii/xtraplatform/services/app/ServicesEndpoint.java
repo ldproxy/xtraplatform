@@ -195,41 +195,41 @@ public class ServicesEndpoint {
       @Context ContainerRequestContext containerRequestContext,
       @PathParam("version") Integer version) {
 
-      Service service = getService(id, callback);
+    Service service = getService(id, callback);
 
-      if (service.getData().getApiVersion().isPresent()) {
-        Integer apiVersion = service.getData().getApiVersion().get();
+    if (service.getData().getApiVersion().isPresent()) {
+      Integer apiVersion = service.getData().getApiVersion().get();
 
-        if (Objects.isNull(version)) {
-          String redirectPath =
-              containerRequestContext
-                  .getUriInfo()
-                  .getAbsolutePath()
-                  .getPath()
-                  .replace(id, String.format("%s/v%d", id, apiVersion));
-          if (getExternalUri().isPresent()) {
-            redirectPath = redirectPath.replace("/rest/services", getExternalUri().get().getPath());
-          }
-          URI redirectUri =
-              containerRequestContext
-                  .getUriInfo()
-                  .getRequestUriBuilder()
-                  .replacePath(redirectPath)
-                  .build();
-
-          throw new WebApplicationException(Response.temporaryRedirect(redirectUri).build());
-        } else if (!Objects.equals(apiVersion, version)) {
-          throw new NotFoundException();
+      if (Objects.isNull(version)) {
+        String redirectPath =
+            containerRequestContext
+                .getUriInfo()
+                .getAbsolutePath()
+                .getPath()
+                .replace(id, String.format("%s/v%d", id, apiVersion));
+        if (getExternalUri().isPresent()) {
+          redirectPath = redirectPath.replace("/rest/services", getExternalUri().get().getPath());
         }
-      } else if (Objects.nonNull(version)) {
+        URI redirectUri =
+            containerRequestContext
+                .getUriInfo()
+                .getRequestUriBuilder()
+                .replacePath(redirectPath)
+                .build();
+
+        throw new WebApplicationException(Response.temporaryRedirect(redirectUri).build());
+      } else if (!Objects.equals(apiVersion, version)) {
         throw new NotFoundException();
       }
+    } else if (Objects.nonNull(version)) {
+      throw new NotFoundException();
+    }
 
     openLoggingContext(id, version, containerRequestContext);
 
     serviceContext.inject(containerRequestContext, service);
 
-      return getServiceResource(service);
+    return getServiceResource(service);
   }
 
   // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory
@@ -256,7 +256,8 @@ public class ServicesEndpoint {
     openLoggingContext(null, null, containerRequestContext);
   }
 
-  private void openLoggingContext(String serviceId, Integer version, ContainerRequestContext containerRequestContext) {
+  private void openLoggingContext(
+      String serviceId, Integer version, ContainerRequestContext containerRequestContext) {
     if (Objects.nonNull(serviceId)) {
       LogContext.put(LogContext.CONTEXT.SERVICE, serviceId);
     } else {
@@ -265,7 +266,10 @@ public class ServicesEndpoint {
 
     if (LOGGER.isDebugEnabled()) {
       LogContext.put(LogContext.CONTEXT.REQUEST, LogContext.generateRandomUuid().toString());
-      LOGGER.debug("Processing request: {} {}", containerRequestContext.getMethod(), formatUri(containerRequestContext.getUriInfo().getRequestUri(), serviceId, version));
+      LOGGER.debug(
+          "Processing request: {} {}",
+          containerRequestContext.getMethod(),
+          formatUri(containerRequestContext.getUriInfo().getRequestUri(), serviceId, version));
     } else {
       LogContext.remove(LogContext.CONTEXT.REQUEST);
     }
@@ -278,7 +282,7 @@ public class ServicesEndpoint {
       path = path.substring(path.indexOf(serviceId) + serviceId.length());
     }
     if (Objects.nonNull(version)) {
-      String versionString = "v"+version;
+      String versionString = "v" + version;
       path = path.substring(path.indexOf(versionString) + versionString.length());
     }
 

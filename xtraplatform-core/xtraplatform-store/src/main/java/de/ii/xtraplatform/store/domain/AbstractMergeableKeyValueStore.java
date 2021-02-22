@@ -49,23 +49,25 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
 
     // TODO: SnapshotProvider???
     try {
-      byte[] merged = getValueEncoding()
-          .serialize(
-              getValueEncoding()
-                  .deserialize(identifier, payload, getValueEncoding().getDefaultFormat(), false));
+      byte[] merged =
+          getValueEncoding()
+              .serialize(
+                  getValueEncoding()
+                      .deserialize(
+                          identifier, payload, getValueEncoding().getDefaultFormat(), false));
 
       return getEventSourcing()
-              .pushMutationEventRaw(identifier, merged)
-              .whenComplete(
-                      (entityData, throwable) -> {
-                        if (Objects.nonNull(entityData)) {
-                          onUpdate(identifier, entityData);
-                        } else if (Objects.nonNull(throwable)) {
-                          onFailure(identifier, throwable);
-                        }
-                      });
+          .pushMutationEventRaw(identifier, merged)
+          .whenComplete(
+              (entityData, throwable) -> {
+                if (Objects.nonNull(entityData)) {
+                  onUpdate(identifier, entityData);
+                } else if (Objects.nonNull(throwable)) {
+                  onFailure(identifier, throwable);
+                }
+              });
     } catch (IOException e) {
-      //never reached, will fail in isUpdateValid
+      // never reached, will fail in isUpdateValid
       return CompletableFuture.failedFuture(e);
     }
   }

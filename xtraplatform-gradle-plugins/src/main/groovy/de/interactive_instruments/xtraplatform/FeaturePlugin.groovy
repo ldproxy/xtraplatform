@@ -6,6 +6,8 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.bundling.Jar
+import org.jetbrains.gradle.ext.ActionDelegationConfig
+import org.jetbrains.gradle.ext.JUnit
 import org.slf4j.LoggerFactory
 
 /**
@@ -64,6 +66,21 @@ class FeaturePlugin implements Plugin<Project> {
         configureSubprojects(project, includedBuilds)
 
         project.plugins.apply(DocPlugin.class)
+        project.plugins.apply('org.jetbrains.gradle.plugin.idea-ext')
+
+        project.with {
+            idea.project.settings {
+                runConfigurations {
+                    defaults(JUnit) {
+                        vmParameters = '-ea -Dlogback.configurationFile=logback-test.xml'
+                    }
+                }
+                delegateActions {
+                    delegateBuildRunToGradle = true
+                    testRunner = ActionDelegationConfig.TestRunner.PLATFORM
+                }
+            }
+        }
     }
 
     void addFeatureBundles(Project project, includedBuilds) {

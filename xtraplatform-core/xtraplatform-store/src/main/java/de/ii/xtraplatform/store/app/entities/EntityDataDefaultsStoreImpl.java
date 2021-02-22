@@ -7,12 +7,12 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
-import com.fasterxml.jackson.core.JsonParser.Feature;
+import static de.ii.xtraplatform.dropwizard.domain.LambdaWithException.biConsumerMayThrow;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
@@ -35,14 +35,6 @@ import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsPath;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -52,8 +44,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-
-import static de.ii.xtraplatform.dropwizard.domain.LambdaWithException.biConsumerMayThrow;
+import org.apache.felix.ipojo.annotations.Component;
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
+import org.apache.felix.ipojo.annotations.Requires;
+import org.apache.felix.ipojo.annotations.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(publicFactory = false)
 @Provides
@@ -84,7 +81,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             ImmutableList.of(EntityDataDefaultsStore.EVENT_TYPE),
             valueEncoding,
             this::onStart,
-            Optional.of(this::processEvent), Optional.empty(),
+            Optional.of(this::processEvent),
+            Optional.empty(),
             Optional.of(biConsumerMayThrow(this::validateDefaults)));
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
@@ -168,8 +166,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             cacheKey -> {
               ImmutableMutationEvent.Builder builder =
                   ImmutableMutationEvent.builder().from(event).identifier(cacheKey);
-              if (!defaultsPath.getKeyPath().isEmpty() && !Objects
-                  .equals(defaultsPath.getKeyPath().get(0), EVENT_TYPE)) {
+              if (!defaultsPath.getKeyPath().isEmpty()
+                  && !Objects.equals(defaultsPath.getKeyPath().get(0), EVENT_TYPE)) {
                 Optional<KeyPathAlias> keyPathAlias =
                     entityFactory.getKeyPathAlias(
                         defaultsPath.getKeyPath().get(defaultsPath.getKeyPath().size() - 1));
@@ -212,23 +210,33 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   }
 
   @Override
-  public Map<String, Object> subtractDefaults(Identifier identifier, Optional<String> subType,
-      Map<String, Object> data, List<String> ignoreKeys) {
+  public Map<String, Object> subtractDefaults(
+      Identifier identifier,
+      Optional<String> subType,
+      Map<String, Object> data,
+      List<String> ignoreKeys) {
 
     Identifier defaultsIdentifier =
-        subType.isPresent() ? ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
-            .addAllPath(identifier.path()).addPath(subType.get().toLowerCase()).build()
-            : ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
-                .addAllPath(identifier.path()).build();
+        subType.isPresent()
+            ? ImmutableIdentifier.builder()
+                .id(EntityDataDefaultsStore.EVENT_TYPE)
+                .addAllPath(identifier.path())
+                .addPath(subType.get().toLowerCase())
+                .build()
+            : ImmutableIdentifier.builder()
+                .id(EntityDataDefaultsStore.EVENT_TYPE)
+                .addAllPath(identifier.path())
+                .build();
 
-    EntityDataBuilder<EntityData> newBuilder = getBuilder(defaultsIdentifier)
-        .fillRequiredFieldsWithPlaceholders();
+    EntityDataBuilder<EntityData> newBuilder =
+        getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders();
 
     try {
       byte[] payload = valueEncodingEntity.serialize(newBuilder.build());
 
-      Map<String, Object> defaults = valueEncodingMap
-          .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
+      Map<String, Object> defaults =
+          valueEncodingMap.deserialize(
+              defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
       return new MapSubtractor().subtract(data, defaults, ignoreKeys);
 
@@ -240,17 +248,23 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   }
 
   @Override
-  public Optional<Map<String, Object>> getAllDefaults(Identifier identifier,
-      Optional<String> subType) {
+  public Optional<Map<String, Object>> getAllDefaults(
+      Identifier identifier, Optional<String> subType) {
 
     Identifier defaultsIdentifier =
-        subType.isPresent() ? ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
-            .addAllPath(identifier.path()).addPath(subType.get().toLowerCase()).build()
-            : ImmutableIdentifier.builder().id(EntityDataDefaultsStore.EVENT_TYPE)
-                .addAllPath(identifier.path()).build();
+        subType.isPresent()
+            ? ImmutableIdentifier.builder()
+                .id(EntityDataDefaultsStore.EVENT_TYPE)
+                .addAllPath(identifier.path())
+                .addPath(subType.get().toLowerCase())
+                .build()
+            : ImmutableIdentifier.builder()
+                .id(EntityDataDefaultsStore.EVENT_TYPE)
+                .addAllPath(identifier.path())
+                .build();
 
-    Optional<EntityDataBuilder<EntityData>> newBuilder = Optional
-        .ofNullable(getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders());
+    Optional<EntityDataBuilder<EntityData>> newBuilder =
+        Optional.ofNullable(getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders());
 
     if (newBuilder.isPresent()) {
       try {
@@ -258,13 +272,15 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
         byte[] payload = valueEncodingEntity.serialize(data);
 
-        Map<String, Object> defaults = valueEncodingMap
-            .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
+        Map<String, Object> defaults =
+            valueEncodingMap.deserialize(
+                defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
-        //TODO
-        defaults = defaults.entrySet().stream()
-            .filter(entry -> !Objects.equals(entry.getValue(), "__DEFAULT__"))
-            .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+        // TODO
+        defaults =
+            defaults.entrySet().stream()
+                .filter(entry -> !Objects.equals(entry.getValue(), "__DEFAULT__"))
+                .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return Optional.ofNullable(defaults);
 
@@ -316,7 +332,6 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     byte[] payload = valueEncodingBuilder.serialize(defaults);
     valueEncodingBuilder.deserialize(
         identifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
-
   }
 
   @Override
@@ -334,7 +349,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     return null;
   }
 
-  //TODO: load defaults from EntityFactory that weren't loaded by event
+  // TODO: load defaults from EntityFactory that weren't loaded by event
   @Override
   protected CompletableFuture<Void> onStart() {
 
@@ -359,22 +374,22 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   }
 
   @Override
-  public CompletableFuture<Map<String, Object>> patch(String id, Map<String, Object> partialData,
-      String... path) {
+  public CompletableFuture<Map<String, Object>> patch(
+      String id, Map<String, Object> partialData, String... path) {
     String defaultId = Joiner.on('.').join(path);
     Map<String, Object> defaults = partialData;
 
     if (has(id, path)) {
       Identifier defaultsIdentifier = Identifier.from(id, path);
 
-      Optional<EntityDataBuilder<EntityData>> newBuilder = Optional
-          .ofNullable(getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders());
+      Optional<EntityDataBuilder<EntityData>> newBuilder =
+          Optional.ofNullable(getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders());
 
       if (newBuilder.isPresent()) {
         try {
 
-          ObjectMapper mapper = valueEncodingEntity
-              .getMapper(valueEncodingEntity.getDefaultFormat());
+          ObjectMapper mapper =
+              valueEncodingEntity.getMapper(valueEncodingEntity.getDefaultFormat());
 
           byte[] serialize = valueEncodingEntity.serialize(partialData);
 
@@ -382,13 +397,15 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
           byte[] payload = valueEncodingEntity.serialize(newBuilder.get().build());
 
-          defaults = valueEncodingMap
-              .deserialize(defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
+          defaults =
+              valueEncodingMap.deserialize(
+                  defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
-          //TODO
-          defaults = defaults.entrySet().stream()
-              .filter(entry -> !Objects.equals(entry.getValue(), "__DEFAULT__"))
-              .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+          // TODO
+          defaults =
+              defaults.entrySet().stream()
+                  .filter(entry -> !Objects.equals(entry.getValue(), "__DEFAULT__"))
+                  .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
 
         } catch (Throwable e) {
           LOGGER.debug("ERROR", e);
@@ -396,9 +413,12 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       }
     }
 
-    put(defaultId, defaults).thenRun(() -> {
-      eventStore.replay(EventFilter.fromPath(Path.of(EntityDataDefaultsStore.EVENT_TYPE, defaultId)));
-    });
+    put(defaultId, defaults)
+        .thenRun(
+            () -> {
+              eventStore.replay(
+                  EventFilter.fromPath(Path.of(EntityDataDefaultsStore.EVENT_TYPE, defaultId)));
+            });
 
     return CompletableFuture.completedFuture(defaults);
   }

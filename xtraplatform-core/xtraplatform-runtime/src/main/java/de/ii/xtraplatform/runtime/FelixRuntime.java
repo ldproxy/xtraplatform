@@ -7,19 +7,11 @@
  */
 package de.ii.xtraplatform.runtime;
 
-import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteSource;
-import com.google.common.io.Resources;
 import de.ii.xtraplatform.runtime.domain.ConfigurationReader;
 import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.runtime.domain.LogContext;
-import io.dropwizard.jackson.Jackson;
-import io.dropwizard.logging.DefaultLoggingFactory;
-import io.dropwizard.util.Duration;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

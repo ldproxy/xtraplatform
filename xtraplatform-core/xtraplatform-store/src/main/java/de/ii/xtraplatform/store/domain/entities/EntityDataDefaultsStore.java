@@ -16,8 +16,11 @@ import java.util.Optional;
 public interface EntityDataDefaultsStore extends MergeableKeyValueStore<Map<String, Object>> {
   String EVENT_TYPE = "defaults";
 
-  Map<String, Object> subtractDefaults(Identifier identifier, Optional<String> subType,
-      Map<String, Object> data, List<String> ignoreKeys);
+  Map<String, Object> subtractDefaults(
+      Identifier identifier,
+      Optional<String> subType,
+      Map<String, Object> data,
+      List<String> ignoreKeys);
 
   Optional<Map<String, Object>> getAllDefaults(Identifier identifier, Optional<String> subType);
 

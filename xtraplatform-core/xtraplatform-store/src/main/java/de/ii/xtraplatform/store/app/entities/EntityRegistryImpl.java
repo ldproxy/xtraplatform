@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -91,20 +90,20 @@ public class EntityRegistryImpl implements EntityRegistry {
   @Override
   public <T extends PersistentEntity> List<T> getEntitiesForType(Class<T> type) {
     return entities.stream()
-               .filter(persistentEntity -> type.isAssignableFrom(persistentEntity.getClass()))
-               .map(type::cast)
-               .collect(ImmutableList.toImmutableList());
+        .filter(persistentEntity -> type.isAssignableFrom(persistentEntity.getClass()))
+        .map(type::cast)
+        .collect(ImmutableList.toImmutableList());
   }
 
   @Override
   public <T extends PersistentEntity> Optional<T> getEntity(Class<T> type, String id) {
     return entities.stream()
-               .filter(
+        .filter(
             persistentEntity ->
                 type.isAssignableFrom(persistentEntity.getClass())
                     && persistentEntity.getId().equals(id))
-               .map(type::cast)
-               .findFirst();
+        .map(type::cast)
+        .findFirst();
   }
 
   @Override
@@ -114,23 +113,27 @@ public class EntityRegistryImpl implements EntityRegistry {
   }
 
   @Override
-  public <T extends PersistentEntity> void addEntityListener(Class<T> type, Consumer<T> listener, boolean existing) {
-    this.entityListeners.add((id, entity) -> {
-      if (type.isAssignableFrom(entity.getClass())) {
-        listener.accept(type.cast(entity));
-      }
-    });
+  public <T extends PersistentEntity> void addEntityListener(
+      Class<T> type, Consumer<T> listener, boolean existing) {
+    this.entityListeners.add(
+        (id, entity) -> {
+          if (type.isAssignableFrom(entity.getClass())) {
+            listener.accept(type.cast(entity));
+          }
+        });
     if (existing) {
       getEntitiesForType(type).forEach(listener);
     }
   }
 
   @Override
-  public <T extends PersistentEntity> void addEntityGoneListener(Class<T> type, Consumer<T> listener) {
-    this.entityGoneListeners.add((entity) -> {
-      if (type.isAssignableFrom(entity.getClass())) {
-        listener.accept(type.cast(entity));
-      }
-    });
+  public <T extends PersistentEntity> void addEntityGoneListener(
+      Class<T> type, Consumer<T> listener) {
+    this.entityGoneListeners.add(
+        (entity) -> {
+          if (type.isAssignableFrom(entity.getClass())) {
+            listener.accept(type.cast(entity));
+          }
+        });
   }
 }

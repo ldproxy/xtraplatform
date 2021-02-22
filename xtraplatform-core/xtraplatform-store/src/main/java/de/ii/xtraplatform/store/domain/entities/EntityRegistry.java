@@ -20,7 +20,8 @@ public interface EntityRegistry {
 
   void addEntityListener(BiConsumer<String, PersistentEntity> listener);
 
-  <T extends PersistentEntity> void addEntityListener(Class<T> type, Consumer<T> listener, boolean existing);
+  <T extends PersistentEntity> void addEntityListener(
+      Class<T> type, Consumer<T> listener, boolean existing);
 
   <T extends PersistentEntity> void addEntityGoneListener(Class<T> type, Consumer<T> listener);
 }

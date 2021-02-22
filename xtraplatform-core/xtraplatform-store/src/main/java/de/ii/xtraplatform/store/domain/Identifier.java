@@ -9,9 +9,8 @@ package de.ii.xtraplatform.store.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.util.List;
-
 import com.google.common.base.Joiner;
+import java.util.List;
 import org.immutables.value.Value;
 
 @Value.Immutable
