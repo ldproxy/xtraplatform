@@ -12,6 +12,7 @@ import de.ii.xtraplatform.dropwizard.app.amdatu.DefaultPages;
 import de.ii.xtraplatform.dropwizard.app.amdatu.InvalidEntryException;
 import de.ii.xtraplatform.dropwizard.app.amdatu.ResourceEntry;
 import de.ii.xtraplatform.dropwizard.app.amdatu.ResourceKeyParser;
+import de.ii.xtraplatform.dropwizard.domain.StaticResourceServlet;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -21,8 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
-
-import de.ii.xtraplatform.dropwizard.domain.StaticResourceServlet;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -34,9 +33,7 @@ import org.osgi.service.http.whiteboard.HttpWhiteboardConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 @Component
 // @Provides(specifications=StaticResourceRegistry.class)
 @Instantiate
@@ -62,8 +59,9 @@ public class StaticResourceRegistry {
       DefaultPages defaultPages =
           DefaultPageParser.parseDefaultPages(
               bundle.getHeaders().get(StaticResourceConstants.WEB_RESOURCE_DEFAULT_PAGE));
-      Optional<String> rootRedirect = Optional
-          .ofNullable(bundle.getHeaders().get(StaticResourceConstants.WEB_RESOURCE_ROOT_REDIRECT));
+      Optional<String> rootRedirect =
+          Optional.ofNullable(
+              bundle.getHeaders().get(StaticResourceConstants.WEB_RESOURCE_ROOT_REDIRECT));
 
       List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
 
@@ -80,7 +78,8 @@ public class StaticResourceRegistry {
                 entry.getAlias(),
                 StandardCharsets.UTF_8,
                 bundle,
-                defaultPages, rootRedirect);
+                defaultPages,
+                rootRedirect);
         Hashtable<String, Object> props = new Hashtable<>();
         props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN, entry.getAlias());
         props.put(

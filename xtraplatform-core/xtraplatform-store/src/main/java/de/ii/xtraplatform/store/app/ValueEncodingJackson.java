@@ -128,8 +128,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
   }
 
   @Override
-  public final T deserialize(Identifier identifier, byte[] payload, FORMAT format,
-      boolean ignoreCache)
+  public final T deserialize(
+      Identifier identifier, byte[] payload, FORMAT format, boolean ignoreCache)
       throws IOException {
     // "null" as payload means delete
     if (isNull(payload)) {
@@ -155,8 +155,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
           decoderMiddleware.stream().filter(ValueDecoderMiddleware::canRecover).findFirst();
       if (recovery.isPresent()) {
         try {
-          data = recovery.get()
-              .recover(identifier, rawData, objectMapper);
+          data = recovery.get().recover(identifier, rawData, objectMapper);
         } catch (Throwable e2) {
           throw e;
         }
@@ -193,8 +192,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     ObjectMapper mapper = getMapper(format);
 
     Map<String, Object> data =
-        mapper.readValue(payload, new TypeReference<LinkedHashMap<String, Object>>() {
-        });
+        mapper.readValue(payload, new TypeReference<LinkedHashMap<String, Object>>() {});
 
     for (int i = nestingPath.size() - 1; i >= 0; i--) {
       if (i == nestingPath.size() - 1 && keyPathAlias.isPresent()) {
@@ -230,8 +228,14 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
   @Deprecated // can be removed after upgrade to Jackson 2.10 / Dropwizard 2.x
   static class EmptyStringFixYAMLGenerator extends YAMLGenerator {
 
-    public EmptyStringFixYAMLGenerator(IOContext ctxt, int jsonFeatures, int yamlFeatures,
-        ObjectCodec codec, Writer out, Version version) throws IOException {
+    public EmptyStringFixYAMLGenerator(
+        IOContext ctxt,
+        int jsonFeatures,
+        int yamlFeatures,
+        ObjectCodec codec,
+        Writer out,
+        Version version)
+        throws IOException {
       super(ctxt, jsonFeatures, yamlFeatures, codec, out, version);
     }
 
@@ -249,8 +253,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
   static class EmptyStringFixYAMLFactory extends YAMLFactory {
     @Override
     protected YAMLGenerator _createGenerator(Writer out, IOContext ctxt) throws IOException {
-      return new EmptyStringFixYAMLGenerator(ctxt, _generatorFeatures, _yamlGeneratorFeatures,
-          _objectCodec, out, _version);
+      return new EmptyStringFixYAMLGenerator(
+          ctxt, _generatorFeatures, _yamlGeneratorFeatures, _objectCodec, out, _version);
     }
   }
 }

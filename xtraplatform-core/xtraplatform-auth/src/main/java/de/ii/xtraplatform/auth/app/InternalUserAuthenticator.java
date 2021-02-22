@@ -69,8 +69,11 @@ public class InternalUserAuthenticator implements UserAuthenticator {
         long now = Instant.now().toEpochMilli();
 
         return Optional.of(
-            ImmutableUser.builder().name(userData.getId()).role(userData.getRole())
-                .forceChangePassword(userData.getPasswordExpiresAt().orElse(now) < now).build());
+            ImmutableUser.builder()
+                .name(userData.getId())
+                .role(userData.getRole())
+                .forceChangePassword(userData.getPasswordExpiresAt().orElse(now) < now)
+                .build());
       }
     }
 

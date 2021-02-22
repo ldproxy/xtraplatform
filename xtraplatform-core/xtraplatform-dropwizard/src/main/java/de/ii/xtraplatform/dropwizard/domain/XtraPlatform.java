@@ -9,7 +9,6 @@ package de.ii.xtraplatform.dropwizard.domain;
 
 import de.ii.xtraplatform.runtime.domain.Constants.ENV;
 import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
-
 import java.net.URI;
 
 public interface XtraPlatform {

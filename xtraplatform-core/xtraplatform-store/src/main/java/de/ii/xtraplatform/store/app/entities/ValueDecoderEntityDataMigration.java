@@ -40,7 +40,11 @@ public class ValueDecoderEntityDataMigration implements ValueDecoderMiddleware<E
 
   @Override
   public EntityData process(
-          Identifier identifier, byte[] payload, ObjectMapper objectMapper, EntityData entityData, boolean ignoreCache)
+      Identifier identifier,
+      byte[] payload,
+      ObjectMapper objectMapper,
+      EntityData entityData,
+      boolean ignoreCache)
       throws IOException {
     if (entityData.getEntityStorageVersion() < entityData.getEntitySchemaVersion()) {
       migrateSchema(

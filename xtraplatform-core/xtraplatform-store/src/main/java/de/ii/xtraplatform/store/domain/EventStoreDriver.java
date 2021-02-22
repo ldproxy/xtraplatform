@@ -9,7 +9,6 @@ package de.ii.xtraplatform.store.domain;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.WatchEvent;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -19,7 +18,7 @@ public interface EventStoreDriver {
 
   Stream<MutationEvent> loadEventStream();
 
-    void saveEvent(MutationEvent event) throws IOException;
+  void saveEvent(MutationEvent event) throws IOException;
 
   void deleteAllEvents(String type, Identifier identifier, String format) throws IOException;
 

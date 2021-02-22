@@ -9,14 +9,10 @@ package de.ii.xtraplatform.runtime.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import de.ii.xtraplatform.runtime.app.ThirdPartyLoggingFilter;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
-import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.logging.LoggingFactory;
-import io.dropwizard.logging.LoggingUtil;
 import io.dropwizard.server.ServerFactory;
-
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -26,8 +22,7 @@ public class XtraPlatformConfiguration extends Configuration {
   public XtraPlatformConfiguration() {}
 
   @Valid @NotNull private XtraPlatformServerFactory server = new XtraPlatformServerFactory();
-  @Valid @Nullable
-  private XtraPlatformLoggingFactory logging;
+  @Valid @Nullable private XtraPlatformLoggingFactory logging;
 
   @Override
   @JsonProperty("server")
@@ -52,8 +47,7 @@ public class XtraPlatformConfiguration extends Configuration {
 
   @Override
   @JsonIgnore
-  public synchronized void setLoggingFactory(LoggingFactory factory) {
-  }
+  public synchronized void setLoggingFactory(LoggingFactory factory) {}
 
   @JsonProperty("logging")
   public synchronized void setLoggingFactory(XtraPlatformLoggingFactory factory) {
@@ -61,11 +55,9 @@ public class XtraPlatformConfiguration extends Configuration {
   }
 
   // TODO: not used anymore, but removing breaks backwards compatibility
-  @Deprecated
-  @JsonProperty public boolean useFormattedJsonOutput;
+  @Deprecated @JsonProperty public boolean useFormattedJsonOutput;
 
-  @Deprecated
-  @JsonProperty public boolean allowServiceReAdding;
+  @Deprecated @JsonProperty public boolean allowServiceReAdding;
 
   /*
   @JsonProperty

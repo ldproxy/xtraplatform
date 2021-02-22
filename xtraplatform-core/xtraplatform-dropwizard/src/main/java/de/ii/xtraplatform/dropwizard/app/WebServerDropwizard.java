@@ -7,12 +7,8 @@
  */
 package de.ii.xtraplatform.dropwizard.app;
 
-import com.codahale.metrics.servlets.AdminServlet;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.MessageFormat;
+import io.dropwizard.jetty.NonblockingServletHolder;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -20,14 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.ServletRegistration;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import io.dropwizard.jetty.NonblockingServletHolder;
-import io.dropwizard.setup.AdminEnvironment;
 import org.apache.felix.http.proxy.ProxyServlet;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
@@ -38,7 +27,6 @@ import org.apache.felix.ipojo.annotations.Validate;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.MultiException;
-import org.glassfish.jersey.servlet.ServletContainer;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -181,7 +169,7 @@ public class WebServerDropwizard {
 
     stop();
 
-    //startStopThread.shutdownNow();
+    // startStopThread.shutdownNow();
   }
 
   protected void start() {
@@ -229,8 +217,7 @@ public class WebServerDropwizard {
 
     int ai = -1;
     for (int i = 0; i < admin.length; i++) {
-      if (admin[i].getName()
-                  .contains("Admin")) {
+      if (admin[i].getName().contains("Admin")) {
         ai = i;
       }
     }
@@ -239,10 +226,7 @@ public class WebServerDropwizard {
       admin[ai] = new NonblockingServletHolder(adminEndpoint);
       admin[ai].setName(name);
 
-      dw.getEnvironment()
-        .getAdminContext()
-        .getServletHandler()
-        .setServlets(admin);
+      dw.getEnvironment().getAdminContext().getServletHandler().setServlets(admin);
     }
   }
 

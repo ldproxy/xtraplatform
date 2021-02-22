@@ -10,7 +10,6 @@ package de.ii.xtraplatform.services.app;
 import de.ii.xtraplatform.services.domain.TaskStatus;
 import it.sauronsoftware.cron4j.TaskExecutor;
 import it.sauronsoftware.cron4j.TaskExecutorListener;
-
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -115,51 +114,50 @@ public class TaskStatusCron4j implements TaskStatus {
         });
   }
 
-    @Override
-    public void onChange(BiConsumer<Double, String> statusConsumer, long minInterval) {
-        taskExecutor.addTaskExecutorListener(
-                new TaskExecutorListener() {
-                    private long last = Instant.now().toEpochMilli();
-                    @Override
-                    public void executionPausing(TaskExecutor taskExecutor) {}
+  @Override
+  public void onChange(BiConsumer<Double, String> statusConsumer, long minInterval) {
+    taskExecutor.addTaskExecutorListener(
+        new TaskExecutorListener() {
+          private long last = Instant.now().toEpochMilli();
 
-                    @Override
-                    public void executionResuming(TaskExecutor taskExecutor) {}
+          @Override
+          public void executionPausing(TaskExecutor taskExecutor) {}
 
-                    @Override
-                    public void executionStopping(TaskExecutor taskExecutor) {}
+          @Override
+          public void executionResuming(TaskExecutor taskExecutor) {}
 
-                    @Override
-                    public void executionTerminated(TaskExecutor taskExecutor, Throwable throwable) {
+          @Override
+          public void executionStopping(TaskExecutor taskExecutor) {}
 
-                    }
+          @Override
+          public void executionTerminated(TaskExecutor taskExecutor, Throwable throwable) {}
 
-                    @Override
-                    public void statusMessageChanged(TaskExecutor taskExecutor, String s) {
-                        synchronized (this) {
-                            long now = Instant.now().toEpochMilli();
-                            if (now - last > minInterval) {
-                                statusConsumer.accept(taskExecutor.getCompleteness(), s);
-                                last = now;
-                            }
-                        }
-                    }
+          @Override
+          public void statusMessageChanged(TaskExecutor taskExecutor, String s) {
+            synchronized (this) {
+              long now = Instant.now().toEpochMilli();
+              if (now - last > minInterval) {
+                statusConsumer.accept(taskExecutor.getCompleteness(), s);
+                last = now;
+              }
+            }
+          }
 
-                    @Override
-                    public void completenessValueChanged(TaskExecutor taskExecutor, double v) {
-                        synchronized (this) {
-                            long now = Instant.now().toEpochMilli();
-                            if (now - last > minInterval) {
-                                statusConsumer.accept(v, taskExecutor.getStatusMessage());
-                                last = now;
-                            }
-                        }
-                    }
-                });
-    }
+          @Override
+          public void completenessValueChanged(TaskExecutor taskExecutor, double v) {
+            synchronized (this) {
+              long now = Instant.now().toEpochMilli();
+              if (now - last > minInterval) {
+                statusConsumer.accept(v, taskExecutor.getStatusMessage());
+                last = now;
+              }
+            }
+          }
+        });
+  }
 
-    @Override
-    public void stop() {
-        taskExecutor.stop();
-    }
+  @Override
+  public void stop() {
+    taskExecutor.stop();
+  }
 }

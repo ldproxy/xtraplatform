@@ -14,12 +14,10 @@ import de.ii.xtraplatform.store.domain.entities.EntityComponent;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
 import de.ii.xtraplatform.store.domain.entities.handler.Entity;
-import org.immutables.value.Value;
 import java.util.OptionalLong;
+import org.immutables.value.Value;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 @EntityComponent
 @Entity(type = User.ENTITY_TYPE, dataClass = User.UserData.class)
 public class User extends AbstractPersistentEntity<User.UserData> {
@@ -37,9 +35,7 @@ public class User extends AbstractPersistentEntity<User.UserData> {
   @JsonDeserialize(builder = ImmutableUserData.Builder.class)
   public interface UserData extends EntityData {
 
-    abstract class Builder implements EntityDataBuilder<UserData> {
-
-    }
+    abstract class Builder implements EntityDataBuilder<UserData> {}
 
     String getPassword();
 
@@ -47,5 +43,4 @@ public class User extends AbstractPersistentEntity<User.UserData> {
 
     OptionalLong getPasswordExpiresAt();
   }
-
 }

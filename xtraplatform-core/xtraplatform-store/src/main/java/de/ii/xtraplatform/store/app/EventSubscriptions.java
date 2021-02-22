@@ -14,9 +14,6 @@ import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.StateChangeEvent;
 import de.ii.xtraplatform.store.domain.TypedEvent;
 import de.ii.xtraplatform.streams.domain.StreamRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -24,6 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // TODO
 public class EventSubscriptions {
@@ -62,14 +61,20 @@ public class EventSubscriptions {
                     // LOGGER.debug("{} STARTED", eventType);
                     cmp.complete(null);
                   }
-                  //only emit one event at a time
+                  // only emit one event at a time
                   synchronized (streamRunner) {
                     if (event instanceof MutationEvent) {
-                      LOGGER.trace("EMIT: {} {}", ((MutationEvent) event).type(), ((MutationEvent) event).identifier());
+                      LOGGER.trace(
+                          "EMIT: {} {}",
+                          ((MutationEvent) event).type(),
+                          ((MutationEvent) event).identifier());
                     }
                     subscriber.onEmit(event);
                     if (event instanceof MutationEvent) {
-                      LOGGER.trace("EMITTED: {} {}", ((MutationEvent) event).type(), ((MutationEvent) event).identifier());
+                      LOGGER.trace(
+                          "EMITTED: {} {}",
+                          ((MutationEvent) event).type(),
+                          ((MutationEvent) event).identifier());
                     }
                   }
                 });

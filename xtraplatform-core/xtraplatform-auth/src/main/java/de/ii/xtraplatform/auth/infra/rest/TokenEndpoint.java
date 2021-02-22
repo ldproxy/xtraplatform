@@ -9,8 +9,6 @@ package de.ii.xtraplatform.auth.infra.rest;
 
 import de.ii.xtraplatform.auth.app.SplitCookie;
 import de.ii.xtraplatform.auth.domain.ImmutableTokenResponse;
-import de.ii.xtraplatform.auth.domain.ImmutableUser;
-import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthenticator;
@@ -23,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;

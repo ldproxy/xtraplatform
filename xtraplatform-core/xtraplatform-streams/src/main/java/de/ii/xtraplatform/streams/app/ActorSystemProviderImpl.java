@@ -46,7 +46,13 @@ public class ActorSystemProviderImpl implements ActorSystemProvider {
 
   @Override
   public ActorSystem getActorSystem(final BundleContext context, final Config config) {
-    return getActorSystem(context, config, context.getBundle().getSymbolicName().substring(context.getBundle().getSymbolicName().lastIndexOf(".")+1));
+    return getActorSystem(
+        context,
+        config,
+        context
+            .getBundle()
+            .getSymbolicName()
+            .substring(context.getBundle().getSymbolicName().lastIndexOf(".") + 1));
   }
 
   @Override

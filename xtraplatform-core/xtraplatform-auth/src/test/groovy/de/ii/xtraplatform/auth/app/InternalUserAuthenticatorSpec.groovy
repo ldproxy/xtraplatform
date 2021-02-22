@@ -81,7 +81,7 @@ class InternalUserAuthenticatorSpec extends Specification {
                 return new XtraPlatformConfiguration()
             }
         }
-        EntityDataStore<EntityData> entityDataStore = new EntityDataStoreTest<>()
+        EntityDataStore<EntityData> entityDataStore = new EntityDataStoreTest()
         return new InternalUserAuthenticator(configurationProvider, entityDataStore)
     }
 

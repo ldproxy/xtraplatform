@@ -22,24 +22,21 @@ import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
 import de.ii.xtraplatform.streams.domain.StreamRunner;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.Validate;
-import org.immutables.value.Value;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Component
 @Provides
@@ -78,13 +75,16 @@ public class EventStoreDefault implements EventStore {
 
     if (storeConfiguration.watch && driver.supportsWatch()) {
       LOGGER.info("Watching store for changes");
-      new Thread(() ->
-              driver.startWatching(changedFile -> {
-                LOGGER.debug("STORE CHANGE {}", changedFile);
-                EventFilter filter = EventFilter.fromPath(changedFile);
-                //LOGGER.debug("FILTER {}", filter);
-                replay(filter);
-              })).start();
+      new Thread(
+              () ->
+                  driver.startWatching(
+                      changedFile -> {
+                        LOGGER.debug("STORE CHANGE {}", changedFile);
+                        EventFilter filter = EventFilter.fromPath(changedFile);
+                        // LOGGER.debug("FILTER {}", filter);
+                        replay(filter);
+                      }))
+          .start();
     }
   }
 
@@ -122,68 +122,85 @@ public class EventStoreDefault implements EventStore {
   public void replay(EventFilter filter) {
     Set<MutationEvent> deleteEvents = new HashSet<>();
 
-    List<MutationEvent> eventStream = driver.loadEventStream().filter(event -> {
-      boolean matches = filter.matches(event);
+    List<MutationEvent> eventStream =
+        driver
+            .loadEventStream()
+            .filter(
+                event -> {
+                  boolean matches = filter.matches(event);
 
-      if (matches) {
-        /*LOGGER.debug("ALLOW {type: {}, path: {}, id: {}}", event.type(), event.identifier()
-                                                                              .path(), event.identifier()
-                                                                                            .id());*/
-        if (Objects.equals(event.type(), "entities") || Objects.equals(event.type(), "overrides")) {
-          String id = event.identifier().path().size() > 1 ? event.identifier().path().get(1) : event.identifier().id();
-          boolean deleted = deleteEvents.add(ImmutableMutationEvent.builder()
-                                                                   .type("entities")
-                                                                   .deleted(true)
-                                                                   .identifier(Identifier.from(id, event.identifier()
-                                                                                                        .path()
-                                                                                                        .get(0)))
-                                                                   .payload(ValueEncodingJackson.YAML_NULL)
-                                                                   .build());
-          /*if (deleted) {
-            LOGGER.debug("DELETING {} {}", event.identifier()
-                                                .path()
-                                                .get(0), id);
-          }*/
-        } else {
-          String id = EntityDataDefaultsStore.EVENT_TYPE;
-          boolean deleted = deleteEvents.add(ImmutableMutationEvent.builder()
-                                                                   .type(EntityDataDefaultsStore.EVENT_TYPE)
-                                                                   .deleted(true)
-                                                                   .identifier(ImmutableIdentifier.builder().id(id).path(event.identifier()
-                                                                                                                              .path()).build())
-                                                                   .payload(ValueEncodingJackson.YAML_NULL)
-                                                                   .build());
-          /*if (deleted) {
-            LOGGER.debug("DELETING {} {}", event.identifier()
-                                                .path(), id);
-          }*/
-        }
-        return true;
-      }
-      /*LOGGER.debug("SKIP {type: {}, path: {}, id: {}}", event.type(), event.identifier()
-                                                                           .path(), event.identifier()
-                                                                                         .id());*/
-      return false;
-    }).collect(Collectors.toList());
+                  if (matches) {
+                    /*LOGGER.debug("ALLOW {type: {}, path: {}, id: {}}", event.type(), event.identifier()
+                    .path(), event.identifier()
+                                  .id());*/
+                    if (Objects.equals(event.type(), "entities")
+                        || Objects.equals(event.type(), "overrides")) {
+                      String id =
+                          event.identifier().path().size() > 1
+                              ? event.identifier().path().get(1)
+                              : event.identifier().id();
+                      boolean deleted =
+                          deleteEvents.add(
+                              ImmutableMutationEvent.builder()
+                                  .type("entities")
+                                  .deleted(true)
+                                  .identifier(Identifier.from(id, event.identifier().path().get(0)))
+                                  .payload(ValueEncodingJackson.YAML_NULL)
+                                  .build());
+                      /*if (deleted) {
+                        LOGGER.debug("DELETING {} {}", event.identifier()
+                                                            .path()
+                                                            .get(0), id);
+                      }*/
+                    } else {
+                      String id = EntityDataDefaultsStore.EVENT_TYPE;
+                      boolean deleted =
+                          deleteEvents.add(
+                              ImmutableMutationEvent.builder()
+                                  .type(EntityDataDefaultsStore.EVENT_TYPE)
+                                  .deleted(true)
+                                  .identifier(
+                                      ImmutableIdentifier.builder()
+                                          .id(id)
+                                          .path(event.identifier().path())
+                                          .build())
+                                  .payload(ValueEncodingJackson.YAML_NULL)
+                                  .build());
+                      /*if (deleted) {
+                        LOGGER.debug("DELETING {} {}", event.identifier()
+                                                            .path(), id);
+                      }*/
+                    }
+                    return true;
+                  }
+                  /*LOGGER.debug("SKIP {type: {}, path: {}, id: {}}", event.type(), event.identifier()
+                  .path(), event.identifier()
+                                .id());*/
+                  return false;
+                })
+            .collect(Collectors.toList());
 
-
-    deleteEvents.forEach(event -> {
-      subscriptions.emitEvent(event).join();
-      try {
-        Thread.sleep(50);
-      } catch (InterruptedException e) {
-        //ignore
-      }
-    });
-    eventStream.forEach(event -> {
-      subscriptions.emitEvent(event).join();
-      try {
-        Thread.sleep(50);
-      } catch (InterruptedException e) {
-        //ignore
-      }
-    });
-    //TODO: type
-    subscriptions.emitEvent(ImmutableReloadEvent.builder().type("entities").filter(filter).build()).join();
+    deleteEvents.forEach(
+        event -> {
+          subscriptions.emitEvent(event).join();
+          try {
+            Thread.sleep(50);
+          } catch (InterruptedException e) {
+            // ignore
+          }
+        });
+    eventStream.forEach(
+        event -> {
+          subscriptions.emitEvent(event).join();
+          try {
+            Thread.sleep(50);
+          } catch (InterruptedException e) {
+            // ignore
+          }
+        });
+    // TODO: type
+    subscriptions
+        .emitEvent(ImmutableReloadEvent.builder().type("entities").filter(filter).build())
+        .join();
   }
 }

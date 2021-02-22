@@ -8,7 +8,6 @@
 package de.ii.xtraplatform.di.domain;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import org.osgi.framework.ServiceReference;
 

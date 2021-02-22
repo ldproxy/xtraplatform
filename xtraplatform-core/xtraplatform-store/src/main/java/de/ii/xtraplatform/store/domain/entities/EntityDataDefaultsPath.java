@@ -38,23 +38,23 @@ public interface EntityDataDefaultsPath {
       pathSegments = identifier.path().subList(1, identifier.path().size());
     }
 
-    //TODO: describe cases, how would catch happen?
+    // TODO: describe cases, how would catch happen?
     if (!pathSegments.isEmpty()) {
-      //for (int i = pathSegments.size(); i > 0; i--) {
-        try {
-          List<String> subtype = pathSegments.subList(0, pathSegments.size());
-          defaultsPath.setEntitySubtype(ImmutableList.of(Joiner.on('/').join(subtype)));
+      // for (int i = pathSegments.size(); i > 0; i--) {
+      try {
+        List<String> subtype = pathSegments.subList(0, pathSegments.size());
+        defaultsPath.setEntitySubtype(ImmutableList.of(Joiner.on('/').join(subtype)));
 
-          if (!identifier.path().isEmpty()) {
-            defaultsPath.setKeyPath(ImmutableList.of(identifier.id()));
-          }
-        } catch (Throwable e) {
-          List<String> keyPath = pathSegments.subList(pathSegments.size() - 1, pathSegments.size());
-
-          defaultsPath.setKeyPath(keyPath);
-          defaultsPath.addKeyPath(identifier.id());
+        if (!identifier.path().isEmpty()) {
+          defaultsPath.setKeyPath(ImmutableList.of(identifier.id()));
         }
-      //}
+      } catch (Throwable e) {
+        List<String> keyPath = pathSegments.subList(pathSegments.size() - 1, pathSegments.size());
+
+        defaultsPath.setKeyPath(keyPath);
+        defaultsPath.addKeyPath(identifier.id());
+      }
+      // }
     }
 
     return defaultsPath;

@@ -11,14 +11,15 @@ import static java.lang.annotation.ElementType.TYPE;
 
 import java.lang.annotation.Target;
 import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.HandlerDeclaration;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Stereotype;
 
 @Component(propagation = false)
 @Provides
 // customization in HandlerDeclarationVisitor needed for multiple callbacks
-//@HandlerDeclaration("<callbacks><callback transition=\"validate\" method=\"onValidate\"></callback><callback transition=\"invalidate\" method=\"onInvalidate\"></callback></callbacks>")
+// @HandlerDeclaration("<callbacks><callback transition=\"validate\"
+// method=\"onValidate\"></callback><callback transition=\"invalidate\"
+// method=\"onInvalidate\"></callback></callbacks>")
 @Stereotype
 @Target(TYPE)
 public @interface EntityComponent {}

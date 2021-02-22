@@ -78,7 +78,8 @@ public class StaticResourceServlet extends HttpServlet {
    * requested and {@code indexFile} is defined, then {@code AssetServlet} will attempt to serve a
    * file with that name in that directory. If a directory is requested and {@code indexFile} is
    * null, it will serve a 404.
-   *  @param indexFile the filename to use when directories are requested, or null to serve no
+   *
+   * @param indexFile the filename to use when directories are requested, or null to serve no
    *     indexes
    * @param resourcePath the base URL from which assets are loaded
    * @param uriPath the URI path fragment in which all requests are rooted
@@ -90,7 +91,8 @@ public class StaticResourceServlet extends HttpServlet {
       String uriPath,
       Charset defaultCharset,
       Bundle bundle,
-      DefaultPages defaultPages, Optional<String> rootRedirect) {
+      DefaultPages defaultPages,
+      Optional<String> rootRedirect) {
     final String trimmedPath = SLASHES.trimFrom(resourcePath);
     this.resourcePath = trimmedPath.isEmpty() ? trimmedPath : trimmedPath + '/';
     final String trimmedUri = SLASHES.trimTrailingFrom(uriPath);
@@ -102,10 +104,7 @@ public class StaticResourceServlet extends HttpServlet {
   }
 
   public StaticResourceServlet(
-      String resourcePath,
-      String uriPath,
-      Charset defaultCharset,
-      Bundle bundle) {
+      String resourcePath, String uriPath, Charset defaultCharset, Bundle bundle) {
     this(resourcePath, uriPath, defaultCharset, bundle, new DefaultPages(), Optional.of("/"));
   }
 

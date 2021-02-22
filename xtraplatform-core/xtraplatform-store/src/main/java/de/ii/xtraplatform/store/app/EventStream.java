@@ -15,7 +15,6 @@ import akka.stream.javadsl.Source;
 import akka.stream.javadsl.SourceQueueWithComplete;
 import de.ii.xtraplatform.store.domain.Event;
 import de.ii.xtraplatform.streams.domain.StreamRunner;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -50,7 +49,7 @@ public class EventStream {
     // queue.offer(event).handleAsync((queueOfferResult, throwable) -> queue));
     // TODO: to apply backpressure join queue as well as offer; but then we block indefinitely if
     // there is no subscriber for a pathPrefix
-      CompletableFuture<QueueOfferResult> cmp = new CompletableFuture<>();
+    CompletableFuture<QueueOfferResult> cmp = new CompletableFuture<>();
     eventQueueChain =
         eventQueueChain.thenApply(
             queue -> {

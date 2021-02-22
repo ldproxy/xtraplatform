@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-
 /** @author zahnen */
 public abstract class AbstractPersistentEntity<T extends EntityData> implements PersistentEntity {
 
@@ -33,7 +32,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
 
   @Validate // is ignored here, but added by @EntityComponent stereotype
   public final void onValidate() {
-    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+    try (MDC.MDCCloseable closeable =
+        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (shouldRegister()) {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("STARTING {} {} {} {}", getType(), getId(), shouldRegister(), register);
@@ -45,7 +45,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
 
   @Invalidate // is ignored here, but added by @EntityComponent stereotype
   public final void onInvalidate() {
-    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+    try (MDC.MDCCloseable closeable =
+        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STOPPING {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
@@ -55,7 +56,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
 
   @PostRegistration // is ignored here, but added by @EntityComponent stereotype
   public final void onPostRegistration(ServiceReference<?> serviceReference) {
-    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+    try (MDC.MDCCloseable closeable =
+        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STARTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
@@ -65,7 +67,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
 
   @PostUnregistration // is ignored here, but added by @EntityComponent stereotype
   public final void onPostUnregistration(ServiceReference<?> serviceReference) {
-    try(MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+    try (MDC.MDCCloseable closeable =
+        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STOPPED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }

@@ -30,14 +30,16 @@ public class FileSystemMustacheResolver extends FileSystemResolver
   private static final String TEMPLATE_DIR_NAME = "templates";
   private static final String HTML_DIR_NAME = "html";
   private static final String TEMPLATE_DIR_START = String.format("/%s/", TEMPLATE_DIR_NAME);
-  private static final String TEMPLATE_HTML_DIR_START = String.format("/%s/%s/", TEMPLATE_DIR_NAME, HTML_DIR_NAME);
+  private static final String TEMPLATE_HTML_DIR_START =
+      String.format("/%s/%s/", TEMPLATE_DIR_NAME, HTML_DIR_NAME);
 
   private final Path templateDir;
 
   public FileSystemMustacheResolver(@Context BundleContext bundleContext) {
     super(Paths.get(bundleContext.getProperty(DATA_DIR_KEY)).toAbsolutePath().toFile());
     this.templateDir =
-        Paths.get(bundleContext.getProperty(DATA_DIR_KEY), TEMPLATE_DIR_NAME, HTML_DIR_NAME).toAbsolutePath();
+        Paths.get(bundleContext.getProperty(DATA_DIR_KEY), TEMPLATE_DIR_NAME, HTML_DIR_NAME)
+            .toAbsolutePath();
   }
 
   @Override
@@ -50,9 +52,7 @@ public class FileSystemMustacheResolver extends FileSystemResolver
     Path templatePath;
     if (templateName.startsWith(TEMPLATE_DIR_START)) {
       templatePath =
-          templateDir
-              .resolve(templateName.substring(TEMPLATE_DIR_START.length()))
-              .toAbsolutePath();
+          templateDir.resolve(templateName.substring(TEMPLATE_DIR_START.length())).toAbsolutePath();
     } else if (templateName.startsWith("/")) {
       templatePath = templateDir.resolve(templateName.substring(1)).toAbsolutePath();
     } else {

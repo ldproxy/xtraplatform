@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.streams.domain;
 
 import akka.Done;
@@ -37,23 +44,23 @@ public class StreamRunner {
   private final ConcurrentLinkedQueue<Runnable> queue;
   private final AtomicInteger running;
 
-  public StreamRunner(BundleContext context,
-      ActorSystemProvider actorSystemProvider,
-      String name) {
+  public StreamRunner(BundleContext context, ActorSystemProvider actorSystemProvider, String name) {
     this(context, actorSystemProvider, name, DYNAMIC_CAPACITY, DYNAMIC_CAPACITY);
   }
 
-  public StreamRunner(BundleContext context,
+  public StreamRunner(
+      BundleContext context,
       ActorSystemProvider actorSystemProvider,
       String name,
-      int capacity, int queueSize) {
+      int capacity,
+      int queueSize) {
     Config config =
         capacity == DYNAMIC_CAPACITY ? getDefaultConfig(name) : getConfig(name, capacity, capacity);
 
     if (capacity != 0) {
       ActorSystem system = actorSystemProvider.getActorSystem(context, config, "akka");
-      ActorMaterializerSettings settings = ActorMaterializerSettings.create(system)
-          .withDispatcher(getDispatcherName(name));
+      ActorMaterializerSettings settings =
+          ActorMaterializerSettings.create(system).withDispatcher(getDispatcherName(name));
 
       this.materializer = ActorMaterializer.create(settings, system);
     } else {
@@ -70,7 +77,9 @@ public class StreamRunner {
     return run(source, sink, Keep.right());
   }
 
-  public <T, U, V, W> CompletionStage<W> run(Source<T, U> source, Sink<T, CompletionStage<V>> sink,
+  public <T, U, V, W> CompletionStage<W> run(
+      Source<T, U> source,
+      Sink<T, CompletionStage<V>> sink,
       Function2<U, CompletionStage<V>, CompletionStage<W>> combiner) {
     return run(LogContextStream.graphWithMdc(source, sink, combiner));
   }
@@ -90,19 +99,25 @@ public class StreamRunner {
 
     CompletableFuture<U> completableFuture = new CompletableFuture<>();
 
-    Runnable task = () -> graph.run(materializer)
-        .thenAccept(LogContext.withMdc(t -> {
-          completableFuture.complete(t);
+    Runnable task =
+        () ->
+            graph
+                .run(materializer)
+                .thenAccept(
+                    LogContext.withMdc(
+                        t -> {
+                          completableFuture.complete(t);
 
-          runNext();
-        }))
-        .exceptionally(throwable -> {
-          completableFuture.completeExceptionally(throwable);
+                          runNext();
+                        }))
+                .exceptionally(
+                    throwable -> {
+                      completableFuture.completeExceptionally(throwable);
 
-          runNext();
+                      runNext();
 
-          return null;
-        });
+                      return null;
+                    });
 
     run(task);
 
@@ -147,29 +162,34 @@ public class StreamRunner {
   }
 
   private static Config getConfig(String name, int parallelismMin, int parallelismMax) {
-    return ConfigFactory.parseMap(new ImmutableMap.Builder<String, Object>()
-        .put("akka.stdout-loglevel", "OFF")
-        .put("akka.loglevel", "INFO")
-        .put("akka.loggers", ImmutableList.of("akka.event.slf4j.Slf4jLogger"))
-        .put("akka.logging-filter", "akka.event.slf4j.Slf4jLoggingFilter")
-        //.put("akka.log-config-on-start", true)
-        .put(String.format("%s.type", getDispatcherName(name)), "Dispatcher")
-        //.put(String.format("%s.executor", getDispatcherName(name)), "fork-join-executor")
-        .put(String.format("%s.executor", getDispatcherName(name)),
-            "de.ii.xtraplatform.streams.app.StreamExecutorServiceConfigurator")
-        .put(String.format("%s.fork-join-executor.parallelism-min", getDispatcherName(name)),
-            parallelismMin)
-        .put(String.format("%s.fork-join-executor.parallelism-factor", getDispatcherName(name)),
-            1.0)
-        .put(String.format("%s.fork-join-executor.parallelism-max", getDispatcherName(name)),
-            parallelismMax)
-        .put(String.format("%s.fork-join-executor.task-peeking-mode", getDispatcherName(name)),
-            "FIFO")
-        .build());
+    return ConfigFactory.parseMap(
+        new ImmutableMap.Builder<String, Object>()
+            .put("akka.stdout-loglevel", "OFF")
+            .put("akka.loglevel", "INFO")
+            .put("akka.loggers", ImmutableList.of("akka.event.slf4j.Slf4jLogger"))
+            .put("akka.logging-filter", "akka.event.slf4j.Slf4jLoggingFilter")
+            // .put("akka.log-config-on-start", true)
+            .put(String.format("%s.type", getDispatcherName(name)), "Dispatcher")
+            // .put(String.format("%s.executor", getDispatcherName(name)), "fork-join-executor")
+            .put(
+                String.format("%s.executor", getDispatcherName(name)),
+                "de.ii.xtraplatform.streams.app.StreamExecutorServiceConfigurator")
+            .put(
+                String.format("%s.fork-join-executor.parallelism-min", getDispatcherName(name)),
+                parallelismMin)
+            .put(
+                String.format("%s.fork-join-executor.parallelism-factor", getDispatcherName(name)),
+                1.0)
+            .put(
+                String.format("%s.fork-join-executor.parallelism-max", getDispatcherName(name)),
+                parallelismMax)
+            .put(
+                String.format("%s.fork-join-executor.task-peeking-mode", getDispatcherName(name)),
+                "FIFO")
+            .build());
   }
 
   private static String getDispatcherName(String name) {
     return String.format("stream.%s", name);
   }
-
 }

@@ -7,7 +7,6 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
-import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import java.util.List;

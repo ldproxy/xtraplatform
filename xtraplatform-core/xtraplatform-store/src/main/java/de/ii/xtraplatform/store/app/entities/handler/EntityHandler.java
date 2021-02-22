@@ -99,7 +99,8 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
     providedServices[0].addElement(controller);
     controller.addAttribute(new Attribute("field", "register"));
     controller.addAttribute(new Attribute("value", "false"));
-    // add @PostRegistration and @PostUnregistration for methods onStarted and onStopped in class AbstractPersistentEntity
+    // add @PostRegistration and @PostUnregistration for methods onStarted and onStopped in class
+    // AbstractPersistentEntity
     providedServices[0].addAttribute(new Attribute("post-registration", "onPostRegistration"));
     providedServices[0].addAttribute(new Attribute("post-unregistration", "onPostUnregistration"));
 
@@ -147,10 +148,10 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
   @Override
   public void configure(Element metadata, Dictionary configuration) throws ConfigurationException {
     Element metadataWithCallbacks = new Element(metadata.getName(), metadata.getNameSpace());
-    for (Attribute attribute: metadata.getAttributes()) {
+    for (Attribute attribute : metadata.getAttributes()) {
       metadataWithCallbacks.addAttribute(attribute);
     }
-    for (Element element: metadata.getElements()) {
+    for (Element element : metadata.getElements()) {
       metadataWithCallbacks.addElement(element);
     }
 
@@ -164,7 +165,7 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
     invalidate.addAttribute(new Attribute("transition", "invalidate"));
     metadataWithCallbacks.addElement(invalidate);
 
-    super.configure(metadataWithCallbacks,configuration);
+    super.configure(metadataWithCallbacks, configuration);
   }
 
   @Override
@@ -190,8 +191,7 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
   }
 
   @Override
-  public void configurationChanged(ComponentInstance instance, Map<String, Object> configuration) {
-  }
+  public void configurationChanged(ComponentInstance instance, Map<String, Object> configuration) {}
 
   private void checkRegistration() {
     try {
@@ -209,5 +209,4 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
       // LOGGER.error("ERR", e);
     }
   }
-
 }

@@ -1,8 +1,9 @@
-/**
- * Copyright 2019 interactive instruments GmbH
- * <p>
- * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of
- * the MPL was not distributed with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package de.ii.xtraplatform.auth.infra.rest;
 
@@ -42,9 +43,7 @@ import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 @Component
 @Provides(specifications = {UserAdminEndpoint.class})
 @Instantiate
@@ -68,15 +67,15 @@ public class UserAdminEndpoint {
 
   @GET
   @Path("/{id}")
-  public User.UserData getUser(@Auth de.ii.xtraplatform.auth.domain.User user,
-      @PathParam("id") String id) {
+  public User.UserData getUser(
+      @Auth de.ii.xtraplatform.auth.domain.User user, @PathParam("id") String id) {
     return userRepository.get(id);
   }
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
-  public User.UserData addUser(@Auth de.ii.xtraplatform.auth.domain.User user,
-      Map<String, String> request) {
+  public User.UserData addUser(
+      @Auth de.ii.xtraplatform.auth.domain.User user, Map<String, String> request) {
     LOGGER.debug("USER {}", request);
 
     if (userRepository.has(request.get("id"))) {
@@ -84,11 +83,12 @@ public class UserAdminEndpoint {
     }
 
     try {
-      User.UserData userData = new ImmutableUserData.Builder()
-          .id(request.get("id"))
-          .password(PasswordHash.createHash(request.get("password")))
-          .role(Role.fromString(request.get("role")))
-          .build();
+      User.UserData userData =
+          new ImmutableUserData.Builder()
+              .id(request.get("id"))
+              .password(PasswordHash.createHash(request.get("password")))
+              .role(Role.fromString(request.get("role")))
+              .build();
 
       CompletableFuture<User.UserData> put = userRepository.put(request.get("id"), userData);
       return put.get();
@@ -101,7 +101,8 @@ public class UserAdminEndpoint {
 
   @Path("/{id}")
   @POST
-  public Response updateUser(@Auth de.ii.xtraplatform.auth.domain.User user,
+  public Response updateUser(
+      @Auth de.ii.xtraplatform.auth.domain.User user,
       @PathParam("id") String id,
       Map<String, String> request) {
 
@@ -109,9 +110,10 @@ public class UserAdminEndpoint {
       throw new NotFoundException();
     }
 
-    if (!request.containsKey("oldPassword") || !request.containsKey("newPassword") || !request
-        .containsKey("newPasswordRepeat") || !Objects
-        .equals(request.get("newPassword"), request.get("newPassword"))) {
+    if (!request.containsKey("oldPassword")
+        || !request.containsKey("newPassword")
+        || !request.containsKey("newPasswordRepeat")
+        || !Objects.equals(request.get("newPassword"), request.get("newPassword"))) {
       throw new BadRequestException();
     }
 
@@ -121,23 +123,20 @@ public class UserAdminEndpoint {
       throw new BadRequestException();
     }
 
-    User.UserData updated = new ImmutableUserData.Builder()
-        .from(userData)
-        .password(PasswordHash.createHash(request.get("newPassword")))
-        .passwordExpiresAt(OptionalLong.empty())
-        .build();
+    User.UserData updated =
+        new ImmutableUserData.Builder()
+            .from(userData)
+            .password(PasswordHash.createHash(request.get("newPassword")))
+            .passwordExpiresAt(OptionalLong.empty())
+            .build();
 
     try {
-      User.UserData updated2 = userRepository.put(id, updated)
-          .get();
+      User.UserData updated2 = userRepository.put(id, updated).get();
 
-      return Response.ok()
-          .entity(updated2)
-          .build();
+      return Response.ok().entity(updated2).build();
     } catch (InterruptedException | ExecutionException e) {
       if (e.getCause() instanceof IllegalArgumentException) {
-        throw new BadRequestException(e.getCause()
-            .getMessage());
+        throw new BadRequestException(e.getCause().getMessage());
       }
       throw new InternalServerErrorException();
     }
@@ -149,5 +148,4 @@ public class UserAdminEndpoint {
       throws IOException {
     userRepository.delete(id);
   }
-
 }

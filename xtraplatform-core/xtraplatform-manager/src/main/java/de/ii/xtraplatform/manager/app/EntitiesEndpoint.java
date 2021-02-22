@@ -60,7 +60,7 @@ public class EntitiesEndpoint implements Endpoint {
   EntitiesEndpoint(
       @Requires EntityDataStore<EntityData> entityRepository,
       @Requires EntityRegistry entityRegistry
-      /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/) {
+      /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/ ) {
     this.serviceRepository = entityRepository;
     this.entityRegistry = entityRegistry;
     this.serviceBackgroundTasks = null; // serviceBackgroundTasks;
@@ -73,10 +73,10 @@ public class EntitiesEndpoint implements Endpoint {
   public Response getEntities(
       @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
       @PathParam("entityType") String entityType) {
-    List<Map<String, String>> entities = serviceRepository.ids(entityType).stream()
-        .map(id -> ImmutableMap.of(
-            "id", id)).collect(
-            Collectors.toList());
+    List<Map<String, String>> entities =
+        serviceRepository.ids(entityType).stream()
+            .map(id -> ImmutableMap.of("id", id))
+            .collect(Collectors.toList());
 
     try {
       return Response.ok().entity(objectMapper.writeValueAsString(entities)).build();
@@ -90,7 +90,8 @@ public class EntitiesEndpoint implements Endpoint {
   @CacheControl(noCache = true)
   public Response getEntity(
       @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
-      @PathParam("entityType") String entityType, @PathParam("id") String id) {
+      @PathParam("entityType") String entityType,
+      @PathParam("id") String id) {
     Optional<EntityData> entityData = Optional.ofNullable(serviceRepository.get(id, entityType));
 
     if (!entityData.isPresent()) {

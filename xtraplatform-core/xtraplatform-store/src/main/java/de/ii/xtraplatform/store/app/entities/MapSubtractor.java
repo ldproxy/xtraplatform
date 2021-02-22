@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.store.app.entities;
 
 import com.google.common.collect.ImmutableMap;
@@ -14,8 +21,8 @@ import java.util.Objects;
 
 public class MapSubtractor {
 
-  public Map<String, Object> subtract(Map<String, Object> data, Map<String, Object> defaults,
-      List<String> ignoreKeys) {
+  public Map<String, Object> subtract(
+      Map<String, Object> data, Map<String, Object> defaults, List<String> ignoreKeys) {
 
     if (Objects.equals(data, defaults)) {
       return ImmutableMap.of();
@@ -28,7 +35,7 @@ public class MapSubtractor {
     Map<String, Object> newEntries = difference.entriesOnlyOnLeft();
     Map<String, ValueDifference<Object>> differingEntries = difference.entriesDiffering();
 
-    //result.putAll(newEntries);
+    // result.putAll(newEntries);
 
     for (String key : data.keySet()) {
       if (ignoreKeys.contains(key)) {
@@ -43,20 +50,25 @@ public class MapSubtractor {
         ValueDifference<Object> diff = differingEntries.get(key);
 
         if (diff.leftValue() instanceof Map) {
-          result.put(key, subtract((Map<String, Object>) diff.leftValue(),
-              (Map<String, Object>) diff.rightValue(),
-              ignoreKeys));
+          result.put(
+              key,
+              subtract(
+                  (Map<String, Object>) diff.leftValue(),
+                  (Map<String, Object>) diff.rightValue(),
+                  ignoreKeys));
 
           continue;
         }
         if (diff.leftValue() instanceof Collection) {
-          result.put(key, subtract((Collection<Object>) diff.leftValue(),
-              (Collection<Object>) diff.rightValue()));
+          result.put(
+              key,
+              subtract(
+                  (Collection<Object>) diff.leftValue(), (Collection<Object>) diff.rightValue()));
 
           continue;
         }
 
-          result.put(key, diff.leftValue());
+        result.put(key, diff.leftValue());
       }
     }
 

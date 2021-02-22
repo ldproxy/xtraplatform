@@ -97,7 +97,8 @@ public abstract class AbstractKeyValueStore<T> implements KeyValueStore<T> {
     return getEventSourcing().pushMutationEvent(identifier, value);
   }
 
-  protected CompletableFuture<T> putPartialWithoutTrigger(Identifier identifier, Map<String, Object> value) {
+  protected CompletableFuture<T> putPartialWithoutTrigger(
+      Identifier identifier, Map<String, Object> value) {
     return getEventSourcing().pushPartialMutationEvent(identifier, value);
   }
 
