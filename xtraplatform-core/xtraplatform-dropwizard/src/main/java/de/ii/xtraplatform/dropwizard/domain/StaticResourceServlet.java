@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.dropwizard.app;
+package de.ii.xtraplatform.dropwizard.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -14,6 +14,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.Resources;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
+import de.ii.xtraplatform.dropwizard.app.ResourceURL;
 import de.ii.xtraplatform.dropwizard.app.amdatu.DefaultPages;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -98,6 +99,14 @@ public class StaticResourceServlet extends HttpServlet {
     this.bundle = bundle;
     this.defaultPages = defaultPages;
     this.rootRedirect = rootRedirect;
+  }
+
+  public StaticResourceServlet(
+      String resourcePath,
+      String uriPath,
+      Charset defaultCharset,
+      Bundle bundle) {
+    this(resourcePath, uriPath, defaultCharset, bundle, new DefaultPages(), Optional.of("/"));
   }
 
   /*public URL getResourceURL() {
