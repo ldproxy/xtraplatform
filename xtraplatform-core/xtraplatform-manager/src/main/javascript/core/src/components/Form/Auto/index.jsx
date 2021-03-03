@@ -37,10 +37,9 @@ const AutoForm = ({
 
     const defaulted = defaultedFields(values, fieldsDefault, fieldsTransformation);
     const { valid, errors } = validate(values, fieldsValidation);
-    //console.log('VALID', valid, errors);
 
     // initialize validation
-    useEffect(() => {
+    const forceAllFieldValidations = useCallback(() => {
         if (!valid) {
             const hasMissingKeys =
                 Object.keys(fieldsValidation).filter((key) => !values.hasOwnProperty(key)).length >
@@ -58,7 +57,7 @@ const AutoForm = ({
 
     const submit = useCallback(
         (changes) => {
-            if (!changes || Object.keys(changes).length === 0) {
+            if (!valid || !changes || Object.keys(changes).length === 0) {
                 return;
             }
 
@@ -70,13 +69,19 @@ const AutoForm = ({
 
             setTouched({});
         },
-        [setTouched, /*TODO onChange,*/ extOnSubmit, reset]
+        [valid, setTouched, /*TODO onChange,*/ extOnSubmit, reset]
     );
 
     // calculate changes, submit with optional debounce if changes are found
-    const changes = changedFields(values, touched, defaulted, fieldsTransformation);
+    const changes = !valid ? {} : changedFields(values, touched, defaulted, fieldsTransformation);
     const useSubmit = debounce > 0 ? useDebounce : extOnSubmit ? () => {} : useOnChange;
     useSubmit(changes, submit, true, debounce);
+
+    useEffect(() => {
+        if (!extOnSubmit && changes && Object.keys(changes).length > 0) {
+            forceAllFieldValidations();
+        }
+    }, [extOnSubmit, changes, forceAllFieldValidations]);
 
     //TODO: replace with context
     const newChildren = React.Children.map(children, (child) => {
@@ -102,6 +107,10 @@ const AutoForm = ({
             onChange={(values, { touched }) => {
                 setValues(values);
                 setTouched(touched);
+            }}
+            onSubmit={() => {
+                forceAllFieldValidations();
+                submit(changes);
             }}
             onReset={extOnCancel}>
             {newChildren}

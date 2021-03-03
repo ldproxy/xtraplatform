@@ -16,7 +16,8 @@ const transformSplit = (field, values, transformers) => {
         };
         delete splitted[field];
         Object.keys(transformers[field].split).forEach((newField) => {
-            splitted[newField] = transformers[field].split[newField](values[field]);
+            const splittedValue = transformers[field].split[newField](values[field]);
+            if (splittedValue !== undefined) splitted[newField] = splittedValue;
         });
         return splitted;
     }

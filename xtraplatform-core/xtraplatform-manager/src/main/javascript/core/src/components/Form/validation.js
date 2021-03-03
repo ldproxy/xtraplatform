@@ -3,12 +3,12 @@ const exists = (value) => value !== null && value !== undefined;
 export const required = () => (value) => (!exists(value) || value.length === 0 ? 'required' : null);
 
 export const equals = (otherKey, otherLabel) => (value, otherValues) =>
-    exists(value) && value.length > 0 && value !== otherValues[otherKey]
+    !exists(value) || value.length === 0 || value !== otherValues[otherKey]
         ? `does not equal ${otherLabel || otherKey}`
         : null;
 
 export const differs = (otherKey, otherLabel) => (value, otherValues) =>
-    exists(value) && value.length > 0 && value === otherValues[otherKey]
+    exists(value) && /*value.length > 0 &&*/ value === otherValues[otherKey]
         ? `may not equal ${otherLabel || otherKey}`
         : null;
 
@@ -39,7 +39,7 @@ export const ifEqualsThen = (otherKey, otherValue, nested) => (value, otherValue
     otherValues[otherKey] === otherValue ? nested(value, otherValues) : null;
 
 export const isFloat = () => (value) =>
-    exists(value) && !(typeof value === 'number' || value.match(/^[0-9]+(\.[0-9]+)?$/i))
+    !exists(value) || !(typeof value === 'number' || value.match(/^[0-9]+(\.[0-9]+)?$/i))
         ? `invalid number`
         : null;
 
@@ -47,7 +47,10 @@ export const bounds = (min, max, msg) =>
     existsAnd((value) => value < min || value > max, 'out of bounds', msg);
 
 export const lessThan = (otherKey, msg) =>
-    existsAnd((value, values) => value >= values[otherKey], `not less than '${msg || otherKey}'`);
+    existsAnd(
+        (value, values) => !exists(values[otherKey]) || value >= values[otherKey],
+        `not less than '${msg || otherKey}'`
+    );
 
 export const greaterThan = (otherKey, msg) =>
     existsAnd(
