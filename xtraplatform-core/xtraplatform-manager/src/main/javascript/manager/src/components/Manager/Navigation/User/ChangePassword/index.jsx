@@ -8,7 +8,7 @@ import { AutoForm, TextField, minLength, maxLength, equals, differs } from '@xtr
 const fieldsValidation = {
     oldPassword: [minLength(1), maxLength(64)],
     newPassword: [minLength(6), maxLength(64), differs('oldPassword', 'old password')],
-    newPasswordRepeat: equals('newPassword', 'new password'),
+    newPasswordRepeat: [minLength(6), maxLength(64), equals('newPassword', 'new password')],
 };
 
 const NavChangePassword = ({ name, disabled, onChange, onCancel }) => {
