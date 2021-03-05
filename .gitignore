@@ -125,3 +125,6 @@ dist
 # Neutrino build directory
 build
 
+.project
+.settings/
+bin/
