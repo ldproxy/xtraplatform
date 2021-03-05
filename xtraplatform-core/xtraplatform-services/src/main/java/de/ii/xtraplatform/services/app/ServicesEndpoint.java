@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.print.attribute.standard.Media;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
@@ -153,9 +152,12 @@ public class ServicesEndpoint {
                                 .get(0)
                                 .equals(MediaType.WILDCARD_TYPE))
                         ? containerRequestContext.getAcceptableMediaTypes().get(0)
-                        : containerRequestContext.getHeaderString("user-agent").toLowerCase().contains("google-site-verification")
-                          ? MediaType.TEXT_HTML_TYPE
-                          : MediaType.APPLICATION_JSON_TYPE;
+                        : containerRequestContext
+                                .getHeaderString("user-agent")
+                                .toLowerCase()
+                                .contains("google-site-verification")
+                            ? MediaType.TEXT_HTML_TYPE
+                            : MediaType.APPLICATION_JSON_TYPE;
 
     if (serviceListingProviders.containsKey(mediaType)) {
       Response serviceListing =
