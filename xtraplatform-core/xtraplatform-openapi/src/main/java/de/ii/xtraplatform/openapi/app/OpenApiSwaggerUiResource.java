@@ -29,7 +29,11 @@ public class OpenApiSwaggerUiResource implements OpenApiViewerResource {
 
   private static Logger LOGGER = LoggerFactory.getLogger(OpenApiSwaggerUiResource.class);
 
-  @Context BundleContext bc;
+  private final BundleContext bc;
+
+  public OpenApiSwaggerUiResource(@Context BundleContext bc) {
+    this.bc = bc;
+  }
 
   @Override
   public Response getFile(String file) {

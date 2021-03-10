@@ -69,18 +69,25 @@ public class ServicesEndpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServicesEndpoint.class);
 
-  @Requires private EntityRegistry entityRegistry;
-
-  @Requires private ServiceInjectableContext serviceContext;
-
-  @Requires Dropwizard dropwizard;
-
-  @Requires private XtraPlatform xtraPlatform;
+  private final EntityRegistry entityRegistry;
+  private final ServiceInjectableContext serviceContext;
+  private final Dropwizard dropwizard;
+  private final XtraPlatform xtraPlatform;
 
   private Map<String, ServiceEndpoint> serviceResources;
   private Map<MediaType, ServiceListingProvider> serviceListingProviders;
 
   @org.apache.felix.ipojo.annotations.Context private BundleContext context;
+
+  public ServicesEndpoint(@Requires EntityRegistry entityRegistry, @Requires Dropwizard dropwizard,
+      @Requires XtraPlatform xtraPlatform, @Requires ServiceInjectableContext serviceContext) {
+    this.serviceResources = new LinkedHashMap<>();
+    this.serviceListingProviders = new LinkedHashMap<>();
+    this.entityRegistry = entityRegistry;
+    this.xtraPlatform = xtraPlatform;
+    this.dropwizard = dropwizard;
+    this.serviceContext = serviceContext;
+  }
 
   public synchronized void onServiceResourceArrival(ServiceReference<ServiceEndpoint> ref) {
     ServiceEndpoint sr = context.getService(ref);
@@ -116,11 +123,6 @@ public class ServicesEndpoint {
         serviceListingProviders.remove(type);
       }
     }
-  }
-
-  public ServicesEndpoint() {
-    this.serviceResources = new LinkedHashMap<>();
-    this.serviceListingProviders = new LinkedHashMap<>();
   }
 
   // TODO

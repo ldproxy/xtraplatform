@@ -7,7 +7,6 @@
  */
 package de.ii.xtraplatform.openapi.app;
 
-import de.ii.xtraplatform.dropwizard.domain.JaxRsChangeListener;
 import de.ii.xtraplatform.dropwizard.domain.JaxRsReg;
 import io.swagger.v3.core.filter.OpenAPISpecFilter;
 import io.swagger.v3.core.filter.SpecFilter;
@@ -44,15 +43,20 @@ import org.slf4j.LoggerFactory;
 @Component
 @Provides(specifications = {DynamicOpenApi.class})
 @Instantiate
-public class DynamicOpenApi extends BaseOpenApiResource implements JaxRsChangeListener {
+public class DynamicOpenApi extends BaseOpenApiResource implements
+    DynamicOpenApiChangeListener {
 
   private static Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApi.class);
   public static final MediaType YAML_TYPE = new MediaType("application", "yaml");
   public static final String YAML = "application/yaml";
-  @Requires private JaxRsReg registry;
+  private final JaxRsReg registry;
 
   private OpenAPI openApiSpec;
   private boolean upToDate;
+
+  public DynamicOpenApi(@Requires JaxRsReg registry) {
+    this.registry = registry;
+  }
 
   @Validate
   private void start() {
@@ -85,12 +89,13 @@ public class DynamicOpenApi extends BaseOpenApiResource implements JaxRsChangeLi
   }
 
   @Override
-  protected Response getOpenApi(
+  public Response getOpenApi(
       HttpHeaders headers, ServletConfig config, Application app, UriInfo uriInfo, String type)
       throws Exception {
     return getOpenApi(headers, uriInfo, type, null);
   }
 
+  @Override
   public Response getOpenApi(
       HttpHeaders headers, UriInfo uriInfo, String type, OpenAPISpecFilter specFilter)
       throws Exception {

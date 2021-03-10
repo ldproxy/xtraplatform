@@ -42,14 +42,19 @@ public class DynamicOpenApiResource {
 
   private static Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApiResource.class);
 
-  @Requires DynamicOpenApi openApi;
+  private final DynamicOpenApiChangeListener openApi;
+  private final OpenApiViewerResource openApiViewerResource;
+  private final ServletConfig config;
+  private final Application app;
 
-  @Requires(optional = true)
-  OpenApiViewerResource openApiViewerResource;
-
-  @Context ServletConfig config;
-
-  @Context Application app;
+  public DynamicOpenApiResource(@Context ServletConfig config, @Context Application app,
+      @Requires(optional = true) OpenApiViewerResource openApiViewerResource,
+      @Requires DynamicOpenApiChangeListener openApi) {
+    this.openApi = openApi;
+    this.openApiViewerResource = openApiViewerResource;
+    this.config = config;
+    this.app = app;
+  }
 
   @GET
   @Produces({MediaType.TEXT_HTML})

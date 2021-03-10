@@ -40,11 +40,9 @@ public class WebServerDropwizard {
   private static final String APP_ENDPOINT = "/*";
   private static final String JERSEY_ENDPOINT = "/rest/*";
 
-  @Context private BundleContext context;
-
-  @Requires private Dropwizard dw;
-
-  @Requires private AdminEndpoint adminEndpoint;
+  private final BundleContext context;
+  private final Dropwizard dw;
+  private final AdminEndpointServlet adminEndpoint;
 
   private boolean initialized;
   private Server server;
@@ -54,8 +52,12 @@ public class WebServerDropwizard {
   private final Lock startStopLock;
   private final ScheduledExecutorService startStopThread;
 
-  public WebServerDropwizard() {
+  public WebServerDropwizard(@Context BundleContext context, @Requires Dropwizard dw,
+      @Context AdminEndpointServlet adminEndpoint) {
 
+    this.dw = dw;
+    this.context = context;
+    this.adminEndpoint = adminEndpoint;
     this.url = "";
 
     this.startStopLock = new ReentrantLock();

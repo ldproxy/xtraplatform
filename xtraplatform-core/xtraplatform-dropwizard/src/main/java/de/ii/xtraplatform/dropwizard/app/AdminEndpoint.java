@@ -44,14 +44,9 @@ import org.slf4j.LoggerFactory;
     filter = "(objectClass=de.ii.xtraplatform.dropwizard.domain.AdminSubEndpoint)",
     onArrival = "onArrival",
     onDeparture = "onDeparture")
-public class AdminEndpoint extends HttpServlet {
+public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AdminEndpoint.class);
-
-  public static final String DEFAULT_HEALTHCHECK_URI = "/healthcheck";
-  public static final String DEFAULT_METRICS_URI = "/metrics";
-  public static final String DEFAULT_PING_URI = "/ping";
-  public static final String DEFAULT_THREADS_URI = "/threads";
 
   private static final String TEMPLATE =
       String.format(
@@ -93,6 +88,7 @@ public class AdminEndpoint extends HttpServlet {
     this.bundleContext = bundleContext;
   }
 
+  @Override
   public synchronized void onArrival(ServiceReference<AdminSubEndpoint> ref) {
     AdminSubEndpoint subEndpoint = bundleContext.getService(ref);
     subEndpoints.add(subEndpoint);
@@ -105,6 +101,7 @@ public class AdminEndpoint extends HttpServlet {
     }
   }
 
+  @Override
   public synchronized void onDeparture(ServiceReference<AdminSubEndpoint> ref) {
     subEndpoints.remove(bundleContext.getService(ref));
   }
