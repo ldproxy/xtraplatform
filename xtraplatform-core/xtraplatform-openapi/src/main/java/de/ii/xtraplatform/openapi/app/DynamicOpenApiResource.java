@@ -10,6 +10,7 @@ package de.ii.xtraplatform.openapi.app;
 /** @author zahnen */
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
 import io.dropwizard.jersey.caching.CacheControl;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 @Component
 @Provides(specifications = {DynamicOpenApiResource.class})
 @Instantiate
+@Hidden
 @Path("/api")
 public class DynamicOpenApiResource {
 

@@ -48,7 +48,7 @@ public interface ServiceData extends EntityData, AutoEntity {
   @JsonProperty("secured")
   @Value.Default
   default boolean getSecured() {
-    return false;
+    return true;
   }
 
   Optional<Integer> getApiVersion();
