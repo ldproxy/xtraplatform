@@ -22,7 +22,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -69,7 +68,15 @@ public class TokenEndpoint implements Endpoint {
     this.authConfig = xtraPlatform.getConfiguration().auth;
   }
 
-  @RequestBody(required = true, content = @Content(examples = {@ExampleObject(value = "{\"user\": \"admin\", \"password\": \"admin\", \"noCookie\": true}")}, schema = @Schema(implementation = Credentials.class)))
+  @RequestBody(
+      required = true,
+      content =
+          @Content(
+              examples = {
+                @ExampleObject(
+                    value = "{\"user\": \"admin\", \"password\": \"admin\", \"noCookie\": true}")
+              },
+              schema = @Schema(implementation = Credentials.class)))
   @POST
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
@@ -84,19 +91,20 @@ public class TokenEndpoint implements Endpoint {
     }
 
     int expiresIn = body.expiration;
-        /*Optional.ofNullable(body.get("expiration"))
-            .map(
-                exp -> {
-                  try {
-                    return Integer.parseInt(exp);
-                  } catch (NumberFormatException e) {
-                    // so we use our default
-                  }
-                  return null;
-                })
-            .orElse(DEFAULT_EXPIRY)*/;
+    /*Optional.ofNullable(body.get("expiration"))
+    .map(
+        exp -> {
+          try {
+            return Integer.parseInt(exp);
+          } catch (NumberFormatException e) {
+            // so we use our default
+          }
+          return null;
+        })
+    .orElse(DEFAULT_EXPIRY)*/ ;
 
-    boolean rememberMe = body.rememberMe;;// Boolean.parseBoolean(body.get("rememberMe"));
+    boolean rememberMe = body.rememberMe;
+    ; // Boolean.parseBoolean(body.get("rememberMe"));
 
     String token = tokenGenerator.generateToken(user.get(), expiresIn, rememberMe);
 
