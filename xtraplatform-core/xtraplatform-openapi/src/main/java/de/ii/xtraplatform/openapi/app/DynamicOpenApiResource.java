@@ -46,7 +46,8 @@ public class DynamicOpenApiResource implements Endpoint {
   private final DynamicOpenApiChangeListener openApi;
   private final OpenApiViewerResource openApiViewerResource;
 
-  public DynamicOpenApiResource(@Requires OpenApiViewerResource openApiViewerResource,
+  public DynamicOpenApiResource(
+      @Requires OpenApiViewerResource openApiViewerResource,
       @Requires DynamicOpenApiChangeListener openApi) {
     this.openApi = openApi;
     this.openApiViewerResource = openApiViewerResource;
@@ -91,7 +92,11 @@ public class DynamicOpenApiResource implements Endpoint {
   @Produces({MediaType.APPLICATION_JSON})
   // @Operation(summary = "the API description - this document", tags = {"Capabilities"}, parameters
   // = {@Parameter(name = "f")})
-  public Response getApiDescriptionJson(@Context HttpHeaders headers, @Context UriInfo uriInfo, @Context ServletConfig config, @Context Application app)
+  public Response getApiDescriptionJson(
+      @Context HttpHeaders headers,
+      @Context UriInfo uriInfo,
+      @Context ServletConfig config,
+      @Context Application app)
       throws Exception {
     LOGGER.debug("MIME {})", "JSON");
     return openApi.getOpenApi(headers, config, app, uriInfo, "json");
@@ -101,7 +106,11 @@ public class DynamicOpenApiResource implements Endpoint {
   @Produces({DynamicOpenApi.YAML})
   // @Operation(summary = "the API description - this document", tags = {"Capabilities"}, parameters
   // = {@Parameter(name = "f")})
-  public Response getApiDescriptionYaml(@Context HttpHeaders headers, @Context UriInfo uriInfo, @Context ServletConfig config, @Context Application app)
+  public Response getApiDescriptionYaml(
+      @Context HttpHeaders headers,
+      @Context UriInfo uriInfo,
+      @Context ServletConfig config,
+      @Context Application app)
       throws Exception {
     LOGGER.debug("MIME {})", "YAML");
     return openApi.getOpenApi(headers, config, app, uriInfo, "yaml");

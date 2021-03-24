@@ -43,8 +43,7 @@ import org.slf4j.LoggerFactory;
 @Component
 @Provides
 @Instantiate
-public class DynamicOpenApi extends BaseOpenApiResource implements
-    DynamicOpenApiChangeListener {
+public class DynamicOpenApi extends BaseOpenApiResource implements DynamicOpenApiChangeListener {
 
   private static Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApi.class);
   public static final MediaType YAML_TYPE = new MediaType("application", "yaml");

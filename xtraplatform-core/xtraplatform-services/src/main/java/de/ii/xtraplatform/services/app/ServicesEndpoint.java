@@ -80,8 +80,11 @@ public class ServicesEndpoint implements Endpoint {
 
   @org.apache.felix.ipojo.annotations.Context private BundleContext context;
 
-  public ServicesEndpoint(@Requires EntityRegistry entityRegistry, @Requires Dropwizard dropwizard,
-      @Requires XtraPlatform xtraPlatform, @Requires ServiceInjectableContext serviceContext) {
+  public ServicesEndpoint(
+      @Requires EntityRegistry entityRegistry,
+      @Requires Dropwizard dropwizard,
+      @Requires XtraPlatform xtraPlatform,
+      @Requires ServiceInjectableContext serviceContext) {
     this.serviceResources = new LinkedHashMap<>();
     this.serviceListingProviders = new LinkedHashMap<>();
     this.entityRegistry = entityRegistry;

@@ -73,7 +73,9 @@ public class EntityRepositoryImpl implements EntityRepository {
   private ObjectMapper mapper;
   private EntitySerializer entitySerializer;
 
-  public EntityRepositoryImpl(@Requires KeyValueStore rootConfigStore, @Requires Jackson jackson,
+  public EntityRepositoryImpl(
+      @Requires KeyValueStore rootConfigStore,
+      @Requires Jackson jackson,
       @Context BundleContext context) {
     LOGGER.debug(
         "JACKSON DYNAMIC {}",

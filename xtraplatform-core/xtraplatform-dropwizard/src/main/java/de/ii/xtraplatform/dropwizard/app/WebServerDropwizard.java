@@ -52,7 +52,9 @@ public class WebServerDropwizard {
   private final Lock startStopLock;
   private final ScheduledExecutorService startStopThread;
 
-  public WebServerDropwizard(@Context BundleContext context, @Requires Dropwizard dw,
+  public WebServerDropwizard(
+      @Context BundleContext context,
+      @Requires Dropwizard dw,
       @Requires AdminEndpointServlet adminEndpoint) {
 
     this.dw = dw;
