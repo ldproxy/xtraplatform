@@ -54,7 +54,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityRepositoryImpl.class);
 
-  @Context BundleContext context;
+  private final BundleContext context;
 
   @Publishes(name = "create", topics = "create", dataKey = Entity.DATA_KEY, synchronous = true)
   private Publisher createListeners;
@@ -73,7 +73,10 @@ public class EntityRepositoryImpl implements EntityRepository {
   private ObjectMapper mapper;
   private EntitySerializer entitySerializer;
 
-  public EntityRepositoryImpl(@Requires KeyValueStore rootConfigStore, @Requires Jackson jackson) {
+  public EntityRepositoryImpl(
+      @Requires KeyValueStore rootConfigStore,
+      @Requires Jackson jackson,
+      @Context BundleContext context) {
     LOGGER.debug(
         "JACKSON DYNAMIC {}",
         jackson.getDefaultObjectMapper().getDeserializationConfig().getHandlerInstantiator());
@@ -89,6 +92,7 @@ public class EntityRepositoryImpl implements EntityRepository {
             entitySerializer);
     this.kvStore = rootConfigStore;
     this.mapper = jackson.getDefaultObjectMapper();
+    this.context = context;
   }
 
   @Override

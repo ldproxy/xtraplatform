@@ -50,11 +50,12 @@ public class SchedulerCron4j implements Scheduler {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerCron4j.class);
 
-  @Context private BundleContext context;
+  private final BundleContext context;
 
   private final it.sauronsoftware.cron4j.Scheduler scheduler;
 
-  public SchedulerCron4j() {
+  public SchedulerCron4j(@Context BundleContext context) {
+    this.context = context;
     this.scheduler = new it.sauronsoftware.cron4j.Scheduler();
     scheduler.setDaemon(true);
     // needed to suppress exception printing to stdout

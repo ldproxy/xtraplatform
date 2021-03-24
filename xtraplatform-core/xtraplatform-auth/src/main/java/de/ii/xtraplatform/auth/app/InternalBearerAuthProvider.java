@@ -36,9 +36,13 @@ import org.apache.felix.ipojo.annotations.StaticServiceProperty;
 @Instantiate
 public class InternalBearerAuthProvider implements AuthProvider<User> {
 
-  @Requires private TokenHandler tokenHandler;
+  private final TokenHandler tokenHandler;
+  private final Dropwizard dropwizard;
 
-  @Requires Dropwizard dropwizard;
+  InternalBearerAuthProvider(@Requires TokenHandler tokenHandler, @Requires Dropwizard dropwizard) {
+    this.tokenHandler = tokenHandler;
+    this.dropwizard = dropwizard;
+  }
 
   @Override
   public AuthDynamicFeature getAuthDynamicFeature() {

@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.openapi.app;
 
 /** @author zahnen */
+import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -36,22 +37,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component
-@Provides(specifications = {DynamicOpenApiResource.class})
+@Provides
 @Instantiate
 @Hidden
 @Path("/api")
-public class DynamicOpenApiResource {
+public class DynamicOpenApiResource implements Endpoint {
 
-  private static Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApiResource.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApiResource.class);
 
-  @Requires DynamicOpenApi openApi;
+  private final DynamicOpenApiChangeListener openApi;
+  private final OpenApiViewerResource openApiViewerResource;
 
-  @Requires(optional = true)
-  OpenApiViewerResource openApiViewerResource;
-
-  @Context ServletConfig config;
-
-  @Context Application app;
+  public DynamicOpenApiResource(
+      @Requires OpenApiViewerResource openApiViewerResource,
+      @Requires DynamicOpenApiChangeListener openApi) {
+    this.openApi = openApi;
+    this.openApiViewerResource = openApiViewerResource;
+  }
 
   @GET
   @Produces({MediaType.TEXT_HTML})
@@ -92,7 +94,11 @@ public class DynamicOpenApiResource {
   @Produces({MediaType.APPLICATION_JSON})
   // @Operation(summary = "the API description - this document", tags = {"Capabilities"}, parameters
   // = {@Parameter(name = "f")})
-  public Response getApiDescriptionJson(@Context HttpHeaders headers, @Context UriInfo uriInfo)
+  public Response getApiDescriptionJson(
+      @Context HttpHeaders headers,
+      @Context UriInfo uriInfo,
+      @Context ServletConfig config,
+      @Context Application app)
       throws Exception {
     LOGGER.debug("MIME {})", "JSON");
     return openApi.getOpenApi(headers, config, app, uriInfo, "json");
@@ -102,7 +108,11 @@ public class DynamicOpenApiResource {
   @Produces({DynamicOpenApi.YAML})
   // @Operation(summary = "the API description - this document", tags = {"Capabilities"}, parameters
   // = {@Parameter(name = "f")})
-  public Response getApiDescriptionYaml(@Context HttpHeaders headers, @Context UriInfo uriInfo)
+  public Response getApiDescriptionYaml(
+      @Context HttpHeaders headers,
+      @Context UriInfo uriInfo,
+      @Context ServletConfig config,
+      @Context Application app)
       throws Exception {
     LOGGER.debug("MIME {})", "YAML");
     return openApi.getOpenApi(headers, config, app, uriInfo, "yaml");

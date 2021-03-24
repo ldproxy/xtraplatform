@@ -36,14 +36,14 @@ import java.util.List;
 public class FirstRunPageRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FirstRunPageRegistry.class);
-    
-    @Context
-    private BundleContext context;
+
+    private final BundleContext context;
 
     private final List<FirstRunPage> pages;
 
-    public FirstRunPageRegistry() {
+    public FirstRunPageRegistry(@Context BundleContext context) {
         pages = new ArrayList<>();
+        this.context = context;
     }
 
     public synchronized void onArrival(ServiceReference<FirstRunPage> ref) {
