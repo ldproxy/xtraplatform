@@ -41,7 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component
-@Provides(specifications = {DynamicOpenApi.class})
+@Provides
 @Instantiate
 public class DynamicOpenApi extends BaseOpenApiResource implements
     DynamicOpenApiChangeListener {

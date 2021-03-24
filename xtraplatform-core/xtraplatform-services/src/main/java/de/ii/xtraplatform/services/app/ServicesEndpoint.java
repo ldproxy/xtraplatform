@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.services.app;
 
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
+import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.dropwizard.domain.MediaTypeCharset;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.LogContext;
@@ -50,7 +51,7 @@ import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 @Component
-@Provides(specifications = {ServicesEndpoint.class})
+@Provides
 @Instantiate
 @Whiteboards(
     whiteboards = {
@@ -65,7 +66,7 @@ import org.slf4j.LoggerFactory;
     })
 @Path("/services/")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
-public class ServicesEndpoint {
+public class ServicesEndpoint implements Endpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServicesEndpoint.class);
 

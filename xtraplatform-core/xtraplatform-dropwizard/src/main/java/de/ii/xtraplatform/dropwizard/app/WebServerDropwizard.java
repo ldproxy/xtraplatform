@@ -53,7 +53,7 @@ public class WebServerDropwizard {
   private final ScheduledExecutorService startStopThread;
 
   public WebServerDropwizard(@Context BundleContext context, @Requires Dropwizard dw,
-      @Context AdminEndpointServlet adminEndpoint) {
+      @Requires AdminEndpointServlet adminEndpoint) {
 
     this.dw = dw;
     this.context = context;

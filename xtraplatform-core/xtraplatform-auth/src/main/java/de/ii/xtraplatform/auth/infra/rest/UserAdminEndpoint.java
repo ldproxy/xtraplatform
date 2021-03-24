@@ -12,6 +12,7 @@ import de.ii.xtraplatform.auth.app.PasswordHash;
 import de.ii.xtraplatform.auth.app.User;
 import de.ii.xtraplatform.auth.app.User.UserData;
 import de.ii.xtraplatform.auth.domain.Role;
+import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.dropwizard.domain.MediaTypeCharset;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
@@ -45,12 +46,12 @@ import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 @Component
-@Provides(specifications = {UserAdminEndpoint.class})
+@Provides
 @Instantiate
 @RolesAllowed({Role.Minimum.ADMIN})
 @Path("/admin/users")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
-public class UserAdminEndpoint {
+public class UserAdminEndpoint implements Endpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(UserAdminEndpoint.class);
 

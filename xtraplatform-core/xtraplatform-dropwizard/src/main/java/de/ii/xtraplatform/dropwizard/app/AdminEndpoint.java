@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 @Component
-@Provides(specifications = {AdminEndpoint.class})
+@Provides
 @Instantiate
 @Wbp(
     filter = "(objectClass=de.ii.xtraplatform.dropwizard.domain.AdminSubEndpoint)",
