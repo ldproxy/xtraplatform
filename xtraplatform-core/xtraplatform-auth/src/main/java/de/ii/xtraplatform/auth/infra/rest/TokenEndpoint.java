@@ -15,10 +15,13 @@ import de.ii.xtraplatform.auth.domain.UserAuthenticator;
 import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.AuthConfig;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -42,6 +45,14 @@ public class TokenEndpoint implements Endpoint {
 
   private static final int DEFAULT_EXPIRY = 2592000;
 
+  public static class Credentials {
+    public String user;
+    public String password;
+    public int expiration = DEFAULT_EXPIRY;
+    public boolean rememberMe = false;
+    public boolean noCookie = false;
+  }
+
   private final UserAuthenticator authenticator;
   private final TokenHandler tokenGenerator;
   private final XtraPlatform xtraPlatform;
@@ -57,33 +68,43 @@ public class TokenEndpoint implements Endpoint {
     this.authConfig = xtraPlatform.getConfiguration().auth;
   }
 
+  @RequestBody(
+      required = true,
+      content =
+          @Content(
+              examples = {
+                @ExampleObject(
+                    value = "{\"user\": \"admin\", \"password\": \"admin\", \"noCookie\": true}")
+              },
+              schema = @Schema(implementation = Credentials.class)))
   @POST
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   @Path("/token")
-  public Response authorize(@Context HttpServletRequest request, Map<String, String> body)
+  public Response authorize(@Context HttpServletRequest request, Credentials body)
       throws IOException {
 
-    Optional<User> user = authenticator.authenticate(body.get("user"), body.get("password"));
+    Optional<User> user = authenticator.authenticate(body.user, body.password);
 
     if (!user.isPresent()) {
       return Response.status(Status.BAD_REQUEST).entity("userOrPasswordInvalid").build();
     }
 
-    int expiresIn =
-        Optional.ofNullable(body.get("expiration"))
-            .map(
-                exp -> {
-                  try {
-                    return Integer.parseInt(exp);
-                  } catch (NumberFormatException e) {
-                    // so we use our default
-                  }
-                  return null;
-                })
-            .orElse(DEFAULT_EXPIRY);
+    int expiresIn = body.expiration;
+    /*Optional.ofNullable(body.get("expiration"))
+    .map(
+        exp -> {
+          try {
+            return Integer.parseInt(exp);
+          } catch (NumberFormatException e) {
+            // so we use our default
+          }
+          return null;
+        })
+    .orElse(DEFAULT_EXPIRY)*/ ;
 
-    boolean rememberMe = Boolean.parseBoolean(body.get("rememberMe"));
+    boolean rememberMe = body.rememberMe;
+    ; // Boolean.parseBoolean(body.get("rememberMe"));
 
     String token = tokenGenerator.generateToken(user.get(), expiresIn, rememberMe);
 
@@ -92,11 +113,13 @@ public class TokenEndpoint implements Endpoint {
             .entity(
                 ImmutableTokenResponse.builder().access_token(token).expires_in(expiresIn).build());
 
-    String domain = null; // request.getServerName();
+    if (!body.noCookie) {
+      String domain = null; // request.getServerName();
 
-    List<String> authCookies = SplitCookie.writeToken(token, domain, isSecure(), rememberMe);
+      List<String> authCookies = SplitCookie.writeToken(token, domain, isSecure(), rememberMe);
 
-    authCookies.forEach(cookie -> response.header("Set-Cookie", cookie));
+      authCookies.forEach(cookie -> response.header("Set-Cookie", cookie));
+    }
 
     return response.build();
   }

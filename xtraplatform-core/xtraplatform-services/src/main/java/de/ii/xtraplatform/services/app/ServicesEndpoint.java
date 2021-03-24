@@ -19,6 +19,7 @@ import de.ii.xtraplatform.services.domain.ServiceInjectableContext;
 import de.ii.xtraplatform.services.domain.ServiceListingProvider;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import io.dropwizard.jersey.caching.CacheControl;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,6 +65,7 @@ import org.slf4j.LoggerFactory;
           onArrival = "onServiceListingProviderArrival",
           onDeparture = "onServiceListingProviderDeparture")
     })
+@Hidden
 @Path("/services/")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
 public class ServicesEndpoint implements Endpoint {

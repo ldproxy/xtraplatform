@@ -11,6 +11,7 @@ package de.ii.xtraplatform.openapi.app;
 import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
 import io.dropwizard.jersey.caching.CacheControl;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -38,6 +39,7 @@ import org.slf4j.LoggerFactory;
 @Component
 @Provides
 @Instantiate
+@Hidden
 @Path("/api")
 public class DynamicOpenApiResource implements Endpoint {
 
