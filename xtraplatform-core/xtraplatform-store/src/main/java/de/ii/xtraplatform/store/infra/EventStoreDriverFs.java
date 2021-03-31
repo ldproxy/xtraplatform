@@ -19,9 +19,9 @@ import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
 import de.ii.xtraplatform.store.app.EventPaths;
+import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.Identifier;
-import de.ii.xtraplatform.store.domain.MutationEvent;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -156,7 +156,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
   }
 
   @Override
-  public Stream<MutationEvent> loadEventStream() {
+  public Stream<EntityEvent> loadEventStream() {
     try {
       return Stream.concat(
           eventPaths
@@ -265,7 +265,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
   }
 
   @Override
-  public void saveEvent(MutationEvent event) throws IOException {
+  public void saveEvent(EntityEvent event) throws IOException {
     // TODO: check mainPath first, if exists use override
     // TODO: if override exists, merge with incoming
     Path eventPath = eventPaths.getSavePath(event);

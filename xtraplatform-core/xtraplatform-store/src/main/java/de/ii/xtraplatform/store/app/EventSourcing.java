@@ -10,6 +10,7 @@ package de.ii.xtraplatform.store.app;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.Event;
 import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
@@ -18,6 +19,7 @@ import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
 import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.ReloadEvent;
+import de.ii.xtraplatform.store.domain.ReplayEvent;
 import de.ii.xtraplatform.store.domain.StateChangeEvent;
 import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
@@ -51,7 +53,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   private final List<String> eventTypes;
   private final ValueEncoding<T> valueEncoding;
   private final Supplier<CompletableFuture<Void>> onStart;
-  private final Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor;
+  private final Optional<Function<ReplayEvent, List<ReplayEvent>>> eventProcessor;
   private final Optional<BiConsumer<Identifier, T>> updateHook;
   private final Optional<BiConsumer<Identifier, T>> valueValidator;
   private final Set<String> started;
@@ -62,7 +64,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       List<String> eventTypes,
       ValueEncoding<T> valueEncoding,
       Supplier<CompletableFuture<Void>> onStart,
-      Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor,
+      Optional<Function<ReplayEvent, List<ReplayEvent>>> eventProcessor,
       Optional<BiConsumer<Identifier, T>> updateHook) {
     this(
         eventStore,
@@ -79,7 +81,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       List<String> eventTypes,
       ValueEncoding<T> valueEncoding,
       Supplier<CompletableFuture<Void>> onStart,
-      Optional<Function<MutationEvent, List<MutationEvent>>> eventProcessor,
+      Optional<Function<ReplayEvent, List<ReplayEvent>>> eventProcessor,
       Optional<BiConsumer<Identifier, T>> updateHook,
       Optional<BiConsumer<Identifier, T>> valueValidator) {
     this.eventStore = eventStore;
@@ -108,28 +110,29 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
   @Override
   public void onEmit(Event event) {
-    if (event instanceof MutationEvent) {
+    if (event instanceof EntityEvent) {
+      EntityEvent entityEvent = (EntityEvent) event;
       try {
-        if (eventProcessor.isPresent()) {
+        if (eventProcessor.isPresent() && event instanceof ReplayEvent) {
           CompletableFuture<T> completableFuture = null;
           // TODO
-          if (queue.containsKey(((MutationEvent) event).identifier())
-              && ((MutationEvent) event).type().equals("defaults")
-              && ((MutationEvent) event).identifier().id().equals("services.ogc_api")) {
-            completableFuture = queue.get(((MutationEvent) event).identifier());
-            queue.remove(((MutationEvent) event).identifier());
+          if (queue.containsKey(entityEvent.identifier())
+              && entityEvent.type().equals("defaults")
+              && entityEvent.identifier().id().equals("services.ogc_api")) {
+            completableFuture = queue.get(entityEvent.identifier());
+            queue.remove(entityEvent.identifier());
           }
-          for (MutationEvent mutationEvent : eventProcessor.get().apply((MutationEvent) event)) {
+          for (ReplayEvent replayEvent : eventProcessor.get().apply((ReplayEvent) event)) {
             if (Objects.nonNull(completableFuture)) {
-              queue.put(mutationEvent.identifier(), completableFuture);
+              queue.put(replayEvent.identifier(), completableFuture);
             }
-            onEmit(mutationEvent);
+            onEmit(replayEvent);
           }
         } else {
-          onEmit((MutationEvent) event);
+          onEmit(entityEvent);
         }
       } catch (Throwable e) {
-        LOGGER.error("Cannot load '{}': {}", ((MutationEvent) event).asPath(), e.getMessage());
+        LOGGER.error("Cannot load '{}': {}", entityEvent.asPath(), e.getMessage());
         if (LOGGER.isDebugEnabled()) {
           LOGGER.debug("Stacktrace:", e);
         }
@@ -200,21 +203,20 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
     try {
       // TODO: if already in queue, pipeline to existing future
-      final MutationEvent mutationEvent =
+      final EntityEvent entityEvent =
           ImmutableMutationEvent.builder()
               .type(eventTypes.get(0))
               .identifier(identifier)
               .payload(payload)
               .deleted(isDelete ? true : null)
               .format(valueEncoding.getDefaultFormat().toString())
-              .ignoreCache(true)
               .build();
 
       queue.put(identifier, completableFuture);
 
       // TODO: pass snapshot to push, event store can decide what to do with it
       // who decides if snapshotting is enabled?
-      eventStore.push(mutationEvent);
+      eventStore.push(entityEvent);
 
     } catch (Throwable e) {
       completableFuture.completeExceptionally(e);
@@ -224,7 +226,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     return completableFuture;
   }
 
-  private void onEmit(MutationEvent event) throws Throwable {
+  private void onEmit(EntityEvent event) throws Throwable {
     Identifier key = event.identifier();
     ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(event.format());
 
@@ -248,7 +250,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
               event.identifier(),
               event.payload(),
               payloadFormat,
-              Objects.equals(event.ignoreCache(), true));
+              event instanceof MutationEvent);
 
     } catch (Throwable e) {
       error = e;

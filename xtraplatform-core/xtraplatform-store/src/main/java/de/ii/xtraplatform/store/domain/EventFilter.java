@@ -20,7 +20,7 @@ public interface EventFilter {
 
   List<String> getIds();
 
-  default boolean matches(MutationEvent event) {
+  default boolean matches(EntityEvent event) {
     Identifier identifier = event.identifier();
 
     if (!getEntityTypes().contains("*")
