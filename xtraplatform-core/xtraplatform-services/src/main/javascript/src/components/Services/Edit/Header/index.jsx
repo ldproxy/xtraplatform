@@ -27,7 +27,7 @@ const ServiceEditHeader = ({
             title={`${service.label} [${service.id}]`}
             actions2={
                 <AsyncIcon
-                    size='small'
+                    size='list'
                     pending={mutationPending}
                     loading={mutationLoading}
                     success={mutationSuccess}
