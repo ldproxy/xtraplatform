@@ -27,6 +27,8 @@ import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
 import de.ii.xtraplatform.store.domain.entities.handler.Entity;
 import java.util.Arrays;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +41,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.felix.ipojo.ComponentFactory;
+import org.apache.felix.ipojo.ComponentInstance;
 import org.apache.felix.ipojo.Factory;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
@@ -57,29 +60,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Component(publicFactory = false)
 @Provides
 @Instantiate
 @Whiteboards(
     whiteboards = {
-      @Wbp(
-          filter =
-              "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=de.ii.xtraplatform.store.domain.entities.PersistentEntity))",
-          onArrival = "onFactoryArrival",
-          onDeparture = "onFactoryDeparture"),
-      @Wbp(
-          filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityHydrator)",
-          onArrival = "onHydratorArrival",
-          onDeparture = "onHydratorDeparture"),
-      @Wbp(
-          filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityMigration)",
-          onArrival = "onMigrationArrival",
-          onDeparture = "onMigrationDeparture"),
-      @Wbp(
-          filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityDataDefaults)",
-          onArrival = "onDefaultsArrival",
-          onDeparture = "onDefaultsDeparture")
+        @Wbp(
+            filter =
+                "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=de.ii.xtraplatform.store.domain.entities.PersistentEntity))",
+            onArrival = "onFactoryArrival",
+            onDeparture = "onFactoryDeparture"),
+        @Wbp(
+            filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityHydrator)",
+            onArrival = "onHydratorArrival",
+            onDeparture = "onHydratorDeparture"),
+        @Wbp(
+            filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityMigration)",
+            onArrival = "onMigrationArrival",
+            onDeparture = "onMigrationDeparture"),
+        @Wbp(
+            filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityDataDefaults)",
+            onArrival = "onDefaultsArrival",
+            onDeparture = "onDefaultsDeparture")
     })
 // TODO: use generic registry implementation
 public class EntityFactoryImpl implements EntityFactory {
@@ -580,30 +585,28 @@ public class EntityFactoryImpl implements EntityFactory {
       LOGGER.info("Reloading configuration for entity of type '{}' with id '{}'", entityType, id);
 
       String instanceId = entityType + "/" + id;
+      String specificEntityType = getSpecificEntityType(entityType, entityData.getEntitySubType());
+      ComponentFactory componentFactory = componentFactories.get(specificEntityType);
+      ComponentInstance instance = componentFactory.getInstanceByName(instanceId);
 
-      deleteInstance(entityType, id);
-      return createInstance(entityType, id, entityData);
-    }
-
-    /*if (instanceHandles.containsKey(instanceId)) {
+      if (Objects.nonNull(instance)) {
         Dictionary<String, Object> configuration = new Hashtable<>();
-        configuration.put("instance.name", instanceId);
+        configuration.put(Factory.INSTANCE_NAME_PROPERTY, instanceId);
         configuration.put(Entity.DATA_KEY, entityData);
 
-        if (entityHydrators.containsKey(entityType)) {
-            entityHydrators.get(entityType)
-                           .getInstanceConfiguration(entityData)
-                           .forEach(configuration::put);
-        }
-
         try {
-            componentFactories.get(entityType)
-                              .reconfigure(configuration);
+          componentFactories.get(specificEntityType)
+              .reconfigure(configuration);
         } catch (Throwable e) {
-            //ignore
-            LOGGER.error("ERROR UPDATING", e);
+          LOGGER.error("Could not reload configuration: {}", e.getMessage());
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Stacktrace:", e);
+          }
         }
-    }*/
+      }
+
+      return CompletableFuture.completedFuture(null);
+    }
   }
 
   @Override

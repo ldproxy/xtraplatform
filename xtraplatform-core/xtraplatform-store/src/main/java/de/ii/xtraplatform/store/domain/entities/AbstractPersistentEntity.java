@@ -7,8 +7,16 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.domain.entities.handler.Entity;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.PostRegistration;
 import org.apache.felix.ipojo.annotations.PostUnregistration;
@@ -20,15 +28,49 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public abstract class AbstractPersistentEntity<T extends EntityData> implements PersistentEntity {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPersistentEntity.class);
+
+  private final ExecutorService executorService;
 
   @ServiceController(value = false) // is ignored here, but added by @Entity handler
   public boolean register;
 
   private T data;
+  private Future<?> startup;
+
+  public AbstractPersistentEntity() {
+    this.executorService =
+        MoreExecutors.getExitingExecutorService(
+            (ThreadPoolExecutor)
+                Executors.newFixedThreadPool(
+                    1, new ThreadFactoryBuilder().setNameFormat("entity.lifecycle-%d").build()));
+    this.data = null;
+    this.startup = null;
+  }
+
+  @Override
+  public T getData() {
+    return data;
+  }
+
+  @Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler
+  public final void setData(T data) {
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("GOT DATA {}" /*, data*/);
+    }
+    T previous = this.data;
+    this.data = data;
+
+    if (Objects.nonNull(previous) && (this.register || Objects.nonNull(startup))) {
+      LOGGER.trace("RELOAD DATA {} {}", previous.hashCode(), data.hashCode());
+      onReload();
+    }
+  }
 
   @Validate // is ignored here, but added by @EntityComponent stereotype
   public final void onValidate() {
@@ -38,7 +80,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("STARTING {} {} {} {}", getType(), getId(), shouldRegister(), register);
         }
-        this.register = onStartup();
+
+        triggerStartup(true, () -> {
+        });
       }
     }
   }
@@ -50,6 +94,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STOPPING {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
+
+      cancelStartup();
+
       onShutdown();
     }
   }
@@ -76,30 +123,85 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
     }
   }
 
-  protected boolean onStartup() {
+  private void onReload() {
+    try (MDC.MDCCloseable closeable =
+        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("RELOADING {} {} {} {}", getType(), getId(), shouldRegister(), register);
+      }
+
+      cancelStartup();
+
+      triggerStartup(false, this::afterReload);
+    }
+  }
+
+  private void afterReload() {
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("RELOADED {} {} {} {}", getType(), getId(), shouldRegister(), register);
+    }
+    if (register) {
+      onReloaded();
+    } else {
+      LOGGER.trace("SUBSEQUENT FAILURE" /*, data*/);
+    }
+  }
+
+  private void triggerStartup(boolean wait, Runnable then) {
+    this.startup = executorService.submit(() -> {
+      LogContext.put(LogContext.CONTEXT.SERVICE, getId());
+      try {
+        this.register = onStartup();
+      } catch (InterruptedException e) {
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("INTERRUPTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
+        }
+        return;
+      }
+      then.run();
+    });
+
+    if (wait) {
+      try {
+        this.startup.get();
+      } catch (InterruptedException | ExecutionException e) {
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("INTERRUPTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
+        }
+      }
+    }
+  }
+
+  private void cancelStartup() {
+    if (Objects.nonNull(startup)) {
+      boolean canceled = startup.cancel(true);
+    }
+  }
+
+  protected boolean onStartup() throws InterruptedException {
     return true;
   }
 
-  protected void onStarted() {}
-
-  protected void onShutdown() {}
-
-  protected void onStopped() {}
-
-  @Override
-  public T getData() {
-    return data;
+  protected void onStarted() {
   }
 
-  @Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler
-  public final void setData(T data) {
-    if (LOGGER.isTraceEnabled()) {
-      LOGGER.trace("GOT data {}" /*, data*/);
-    }
-    this.data = data;
+  protected void onReloaded() {
+  }
+
+  protected void onShutdown() {
+  }
+
+  protected void onStopped() {
   }
 
   protected boolean shouldRegister() {
     return true;
+  }
+
+  protected void checkForStartupCancel() throws InterruptedException {
+    if (Thread.interrupted()) {
+      Thread.currentThread().interrupt();
+      throw new InterruptedException();
+    }
   }
 }
