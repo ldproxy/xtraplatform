@@ -11,7 +11,7 @@ public interface EventStore {
 
   void subscribe(EventStoreSubscriber subscriber);
 
-  void push(MutationEvent event);
+  void push(EntityEvent event);
 
   boolean isReadOnly();
 

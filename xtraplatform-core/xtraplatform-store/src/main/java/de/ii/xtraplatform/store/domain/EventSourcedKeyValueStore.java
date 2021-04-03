@@ -10,7 +10,6 @@ package de.ii.xtraplatform.store.domain;
 import de.ii.xtraplatform.store.app.EventSourcingCache;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-// TODO
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,8 +22,8 @@ public interface EventSourcedKeyValueStore<T> extends EventSourcedStore<T>, KeyV
   @Override
   default void onEmit(Event event) {
     // TODO: when isReplay switches, notify EntityInstantiator
-    if (event instanceof MutationEvent) {
-      getEventSourcing().onEmit((MutationEvent) event);
+    if (event instanceof EntityEvent) {
+      getEventSourcing().onEmit((EntityEvent) event);
 
     } else if (event instanceof StateChangeEvent) {
       switch (((StateChangeEvent) event).state()) {

@@ -11,10 +11,10 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
-import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
-import de.ii.xtraplatform.store.domain.MutationEvent;
+import de.ii.xtraplatform.store.domain.ImmutableReplayEvent;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -85,7 +85,7 @@ public class EventPaths {
     return rootPath;
   }
 
-  public Path getSavePath(MutationEvent event) {
+  public Path getSavePath(EntityEvent event) {
     return getEventPath(event.type(), event.identifier(), event.format(), mainPathPatternWrite);
   }
 
@@ -105,7 +105,7 @@ public class EventPaths {
                 + (Objects.nonNull(format) ? "." + format.toLowerCase() : "")));
   }
 
-  public MutationEvent pathToEvent(
+  public EntityEvent pathToEvent(
       Pattern pathPattern, Path path, Function<Path, byte[]> readPayload) {
     int parentCount = rootPath.getNameCount();
     Matcher pathMatcher =
@@ -134,7 +134,7 @@ public class EventPaths {
         Iterable<String> eventPathSegments =
             Strings.isNullOrEmpty(eventPath) ? ImmutableList.of() : PATH_SPLITTER.split(eventPath);
 
-        return ImmutableMutationEvent.builder()
+        return ImmutableReplayEvent.builder()
             .type(eventType)
             .identifier(ImmutableIdentifier.builder().id(eventId).path(eventPathSegments).build())
             .payload(bytes)

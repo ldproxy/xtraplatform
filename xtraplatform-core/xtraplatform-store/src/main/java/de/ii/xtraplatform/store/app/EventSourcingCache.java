@@ -8,10 +8,10 @@
 package de.ii.xtraplatform.store.app;
 
 import com.google.common.collect.ImmutableList;
+import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
-import de.ii.xtraplatform.store.domain.MutationEvent;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -86,7 +86,7 @@ public class EventSourcingCache<T> {
 
     try {
       // TODO: if already in queue, pipeline to existing future
-      final MutationEvent mutationEvent =
+      final EntityEvent entityEvent =
           ImmutableMutationEvent.builder()
               .type(eventType)
               .identifier(identifier)
@@ -99,7 +99,7 @@ public class EventSourcingCache<T> {
 
       // TODO: pass snapshot to push, event store can decide what to do with it
       // who decides if snapshotting is enabled?
-      eventStore.push(mutationEvent);
+      eventStore.push(entityEvent);
 
     } catch (Throwable e) {
       completableFuture.completeExceptionally(e);
@@ -109,7 +109,7 @@ public class EventSourcingCache<T> {
     return completableFuture;
   }
 
-  public void onEmit(MutationEvent event) {
+  public void onEmit(EntityEvent event) {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("Adding event: {} {}", event.type(), event.identifier());
     }

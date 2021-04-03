@@ -27,6 +27,11 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
   }
 
   @Override
+  protected void onReloaded() {
+    LOGGER.info("Service with id '{}' reloaded successfully.", getId());
+  }
+
+  @Override
   protected void onShutdown() {
     if (shouldRegister()) {
       LOGGER.info("Service with id '{}' stopped.", getId());

@@ -10,15 +10,15 @@ package de.ii.xtraplatform.store.app;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
 import de.ii.xtraplatform.runtime.domain.StoreConfiguration.StoreMode;
+import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
-import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
+import de.ii.xtraplatform.store.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.store.domain.ImmutableReloadEvent;
-import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
 import de.ii.xtraplatform.streams.domain.StreamRunner;
@@ -94,7 +94,7 @@ public class EventStoreDefault implements EventStore {
   }
 
   @Override
-  public void push(MutationEvent event) {
+  public void push(EntityEvent event) {
     if (isReadOnly) {
       throw new UnsupportedOperationException(
           "Operating in read-only mode, writes are not allowed.");
@@ -120,9 +120,9 @@ public class EventStoreDefault implements EventStore {
 
   @Override
   public void replay(EventFilter filter) {
-    Set<MutationEvent> deleteEvents = new HashSet<>();
+    Set<EntityEvent> deleteEvents = new HashSet<>();
 
-    List<MutationEvent> eventStream =
+    List<EntityEvent> eventStream =
         driver
             .loadEventStream()
             .filter(
@@ -141,7 +141,7 @@ public class EventStoreDefault implements EventStore {
                               : event.identifier().id();
                       boolean deleted =
                           deleteEvents.add(
-                              ImmutableMutationEvent.builder()
+                              ImmutableReplayEvent.builder()
                                   .type("entities")
                                   .deleted(true)
                                   .identifier(Identifier.from(id, event.identifier().path().get(0)))
@@ -156,7 +156,7 @@ public class EventStoreDefault implements EventStore {
                       String id = EntityDataDefaultsStore.EVENT_TYPE;
                       boolean deleted =
                           deleteEvents.add(
-                              ImmutableMutationEvent.builder()
+                              ImmutableReplayEvent.builder()
                                   .type(EntityDataDefaultsStore.EVENT_TYPE)
                                   .deleted(true)
                                   .identifier(

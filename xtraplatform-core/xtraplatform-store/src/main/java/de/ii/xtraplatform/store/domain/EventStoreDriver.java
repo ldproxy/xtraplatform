@@ -16,9 +16,9 @@ public interface EventStoreDriver {
 
   void start();
 
-  Stream<MutationEvent> loadEventStream();
+  Stream<EntityEvent> loadEventStream();
 
-  void saveEvent(MutationEvent event) throws IOException;
+  void saveEvent(EntityEvent event) throws IOException;
 
   void deleteAllEvents(String type, Identifier identifier, String format) throws IOException;
 

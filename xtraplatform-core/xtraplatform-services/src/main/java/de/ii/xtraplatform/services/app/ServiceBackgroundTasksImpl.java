@@ -16,6 +16,7 @@ import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
 import de.ii.xtraplatform.services.domain.TaskQueue;
 import de.ii.xtraplatform.services.domain.TaskStatus;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
+import de.ii.xtraplatform.store.domain.entities.Reloadable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -66,6 +67,25 @@ public class ServiceBackgroundTasksImpl
   }
 
   private <T extends Service> void onServiceStart(T service) {
+    if (service instanceof Reloadable) {
+      ((Reloadable)service).addReloadListener(service.getClass(), this::onServiceReload);
+    }
+    startTasks(service);
+  }
+
+  private <T extends Service> void onServiceReload(T service) {
+    stopTasks(service);
+    startTasks(service);
+  }
+
+  private <T extends Service> void onServiceStop(T service) {
+    stopTasks(service);
+  }
+
+  private <T extends Service> void startTasks(T service) {
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Starting background tasks for service '{}'", service.getId());
+    }
     tasks
         .get()
         .forEach(
@@ -74,8 +94,10 @@ public class ServiceBackgroundTasksImpl
             });
   }
 
-  private <T extends Service> void onServiceStop(T service) {
-    LOGGER.debug("ONSTOP {}", service.getId());
+  private <T extends Service> void stopTasks(T service) {
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Stopping background tasks for service '{}'", service.getId());
+    }
     getCurrentTaskForService(service.getId()).ifPresent(TaskStatus::stop);
     commonQueue.getFutureTasks().stream()
         .filter(task -> Objects.equals(task.getId(), service.getId()))

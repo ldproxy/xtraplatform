@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.store.app;
 
 import akka.stream.QueueOfferResult;
+import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.ImmutableStateChangeEvent;
 import de.ii.xtraplatform.store.domain.MutationEvent;
@@ -58,23 +59,28 @@ public class EventSubscriptions {
                 event -> {
                   if (event instanceof StateChangeEvent
                       && ((StateChangeEvent) event).state() == StateChangeEvent.STATE.LISTENING) {
-                    // LOGGER.debug("{} STARTED", eventType);
+                    subscriber.onEmit(event);
+                    if (LOGGER.isTraceEnabled()) {
+                      LOGGER.trace("{} STARTED LISTENER", eventType);
+                    }
                     cmp.complete(null);
+                    return;
                   }
+
                   // only emit one event at a time
                   synchronized (streamRunner) {
-                    if (event instanceof MutationEvent) {
+                    if (LOGGER.isTraceEnabled() && event instanceof EntityEvent) {
                       LOGGER.trace(
                           "EMIT: {} {}",
-                          ((MutationEvent) event).type(),
-                          ((MutationEvent) event).identifier());
+                          ((EntityEvent) event).type(),
+                          ((EntityEvent) event).identifier());
                     }
                     subscriber.onEmit(event);
-                    if (event instanceof MutationEvent) {
+                    if (LOGGER.isTraceEnabled() && event instanceof EntityEvent) {
                       LOGGER.trace(
                           "EMITTED: {} {}",
-                          ((MutationEvent) event).type(),
-                          ((MutationEvent) event).identifier());
+                          ((EntityEvent) event).type(),
+                          ((EntityEvent) event).identifier());
                     }
                   }
                 });
@@ -87,8 +93,8 @@ public class EventSubscriptions {
   }
 
   public synchronized CompletableFuture<QueueOfferResult> emitEvent(TypedEvent event) {
-    if (LOGGER.isTraceEnabled() && event instanceof MutationEvent) {
-      LOGGER.trace("Emitting event: {} {}", event.type(), ((MutationEvent) event).identifier());
+    if (LOGGER.isTraceEnabled() && event instanceof EntityEvent) {
+      LOGGER.trace("Emitting event: {} {}", event.type(), ((EntityEvent) event).identifier());
     }
     final EventStream eventStream = getEventStream(event.type());
 

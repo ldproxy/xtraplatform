@@ -22,10 +22,10 @@ import de.ii.xtraplatform.store.domain.AbstractMergeableKeyValueStore;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
-import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
+import de.ii.xtraplatform.store.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.KeyPathAliasUnwrap;
-import de.ii.xtraplatform.store.domain.MutationEvent;
+import de.ii.xtraplatform.store.domain.ReplayEvent;
 import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.store.domain.entities.AutoEntity;
@@ -157,7 +157,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   // TODO: onEmit middleware
-  private List<MutationEvent> processEvent(MutationEvent event) {
+  private List<ReplayEvent> processEvent(ReplayEvent event) {
 
     if (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format())) {
       return ImmutableList.of();
@@ -181,8 +181,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       return ImmutableList.of();
     }
 
-    ImmutableMutationEvent.Builder builder =
-        ImmutableMutationEvent.builder().from(event).identifier(cacheKey);
+    ImmutableReplayEvent.Builder builder =
+        ImmutableReplayEvent.builder().from(event).identifier(cacheKey);
     if (!overridesPath.getKeyPath().isEmpty()) {
       Optional<KeyPathAlias> keyPathAlias =
           entityFactory.getKeyPathAlias(
@@ -269,7 +269,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 if (isEventStoreReadOnly) {
                   getEventSourcing()
                       .onEmit(
-                          ImmutableMutationEvent.builder()
+                          ImmutableReplayEvent.builder()
                               .type(EVENT_TYPES.get(0))
                               .identifier(entry.getKey())
                               .payload(valueEncoding.serialize(entry.getValue()))
