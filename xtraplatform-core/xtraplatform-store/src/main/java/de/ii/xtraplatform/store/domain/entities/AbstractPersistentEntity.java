@@ -11,12 +11,15 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.domain.entities.handler.Entity;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.function.Consumer;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.PostRegistration;
 import org.apache.felix.ipojo.annotations.PostUnregistration;
@@ -31,11 +34,12 @@ import org.slf4j.MDC;
 /**
  * @author zahnen
  */
-public abstract class AbstractPersistentEntity<T extends EntityData> implements PersistentEntity {
+public abstract class AbstractPersistentEntity<T extends EntityData> implements PersistentEntity, Reloadable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPersistentEntity.class);
 
   private final ExecutorService executorService;
+  private final List<Consumer<PersistentEntity>> reloadListeners;
 
   @ServiceController(value = false) // is ignored here, but added by @Entity handler
   public boolean register;
@@ -49,6 +53,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
             (ThreadPoolExecutor)
                 Executors.newFixedThreadPool(
                     1, new ThreadFactoryBuilder().setNameFormat("entity.lifecycle-%d").build()));
+    this.reloadListeners = new ArrayList<>();
     this.data = null;
     this.startup = null;
   }
@@ -140,6 +145,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("RELOADED {} {} {} {}", getType(), getId(), shouldRegister(), register);
     }
+    reloadListeners.forEach(listener -> listener.accept(this));
+
     if (register) {
       onReloaded();
     } else {
@@ -203,5 +210,16 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
       Thread.currentThread().interrupt();
       throw new InterruptedException();
     }
+  }
+
+  @Override
+  public <U extends PersistentEntity> void addReloadListener(Class<U> type,
+      Consumer<U> listener) {
+    this.reloadListeners.add(
+        (entity) -> {
+          if (type.isAssignableFrom(entity.getClass())) {
+            listener.accept(type.cast(entity));
+          }
+        });
   }
 }
