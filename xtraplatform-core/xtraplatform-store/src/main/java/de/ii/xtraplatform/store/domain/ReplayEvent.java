@@ -13,6 +13,4 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Value.Style(get = "*", deepImmutablesDetection = true)
 @JsonDeserialize(builder = ImmutableReplayEvent.Builder.class)
-public interface ReplayEvent extends EntityEvent {
-
-}
+public interface ReplayEvent extends EntityEvent {}

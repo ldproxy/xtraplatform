@@ -31,10 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-/**
- * @author zahnen
- */
-public abstract class AbstractPersistentEntity<T extends EntityData> implements PersistentEntity, Reloadable {
+/** @author zahnen */
+public abstract class AbstractPersistentEntity<T extends EntityData>
+    implements PersistentEntity, Reloadable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPersistentEntity.class);
 
@@ -86,8 +85,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
           LOGGER.trace("STARTING {} {} {} {}", getType(), getId(), shouldRegister(), register);
         }
 
-        triggerStartup(true, () -> {
-        });
+        triggerStartup(true, () -> {});
       }
     }
   }
@@ -155,18 +153,21 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
   }
 
   private void triggerStartup(boolean wait, Runnable then) {
-    this.startup = executorService.submit(() -> {
-      LogContext.put(LogContext.CONTEXT.SERVICE, getId());
-      try {
-        this.register = onStartup();
-      } catch (InterruptedException e) {
-        if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace("INTERRUPTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
-        }
-        return;
-      }
-      then.run();
-    });
+    this.startup =
+        executorService.submit(
+            () -> {
+              LogContext.put(LogContext.CONTEXT.SERVICE, getId());
+              try {
+                this.register = onStartup();
+              } catch (InterruptedException e) {
+                if (LOGGER.isTraceEnabled()) {
+                  LOGGER.trace(
+                      "INTERRUPTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
+                }
+                return;
+              }
+              then.run();
+            });
 
     if (wait) {
       try {
@@ -189,17 +190,13 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
     return true;
   }
 
-  protected void onStarted() {
-  }
+  protected void onStarted() {}
 
-  protected void onReloaded() {
-  }
+  protected void onReloaded() {}
 
-  protected void onShutdown() {
-  }
+  protected void onShutdown() {}
 
-  protected void onStopped() {
-  }
+  protected void onStopped() {}
 
   protected boolean shouldRegister() {
     return true;
@@ -213,8 +210,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData> implements 
   }
 
   @Override
-  public <U extends PersistentEntity> void addReloadListener(Class<U> type,
-      Consumer<U> listener) {
+  public <U extends PersistentEntity> void addReloadListener(Class<U> type, Consumer<U> listener) {
     this.reloadListeners.add(
         (entity) -> {
           if (type.isAssignableFrom(entity.getClass())) {

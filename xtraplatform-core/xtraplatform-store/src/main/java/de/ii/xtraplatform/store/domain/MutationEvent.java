@@ -8,12 +8,9 @@
 package de.ii.xtraplatform.store.domain;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Immutable
 @Value.Style(get = "*", deepImmutablesDetection = true)
 @JsonDeserialize(builder = ImmutableMutationEvent.Builder.class)
-public interface MutationEvent extends EntityEvent {
-
-}
+public interface MutationEvent extends EntityEvent {}
