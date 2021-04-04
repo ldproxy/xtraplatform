@@ -11,7 +11,6 @@ import akka.stream.QueueOfferResult;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.ImmutableStateChangeEvent;
-import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.StateChangeEvent;
 import de.ii.xtraplatform.store.domain.TypedEvent;
 import de.ii.xtraplatform.streams.domain.StreamRunner;

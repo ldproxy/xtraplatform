@@ -68,7 +68,7 @@ public class ServiceBackgroundTasksImpl
 
   private <T extends Service> void onServiceStart(T service) {
     if (service instanceof Reloadable) {
-      ((Reloadable)service).addReloadListener(service.getClass(), this::onServiceReload);
+      ((Reloadable) service).addReloadListener(service.getClass(), this::onServiceReload);
     }
     startTasks(service);
   }

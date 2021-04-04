@@ -247,10 +247,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     try {
       value =
           valueEncoding.deserialize(
-              event.identifier(),
-              event.payload(),
-              payloadFormat,
-              event instanceof MutationEvent);
+              event.identifier(), event.payload(), payloadFormat, event instanceof MutationEvent);
 
     } catch (Throwable e) {
       error = e;

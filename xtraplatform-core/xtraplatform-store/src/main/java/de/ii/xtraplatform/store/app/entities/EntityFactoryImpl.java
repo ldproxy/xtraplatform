@@ -60,31 +60,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 @Component(publicFactory = false)
 @Provides
 @Instantiate
 @Whiteboards(
     whiteboards = {
-        @Wbp(
-            filter =
-                "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=de.ii.xtraplatform.store.domain.entities.PersistentEntity))",
-            onArrival = "onFactoryArrival",
-            onDeparture = "onFactoryDeparture"),
-        @Wbp(
-            filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityHydrator)",
-            onArrival = "onHydratorArrival",
-            onDeparture = "onHydratorDeparture"),
-        @Wbp(
-            filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityMigration)",
-            onArrival = "onMigrationArrival",
-            onDeparture = "onMigrationDeparture"),
-        @Wbp(
-            filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityDataDefaults)",
-            onArrival = "onDefaultsArrival",
-            onDeparture = "onDefaultsDeparture")
+      @Wbp(
+          filter =
+              "(&(objectClass=org.apache.felix.ipojo.Factory)(component.providedServiceSpecifications=de.ii.xtraplatform.store.domain.entities.PersistentEntity))",
+          onArrival = "onFactoryArrival",
+          onDeparture = "onFactoryDeparture"),
+      @Wbp(
+          filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityHydrator)",
+          onArrival = "onHydratorArrival",
+          onDeparture = "onHydratorDeparture"),
+      @Wbp(
+          filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityMigration)",
+          onArrival = "onMigrationArrival",
+          onDeparture = "onMigrationDeparture"),
+      @Wbp(
+          filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityDataDefaults)",
+          onArrival = "onDefaultsArrival",
+          onDeparture = "onDefaultsDeparture")
     })
 // TODO: use generic registry implementation
 public class EntityFactoryImpl implements EntityFactory {
@@ -595,8 +593,7 @@ public class EntityFactoryImpl implements EntityFactory {
         configuration.put(Entity.DATA_KEY, entityData);
 
         try {
-          componentFactories.get(specificEntityType)
-              .reconfigure(configuration);
+          componentFactories.get(specificEntityType).reconfigure(configuration);
         } catch (Throwable e) {
           LOGGER.error("Could not reload configuration: {}", e.getMessage());
           if (LOGGER.isDebugEnabled()) {
