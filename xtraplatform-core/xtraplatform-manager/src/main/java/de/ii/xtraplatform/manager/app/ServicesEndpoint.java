@@ -167,14 +167,12 @@ public class ServicesEndpoint implements Endpoint {
                   .putAll(cleanRequest)
                   .put("auto", "true")
                   .put("autoPersist", "true")
-                  .put("autoTypes",
+                  .put(
+                      "autoTypes",
                       Optional.ofNullable(request.get("autoTypes"))
                           .map(
                               schemas ->
-                                  Splitter.on(',')
-                                      .trimResults()
-                                      .omitEmptyStrings()
-                                      .split(schemas))
+                                  Splitter.on(',').trimResults().omitEmptyStrings().split(schemas))
                           .orElse(ImmutableList.of()))
                   .put("entityStorageVersion", "2")
                   .put(
