@@ -13,6 +13,7 @@ public class Constants {
   public static final String DATA_DIR_KEY = "de.ii.xtraplatform.directories.data";
   public static final String ENV_KEY = "de.ii.xtraplatform.environment";
   public static final String USER_CONFIG_PATH_KEY = "de.ii.xtraplatform.userConfigPath";
+  public static final String TMP_DIR_PROP = "java.io.tmpdir";
 
   public enum ENV {
     PRODUCTION,

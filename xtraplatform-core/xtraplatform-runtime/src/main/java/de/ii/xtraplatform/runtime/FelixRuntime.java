@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.runtime;
 
+import static de.ii.xtraplatform.runtime.domain.Constants.TMP_DIR_PROP;
+
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteSource;
 import de.ii.xtraplatform.runtime.domain.ConfigurationReader;
@@ -36,6 +38,7 @@ public class FelixRuntime {
   private static final String ENV_VAR = "XTRAPLATFORM_ENV";
   private static final String DATA_DIR_NAME = "data";
   private static final String BUNDLES_DIR_NAME = "bundles";
+  private static final String TMP_DIR_NAME = "tmp";
   private static final String FELIX_CACHE_DIR_NAME = "tmp/felix";
 
   private final String name;
@@ -58,6 +61,7 @@ public class FelixRuntime {
     Path bundlesDir =
         getBundlesDir(args)
             .orElseThrow(() -> new IllegalArgumentException("No bundles directory found"));
+    System.setProperty(TMP_DIR_PROP, dataDir.resolve(TMP_DIR_NAME).toAbsolutePath().toString());
     Constants.ENV env = parseEnvironment();
     ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
     Path configurationFile = configurationReader.getConfigurationFile(dataDir, env);
