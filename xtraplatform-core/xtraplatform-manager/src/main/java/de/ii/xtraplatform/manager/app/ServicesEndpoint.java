@@ -38,6 +38,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -143,6 +144,9 @@ public class ServicesEndpoint implements Endpoint {
 
       // LOGGER.debug("ADD SERVICE {}: {}", id, request);
 
+      HashMap<String, String> cleanRequest = new HashMap<>(request);
+      cleanRequest.remove("autoTypes");
+
       Map<String, Object> autoProvider =
           Objects.equals(request.get("featureProviderType"), "WFS")
               ? new ImmutableMap.Builder<String, Object>()
@@ -160,9 +164,18 @@ public class ServicesEndpoint implements Endpoint {
                           .build())
                   .build()
               : new ImmutableMap.Builder<String, Object>()
-                  .putAll(request)
+                  .putAll(cleanRequest)
                   .put("auto", "true")
                   .put("autoPersist", "true")
+                  .put("autoTypes",
+                      Optional.ofNullable(request.get("autoTypes"))
+                          .map(
+                              schemas ->
+                                  Splitter.on(',')
+                                      .trimResults()
+                                      .omitEmptyStrings()
+                                      .split(schemas))
+                          .orElse(ImmutableList.of()))
                   .put("entityStorageVersion", "2")
                   .put(
                       "connectionInfo",

@@ -25,6 +25,7 @@ export const fieldsValidation = {
     password: ifEqualsThen('featureProviderType', 'SQL', required()),
     url: ifEqualsThen('featureProviderType', 'WFS', url()),
     schemas: allowedChars('A-Za-z0-9-_,'),
+    autoTypes: allowedChars('A-Za-z0-9-_,\\[\\]\\(\\)\\|\\*\\.\\{\\}'),
 };
 
 //TODO: providers from fassets
@@ -76,6 +77,13 @@ const ServiceAddOgcApi = ({ isBasicAuth, loading, errors, featureProviderType })
                         help={t('services/ogc_api:services.add.schemas._description')}
                         disabled={loading}
                         error={errors['schemas']}
+                    />
+                    <TextField
+                        name='autoTypes'
+                        label={t('services/ogc_api:services.add.autoTypes._label')}
+                        help={t('services/ogc_api:services.add.autoTypes._description')}
+                        disabled={loading}
+                        error={errors['autoTypes']}
                     />
                 </>
             )}
