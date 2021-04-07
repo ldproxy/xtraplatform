@@ -11,7 +11,7 @@ const HoverIcon = styled(CircleQuestion)`
     pointer-events: none;
 `;
 
-const TooltipIcon = ({ icon, iconSize, iconColor, children }) => {
+const TooltipIcon = ({ icon, iconSize, iconColor, align, children }) => {
     const [hoverRef, isHovered] = useHover();
 
     return (
@@ -24,7 +24,7 @@ const TooltipIcon = ({ icon, iconSize, iconColor, children }) => {
                 ref={hoverRef}
             />
             {isHovered && (
-                <Drop align={{ left: 'right' }} target={hoverRef.current} plain>
+                <Drop align={align} target={hoverRef.current} plain>
                     <Box
                         margin='xsmall'
                         pad='xsmall'
@@ -50,13 +50,15 @@ TooltipIcon.displayName = 'TooltipIcon';
 TooltipIcon.propTypes = {
     icon: PropTypes.elementType.isRequired,
     iconSize: PropTypes.string,
-    iconSize: PropTypes.string,
+    iconColor: PropTypes.string,
+    align: PropTypes.object,
     children: PropTypes.element,
 };
 
 TooltipIcon.defaultProps = {
     iconSize: 'medium',
-    iconSize: null,
+    iconColor: null,
+    align: { top: 'bottom' },
     children: null,
 };
 
