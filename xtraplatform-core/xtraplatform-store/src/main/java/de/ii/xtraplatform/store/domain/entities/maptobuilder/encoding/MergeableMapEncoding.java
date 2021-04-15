@@ -24,7 +24,7 @@ class MergeableMapEncoding<T, U> {
   }
 
   @Encoding.Builder // <-- put annotation
-  static class Builder<T,U> { // <-- copy type parameters from the encoding
+  static class Builder<T, U> { // <-- copy type parameters from the encoding
 
     private Map<T, U> mergeableMap = new LinkedHashMap<>();
 
