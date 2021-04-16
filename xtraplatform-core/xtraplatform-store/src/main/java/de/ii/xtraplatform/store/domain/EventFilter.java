@@ -10,7 +10,6 @@ package de.ii.xtraplatform.store.domain;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 @Value.Immutable

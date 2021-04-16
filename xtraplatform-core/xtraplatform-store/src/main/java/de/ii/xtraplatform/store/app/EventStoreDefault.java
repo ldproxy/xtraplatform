@@ -81,7 +81,7 @@ public class EventStoreDefault implements EventStore {
                       changedFiles -> {
                         LOGGER.info("Store changes detected: {}", changedFiles);
                         EventFilter filter = EventFilter.fromPaths(changedFiles);
-                        //LOGGER.debug("FILTER {}", filter);
+                        // LOGGER.debug("FILTER {}", filter);
                         replay(filter);
                       }))
           .start();

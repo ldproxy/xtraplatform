@@ -500,7 +500,10 @@ public class EntityFactoryImpl implements EntityFactory {
         return entityHydrators.get(specificEntityType).hydrateData(entityData);
 
       } catch (Throwable e) {
-        LogContext.error(LOGGER, e, "Entity of type '{}' with id '{}' could not be hydrated",
+        LogContext.error(
+            LOGGER,
+            e,
+            "Entity of type '{}' with id '{}' could not be hydrated",
             specificEntityType,
             id);
       }
@@ -510,9 +513,8 @@ public class EntityFactoryImpl implements EntityFactory {
         return entityHydrators.get(entityType).hydrateData(entityData);
 
       } catch (Throwable e) {
-        LogContext.error(LOGGER, e, "Entity of type '{}' with id '{}' could not be hydrated",
-            entityType,
-            id);
+        LogContext.error(
+            LOGGER, e, "Entity of type '{}' with id '{}' could not be hydrated", entityType, id);
       }
     }
 
@@ -572,11 +574,14 @@ public class EntityFactoryImpl implements EntityFactory {
     try (MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
 
       String instanceId = entityType + "/" + id;
-      String entityTypeSingular = entityType.substring(0, entityType.length()-1);
+      String entityTypeSingular = entityType.substring(0, entityType.length() - 1);
 
       if (Objects.equals(entityData.hashCode(), instanceConfigurationHashes.get(instanceId))) {
 
-        LOGGER.info("Not reloading configuration for {} with id '{}', no effective changes detected", entityTypeSingular, id);
+        LOGGER.info(
+            "Not reloading configuration for {} with id '{}', no effective changes detected",
+            entityTypeSingular,
+            id);
 
         return CompletableFuture.completedFuture(null);
       }

@@ -14,9 +14,7 @@ import de.ii.xtraplatform.runtime.app.ThirdPartyLoggingFilter;
 import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.logging.LoggingUtil;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = XtraPlatformLoggingFactory.class)
 public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
 
@@ -41,11 +39,12 @@ public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
 
     LoggingUtil.getLoggerContext().resetTurboFilterList();
 
-    //if (!showThirdPartyLoggers) {
-    LoggingUtil.getLoggerContext().addTurboFilter(
-        new ThirdPartyLoggingFilter(showThirdPartyLoggers, sqlQueries, sqlResults, configDumps,
-            stackTraces));
-    //}
+    // if (!showThirdPartyLoggers) {
+    LoggingUtil.getLoggerContext()
+        .addTurboFilter(
+            new ThirdPartyLoggingFilter(
+                showThirdPartyLoggers, sqlQueries, sqlResults, configDumps, stackTraces));
+    // }
   }
 
   @JsonProperty("showThirdPartyLoggers")
@@ -91,6 +90,5 @@ public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
   }
 
   @JsonProperty("type")
-  public void setType(String type) {
-  }
+  public void setType(String type) {}
 }

@@ -166,7 +166,10 @@ public class EventStoreDriverFs implements EventStoreDriver {
               .flatMap(
                   pathPattern ->
                       loadPathStream(storeDirectory)
-                          .map(path -> eventPaths.pathToEvent(pathPattern, path, this::readPayload, false))
+                          .map(
+                              path ->
+                                  eventPaths.pathToEvent(
+                                      pathPattern, path, this::readPayload, false))
                           .filter(Objects::nonNull))
               .sorted(Comparator.naturalOrder()),
           additionalEventPaths.stream()
@@ -222,17 +225,20 @@ public class EventStoreDriverFs implements EventStoreDriver {
         }
         final Path rootDir = keys.get(key).get(0);
         final Path watchDir = keys.get(key).get(1);
-        List<Path> changedFiles = key.pollEvents().stream()
-            .filter(watchEvent -> watchEvent.context() instanceof Path)
-            .filter(watchEvent -> {
-              String fileExtension = getFileExtension(watchEvent.context().toString());
-              //TODO: either inject from store or filter at a later stage
-              return Objects.equals(fileExtension, "yml")
-                  || Objects.equals(fileExtension, "yaml")
-                  || Objects.equals(fileExtension, "json");
-            })
-            .map(watchEvent -> rootDir.relativize(watchDir.resolve((Path) watchEvent.context())))
-            .collect(Collectors.toList());
+        List<Path> changedFiles =
+            key.pollEvents().stream()
+                .filter(watchEvent -> watchEvent.context() instanceof Path)
+                .filter(
+                    watchEvent -> {
+                      String fileExtension = getFileExtension(watchEvent.context().toString());
+                      // TODO: either inject from store or filter at a later stage
+                      return Objects.equals(fileExtension, "yml")
+                          || Objects.equals(fileExtension, "yaml")
+                          || Objects.equals(fileExtension, "json");
+                    })
+                .map(
+                    watchEvent -> rootDir.relativize(watchDir.resolve((Path) watchEvent.context())))
+                .collect(Collectors.toList());
 
         if (!changedFiles.isEmpty()) {
           watchEventConsumer.accept(changedFiles);
@@ -251,14 +257,14 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
     Files.walkFileTree(
         rootDir,
-        new SimpleFileVisitor<>() {
+        new SimpleFileVisitor<Path>() {
           @Override
           public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
               throws IOException {
             WatchKey watchKey =
                 dir.register(
                     watchService,
-                    new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE},
+                    new WatchEvent.Kind[] {ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE},
                     SensitivityWatchEventModifier.HIGH);
             keys.put(watchKey, ImmutableList.of(rootDir, dir));
             return FileVisitResult.CONTINUE;

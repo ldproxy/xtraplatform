@@ -15,9 +15,7 @@ import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import java.util.Objects;
 import org.slf4j.Marker;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 public class ThirdPartyLoggingFilter extends TurboFilter {
 
   private final boolean showThirdPartyLoggers;
@@ -26,8 +24,12 @@ public class ThirdPartyLoggingFilter extends TurboFilter {
   private final boolean configDumps;
   private final boolean stackTraces;
 
-  public ThirdPartyLoggingFilter(boolean showThirdPartyLoggers, boolean sqlQueries,
-      boolean sqlResults, boolean configDumps, boolean stackTraces) {
+  public ThirdPartyLoggingFilter(
+      boolean showThirdPartyLoggers,
+      boolean sqlQueries,
+      boolean sqlResults,
+      boolean configDumps,
+      boolean stackTraces) {
     this.showThirdPartyLoggers = showThirdPartyLoggers;
     this.sqlQueries = sqlQueries;
     this.sqlResults = sqlResults;
@@ -39,13 +41,15 @@ public class ThirdPartyLoggingFilter extends TurboFilter {
   public FilterReply decide(
       Marker marker, Logger logger, Level level, String format, Object[] params, Throwable t) {
 
-    if (sqlQueries && (Objects.equals(marker, MARKER.SQL) || logger.getName()
-        .equals("slick.jdbc.JdbcBackend.benchmark"))) {
+    if (sqlQueries
+        && (Objects.equals(marker, MARKER.SQL)
+            || logger.getName().equals("slick.jdbc.JdbcBackend.benchmark"))) {
       return FilterReply.ACCEPT;
     }
 
-    if (sqlResults && (Objects.equals(marker, MARKER.SQL_RESULT) || logger.getName()
-        .equals("slick.jdbc.StatementInvoker.result"))) {
+    if (sqlResults
+        && (Objects.equals(marker, MARKER.SQL_RESULT)
+            || logger.getName().equals("slick.jdbc.StatementInvoker.result"))) {
       return FilterReply.ACCEPT;
     }
 
