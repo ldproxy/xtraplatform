@@ -112,6 +112,12 @@ class FeaturePlugin implements Plugin<Project> {
 
     void configureSubprojects(Project project, includedBuilds) {
 
+        project.tasks.register("testReportInfo") {
+            doLast {
+                println "\nSpock report: file://${project.buildDir}/reports/spock/index.html"
+            }
+        }
+
         project.subprojects { Project subproject ->
 
             subproject.plugins.apply('java-library')

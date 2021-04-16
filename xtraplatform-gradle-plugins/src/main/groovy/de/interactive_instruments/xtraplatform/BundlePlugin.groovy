@@ -237,20 +237,19 @@ class BundlePlugin implements Plugin<Project> {
                 junitXml.enabled = false
             }
 
-            outputs.dir("${project.rootProject.buildDir}/reports/spock")
+            //outputs.dir("${project.rootProject.buildDir}/reports/spock")
 
             systemProperty 'com.athaydes.spockframework.report.outputDir', "${project.rootProject.buildDir}/reports/spock"
             systemProperty 'com.athaydes.spockframework.report.showCodeBlocks', 'true'
             systemProperty 'com.athaydes.spockframework.report.projectName', project.rootProject.name
             systemProperty 'com.athaydes.spockframework.report.projectVersion', project.rootProject.version
             systemProperty 'com.athaydes.spockframework.report.projectVersion', project.rootProject.version
+            systemProperty 'com.athaydes.spockframework.report.internal.HtmlReportCreator.printThrowableStackTrace', 'true'
 
             systemProperty 'logback.configurationFile', 'logback-test.xml'
             systemProperty 'spock.configuration', 'SpockConfig.groovy'
 
-            doLast {
-                println "\nSpock report: file://${project.rootProject.buildDir}/reports/spock/index.html"
-            }
+            finalizedBy project.rootProject.tasks.testReportInfo
         }
 
         project.tasks.test.with testConfig
