@@ -63,7 +63,7 @@ public class StoreReloadTask extends Task {
 
     ImmutableEventFilter filter =
         ImmutableEventFilter.builder()
-            .eventType("entities")
+            .addEventTypes("entities")
             .entityTypes(entityTypes)
             .ids(ids)
             .build();
