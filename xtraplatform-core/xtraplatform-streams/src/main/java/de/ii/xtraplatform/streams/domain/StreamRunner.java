@@ -22,6 +22,8 @@ import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import de.ii.xtraplatform.runtime.domain.LogContext;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -32,7 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.ExecutionContextExecutor;
 
-public class StreamRunner {
+public class StreamRunner implements Closeable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StreamRunner.class);
   public static final int DYNAMIC_CAPACITY = -1;
@@ -191,5 +193,12 @@ public class StreamRunner {
 
   private static String getDispatcherName(String name) {
     return String.format("stream.%s", name);
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (Objects.nonNull(materializer)) {
+      materializer.shutdown();
+    }
   }
 }

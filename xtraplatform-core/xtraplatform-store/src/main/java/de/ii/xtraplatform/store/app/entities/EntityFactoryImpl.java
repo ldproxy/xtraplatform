@@ -593,7 +593,7 @@ public class EntityFactoryImpl implements EntityFactory {
         configuration.put(Entity.DATA_KEY, entityData);
 
         try {
-          componentFactories.get(specificEntityType).reconfigure(configuration);
+          componentFactory.reconfigure(configuration);
         } catch (Throwable e) {
           LOGGER.error("Could not reload configuration: {}", e.getMessage());
           if (LOGGER.isDebugEnabled()) {
