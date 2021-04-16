@@ -116,13 +116,14 @@ public class LogContext {
   }
 
   public static void error(
-      String messagePrefix, Throwable throwable, Logger logger, String... messagePrefixArgs) {
+      Logger logger, Throwable throwable, String messagePrefix,
+      String... messagePrefixArgs) {
     String[] strings = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
     strings[messagePrefixArgs.length] = throwable.getMessage();
 
     logger.error(messagePrefix + ": {}", (Object[]) strings);
-    if (logger.isDebugEnabled()) {
-      logger.debug("Stacktrace:", throwable);
+    if (logger.isDebugEnabled(MARKER.STACKTRACE)) {
+      logger.debug(MARKER.STACKTRACE, "Stacktrace:", throwable);
     }
   }
 

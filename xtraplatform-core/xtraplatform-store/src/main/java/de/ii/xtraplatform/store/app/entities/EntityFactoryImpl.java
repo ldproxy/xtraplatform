@@ -500,15 +500,9 @@ public class EntityFactoryImpl implements EntityFactory {
         return entityHydrators.get(specificEntityType).hydrateData(entityData);
 
       } catch (Throwable e) {
-        LOGGER.error(
-            "Entity of type '{}' with id '{}' could not be hydrated: {}",
+        LogContext.error(LOGGER, e, "Entity of type '{}' with id '{}' could not be hydrated",
             specificEntityType,
-            id,
-            e.getMessage());
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Cause:", e);
-        }
-        // throw e;
+            id);
       }
 
     } else if (entityHydrators.containsKey(entityType)) {
@@ -516,15 +510,9 @@ public class EntityFactoryImpl implements EntityFactory {
         return entityHydrators.get(entityType).hydrateData(entityData);
 
       } catch (Throwable e) {
-        LOGGER.error(
-            "Entity of type '{}' with id '{}' could not be hydrated: {}",
+        LogContext.error(LOGGER, e, "Entity of type '{}' with id '{}' could not be hydrated",
             entityType,
-            id,
-            e.getMessage());
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Cause:", e);
-        }
-        // throw e;
+            id);
       }
     }
 
@@ -608,10 +596,7 @@ public class EntityFactoryImpl implements EntityFactory {
           componentFactory.reconfigure(configuration);
           instanceConfigurationHashes.put(instanceId, entityData.hashCode());
         } catch (Throwable e) {
-          LOGGER.error("Could not reload configuration: {}", e.getMessage());
-          if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Stacktrace:", e);
-          }
+          LogContext.error(LOGGER, e, "Could not reload configuration");
         }
       }
 
