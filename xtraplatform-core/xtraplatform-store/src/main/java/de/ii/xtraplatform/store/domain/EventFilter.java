@@ -14,7 +14,8 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 public interface EventFilter {
-  String getEventType();
+
+  List<String> getEventTypes();
 
   List<String> getEntityTypes();
 
@@ -50,7 +51,7 @@ public interface EventFilter {
     }
 
     ImmutableEventFilter.Builder builder =
-        ImmutableEventFilter.builder().eventType(eventType).addEntityTypes(entityType);
+        ImmutableEventFilter.builder().addEventTypes(eventType).addEntityTypes(entityType);
     // TODO
     if (eventType.equals("defaults")) {
       builder.addIds("*");
@@ -61,6 +62,14 @@ public interface EventFilter {
       }
       builder.addIds(id);
     }
+
+    return builder.build();
+  }
+
+  static EventFilter fromPaths(List<Path> paths) {
+    ImmutableEventFilter.Builder builder = ImmutableEventFilter.builder();
+
+    paths.stream().map(EventFilter::fromPath).filter(Objects::nonNull).forEach(builder::from);
 
     return builder.build();
   }

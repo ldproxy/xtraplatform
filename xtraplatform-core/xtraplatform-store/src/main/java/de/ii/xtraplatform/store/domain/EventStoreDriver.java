@@ -9,6 +9,7 @@ package de.ii.xtraplatform.store.domain;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -26,7 +27,7 @@ public interface EventStoreDriver {
     return false;
   }
 
-  default void startWatching(Consumer<Path> watchEventConsumer) {
+  default void startWatching(Consumer<List<Path>> watchEventConsumer) {
     throw new UnsupportedOperationException();
   }
 }

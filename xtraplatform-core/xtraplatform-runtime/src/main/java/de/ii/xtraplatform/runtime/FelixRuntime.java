@@ -75,11 +75,10 @@ public class FelixRuntime {
       LOGGER.debug("Data directory: {}", dataDir);
       LOGGER.debug("Bundles directory: {}", bundlesDir);
       LOGGER.debug("Environment: {}", env);
+      LOGGER.debug("Base configs: {}", baseConfigs);
     }
 
-    // trace
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Base configs: {}", baseConfigs);
+    if (LOGGER.isDebugEnabled(LogContext.MARKER.DUMP)) {
       try {
         String cfg = configurationReader.loadMergedConfig(configurationFile, env);
         LOGGER.debug(LogContext.MARKER.DUMP, "Application configuration: \n{}", cfg);

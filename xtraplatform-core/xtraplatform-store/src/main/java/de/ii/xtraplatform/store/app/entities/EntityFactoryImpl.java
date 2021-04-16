@@ -93,6 +93,7 @@ public class EntityFactoryImpl implements EntityFactory {
   private final DeclarationBuilderService declarationBuilderService;
   private final Map<String, DeclarationHandle> instanceHandles;
   private final Map<String, CompletableFuture<PersistentEntity>> instanceRegistration;
+  private final Map<String, Integer> instanceConfigurationHashes;
   private final Map<String, ComponentFactory> componentFactories;
   private final Map<String, String> entityClasses;
   private final Map<Class<?>, String> entityDataTypes;
@@ -110,6 +111,7 @@ public class EntityFactoryImpl implements EntityFactory {
     this.declarationBuilderService = declarationBuilderService;
     this.instanceHandles = new ConcurrentHashMap<>();
     this.instanceRegistration = new ConcurrentHashMap<>();
+    this.instanceConfigurationHashes = new ConcurrentHashMap<String, Integer>();
     this.componentFactories = new ConcurrentHashMap<>();
     this.entityClasses = new ConcurrentHashMap<>();
     this.entityDataTypes = new ConcurrentHashMap<>();
@@ -498,15 +500,12 @@ public class EntityFactoryImpl implements EntityFactory {
         return entityHydrators.get(specificEntityType).hydrateData(entityData);
 
       } catch (Throwable e) {
-        LOGGER.error(
-            "Entity of type '{}' with id '{}' could not be hydrated: {}",
+        LogContext.error(
+            LOGGER,
+            e,
+            "Entity of type '{}' with id '{}' could not be hydrated",
             specificEntityType,
-            id,
-            e.getMessage());
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Cause:", e);
-        }
-        // throw e;
+            id);
       }
 
     } else if (entityHydrators.containsKey(entityType)) {
@@ -514,15 +513,8 @@ public class EntityFactoryImpl implements EntityFactory {
         return entityHydrators.get(entityType).hydrateData(entityData);
 
       } catch (Throwable e) {
-        LOGGER.error(
-            "Entity of type '{}' with id '{}' could not be hydrated: {}",
-            entityType,
-            id,
-            e.getMessage());
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Cause:", e);
-        }
-        // throw e;
+        LogContext.error(
+            LOGGER, e, "Entity of type '{}' with id '{}' could not be hydrated", entityType, id);
       }
     }
 
@@ -571,6 +563,7 @@ public class EntityFactoryImpl implements EntityFactory {
     DeclarationHandle handle = instanceBuilder.build();
     handle.publish();
     this.instanceHandles.put(instanceId, handle);
+    this.instanceConfigurationHashes.put(instanceId, entityData.hashCode());
 
     return registration.whenComplete((entity, throwable) -> scheduledFuture.cancel(true));
   }
@@ -580,9 +573,21 @@ public class EntityFactoryImpl implements EntityFactory {
       String entityType, String id, EntityData entityData) {
     try (MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
 
-      LOGGER.info("Reloading configuration for entity of type '{}' with id '{}'", entityType, id);
-
       String instanceId = entityType + "/" + id;
+      String entityTypeSingular = entityType.substring(0, entityType.length() - 1);
+
+      if (Objects.equals(entityData.hashCode(), instanceConfigurationHashes.get(instanceId))) {
+
+        LOGGER.info(
+            "Not reloading configuration for {} with id '{}', no effective changes detected",
+            entityTypeSingular,
+            id);
+
+        return CompletableFuture.completedFuture(null);
+      }
+
+      LOGGER.info("Reloading configuration for {} with id '{}'", entityTypeSingular, id);
+
       String specificEntityType = getSpecificEntityType(entityType, entityData.getEntitySubType());
       ComponentFactory componentFactory = componentFactories.get(specificEntityType);
       ComponentInstance instance = componentFactory.getInstanceByName(instanceId);
@@ -594,11 +599,9 @@ public class EntityFactoryImpl implements EntityFactory {
 
         try {
           componentFactory.reconfigure(configuration);
+          instanceConfigurationHashes.put(instanceId, entityData.hashCode());
         } catch (Throwable e) {
-          LOGGER.error("Could not reload configuration: {}", e.getMessage());
-          if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Stacktrace:", e);
-          }
+          LogContext.error(LOGGER, e, "Could not reload configuration");
         }
       }
 
@@ -617,6 +620,7 @@ public class EntityFactoryImpl implements EntityFactory {
     if (instanceHandles.containsKey(instanceId)) {
       instanceHandles.get(instanceId).retract();
       instanceHandles.remove(instanceId);
+      instanceConfigurationHashes.remove(instanceId);
     }
   }
 

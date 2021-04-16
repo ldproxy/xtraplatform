@@ -35,6 +35,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
   private boolean publish;
 
   private final Path storeDirectory;
+  private final List<Path> additionalDirectories;
   private final EventPaths eventPaths;
   private final List<EventPaths> additionalEventPaths;
   private final boolean isEnabled;
@@ -85,7 +87,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
     this.isReadOnly =
         xtraPlatform.getConfiguration().store.mode == StoreConfiguration.StoreMode.READ_ONLY;
 
-    List<Path> additionalDirectories =
+    this.additionalDirectories =
         getAdditionalDirectories(
             bundleContext.getProperty(Constants.DATA_DIR_KEY),
             xtraPlatform.getConfiguration().store);
@@ -164,8 +166,12 @@ public class EventStoreDriverFs implements EventStoreDriver {
               .flatMap(
                   pathPattern ->
                       loadPathStream(storeDirectory)
-                          .map(path -> eventPaths.pathToEvent(pathPattern, path, this::readPayload))
-                          .filter(Objects::nonNull)),
+                          .map(
+                              path ->
+                                  eventPaths.pathToEvent(
+                                      pathPattern, path, this::readPayload, false))
+                          .filter(Objects::nonNull))
+              .sorted(Comparator.naturalOrder()),
           additionalEventPaths.stream()
               .filter(additionalEventPath -> Files.exists(additionalEventPath.getRootPath()))
               .flatMap(
@@ -178,8 +184,9 @@ public class EventStoreDriverFs implements EventStoreDriver {
                                       .map(
                                           path ->
                                               additionalEventPath.pathToEvent(
-                                                  pathPattern, path, this::readPayload))
-                                      .filter(Objects::nonNull))));
+                                                  pathPattern, path, this::readPayload, true))
+                                      .filter(Objects::nonNull))
+                          .sorted(Comparator.naturalOrder())));
 
     } catch (Throwable e) {
       LOGGER.error("Reading events from '{}' failed: {}", storeDirectory, e.getMessage());
@@ -198,53 +205,73 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
   // TODO: stopWatching, move watchService to class, watch new directories, file extension filter
   @Override
-  public void startWatching(Consumer<Path> watchEventConsumer) {
+  public void startWatching(Consumer<List<Path>> watchEventConsumer) {
 
     try {
       WatchService watchService = FileSystems.getDefault().newWatchService();
-      final Map<WatchKey, Path> keys = new HashMap<>();
+      final Map<WatchKey, List<Path>> keys = new HashMap<>();
 
-      Files.walkFileTree(
-          storeDirectory,
-          new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                throws IOException {
-              // LOGGER.debug("registering " + dir + " in watcher service");
-              WatchKey watchKey =
-                  dir.register(
-                      watchService,
-                      new WatchEvent.Kind[] {ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE},
-                      SensitivityWatchEventModifier.HIGH);
-              keys.put(watchKey, dir);
-              return FileVisitResult.CONTINUE;
-            }
-          });
-      // LOGGER.debug("Watching directory for changes {}", storeDirectory);
+      keys.putAll(watchDirectory(watchService, storeDirectory));
+
+      for (Path additionalDirectory : additionalDirectories) {
+        keys.putAll(watchDirectory(watchService, additionalDirectory));
+      }
+
       WatchKey key;
       while ((key = watchService.take()) != null) {
-        final Path dir = keys.get(key);
-        if (dir == null) {
+        if (!keys.containsKey(key)) {
           LOGGER.error("WatchKey " + key + " not recognized!");
           continue;
         }
-        for (WatchEvent<?> event : key.pollEvents()) {
-          if (event.context() instanceof Path) {
-            String fileExtension = getFileExtension(event.context().toString());
-            if (Objects.equals(fileExtension, "yml")
-                || Objects.equals(fileExtension, "yaml")
-                || Objects.equals(fileExtension, "json")) {
-              Path file = dir.resolve((Path) event.context());
-              // LOGGER.debug("FILE {}", storeDirectory.relativize(file));
-              watchEventConsumer.accept(storeDirectory.relativize(file));
-            }
-          }
+        final Path rootDir = keys.get(key).get(0);
+        final Path watchDir = keys.get(key).get(1);
+        List<Path> changedFiles =
+            key.pollEvents().stream()
+                .filter(watchEvent -> watchEvent.context() instanceof Path)
+                .filter(
+                    watchEvent -> {
+                      String fileExtension = getFileExtension(watchEvent.context().toString());
+                      // TODO: either inject from store or filter at a later stage
+                      return Objects.equals(fileExtension, "yml")
+                          || Objects.equals(fileExtension, "yaml")
+                          || Objects.equals(fileExtension, "json");
+                    })
+                .map(
+                    watchEvent -> rootDir.relativize(watchDir.resolve((Path) watchEvent.context())))
+                .collect(Collectors.toList());
+
+        if (!changedFiles.isEmpty()) {
+          watchEventConsumer.accept(changedFiles);
         }
+
         key.reset();
       }
     } catch (IOException | InterruptedException e) {
       LOGGER.error("Could not watch directory {}: {}", storeDirectory, e.getMessage());
     }
+  }
+
+  private Map<WatchKey, List<Path>> watchDirectory(WatchService watchService, Path rootDir)
+      throws IOException {
+    final Map<WatchKey, List<Path>> keys = new HashMap<>();
+
+    Files.walkFileTree(
+        rootDir,
+        new SimpleFileVisitor<Path>() {
+          @Override
+          public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+              throws IOException {
+            WatchKey watchKey =
+                dir.register(
+                    watchService,
+                    new WatchEvent.Kind[] {ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE},
+                    SensitivityWatchEventModifier.HIGH);
+            keys.put(watchKey, ImmutableList.of(rootDir, dir));
+            return FileVisitResult.CONTINUE;
+          }
+        });
+
+    return keys;
   }
 
   private Stream<Path> loadPathStream(Path directory) {

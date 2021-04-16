@@ -78,9 +78,9 @@ public class EventStoreDefault implements EventStore {
       new Thread(
               () ->
                   driver.startWatching(
-                      changedFile -> {
-                        LOGGER.debug("STORE CHANGE {}", changedFile);
-                        EventFilter filter = EventFilter.fromPath(changedFile);
+                      changedFiles -> {
+                        LOGGER.info("Store changes detected: {}", changedFiles);
+                        EventFilter filter = EventFilter.fromPaths(changedFiles);
                         // LOGGER.debug("FILTER {}", filter);
                         replay(filter);
                       }))

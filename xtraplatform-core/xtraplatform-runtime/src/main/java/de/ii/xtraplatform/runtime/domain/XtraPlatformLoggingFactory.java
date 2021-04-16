@@ -17,14 +17,20 @@ import io.dropwizard.logging.LoggingUtil;
 /** @author zahnen */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = XtraPlatformLoggingFactory.class)
 public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
-  private static final ThirdPartyLoggingFilter thirdPartyLoggingFilter =
-      new ThirdPartyLoggingFilter();
 
   private boolean showThirdPartyLoggers;
+  private boolean sqlQueries;
+  private boolean sqlResults;
+  private boolean configDumps;
+  private boolean stackTraces;
 
   public XtraPlatformLoggingFactory() {
     super();
     this.showThirdPartyLoggers = false;
+    this.sqlQueries = false;
+    this.sqlResults = false;
+    this.configDumps = false;
+    this.stackTraces = false;
   }
 
   @Override
@@ -33,9 +39,12 @@ public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
 
     LoggingUtil.getLoggerContext().resetTurboFilterList();
 
-    if (!showThirdPartyLoggers) {
-      LoggingUtil.getLoggerContext().addTurboFilter(thirdPartyLoggingFilter);
-    }
+    // if (!showThirdPartyLoggers) {
+    LoggingUtil.getLoggerContext()
+        .addTurboFilter(
+            new ThirdPartyLoggingFilter(
+                showThirdPartyLoggers, sqlQueries, sqlResults, configDumps, stackTraces));
+    // }
   }
 
   @JsonProperty("showThirdPartyLoggers")
@@ -46,6 +55,38 @@ public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
   @JsonProperty("showThirdPartyLoggers")
   public void setThirdPartyLogging(boolean showThirdPartyLoggers) {
     this.showThirdPartyLoggers = showThirdPartyLoggers;
+  }
+
+  public boolean isSqlQueries() {
+    return sqlQueries;
+  }
+
+  public void setSqlQueries(boolean sqlQueries) {
+    this.sqlQueries = sqlQueries;
+  }
+
+  public boolean isSqlResults() {
+    return sqlResults;
+  }
+
+  public void setSqlResults(boolean sqlResults) {
+    this.sqlResults = sqlResults;
+  }
+
+  public boolean isConfigDumps() {
+    return configDumps;
+  }
+
+  public void setConfigDumps(boolean configDumps) {
+    this.configDumps = configDumps;
+  }
+
+  public boolean isStackTraces() {
+    return stackTraces;
+  }
+
+  public void setStackTraces(boolean stackTraces) {
+    this.stackTraces = stackTraces;
   }
 
   @JsonProperty("type")

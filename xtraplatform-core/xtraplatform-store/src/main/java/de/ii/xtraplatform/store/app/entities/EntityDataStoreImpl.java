@@ -163,6 +163,14 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       return ImmutableList.of();
     }
 
+    if (Objects.nonNull(event.additionalLocation()) && event.type().equals(EVENT_TYPES.get(0))) {
+      LOGGER.warn(
+          "Ignoring entity '{}' in '{}', entities are not allowed in additionalLocations",
+          event.asPath(),
+          event.additionalLocation());
+      return ImmutableList.of();
+    }
+
     if (!event.type().equals(EVENT_TYPES.get(1))) {
       return ImmutableList.of(event);
     }

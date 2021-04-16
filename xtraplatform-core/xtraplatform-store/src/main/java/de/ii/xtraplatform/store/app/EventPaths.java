@@ -106,7 +106,7 @@ public class EventPaths {
   }
 
   public EntityEvent pathToEvent(
-      Pattern pathPattern, Path path, Function<Path, byte[]> readPayload) {
+      Pattern pathPattern, Path path, Function<Path, byte[]> readPayload, boolean isAdditional) {
     int parentCount = rootPath.getNameCount();
     Matcher pathMatcher =
         pathPattern.matcher(path.subpath(parentCount, path.getNameCount()).toString());
@@ -139,6 +139,7 @@ public class EventPaths {
             .identifier(ImmutableIdentifier.builder().id(eventId).path(eventPathSegments).build())
             .payload(bytes)
             .format(eventPayloadFormat.orElse(null))
+            .additionalLocation(isAdditional ? rootPath.toString() : null)
             .build();
       }
     }
