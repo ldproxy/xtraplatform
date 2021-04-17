@@ -10,6 +10,7 @@ package de.ii.xtraplatform.store.app;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.Event;
 import de.ii.xtraplatform.store.domain.EventFilter;
@@ -132,10 +133,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
           onEmit(entityEvent);
         }
       } catch (Throwable e) {
-        LOGGER.error("Cannot load '{}': {}", entityEvent.asPath(), e.getMessage());
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Stacktrace:", e);
-        }
+        LogContext.error(LOGGER, e, "Cannot load '{}'", entityEvent.asPath());
       }
 
     } else if (event instanceof StateChangeEvent) {

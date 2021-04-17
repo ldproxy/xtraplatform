@@ -10,6 +10,7 @@ package de.ii.xtraplatform.di.domain;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -63,8 +64,8 @@ public final class RegistryState<T> implements Registry.State<T> {
       if (identifier.isPresent()) {
         this.items.put(identifier.get(), service);
 
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Registered {}: {}", componentName, identifier.get());
+        if (LOGGER.isDebugEnabled(MARKER.DI)) {
+          LOGGER.debug(MARKER.DI, "Registered {}: {}", componentName, identifier.get());
         }
       }
 
@@ -82,8 +83,8 @@ public final class RegistryState<T> implements Registry.State<T> {
       if (identifier.isPresent()) {
         this.items.remove(identifier.get());
 
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Deregistered {}: {}", componentName, identifier.get());
+        if (LOGGER.isDebugEnabled(MARKER.DI)) {
+          LOGGER.debug(MARKER.DI, "Deregistered {}: {}", componentName, identifier.get());
         }
       }
     }

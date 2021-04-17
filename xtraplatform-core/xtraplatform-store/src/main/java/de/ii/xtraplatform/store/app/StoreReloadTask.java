@@ -44,7 +44,7 @@ public class StoreReloadTask extends Task {
   @Override
   public void execute(ImmutableMultimap<String, String> parameters, PrintWriter output)
       throws Exception {
-    LOGGER.debug("RELOAD {}", parameters);
+    if (LOGGER.isTraceEnabled()) LOGGER.trace("Reload request: {}", parameters);
 
     List<String> entityTypes = getEntityTypes(parameters);
 

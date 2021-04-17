@@ -30,11 +30,11 @@ public class LogContext {
   }
 
   public enum MARKER implements MyMarker {
-    DEV,
     SQL,
     SQL_RESULT,
     STACKTRACE,
-    DUMP;
+    DUMP,
+    DI;
 
     @Override
     public String toString() {
@@ -115,15 +115,69 @@ public class LogContext {
     return biFunction;
   }
 
+  /**
+   * Log the message of a Throwable with a custom prefix in the ERROR level and log the stacktrace
+   * of the Throwable in the DEBUG level with the STACKTRACE marker.
+   *
+   * @param logger The Logger to use
+   * @param throwable The throwable to log
+   * @param messagePrefix The message prefix
+   * @param messagePrefixArgs The message prefix substitutions
+   */
   public static void error(
-      Logger logger, Throwable throwable, String messagePrefix, String... messagePrefixArgs) {
-    String[] strings = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
-    strings[messagePrefixArgs.length] = throwable.getMessage();
+      Logger logger, Throwable throwable, String messagePrefix, Object... messagePrefixArgs) {
+    Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
+    args[messagePrefixArgs.length] = getMessage(throwable);
 
-    logger.error(messagePrefix + ": {}", (Object[]) strings);
+    logThrowable(logger, throwable, messagePrefix + ": {}", args);
+  }
+
+  /**
+   * Log the messages of a Throwable and all of its nested causes with a custom prefix in the ERROR
+   * level and log the stacktrace of the Throwable in the DEBUG level with the STACKTRACE marker.
+   *
+   * @param logger The Logger to use
+   * @param throwable The throwable to log
+   * @param messagePrefix The message prefix
+   * @param messagePrefixArgs The message prefix substitutions
+   */
+  public static void errorChain(
+      Logger logger, Throwable throwable, String messagePrefix, Object... messagePrefixArgs) {
+    Throwable current = throwable;
+    int max = 3;
+    int numMessages = 0;
+    String[] messages = new String[max];
+    String prefix = messagePrefix;
+    while (Objects.nonNull(throwable) && max > 0) {
+      messages[numMessages] = getMessage(current);
+      prefix += ": {}";
+      numMessages++;
+      max--;
+      current = current.getCause();
+    }
+
+    Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + numMessages);
+    if (numMessages >= 0) {
+      System.arraycopy(messages, 0, args, messagePrefixArgs.length, numMessages);
+    }
+
+    logThrowable(logger, throwable, prefix, args);
+  }
+
+  private static void logThrowable(
+      Logger logger, Throwable throwable, String message, Object... messageArgs) {
+    logger.error(message, messageArgs);
     if (logger.isDebugEnabled(MARKER.STACKTRACE)) {
       logger.debug(MARKER.STACKTRACE, "Stacktrace:", throwable);
     }
+  }
+
+  private static String getMessage(Throwable throwable) {
+    return Objects.nonNull(throwable.getMessage())
+        ? throwable.getMessage()
+        : String.format(
+            "%s at %s",
+            throwable.getClass().getSimpleName(), throwable.getStackTrace()[0].toString());
   }
 
   /**

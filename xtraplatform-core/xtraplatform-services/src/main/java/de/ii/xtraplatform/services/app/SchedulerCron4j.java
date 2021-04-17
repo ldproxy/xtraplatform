@@ -116,7 +116,8 @@ public class SchedulerCron4j implements Scheduler {
         if (Objects.nonNull(runningTask)
             && Objects.equals(runningTask.getId(), task.getId())
             && Objects.equals(runningTask.getLabel(), task.getLabel())) {
-          LOGGER.debug("Ignoring task {} for {}, already running", task.getLabel(), task.getId());
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug("Ignoring task {} for {}, already running", task.getLabel(), task.getId());
           return CompletableFuture.failedFuture(new IllegalArgumentException());
         }
         if (getFutureTasks().stream()
@@ -124,7 +125,9 @@ public class SchedulerCron4j implements Scheduler {
                 futureTask ->
                     Objects.equals(futureTask.getId(), task.getId())
                         && Objects.equals(futureTask.getLabel(), task.getLabel()))) {
-          LOGGER.debug("Ignoring task {} for {}, already in queue", task.getLabel(), task.getId());
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(
+                "Ignoring task {} for {}, already in queue", task.getLabel(), task.getId());
           return CompletableFuture.failedFuture(new IllegalArgumentException());
         }
 
@@ -164,7 +167,9 @@ public class SchedulerCron4j implements Scheduler {
             o -> {
               boolean removed = queue.remove(o);
               if (removed) {
-                LOGGER.debug("REMOVED TASK {} -> {}", o.getLeft().getLabel(), o.getLeft().getId());
+                if (LOGGER.isTraceEnabled())
+                  LOGGER.trace(
+                      "REMOVED TASK {} -> {}", o.getLeft().getLabel(), o.getLeft().getId());
               }
             });
       }
@@ -208,32 +213,8 @@ public class SchedulerCron4j implements Scheduler {
                   Thread.currentThread().setName("bg-task-1");
 
                   if (optionalThrowable.isPresent()) {
-                    Throwable throwable = optionalThrowable.get();
-                    String msg1 = throwable.getMessage();
-                    if (Objects.isNull(msg1)) {
-                      msg1 =
-                          String.format(
-                              "%s at %s",
-                              throwable.getClass().getSimpleName(),
-                              throwable.getStackTrace()[0].toString());
-                    }
-                    String msg2 =
-                        Objects.nonNull(throwable.getCause())
-                            ? throwable.getCause().getMessage()
-                            : "";
-                    if (Objects.isNull(msg2)) {
-                      msg2 =
-                          String.format(
-                              "%s at %s",
-                              throwable.getCause().getClass().getSimpleName(),
-                              throwable.getCause().getStackTrace()[0].toString());
-                    }
-
-                    LOGGER.error("{} failed: {} Cause: {}", task.getLeft().getLabel(), msg1, msg2);
-
-                    if (LOGGER.isDebugEnabled(LogContext.MARKER.STACKTRACE)) {
-                      LOGGER.debug(LogContext.MARKER.STACKTRACE, "Stacktrace:", throwable);
-                    }
+                    LogContext.errorChain(
+                        LOGGER, optionalThrowable.get(), "{} failed", task.getLeft().getLabel());
                   } else {
                     String time = pretty(currentTask.getEndTime() - currentTask.getStartTime());
 

@@ -30,6 +30,7 @@ import akka.stream.javadsl.Source;
 import akka.stream.javadsl.SourceQueueWithComplete;
 import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.streams.domain.HttpClient;
 import java.io.InputStream;
 import java.util.Objects;
@@ -155,9 +156,7 @@ public class HttpHostClientAkka implements HttpClient {
             }
             result.completeExceptionally(throwable1);
 
-            // if (LOGGER.isDebugEnabled()) {
-            LOGGER.error("Queuing exception", throwable1);
-            // }
+            LogContext.error(LOGGER, throwable1, "Unexpected queuing exception");
           }
         });
 
@@ -195,9 +194,7 @@ public class HttpHostClientAkka implements HttpClient {
             }
             result.completeExceptionally(throwable1);
 
-            // if (LOGGER.isDebugEnabled()) {
-            LOGGER.error("Queuing exception", throwable1);
-            // }
+            LogContext.error(LOGGER, throwable1, "Unexpected queuing exception");
           }
         });
 
@@ -215,8 +212,7 @@ public class HttpHostClientAkka implements HttpClient {
             new PFBuilder<Throwable, Pair<Try<HttpResponse>, Object>>()
                 .matchAny(
                     throwable -> {
-                      LOGGER.error(
-                          "error queuing request: {}", throwable.getStackTrace(), throwable);
+                      LogContext.error(LOGGER, throwable, "Unexpected queuing exception");
                       return null;
                     })
                 .build())
@@ -234,8 +230,7 @@ public class HttpHostClientAkka implements HttpClient {
             new PFBuilder<Throwable, Pair<Try<HttpResponse>, Object>>()
                 .matchAny(
                     throwable -> {
-                      LOGGER.error(
-                          "error queuing request: {}", throwable.getStackTrace(), throwable);
+                      LogContext.error(LOGGER, throwable, "Unexpected queuing exception");
                       return null;
                     })
                 .build())
@@ -286,7 +281,8 @@ public class HttpHostClientAkka implements HttpClient {
               .map(HttpHostClientAkka::decodeResponse)
               .flatMapConcat(
                   httpResponseDecoded -> {
-                    LOGGER.debug("HTTP RESPONSE {}", httpResponseDecoded.status());
+                    if (LOGGER.isTraceEnabled())
+                      LOGGER.trace("HTTP RESPONSE {}", httpResponseDecoded.status());
                     return httpResponseDecoded.entity().withoutSizeLimit().getDataBytes();
                   });
       result.complete((T) byteStringNotUsedSource);
@@ -299,7 +295,8 @@ public class HttpHostClientAkka implements HttpClient {
             .map(HttpHostClientAkka::decodeResponse)
             .flatMapConcat(
                 httpResponseDecoded -> {
-                  LOGGER.debug("HTTP RESPONSE {}", httpResponseDecoded.status());
+                  if (LOGGER.isTraceEnabled())
+                    LOGGER.trace("HTTP RESPONSE {}", httpResponseDecoded.status());
                   return httpResponseDecoded.entity().withoutSizeLimit().getDataBytes();
                 })
             .runWith(sink, materializer);
@@ -332,7 +329,7 @@ public class HttpHostClientAkka implements HttpClient {
     } else {
       coder = Coder.NoCoding;
     }
-    LOGGER.debug("HTTP Encoding {}", coder);
+    if (LOGGER.isTraceEnabled()) LOGGER.trace("HTTP Encoding {}", coder);
 
     // Decode the entity
     return coder.decodeMessage(response);

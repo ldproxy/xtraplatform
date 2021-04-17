@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -71,9 +72,7 @@ public class ActorSystemProviderImpl implements ActorSystemProvider {
 
       return system;
     } catch (Throwable e) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("AKKA START FAILED", e);
-      }
+      LogContext.error(LOGGER, e, "Unexpected error, could not start Akka");
     }
     return null;
   }

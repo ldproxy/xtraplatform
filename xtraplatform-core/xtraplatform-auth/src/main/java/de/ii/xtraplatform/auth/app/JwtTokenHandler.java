@@ -86,8 +86,9 @@ public class JwtTokenHandler implements TokenHandler {
                             .orElse("USER")))
                 .build());
       } catch (Throwable e) {
-        // ignore
-        LOGGER.debug("Error validating token", e);
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("Error validating token", e);
+        }
       }
     }
 
@@ -107,8 +108,9 @@ public class JwtTokenHandler implements TokenHandler {
         return Optional.ofNullable(claimsJws.get(name, type));
 
       } catch (Throwable e) {
-        // ignore
-        LOGGER.debug("Error validating token", e);
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("Error validating token", e);
+        }
       }
     }
 

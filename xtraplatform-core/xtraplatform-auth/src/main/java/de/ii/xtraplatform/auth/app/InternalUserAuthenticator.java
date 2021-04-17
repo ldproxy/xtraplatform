@@ -60,11 +60,13 @@ public class InternalUserAuthenticator implements UserAuthenticator {
       de.ii.xtraplatform.auth.app.User.UserData userData = userRepository.get(username);
 
       if (PasswordHash.validatePassword(password, userData.getPassword())) {
-        LOGGER.debug(
-            "Authenticated {} {} {}",
-            userData.getId(),
-            userData.getRole(),
-            PasswordHash.createHash(password));
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace(
+              "Authenticated {} {} {}",
+              userData.getId(),
+              userData.getRole(),
+              PasswordHash.createHash(password));
+        }
 
         long now = Instant.now().toEpochMilli();
 
@@ -91,11 +93,13 @@ public class InternalUserAuthenticator implements UserAuthenticator {
 
       if (Objects.equals(username, SUPER_ADMIN.getId())
           && PasswordHash.validatePassword(password, SUPER_ADMIN.getPassword())) {
-        LOGGER.debug(
-            "Authenticated {} {} {}",
-            SUPER_ADMIN.getId(),
-            SUPER_ADMIN.getRole(),
-            PasswordHash.createHash(password));
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace(
+              "Authenticated {} {} {}",
+              SUPER_ADMIN.getId(),
+              SUPER_ADMIN.getRole(),
+              PasswordHash.createHash(password));
+        }
 
         try {
           de.ii.xtraplatform.auth.app.User.UserData firstUser =

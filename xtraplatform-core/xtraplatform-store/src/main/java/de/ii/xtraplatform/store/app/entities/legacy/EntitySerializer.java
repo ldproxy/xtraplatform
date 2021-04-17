@@ -215,8 +215,10 @@ public class EntitySerializer implements ResourceSerializer<RemoveEntityData> {
                         SettableBeanProperty settableBeanProperty =
                             super._resolveMergeAndNullSettings(ctxt, prop, propMetadata);
                         if (settableBeanProperty instanceof MergingSettableBeanProperty) {
-                          LOGGER.debug(
-                              "catch getter exception for {}", settableBeanProperty.getFullName());
+                          if (LOGGER.isTraceEnabled())
+                            LOGGER.trace(
+                                "catch getter exception for {}",
+                                settableBeanProperty.getFullName());
                           return new MergingSettableBeanProperty(
                               (MergingSettableBeanProperty) settableBeanProperty,
                               settableBeanProperty) {
@@ -224,16 +226,18 @@ public class EntitySerializer implements ResourceSerializer<RemoveEntityData> {
                             public void deserializeAndSet(
                                 JsonParser p, DeserializationContext ctxt, Object instance)
                                 throws IOException {
-                              LOGGER.debug("MERGING {}", instance.getClass());
+                              if (LOGGER.isTraceEnabled())
+                                LOGGER.trace("MERGING {}", instance.getClass());
                               // super.deserializeAndSet(p, ctxt, instance);
                               Object oldValue = null;
                               try {
                                 oldValue = _accessor.getValue(instance);
                               } catch (Throwable e) {
-                                LOGGER.trace(
-                                    "ignoring unset field '{}' of {} instance",
-                                    this.getName(),
-                                    this.getDeclaringClass().getClass().getName());
+                                if (LOGGER.isTraceEnabled())
+                                  LOGGER.trace(
+                                      "ignoring unset field '{}' of {} instance",
+                                      this.getName(),
+                                      this.getDeclaringClass().getClass().getName());
                               }
 
                               Object newValue;

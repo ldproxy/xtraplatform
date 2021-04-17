@@ -8,6 +8,8 @@
 package de.ii.xtraplatform.store.app.entities;
 
 import com.google.common.collect.ImmutableList;
+import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
 import java.util.ArrayList;
@@ -59,15 +61,15 @@ public class EntityRegistryImpl implements EntityRegistry {
       if (Objects.nonNull(entity)) {
         entities.add(entity);
 
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Registered entity: {} {}", entity.getClass(), entity.getId());
+        if (LOGGER.isDebugEnabled(MARKER.DI)) {
+          LOGGER.debug(MARKER.DI, "Registered entity: {} {}", entity.getClass(), entity.getId());
         }
 
         String instanceId = (String) ref.getProperty("instance.name");
         entityListeners.forEach(listener -> listener.accept(instanceId, entity));
       }
     } catch (Throwable e) {
-      LOGGER.error("E", e);
+      LogContext.error(LOGGER, e, "Unexpected error");
     }
   }
 
@@ -79,12 +81,10 @@ public class EntityRegistryImpl implements EntityRegistry {
 
       entities.remove(entity);
 
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Deregistered entity: {} {}", entity.getClass(), entity.getId());
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
+        LOGGER.debug(MARKER.DI, "Deregistered entity: {} {}", entity.getClass(), entity.getId());
       }
     }
-
-    LOGGER.debug("ENTITY REMOVED {}", entity != null ? entity.getId() : null);
   }
 
   @Override

@@ -30,6 +30,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.felix.ipojo.annotations.Component;
@@ -82,7 +83,8 @@ public class JacksonProvider implements Jackson {
   public synchronized void onArrival(ServiceReference<JacksonSubTypeIds> ref) {
     JacksonSubTypeIds ids = context.getService(ref);
     if (ids != null) {
-      LOGGER.debug("Registered Jackson subtype ids: {}", ids.getMapping());
+      if (LOGGER.isDebugEnabled(MARKER.DI))
+        LOGGER.debug(MARKER.DI, "Registered Jackson subtype ids: {}", ids.getMapping());
       mapping.putAll(ids.getMapping());
     }
   }

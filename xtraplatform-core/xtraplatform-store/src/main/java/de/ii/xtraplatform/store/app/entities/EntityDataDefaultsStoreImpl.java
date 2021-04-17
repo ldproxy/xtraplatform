@@ -14,6 +14,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
 import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
@@ -177,7 +178,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                           event.payload(), event.format(), defaultsPath.getKeyPath(), keyPathAlias);
                   builder.payload(nestedPayload);
                 } catch (IOException e) {
-                  LOGGER.error("Error:", e);
+                  LogContext.error(LOGGER, e, "Deserialization error");
                 }
               }
 
@@ -320,7 +321,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         return valueEncodingBuilder.deserialize(
             identifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
       } catch (IOException e) {
-        LOGGER.error("Cannot load defaults for '{}': {}", identifier.asPath(), e.getMessage());
+        LogContext.error(LOGGER, e, "Cannot load defaults for '{}'", identifier.asPath());
       }
     }
 
@@ -408,7 +409,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                   .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
 
         } catch (Throwable e) {
-          LOGGER.debug("ERROR", e);
+          LogContext.error(LOGGER, e, "Deserialization error");
         }
       }
     }

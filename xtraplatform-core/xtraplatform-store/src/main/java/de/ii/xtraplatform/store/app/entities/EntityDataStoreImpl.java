@@ -201,7 +201,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 event.payload(), event.format(), overridesPath.getKeyPath(), keyPathAlias);
         builder.payload(nestedPayload);
       } catch (IOException e) {
-        LOGGER.error("Error:", e);
+        LogContext.error(LOGGER, e, "Deserialization error");
       }
     }
 
@@ -326,7 +326,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   protected void onUpdate(Identifier identifier, EntityData entityData) {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
-      LOGGER.debug("Reloading entity: {}", identifier);
+      if (LOGGER.isDebugEnabled()) LOGGER.debug("Reloading entity: {}", identifier);
       EntityData hydratedData = hydrateData(identifier, entityData);
 
       entityFactory.updateInstance(identifier.path().get(0), identifier.id(), hydratedData);
@@ -340,7 +340,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected void onFailure(Identifier identifier, Throwable throwable) {
-    LOGGER.error("Could not save entity with id '{}': {}", identifier, throwable.getMessage());
+    LogContext.error(LOGGER, throwable, "Could not save entity with id '{}'", identifier);
   }
 
   @Override
@@ -564,11 +564,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 identifier.path().get(0),
                 entityData.getId());
           } catch (IOException e) {
-            LOGGER.error(
-                "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved: {}",
+            LogContext.error(
+                LOGGER,
+                e,
+                "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved",
                 identifier.path().get(0),
-                entityData.getId(),
-                e.getMessage());
+                entityData.getId());
           }
 
         } else {
