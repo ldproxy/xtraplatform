@@ -3982,7 +3982,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@xtraplatform/manager@^2.0.0-beta.10, @xtraplatform/manager@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/manager":
+"@xtraplatform/manager@^2.0.0-beta.11, @xtraplatform/manager@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/manager":
   version: 0.0.0-use.local
   resolution: "@xtraplatform/manager@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/manager"
   dependencies:
@@ -4055,7 +4055,7 @@ __metadata:
     "@neutrinojs/airbnb": ^9.3.0
     "@neutrinojs/mocha": ^9.3.0
     "@xtraplatform/core": ^2.0.0-beta.12
-    "@xtraplatform/manager": ^2.0.0-beta.10
+    "@xtraplatform/manager": ^2.0.0-beta.11
     "@xtraplatform/neutrino": ^2.0.0-beta.4
     apollo-link-rest: ^0.8.0-beta.0
     core-js: ^3
@@ -4085,7 +4085,7 @@ __metadata:
   peerDependencies:
     "@apollo/client": ^3
     "@xtraplatform/core": ^2.0.0-beta.12
-    "@xtraplatform/manager": ^2.0.0-beta.10
+    "@xtraplatform/manager": ^2.0.0-beta.11
     feature-u: ^3
     grommet: ^2
     grommet-icons: ^4
@@ -14013,7 +14013,7 @@ fsevents@^1.2.7:
     "@storybook/addon-essentials": ^6.0.13
     "@storybook/addon-links": ^6.0.13
     "@storybook/react": ^6.0.13
-    "@xtraplatform/manager": ^2.0.0-beta.10
+    "@xtraplatform/manager": ^2.0.0-beta.11
     "@xtraplatform/neutrino": ^2.0.0-beta.4
     babel-loader: ^8
     core-js: ^3

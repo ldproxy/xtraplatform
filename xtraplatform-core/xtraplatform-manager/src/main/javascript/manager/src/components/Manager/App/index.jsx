@@ -12,7 +12,7 @@ import { AuthProvider } from '../Auth';
 import { ViewProvider } from '../View';
 import Layout from '../Layout';
 import DefaultRoute from './DefaultRoute';
-import { theme, routes, i18n, i18nAsResources } from '../../../feature-u';
+import { app, theme, routes, i18n, i18nAsResources } from '../../../feature-u';
 
 const baseUrl = '../rest/admin';
 
@@ -27,8 +27,9 @@ const client = new ApolloClient({
 
 const ManagerApp = () => {
     // TODO: set in ldproxy-manager (via fasset)
-    const appName = 'ldproxy';
-    const themeName = 'default';
+    const appCfg = useFassets(app());
+    const appName = appCfg.name;
+    const themeName = appCfg.defaultTheme || 'default';
     const themeMode = 'light';
     const secured = false;
     const isAdvanced = true;

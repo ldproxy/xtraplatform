@@ -1,3 +1,4 @@
+export const app = () => `app.cfg`;
 export const theme = (name) => `theme.${name || '*'}`;
 export const routes = (name) => `routes.${name || '*'}`;
 export const i18n = (name) => `i18n.${name || '*'}`;
