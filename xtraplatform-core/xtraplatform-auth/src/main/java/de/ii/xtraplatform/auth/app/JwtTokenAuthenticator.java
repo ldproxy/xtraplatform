@@ -29,7 +29,9 @@ public class JwtTokenAuthenticator implements Authenticator<String, User> {
   @Override
   public Optional<User> authenticate(String token) throws AuthenticationException {
 
-    LOGGER.debug("Authenticating token {}", token);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Authenticating token {}", token);
+    }
 
     return tokenHandler.parseToken(token);
   }

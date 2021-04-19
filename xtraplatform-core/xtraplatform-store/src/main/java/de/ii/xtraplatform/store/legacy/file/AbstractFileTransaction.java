@@ -9,6 +9,7 @@ package de.ii.xtraplatform.store.legacy.file;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.legacy.Transaction;
 import java.io.BufferedReader;
 import java.io.File;
@@ -60,7 +61,7 @@ public abstract class AbstractFileTransaction implements Transaction {
         file.delete();
       }
     } catch (IOException ex) {
-      LOGGER.error("Rollback failed for file: {}", file.getAbsolutePath(), ex);
+      LogContext.error(LOGGER, ex, "Rollback failed for file", file.getAbsolutePath());
     }
   }
 
@@ -69,7 +70,7 @@ public abstract class AbstractFileTransaction implements Transaction {
       BufferedReader br = new BufferedReader(new FileReader(file));
       return br.readLine() == null;
     } catch (IOException ex) {
-      LOGGER.error("File is empty failed for file: {}", file.getAbsolutePath(), ex);
+      LogContext.error(LOGGER, ex, "File is empty failed for file", file.getAbsolutePath());
     }
     return false;
   }

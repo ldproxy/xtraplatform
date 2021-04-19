@@ -173,7 +173,9 @@ public class StaticResourceServlet extends HttpServlet {
         output.write(cachedAsset.getResource());
       }
     } catch (RuntimeException | URISyntaxException ignored) {
-      LOGGER.debug("exception: {}", ignored);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Unexpected exception", ignored);
+      }
       resp.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
   }

@@ -48,8 +48,9 @@ public class LoggingContextCloser implements ContainerResponseFilter {
   }
 
   private void closeLoggingContext(ContainerResponseContext responseContext) {
-    LOGGER.debug(
-        "Sending response: {} {}", responseContext.getStatus(), responseContext.getStatusInfo());
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(
+          "Sending response: {} {}", responseContext.getStatus(), responseContext.getStatusInfo());
 
     LogContext.remove(LogContext.CONTEXT.REQUEST);
   }

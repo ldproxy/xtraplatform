@@ -89,7 +89,7 @@ public class HttpProxyTransport extends ClientTransport {
           String withFullPath =
               span._1().utf8String().replace(" /", String.format(" http://%s:%d/", host, port));
 
-          LOGGER.debug("PROXY: {}", withFullPath);
+          if (LOGGER.isTraceEnabled()) LOGGER.trace("PROXY: {}", withFullPath);
 
           return ByteString.fromString(withFullPath + span._2().utf8String());
         });

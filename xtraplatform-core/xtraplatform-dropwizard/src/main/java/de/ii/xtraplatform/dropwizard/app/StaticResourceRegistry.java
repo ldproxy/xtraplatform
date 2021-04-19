@@ -13,6 +13,7 @@ import de.ii.xtraplatform.dropwizard.app.amdatu.InvalidEntryException;
 import de.ii.xtraplatform.dropwizard.app.amdatu.ResourceEntry;
 import de.ii.xtraplatform.dropwizard.app.amdatu.ResourceKeyParser;
 import de.ii.xtraplatform.dropwizard.domain.StaticResourceServlet;
+import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -66,11 +67,13 @@ public class StaticResourceRegistry {
       List<ServiceRegistration> serviceRegistrations = new ArrayList<>();
 
       for (ResourceEntry entry : entryMap.values()) {
-        LOGGER.debug(
-            "Registered static web resource: {} {} {}",
-            entry.getPaths().get(0),
-            entry.getAlias(),
-            defaultPages.getDefaultPageFor(entry.getPaths().get(0)));
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(
+              MARKER.DI,
+              "Registered static web resource: {} {} {}",
+              entry.getPaths().get(0),
+              entry.getAlias(),
+              defaultPages.getDefaultPageFor(entry.getPaths().get(0)));
 
         HttpServlet staticResourceServlet =
             new StaticResourceServlet(

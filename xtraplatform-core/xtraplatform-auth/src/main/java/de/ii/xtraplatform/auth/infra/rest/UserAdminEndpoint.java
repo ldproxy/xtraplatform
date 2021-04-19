@@ -14,6 +14,7 @@ import de.ii.xtraplatform.auth.app.User.UserData;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.dropwizard.domain.MediaTypeCharset;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import io.dropwizard.auth.Auth;
@@ -77,7 +78,9 @@ public class UserAdminEndpoint implements Endpoint {
   @Consumes(MediaType.APPLICATION_JSON)
   public User.UserData addUser(
       @Auth de.ii.xtraplatform.auth.domain.User user, Map<String, String> request) {
-    LOGGER.debug("USER {}", request);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Adding user {}", request);
+    }
 
     if (userRepository.has(request.get("id"))) {
       throw new BadRequestException("User already exists.");
@@ -95,7 +98,7 @@ public class UserAdminEndpoint implements Endpoint {
       return put.get();
 
     } catch (IllegalStateException | InterruptedException | ExecutionException e) {
-      LOGGER.error("Error adding user", e);
+      LogContext.error(LOGGER, e, "Error adding user");
       throw new BadRequestException();
     }
   }

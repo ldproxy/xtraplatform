@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.sun.nio.file.SensitivityWatchEventModifier;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.Constants;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
 import de.ii.xtraplatform.store.app.EventPaths;
 import de.ii.xtraplatform.store.domain.EntityEvent;
@@ -189,10 +190,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
                           .sorted(Comparator.naturalOrder())));
 
     } catch (Throwable e) {
-      LOGGER.error("Reading events from '{}' failed: {}", storeDirectory, e.getMessage());
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Stacktrace:", e);
-      }
+      LogContext.error(LOGGER, e, "Reading events from '{}' failed", storeDirectory);
     }
 
     return Stream.empty();
@@ -220,7 +218,9 @@ public class EventStoreDriverFs implements EventStoreDriver {
       WatchKey key;
       while ((key = watchService.take()) != null) {
         if (!keys.containsKey(key)) {
-          LOGGER.error("WatchKey " + key + " not recognized!");
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("WatchKey " + key + " not recognized!");
+          }
           continue;
         }
         final Path rootDir = keys.get(key).get(0);
@@ -247,7 +247,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
         key.reset();
       }
     } catch (IOException | InterruptedException e) {
-      LOGGER.error("Could not watch directory {}: {}", storeDirectory, e.getMessage());
+      LogContext.error(LOGGER, e, "Could not watch directory {}", storeDirectory);
     }
   }
 
@@ -435,11 +435,12 @@ public class EventStoreDriverFs implements EventStoreDriver {
           legacyStoreDirectory.toAbsolutePath(),
           storeDirectory.toAbsolutePath());
     } catch (Throwable e) {
-      LOGGER.error(
+      LogContext.error(
+          LOGGER,
+          e,
           "Error migrating store from '{}' to '{}': {}",
           legacyStoreDirectory.toAbsolutePath(),
-          storeDirectory.toAbsolutePath(),
-          e.getMessage());
+          storeDirectory.toAbsolutePath());
     }
   }
 }

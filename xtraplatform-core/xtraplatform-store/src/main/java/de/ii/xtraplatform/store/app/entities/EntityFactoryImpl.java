@@ -15,6 +15,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
@@ -146,22 +147,24 @@ public class EntityFactoryImpl implements EntityFactory {
       try {
         registerEntityDataClass(factory, commonEntityType, entityDataClassName.get());
       } catch (ClassNotFoundException e) {
-        LOGGER.error("Could not find class for entity data type {}.", entityDataClassName);
+        LogContext.error(
+            LOGGER, e, "Could not find class for entity data type {}", entityDataClassName);
       }
 
       if (entityDataSubClassName.isPresent()) {
         try {
           registerEntityDataClass(factory, specificEntityType, entityDataSubClassName.get());
         } catch (ClassNotFoundException e) {
-          LOGGER.error("Could not find class for entity data type {}.", entityDataClassName);
+          LogContext.error(
+              LOGGER, e, "Could not find class for entity data type {}", entityDataClassName);
         }
       }
 
       this.componentFactories.put(specificEntityType, factory);
       this.entityClasses.put(specificEntityType, entityClassName.get());
 
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Registered entity type: {}", specificEntityType);
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
+        LOGGER.debug(MARKER.DI, "Registered entity type: {}", specificEntityType);
       }
     }
   }
@@ -206,8 +209,8 @@ public class EntityFactoryImpl implements EntityFactory {
 
     if (entityType.isPresent() && entityDataType.isPresent()) {
       String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Deregistered entity type: {}", specificEntityType);
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
+        LOGGER.debug(MARKER.DI, "Deregistered entity type: {}", specificEntityType);
       }
       this.componentFactories.remove(entityDataType.get());
       this.entityClasses.remove(entityDataType.get());
@@ -224,8 +227,8 @@ public class EntityFactoryImpl implements EntityFactory {
       EntityHydrator<EntityData> entityHydrator = context.getService(ref);
       this.entityHydrators.put(specificEntityType, entityHydrator);
 
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Registered entity data hydrator: {}", specificEntityType);
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
+        LOGGER.debug(MARKER.DI, "Registered entity data hydrator: {}", specificEntityType);
       }
     }
   }
@@ -238,8 +241,8 @@ public class EntityFactoryImpl implements EntityFactory {
 
       if (entityType.isPresent()) {
         String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Deregistered entity data hydrator: {}", specificEntityType);
+        if (LOGGER.isDebugEnabled(MARKER.DI)) {
+          LOGGER.debug(MARKER.DI, "Deregistered entity data hydrator: {}", specificEntityType);
         }
         this.entityHydrators.remove(specificEntityType);
       }
@@ -262,8 +265,9 @@ public class EntityFactoryImpl implements EntityFactory {
           .get(specificEntityType)
           .put(entityMigration.getSourceVersion(), entityMigration);
 
-      if (LOGGER.isDebugEnabled()) {
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
         LOGGER.debug(
+            MARKER.DI,
             "Registered entity schema migration: {} v{} -> v{}",
             specificEntityType,
             entityMigration.getSourceVersion(),
@@ -284,8 +288,9 @@ public class EntityFactoryImpl implements EntityFactory {
         EntityMigration<EntityData, EntityData> entityMigration = context.getService(ref);
         this.entityMigrations.get(specificEntityType).remove(entityMigration.getSourceVersion());
 
-        if (LOGGER.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled(MARKER.DI)) {
           LOGGER.debug(
+              MARKER.DI,
               "Deregistered entity schema migration: {} v{} -> v{}",
               specificEntityType,
               entityMigration.getSourceVersion(),
@@ -308,8 +313,8 @@ public class EntityFactoryImpl implements EntityFactory {
       EntityDataDefaults<EntityData> defaults = context.getService(ref);
       this.entityDataDefaults.put(specificEntityType, defaults);
 
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Registered entity data defaults: {}", specificEntityType);
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
+        LOGGER.debug(MARKER.DI, "Registered entity data defaults: {}", specificEntityType);
       }
     }
   }
@@ -323,8 +328,8 @@ public class EntityFactoryImpl implements EntityFactory {
 
       if (entityType.isPresent()) {
         String specificEntityType = getSpecificEntityType(entityType.get(), entitySubType);
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Deregistered entity data defaults: {}", specificEntityType);
+        if (LOGGER.isDebugEnabled(MARKER.DI)) {
+          LOGGER.debug(MARKER.DI, "Deregistered entity data defaults: {}", specificEntityType);
         }
         this.entityDataDefaults.remove(specificEntityType);
       }
@@ -352,7 +357,8 @@ public class EntityFactoryImpl implements EntityFactory {
 
       return entityDataBuilders.get(specificEntityType).newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
-      LOGGER.error("Could not instantiate builder for entity type {}.", specificEntityType);
+      LogContext.error(
+          LOGGER, e, "Could not instantiate builder for entity type {}", specificEntityType);
     }
 
     return null;

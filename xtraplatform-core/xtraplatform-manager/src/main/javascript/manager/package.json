@@ -1,6 +1,6 @@
 {
     "name": "@xtraplatform/manager",
-    "version": "2.0.0-beta.10",
+    "version": "2.0.0-beta.11",
     "author": "interactive instruments GmbH",
     "license": "MPL-2.0",
     "module": "src/index.js",

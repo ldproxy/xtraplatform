@@ -92,8 +92,8 @@ public class FelixRuntime {
     int startLevel = 1;
 
     for (List<String> level : bundles) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Level {} Bundles: {}", startLevel, level);
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Level {} Bundles: {}", startLevel, level);
       }
 
       String levelBundles =
@@ -106,8 +106,8 @@ public class FelixRuntime {
 
     if (env == Constants.ENV.DEVELOPMENT) {
       for (List<String> level : devBundles) {
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Level {} Bundles: {}", startLevel, level);
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("Level {} Bundles: {}", startLevel, level);
         }
 
         String levelBundles =
@@ -146,10 +146,7 @@ public class FelixRuntime {
       this.felix = new Felix(felixConfig);
       felix.init();
     } catch (Exception ex) {
-      LOGGER.error("Could not initialize felix: {}", ex.getMessage());
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("", ex);
-      }
+      LogContext.error(LOGGER, ex, "Could not initialize felix");
     }
 
     AutoProcessor.process(felixConfig, felix.getBundleContext());
@@ -163,10 +160,7 @@ public class FelixRuntime {
         LOGGER.trace("Felix started");
       }
     } catch (Exception ex) {
-      LOGGER.error("Could not start felix: {}", ex.getMessage());
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("", ex);
-      }
+      LogContext.error(LOGGER, ex, "Could not start felix");
     }
   }
 
@@ -181,10 +175,7 @@ public class FelixRuntime {
         LOGGER.trace("Felix stopped");
       }
     } catch (Exception ex) {
-      LOGGER.error("Could not stop felix: {}", ex.getMessage());
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("", ex);
-      }
+      LogContext.error(LOGGER, ex, "Could not stop felix");
     }
 
     LOGGER.info("Stopped {}", name);

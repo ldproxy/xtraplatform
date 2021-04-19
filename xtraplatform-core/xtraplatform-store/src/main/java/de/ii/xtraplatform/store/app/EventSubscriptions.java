@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.store.app;
 
 import akka.stream.QueueOfferResult;
+import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.ImmutableStateChangeEvent;
@@ -46,9 +47,12 @@ public class EventSubscriptions {
         () -> {
           Thread.currentThread().setName("startup");
 
-          if (LOGGER.isDebugEnabled()) {
+          if (LOGGER.isDebugEnabled(MARKER.DI)) {
             LOGGER.debug(
-                "New event store subscriber: {} {}", subscriber.getEventTypes(), subscriber);
+                MARKER.DI,
+                "New event store subscriber: {} {}",
+                subscriber.getEventTypes(),
+                subscriber);
           }
 
           for (String eventType : subscriber.getEventTypes()) {

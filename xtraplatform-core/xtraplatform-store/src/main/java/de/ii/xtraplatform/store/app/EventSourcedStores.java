@@ -9,6 +9,7 @@ package de.ii.xtraplatform.store.app;
 
 import de.ii.xtraplatform.di.domain.Registry;
 import de.ii.xtraplatform.di.domain.RegistryState;
+import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import de.ii.xtraplatform.store.domain.EventSourcedStore;
 import java.util.Optional;
 import org.apache.felix.ipojo.annotations.Component;
@@ -46,6 +47,8 @@ public class EventSourcedStores implements Registry<EventSourcedStore<?>> {
 
   @Override
   public void onRegister(Optional<EventSourcedStore<?>> instance) {
-    LOGGER.info("REGISTERED {}", instance);
+    if (LOGGER.isDebugEnabled(MARKER.DI)) {
+      LOGGER.debug(MARKER.DI, "REGISTERED {}", instance);
+    }
   }
 }

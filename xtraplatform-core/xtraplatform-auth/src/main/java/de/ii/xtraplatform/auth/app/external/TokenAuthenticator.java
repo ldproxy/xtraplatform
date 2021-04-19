@@ -77,8 +77,9 @@ public class TokenAuthenticator implements Authenticator<String, User> {
                   .build());
         }
       } catch (Throwable e) {
-        // ignore
-        LOGGER.debug("Error validating token", e);
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("Error validating token", e);
+        }
       }
     }
 

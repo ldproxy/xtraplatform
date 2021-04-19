@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.di.domain;
 
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
@@ -68,10 +69,7 @@ public final class FactoryRegistryState<T> implements Registry.State<Factory>, F
       bundleContext.getBundle().loadClass(className);
       return true;
     } catch (Throwable e) {
-      LOGGER.error("Factory target class does not exist: {}", className);
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Stacktrace", e);
-      }
+      LogContext.error(LOGGER, e, "Factory target class '{}' does not exist", className);
     }
     return false;
   }

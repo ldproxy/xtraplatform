@@ -21,6 +21,7 @@ import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.dropwizard.domain.MustacheResolverRegistry;
 import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.runtime.domain.Constants.ENV;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.HttpConnectorFactory;
@@ -102,8 +103,8 @@ public class DropwizardProvider implements Dropwizard {
       LOGGER.debug("Initialized {} with configuration file {}", applicationName, cfgFile);
 
     } catch (Throwable ex) {
-      LOGGER.error(
-          "Error initializing {} with configuration file {}", applicationName, cfgFile, ex);
+      LogContext.error(
+          LOGGER, ex, "Error initializing {} with configuration file {}", applicationName, cfgFile);
       System.exit(1);
     }
   }

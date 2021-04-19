@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.dropwizard.app;
 
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
+import de.ii.xtraplatform.runtime.domain.LogContext;
 import io.dropwizard.jetty.NonblockingServletHolder;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -111,17 +112,11 @@ public class WebServerDropwizard {
           } catch (MultiException ex) {
             for (Throwable e : ex.getThrowables()) {
               if (e != null) {
-                LOGGER.error("Error stopping web server: {}", e.getMessage());
-                if (LOGGER.isDebugEnabled()) {
-                  LOGGER.debug("Stacktrace", e);
-                }
+                LogContext.error(LOGGER, e, "Error stopping web server");
               }
             }
           } catch (Exception e) {
-            LOGGER.error("Error stopping web server: {}", e.getMessage());
-            if (LOGGER.isDebugEnabled()) {
-              LOGGER.debug("Stacktrace", e);
-            }
+            LogContext.error(LOGGER, e, "Error stopping web server");
           }
 
           try {
@@ -144,10 +139,7 @@ public class WebServerDropwizard {
             LOGGER.info("Started web server at {}", getUrl());
 
           } catch (Exception e) {
-            LOGGER.error("Error starting web server: {}", e.getMessage());
-            if (LOGGER.isDebugEnabled()) {
-              LOGGER.debug("Stacktrace", e);
-            }
+            LogContext.error(LOGGER, e, "Error stopping web server");
           }
         }
       } finally {

@@ -10,6 +10,7 @@ package de.ii.xtraplatform.dropwizard.app;
 import com.github.mustachejava.MustacheResolver;
 import de.ii.xtraplatform.dropwizard.domain.MustacheResolverRegistry;
 import de.ii.xtraplatform.dropwizard.domain.PartialMustacheResolver;
+import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import io.dropwizard.views.View;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -65,26 +66,24 @@ public class MustacheResolverRegistryDefault implements MustacheResolverRegistry
   }
 
   private synchronized void onArrival(ServiceReference<PartialMustacheResolver> ref) {
-    try {
-      final PartialMustacheResolver extension = bundleContext.getService(ref);
-      int priority = extension.getSortPriority();
+    final PartialMustacheResolver extension = bundleContext.getService(ref);
+    int priority = extension.getSortPriority();
 
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            "Registered partial mustache resolver with priority {}: {}", priority, extension);
-      }
-
-      partialMustacheResolvers.add(extension);
-    } catch (Throwable e) {
-      LOGGER.error("E", e);
+    if (LOGGER.isDebugEnabled(MARKER.DI)) {
+      LOGGER.debug(
+          MARKER.DI,
+          "Registered partial mustache resolver with priority {}: {}",
+          priority,
+          extension);
     }
+
+    partialMustacheResolvers.add(extension);
   }
 
   private synchronized void onDeparture(ServiceReference<PartialMustacheResolver> ref) {
     final PartialMustacheResolver extension = bundleContext.getService(ref);
 
     if (Objects.nonNull(extension)) {
-
       partialMustacheResolvers.remove(extension);
     }
   }

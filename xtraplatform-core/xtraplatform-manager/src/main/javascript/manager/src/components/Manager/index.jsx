@@ -4,13 +4,23 @@ import { createFeature, assertNoRootAppElm } from 'feature-u';
 
 import { validatePropTypes } from '@xtraplatform/core';
 import App from './App';
-import { theme, routes, i18n } from '../../feature-u';
+import { theme, routes, i18n, app } from '../../feature-u';
 
 export default createFeature({
     name: 'manager',
     fassets: {
         // consumed resources
         use: [
+            [
+                app(),
+                {
+                    type: validatePropTypes({
+                        name: PropTypes.string.isRequired,
+                        version: PropTypes.string,
+                        defaultTheme: PropTypes.string,
+                    }),
+                },
+            ],
             [
                 routes(),
                 {

@@ -114,7 +114,7 @@ public class AkkaHttp implements de.ii.xtraplatform.streams.domain.Http {
                 .withSupervisionStrategy(
                     (Function<Throwable, Supervision.Directive>)
                         throwable -> {
-                          LOGGER.debug("Akka exception:", throwable);
+                          if (LOGGER.isTraceEnabled()) LOGGER.trace("Akka exception:", throwable);
                           return Supervision.resume();
                         }),
             actorSystem);
@@ -160,7 +160,7 @@ public class AkkaHttp implements de.ii.xtraplatform.streams.domain.Http {
     ClientConnectionSettings connectionSettings =
         ClientConnectionSettings.create(actorSystem)
             .withIdleTimeout(Duration.create(idleTimeout, "s"));
-    LOGGER.debug("Creating http client for host: {}", host);
+    if (LOGGER.isDebugEnabled()) LOGGER.debug("Creating http client for host: {}", host);
 
     Optional<ClientTransport> proxyForHost = getProxyForHost(host);
     if (proxyForHost.isPresent()) {
@@ -200,12 +200,13 @@ public class AkkaHttp implements de.ii.xtraplatform.streams.domain.Http {
 
         if (hostName.equals(ip)
             || nonProxyHosts.stream().noneMatch(glob -> ip.matches(createRegexFromGlob(glob)))) {
-          LOGGER.debug(
-              "Using http proxy '{}:{}' for host: {} ({})",
-              proxy.get().getHost(),
-              proxy.get().getPort(),
-              host,
-              ip);
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(
+                "Using http proxy '{}:{}' for host: {} ({})",
+                proxy.get().getHost(),
+                proxy.get().getPort(),
+                host,
+                ip);
 
           ClientTransport transport;
           if (isHttps) {

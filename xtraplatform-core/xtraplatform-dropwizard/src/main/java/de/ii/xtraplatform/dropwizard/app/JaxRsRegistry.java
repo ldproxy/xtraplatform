@@ -12,6 +12,7 @@ import de.ii.xtraplatform.dropwizard.domain.AuthProvider;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.dropwizard.domain.JaxRsChangeListener;
 import de.ii.xtraplatform.dropwizard.domain.JaxRsReg;
+import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.jetty.NonblockingServletHolder;
 import java.util.ArrayList;
@@ -193,10 +194,12 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
             jersey.register(provider1.getRolesAllowedDynamicFeature());
             jersey.register(provider1.getAuthValueFactoryProvider());
             this.isAuthProviderAvailable = true;
-            LOGGER.debug("Registered JAX-RS Auth Provider {}", provider.getClass());
+            if (LOGGER.isDebugEnabled(MARKER.DI))
+              LOGGER.debug(MARKER.DI, "Registered JAX-RS Auth Provider {}", provider.getClass());
           } else {
             jersey.register(provider);
-            LOGGER.debug("Registered JAX-RS Provider {}", provider.getClass());
+            if (LOGGER.isDebugEnabled(MARKER.DI))
+              LOGGER.debug(MARKER.DI, "Registered JAX-RS Provider {}", provider.getClass());
           }
         }
         providerCache.clear();
@@ -204,11 +207,14 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
       if (isAuthProviderAvailable && !resourceCache.isEmpty()) {
         for (Object resource : resourceCache) {
           jersey.register(resource);
-          LOGGER.debug("Registered JAX-RS Resource {}", resource.getClass());
+          if (LOGGER.isDebugEnabled(MARKER.DI))
+            LOGGER.debug(MARKER.DI, "Registered JAX-RS Resource {}", resource.getClass());
         }
         resourceCache.clear();
       } else if (!isAuthProviderAvailable && !resourceCache.isEmpty()) {
-        LOGGER.debug("No JAX-RS Auth Provider registered yet, cannot register Resources.");
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(
+              MARKER.DI, "No JAX-RS Auth Provider registered yet, cannot register Resources.");
       }
       if (!filterCache.isEmpty()) {
         for (Object filter : filterCache) {
@@ -217,17 +223,22 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
             jersey.register(filter);
             // jersey.getResourceConfig().register()
             // .getContainerRequestFilters().add(filter.getClass());
-            LOGGER.debug("Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
+            if (LOGGER.isDebugEnabled(MARKER.DI))
+              LOGGER.debug(
+                  MARKER.DI, "Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
           } else if (filter instanceof ContainerResponseFilter) {
             // TODO: verify
             jersey.register(filter);
             // jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
-            LOGGER.debug("Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
+            if (LOGGER.isDebugEnabled(MARKER.DI))
+              LOGGER.debug(
+                  MARKER.DI, "Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
           } else if (filter instanceof DynamicFeature) {
             // TODO: verify
             jersey.register(filter);
             // jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
-            LOGGER.debug("Registered JAX-RS DynamicFeature {})", filter.getClass());
+            if (LOGGER.isDebugEnabled(MARKER.DI))
+              LOGGER.debug(MARKER.DI, "Registered JAX-RS DynamicFeature {})", filter.getClass());
           }
         }
         filterCache.clear();
@@ -294,11 +305,14 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
         if (!authProviders.isEmpty()) {
           Object oldService = authProviders.get(authProviders.lastKey());
           if (oldService != null && jerseyUnregister(oldService)) {
-            LOGGER.debug("Deregistered JAX-RS Auth Provider {})", oldService.getClass());
+            if (LOGGER.isDebugEnabled(MARKER.DI))
+              LOGGER.debug(
+                  MARKER.DI, "Deregistered JAX-RS Auth Provider {})", oldService.getClass());
           }
         }
         jerseyRegisterProvider(service);
-        LOGGER.debug("Registered JAX-RS Auth Provider {})", service.getClass());
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(MARKER.DI, "Registered JAX-RS Auth Provider {})", service.getClass());
       }
       authProviders.put(ranking, service);
       isAuthProviderAvailable = true;
@@ -310,14 +324,16 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     if (type != null && type.equals("auth")) {
       if (ranking == authProviders.lastKey()) {
         if (jerseyUnregister(service)) {
-          LOGGER.debug("Deregistered JAX-RS Auth Provider {})", service.getClass());
+          if (LOGGER.isDebugEnabled(MARKER.DI))
+            LOGGER.debug(MARKER.DI, "Deregistered JAX-RS Auth Provider {})", service.getClass());
         }
         authProviders.remove(ranking);
         if (!authProviders.isEmpty()) {
           Object newService = authProviders.get(authProviders.lastKey());
           if (newService != null) {
             jerseyRegisterProvider(newService);
-            LOGGER.debug("Registered JAX-RS Auth Provider {})", newService.getClass());
+            if (LOGGER.isDebugEnabled(MARKER.DI))
+              LOGGER.debug(MARKER.DI, "Registered JAX-RS Auth Provider {})", newService.getClass());
           }
         }
         reload = true;
@@ -340,7 +356,8 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
   private boolean jerseyUnregister(Object object) {
     if (isJerseyAvailable) {
       if (jersey.getSingletons().remove(object)) {
-        LOGGER.debug("Unregistered JAX-RS Resource/Provider {})", object.getClass());
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(MARKER.DI, "Unregistered JAX-RS Resource/Provider {})", object.getClass());
         return true;
       }
     } else {
@@ -364,12 +381,16 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
       // TODO: verify
       if (jersey.getClasses().remove(object.getClass())) {
         // if (jersey.getResourceConfig().getContainerRequestFilters().remove(object.getClass())) {
-        LOGGER.debug("Unregistered JAX-RS ContainerRequestFilter {})", object.getClass());
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(
+              MARKER.DI, "Unregistered JAX-RS ContainerRequestFilter {})", object.getClass());
         return true;
       } else // TODO: verify
       if (jersey.getClasses().remove(object.getClass())) {
         // if (jersey.getResourceConfig().getContainerResponseFilters().remove(object.getClass())) {
-        LOGGER.debug("Unregistered JAX-RS ContainerResponseFilter {})", object.getClass());
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(
+              MARKER.DI, "Unregistered JAX-RS ContainerResponseFilter {})", object.getClass());
         return true;
       }
     } else {
