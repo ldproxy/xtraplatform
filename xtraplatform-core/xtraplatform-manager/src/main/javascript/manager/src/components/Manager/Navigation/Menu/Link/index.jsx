@@ -4,23 +4,19 @@ import { Link, useRouteMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { Box, Text } from 'grommet';
-import { normalizeColor } from 'grommet/utils';
 
 const StyledLink = styled(Link)`
     text-decoration: none;
     color: ${(props) =>
-        normalizeColor(
-            props.colorProp || props.theme.anchor.color,
-            props.theme
-        )};
+        props.theme.normalizeColor(props.colorProp || props.theme.navigation.color, props.theme.navigation.dark)};
 `;
 
 const StyledBox = styled(Box)`
     background-color: ${(props) =>
-        props.isActive ? props.theme.menu.active.color : 'transparent'};
+        props.isActive ? props.theme.normalizeColor(props.theme.navigation.active.color, props.theme.navigation.dark) : 'transparent'};
 
     &:hover {
-        background-color: ${(props) => props.theme.menu.active.color};
+        background-color: ${(props) => props.theme.normalizeColor(props.theme.navigation.active.color, props.theme.navigation.dark)};
     }
 `;
 

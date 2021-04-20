@@ -16,11 +16,25 @@ export default (base) => ({
             xlarge: {},
         },
     },
-    menu: {
-        background: 'transparent',
-        active: {
-            color: 'rgba(0,0,0,0.15)',
+    navigation: {
+        background: 'neutral-3',
+        dark: true,
+        color: {
+            dark: 'light-1',
+            light: 'dark-1',
         },
+        active: {
+            color: {
+                dark: 'rgba(0,0,0,0.15)',
+                light: 'rgba(0,0,0,0.15)',
+            },
+        },
+        overlay: {
+            color: {
+                dark: 'rgba(0,0,0,0.15)',
+                light: 'rgba(0,0,0,0.15)',
+            }
+        }
     },
     anchor: {
         color: {

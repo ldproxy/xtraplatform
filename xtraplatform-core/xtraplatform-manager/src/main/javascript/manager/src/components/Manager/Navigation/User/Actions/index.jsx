@@ -1,40 +1,43 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import { Box, Text, DropButton, Button, Menu } from 'grommet';
+import { Box, Text, DropButton, Button, Menu, ThemeContext } from 'grommet';
 import { User } from 'grommet-icons';
 
 const UserActions = ({ name, onLogout, onChangePassword }) => {
     const { t } = useTranslation();
+    const theme = useContext(ThemeContext);
+    const color = theme.normalizeColor(theme.navigation.color, theme.navigation.dark);
+    const bgColor = theme.normalizeColor(theme.navigation.overlay.color, theme.navigation.dark)
     //TODO: i18n for all user forms
     const items = [
         {
             label: (
-                <Text color='light-1' weight='bold'>
+                <Text color={color} weight='bold'>
                     {name}
                 </Text>
             ),
-            color: '#ffffff',
+            color: color,
             active: true,
         },
         {
             label: t('services/ogc_api:manager.changePassword._label'),
-            color: 'light-1',
+            color: color,
             onClick: onChangePassword,
         },
         {
             label: t('services/ogc_api:manager.logout._label'),
-            color: 'light-1',
+            color: color,
             onClick: onLogout,
         },
     ];
     return (
         <Menu
-            icon={<User color='light-1' />}
+            icon={<User color={color} />}
             margin={{ vertical: 'medium', horizontal: 'small' }}
             dropProps={{ align: { bottom: 'bottom', left: 'left' }, plain: true }}
-            dropBackground='navigationOverlay'
+            dropBackground={bgColor}
             items={items}
         />
         /*<Box pad={{ vertical: 'medium', horizontal: 'small' }}>

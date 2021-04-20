@@ -11,7 +11,7 @@ const fieldsValidation = {
     newPasswordRepeat: [minLength(6), maxLength(64), equals('newPassword', 'new password')],
 };
 
-const NavChangePassword = ({ name, disabled, onChange, onCancel }) => {
+const NavChangePassword = ({ name, disabled, color, onChange, onCancel }) => {
     const { t } = useTranslation();
 
     const fieldsInitial = {
@@ -27,7 +27,7 @@ const NavChangePassword = ({ name, disabled, onChange, onCancel }) => {
     return (
         <Box flex='grow' justify='start' pad='medium'>
             <Box margin={{ bottom: 'medium' }}>
-                <Text color='white' weight='bold'>
+                <Text color={color} weight='bold'>
                     {t('services/ogc_api:manager.changePassword._description', { user: name })}
                 </Text>
             </Box>
@@ -41,18 +41,17 @@ const NavChangePassword = ({ name, disabled, onChange, onCancel }) => {
                     autoFocus={true}
                     type='password'
                     label={
-                        <Text color='light-2'>
+                        <Text color={color}>
                             {t('services/ogc_api:manager.oldPassword._label')}
                         </Text>
                     }
-                    background='light-4'
                     disabled={disabled}
                 />
                 <TextField
                     name='newPassword'
                     type='password'
                     label={
-                        <Text color='light-2'>
+                        <Text color={color}>
                             {t('services/ogc_api:manager.newPassword._label')}
                         </Text>
                     }
@@ -62,7 +61,7 @@ const NavChangePassword = ({ name, disabled, onChange, onCancel }) => {
                     name='newPasswordRepeat'
                     type='password'
                     label={
-                        <Text color='light-2'>
+                        <Text color={color}>
                             {t('services/ogc_api:manager.repeatNewPassword._label')}
                         </Text>
                     }
