@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, Button, Text, Form, FormField, ThemeContext } from 'grommet';
 import { AutoForm, TextField, ToggleField } from '@xtraplatform/core';
 
-const NavLogin = ({ loginExpired, loginError, onLogin }) => {
+const NavLogin = ({ loginExpired, loginError, color, onLogin }) => {
     const { t } = useTranslation();
 
     const fieldsInitial = {
@@ -26,7 +26,7 @@ const NavLogin = ({ loginExpired, loginError, onLogin }) => {
         <Box flex='grow' justify='start' pad='medium'>
             {loginExpired && (
                 <Box margin={{ bottom: 'medium' }}>
-                    <Text color='white' weight='bold'>
+                    <Text color={color} weight='bold'>
                         {t('services/ogc_api:manager.sessionTimedOut._label')}
                     </Text>
                 </Box>
@@ -35,14 +35,13 @@ const NavLogin = ({ loginExpired, loginError, onLogin }) => {
                 <TextField
                     name='user'
                     autoFocus={true}
-                    label={<Text color='light-2'>{t('services/ogc_api:manager.user._label')}</Text>}
-                    background='light-4'
+                    label={<Text color={color}>{t('services/ogc_api:manager.user._label')}</Text>}
                 />
                 <TextField
                     name='password'
                     type='password'
                     label={
-                        <Text color='light-2'>{t('services/ogc_api:manager.password._label')}</Text>
+                        <Text color={color}>{t('services/ogc_api:manager.password._label')}</Text>
                     }
                     error={loginError && t(`services/ogc_api:manager.${loginError}._label`)}
                 />
@@ -50,7 +49,7 @@ const NavLogin = ({ loginExpired, loginError, onLogin }) => {
                     <ToggleField
                         name='rememberMe'
                         label={
-                            <Text color='light-2'>
+                            <Text color={color}>
                                 {t('services/ogc_api:manager.rememberMe._label')}
                             </Text>
                         }

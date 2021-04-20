@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { Box, Image, Text, Button } from 'grommet';
 import { Close } from 'grommet-icons';
 
-const NavigationHeader = ({ isLayer, title, logo, onClose }) => {
+const NavigationHeader = ({ isLayer, title, logo, color, onClose }) => {
     return (
         <Box fill='horizontal' flex={false} pad={{ right: 'small' }}>
             <Box
@@ -20,7 +20,7 @@ const NavigationHeader = ({ isLayer, title, logo, onClose }) => {
                     {logo ? (
                         <Image fit='contain' alignSelf='start' src={logo} />
                     ) : (
-                        <Text size='large' weight={500}>
+                        <Text size='large' weight={500} color={color}>
                             {title}
                         </Text>
                     )}

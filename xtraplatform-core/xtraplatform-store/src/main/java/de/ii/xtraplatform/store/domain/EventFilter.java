@@ -25,7 +25,9 @@ public interface EventFilter {
     Identifier identifier = event.identifier();
 
     if (!getEntityTypes().contains("*")
-        && (identifier.path().isEmpty() || !getEntityTypes().contains(identifier.path().get(0)))) {
+        && (identifier.path().isEmpty() || !getEntityTypes().contains(identifier.path().get(0)))
+        && (!Objects.equals(event.type(), "defaults")
+            || !getEntityTypes().contains(identifier.id()))) {
       return false;
     }
 

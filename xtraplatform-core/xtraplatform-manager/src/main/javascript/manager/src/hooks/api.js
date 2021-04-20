@@ -25,12 +25,12 @@ export const useApiQuery = (query, id) => {
     return result;
 };
 
-export const useApiMutation = (query, id) => {
-    const [doPatch, result] = useMutation(query);
+export const useApiMutation = (query, id, options = {}) => {
+    const [doPatch, result] = useMutation(query, options);
 
     const patchWrapper = (patch) => {
         //useCallback(
-        console.log('CHANGE REQUEST', id, patch);
+        console.log('CHANGE REQUEST', id, patch, options);
         return doPatch({ variables: { id, input: patch } })
             .then((result2) => {
                 console.log('CHANGE RESPONSE', result2);

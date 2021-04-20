@@ -70,8 +70,10 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     T previous = this.data;
     this.data = data;
 
-    if (Objects.nonNull(previous) && (this.register || Objects.nonNull(startup))) {
-      LOGGER.trace("RELOAD DATA {} {}", previous.hashCode(), data.hashCode());
+    if (Objects.nonNull(previous)) {
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("RELOAD DATA {} {}", previous.hashCode(), data.hashCode());
+      }
       onReload();
     }
   }
@@ -135,7 +137,14 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
 
       cancelStartup();
 
-      triggerStartup(false, this::afterReload);
+      if (shouldRegister()) {
+        triggerStartup(false, this::afterReload);
+      } else {
+        this.register = false;
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("DISABLED {} {} {} {}", getType(), getId(), shouldRegister(), register);
+        }
+      }
     }
   }
 

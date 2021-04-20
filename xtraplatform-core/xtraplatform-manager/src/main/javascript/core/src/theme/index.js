@@ -6,12 +6,12 @@ export { core };
 
 export const createTheme = (extension = {}) => {
     const intermediateTheme = deepMerge(base, grommet, extension);
-    intermediateTheme.normalizeColor = (color) => normalizeColor(color, intermediateTheme);
+    intermediateTheme.normalizeColor = (color, dark) => normalizeColor(color, intermediateTheme, dark);
 
     const coreTheme = core(intermediateTheme);
 
     const finalTheme = deepMerge(base, grommet, coreTheme, extension);
-    finalTheme.normalizeColor = (color) => normalizeColor(color, finalTheme);
+    finalTheme.normalizeColor = (color, dark) => normalizeColor(color, finalTheme, dark);
 
     return finalTheme;
 };

@@ -18,13 +18,13 @@ import {
 const ServiceEdit = () => {
     const { id } = useParams();
     const history = useHistory();
-    const { loading, error, data } = useServiceStatus(id);
+    const { loading, error, data, refetch: refetchStatus } = useServiceStatus(id);
     const { loading: loading2, error: error2, data: data2 } = useService(id);
     const { loading: loading3, error: error3, data: data3 } = useServiceDefaults();
     const [
         patchService,
         { loading: mutationLoading, error: mutationError, data: mutationSuccess },
-    ] = useServicePatch(id);
+    ] = useServicePatch(id, {onCompleted: refetchStatus});
     const [deleteService] = useServiceDelete(id);
     const { refetch } = useServices();
     const [mutationPending, setPending] = useState(false);

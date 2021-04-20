@@ -176,7 +176,7 @@ export const useServices = () => useApiQuery(SERVICES);
 export const useService = (id) => useApiQuery(SERVICE, id);
 export const useServiceStatus = (id) => useApiQuery(SERVICE_STATUS, id);
 export const useServiceAdd = () => useApiMutation(ADD_SERVICE);
-export const useServicePatch = (id) => useApiMutation(PATCH_SERVICE, id);
+export const useServicePatch = (id, options) => useApiMutation(PATCH_SERVICE, id, options);
 export const useServiceDelete = (id) => useApiMutation(DELETE_SERVICE, id);
 export const useProvider = (id) => useApiQuery(PROVIDER, id);
 export const useCodelists = () => useApiQuery(CODELISTS);

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 
-import { Box } from 'grommet';
+import { Box, ThemeContext } from 'grommet';
 
 import { Sidebar } from '@xtraplatform/core';
 import NavigationHeader from './Header';
@@ -15,6 +15,10 @@ const Navigation = ({ title, logo, routes, onClose, isLayer, isLayerActive }) =>
     const [auth, signin, signout, refresh] = useAuth();
     const { user, error, expired } = auth;
     const [changePassword, { loading: isChanging }] = useChangePassword(user && user.sub);
+    const theme = useContext(ThemeContext);
+    const color = theme.normalizeColor(theme.navigation.color, theme.navigation.dark);
+    const bgColor = theme.navigation.background;
+    
 
     if (isLayer && !isLayerActive) {
         return null;
@@ -27,13 +31,14 @@ const Navigation = ({ title, logo, routes, onClose, isLayer, isLayerActive }) =>
 
     return (
         <Sidebar isLayer={isLayer} hideBorder onClose={onClose}>
-            <Box fill='vertical' background='navigation'>
-                <NavigationHeader isLayer={isLayer} onClose={onClose} title={title} logo={logo} />
+            <Box fill='vertical' background={bgColor} color={color}>
+                <NavigationHeader isLayer={isLayer} onClose={onClose} title={title} logo={logo} color={color} />
                 {user ? (
                     user.forceChangePassword || isChangePassword ? (
                         <ChangePassword
                             name={user.sub}
-                            disabled={isChanging}
+                            disabled={isChanging} 
+                            color={color}
                             onCancel={!user.forceChangePassword && (() => setChangePassword(false))}
                             onChange={onChangePassword}
                         />
@@ -48,7 +53,7 @@ const Navigation = ({ title, logo, routes, onClose, isLayer, isLayerActive }) =>
                         </Box>
                     )
                 ) : (
-                    <Login loginError={error} loginExpired={expired} onLogin={signin} />
+                    <Login loginError={error} loginExpired={expired} color={color} onLogin={signin} />
                 )}
             </Box>
         </Sidebar>

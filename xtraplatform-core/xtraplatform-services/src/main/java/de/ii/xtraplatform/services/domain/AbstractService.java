@@ -32,9 +32,7 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
   }
 
   @Override
-  protected void onShutdown() {
-    if (shouldRegister()) {
-      LOGGER.info("Service with id '{}' stopped.", getId());
-    }
+  protected void onStopped() {
+    LOGGER.info("Service with id '{}' stopped.", getId());
   }
 }

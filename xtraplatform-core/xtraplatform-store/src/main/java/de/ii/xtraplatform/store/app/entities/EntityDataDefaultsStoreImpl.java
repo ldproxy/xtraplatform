@@ -21,13 +21,16 @@ import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
 import de.ii.xtraplatform.store.app.ValueDecoderWithBuilder;
 import de.ii.xtraplatform.store.app.ValueEncodingJackson;
 import de.ii.xtraplatform.store.domain.AbstractMergeableKeyValueStore;
+import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
+import de.ii.xtraplatform.store.domain.ImmutableMutationEvent;
 import de.ii.xtraplatform.store.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.MergeableKeyValueStore;
+import de.ii.xtraplatform.store.domain.MutationEvent;
 import de.ii.xtraplatform.store.domain.ReplayEvent;
 import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
@@ -45,6 +48,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
@@ -82,8 +86,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             ImmutableList.of(EntityDataDefaultsStore.EVENT_TYPE),
             valueEncoding,
             this::onStart,
-            Optional.of(this::processEvent),
-            Optional.empty(),
+            Optional.of(this::processReplayEvent),
+            Optional.of(this::processMutationEvent),
             Optional.of(biConsumerMayThrow(this::validateDefaults)));
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
@@ -144,11 +148,23 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     // LOGGER.debug("VALID");
   }
 
+  private List<ReplayEvent> processReplayEvent(ReplayEvent event) {
+    return processEvent(event)
+        .map(entityEvent -> (ReplayEvent) entityEvent)
+        .collect(Collectors.toList());
+  }
+
+  private List<MutationEvent> processMutationEvent(MutationEvent event) {
+    return processEvent(event)
+        .map(entityEvent -> ImmutableMutationEvent.builder().from(entityEvent).build())
+        .collect(Collectors.toList());
+  }
+
   // TODO: onEmit middleware
-  private List<ReplayEvent> processEvent(ReplayEvent event) {
+  private Stream<EntityEvent> processEvent(EntityEvent event) {
 
     if (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format())) {
-      return ImmutableList.of();
+      return Stream.empty();
     }
 
     EntityDataDefaultsPath defaultsPath = EntityDataDefaultsPath.from(event.identifier());
@@ -183,8 +199,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               }
 
               return builder.build();
-            })
-        .collect(Collectors.toList());
+            });
   }
 
   private List<Identifier> getCacheKeys(

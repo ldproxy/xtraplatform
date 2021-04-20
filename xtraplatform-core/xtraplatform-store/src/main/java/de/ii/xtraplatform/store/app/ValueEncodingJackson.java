@@ -76,7 +76,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
                 new EmptyStringFixYAMLFactory()
                     .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
                     .disable(YAMLGenerator.Feature.USE_NATIVE_OBJECT_ID)
-                    .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
+                    .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                    .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS))
             .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
             .registerModule(DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER)
             .registerModule(DESERIALIZE_API_BUILDINGBLOCK_MIGRATION)
@@ -225,8 +226,13 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
         || YAML_EMPTY.matcher(payloadString).matches();
   }
 
-  @Deprecated // can be removed after upgrade to Jackson 2.10 / Dropwizard 2.x
+  @Deprecated // can be removed after upgrade to Jackson 2.10 / Dropwizard 2.x (edit: check if
+  // quoted numbers are also fixed)
   static class EmptyStringFixYAMLGenerator extends YAMLGenerator {
+
+    private static final Character STYLE_QUOTED = '"';
+    private static final Pattern PLAIN_NUMBER_P_FIXED =
+        Pattern.compile("[+\\-]?[0-9]*(\\.[0-9]*)?");
 
     public EmptyStringFixYAMLGenerator(
         IOContext ctxt,
@@ -242,7 +248,12 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     @Override
     protected void _writeScalar(String value, String type, Character style) throws IOException {
       if (type.equals("string") && value.isEmpty()) {
-        super._writeScalar(value, type, Character.valueOf('"'));
+        super._writeScalar(value, type, STYLE_QUOTED);
+      } else if (type.equals("string")
+          && !STYLE_QUOTED.equals(style)
+          && Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS.enabledIn(_formatFeatures)
+          && PLAIN_NUMBER_P_FIXED.matcher(value).matches()) {
+        super._writeScalar(value, type, STYLE_QUOTED);
       } else {
         super._writeScalar(value, type, style);
       }
