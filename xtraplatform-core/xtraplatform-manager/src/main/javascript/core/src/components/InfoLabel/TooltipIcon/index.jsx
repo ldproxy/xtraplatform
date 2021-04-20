@@ -24,7 +24,7 @@ const TooltipIcon = ({ icon, iconSize, iconColor, align, children }) => {
                 ref={hoverRef}
             />
             {isHovered && (
-                <Drop align={align} target={hoverRef.current} plain>
+                <Drop align={align} overflow='visible' target={hoverRef.current} plain>
                     <Box
                         margin='xsmall'
                         pad='xsmall'
