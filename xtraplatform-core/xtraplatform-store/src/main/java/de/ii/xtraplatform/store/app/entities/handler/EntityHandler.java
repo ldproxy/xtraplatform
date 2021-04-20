@@ -12,11 +12,14 @@ import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
 import de.ii.xtraplatform.store.domain.entities.handler.Entity;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.felix.ipojo.ComponentInstance;
 import org.apache.felix.ipojo.ConfigurationException;
@@ -45,6 +48,7 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
   static final String NAMESPACE = "de.ii.xtraplatform.store.domain.entities.handler";
 
   private ProvidedServiceHandler providedServiceHandler;
+  private boolean first = true;
 
   @Override
   public void initializeComponentFactory(ComponentTypeDescription typeDesc, Element metadata)
@@ -191,7 +195,9 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
   }
 
   @Override
-  public void configurationChanged(ComponentInstance instance, Map<String, Object> configuration) {}
+  public void configurationChanged(ComponentInstance instance, Map<String, Object> configuration) {
+    checkRegistration();
+  }
 
   private void checkRegistration() {
     try {
@@ -202,10 +208,20 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
       boolean register = (boolean) field.get(getInstanceManager().getPojoObject());
 
       providedServiceHandler.onSet(null, "register", register);
-    } catch (SecurityException
-        | IllegalAccessException
-        | IllegalArgumentException
-        | NoSuchFieldException e) {
+
+      if (first) {
+        this.first = false;
+
+        Method addReloadListener = getInstanceManager().getPojoObject().getClass()
+            .getMethod("addReloadListener", Class.class, Consumer.class);
+
+        addReloadListener.invoke(getInstanceManager().getPojoObject(), PersistentEntity.class,
+            (Consumer<PersistentEntity>) (PersistentEntity e) -> {
+              checkRegistration();
+            });
+      }
+
+    } catch (SecurityException | IllegalAccessException | IllegalArgumentException | NoSuchFieldException | NoSuchMethodException | InvocationTargetException e) {
       // LOGGER.error("ERR", e);
     }
   }
