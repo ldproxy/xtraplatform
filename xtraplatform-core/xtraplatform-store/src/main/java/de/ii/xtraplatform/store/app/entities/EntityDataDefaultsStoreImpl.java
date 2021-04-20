@@ -378,10 +378,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   public CompletableFuture<Map<String, Object>> patch(
       String id, Map<String, Object> partialData, String... path) {
     String defaultId = Joiner.on('.').join(path);
+    Identifier defaultsIdentifier = Identifier.from(id, path);
     Map<String, Object> defaults = partialData;
 
     if (has(id, path)) {
-      Identifier defaultsIdentifier = Identifier.from(id, path);
 
       Optional<EntityDataBuilder<EntityData>> newBuilder =
           Optional.ofNullable(getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders());
@@ -414,7 +414,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       }
     }
 
-    put(defaultId, defaults)
+    put(defaultsIdentifier, defaults)
         .thenRun(
             () -> {
               eventStore.replay(
