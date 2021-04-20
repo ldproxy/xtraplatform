@@ -149,13 +149,15 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   }
 
   private List<ReplayEvent> processReplayEvent(ReplayEvent event) {
-    return processEvent(event).map(entityEvent -> (ReplayEvent)entityEvent).collect(
-        Collectors.toList());
+    return processEvent(event)
+        .map(entityEvent -> (ReplayEvent) entityEvent)
+        .collect(Collectors.toList());
   }
 
   private List<MutationEvent> processMutationEvent(MutationEvent event) {
-    return processEvent(event).map(entityEvent -> ImmutableMutationEvent.builder().from(entityEvent).build()).collect(
-        Collectors.toList());
+    return processEvent(event)
+        .map(entityEvent -> ImmutableMutationEvent.builder().from(entityEvent).build())
+        .collect(Collectors.toList());
   }
 
   // TODO: onEmit middleware

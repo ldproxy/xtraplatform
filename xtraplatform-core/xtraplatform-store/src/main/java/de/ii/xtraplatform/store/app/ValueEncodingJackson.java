@@ -226,11 +226,13 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
         || YAML_EMPTY.matcher(payloadString).matches();
   }
 
-  @Deprecated // can be removed after upgrade to Jackson 2.10 / Dropwizard 2.x (edit: check if quoted numbers are also fixed)
+  @Deprecated // can be removed after upgrade to Jackson 2.10 / Dropwizard 2.x (edit: check if
+  // quoted numbers are also fixed)
   static class EmptyStringFixYAMLGenerator extends YAMLGenerator {
 
-    private final static Character STYLE_QUOTED = '"';
-    private final static Pattern PLAIN_NUMBER_P_FIXED = Pattern.compile("[+\\-]?[0-9]*(\\.[0-9]*)?");
+    private static final Character STYLE_QUOTED = '"';
+    private static final Pattern PLAIN_NUMBER_P_FIXED =
+        Pattern.compile("[+\\-]?[0-9]*(\\.[0-9]*)?");
 
     public EmptyStringFixYAMLGenerator(
         IOContext ctxt,
@@ -247,7 +249,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     protected void _writeScalar(String value, String type, Character style) throws IOException {
       if (type.equals("string") && value.isEmpty()) {
         super._writeScalar(value, type, STYLE_QUOTED);
-      } else if (type.equals("string") && !STYLE_QUOTED.equals(style)
+      } else if (type.equals("string")
+          && !STYLE_QUOTED.equals(style)
           && Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS.enabledIn(_formatFeatures)
           && PLAIN_NUMBER_P_FIXED.matcher(value).matches()) {
         super._writeScalar(value, type, STYLE_QUOTED);

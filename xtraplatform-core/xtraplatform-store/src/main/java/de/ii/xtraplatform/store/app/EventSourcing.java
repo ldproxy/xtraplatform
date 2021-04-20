@@ -132,7 +132,8 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
             completableFuture = queue.get(entityEvent.identifier());
             queue.remove(entityEvent.identifier());
           }
-          for (MutationEvent mutationEvent : mutationEventProcessor.get().apply((MutationEvent) event)) {
+          for (MutationEvent mutationEvent :
+              mutationEventProcessor.get().apply((MutationEvent) event)) {
             if (Objects.nonNull(completableFuture)) {
               queue.put(mutationEvent.identifier(), completableFuture);
             }

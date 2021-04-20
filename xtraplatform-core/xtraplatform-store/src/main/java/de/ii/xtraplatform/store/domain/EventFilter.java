@@ -26,7 +26,8 @@ public interface EventFilter {
 
     if (!getEntityTypes().contains("*")
         && (identifier.path().isEmpty() || !getEntityTypes().contains(identifier.path().get(0)))
-        && (!Objects.equals(event.type(), "defaults") || !getEntityTypes().contains(identifier.id()))) {
+        && (!Objects.equals(event.type(), "defaults")
+            || !getEntityTypes().contains(identifier.id()))) {
       return false;
     }
 

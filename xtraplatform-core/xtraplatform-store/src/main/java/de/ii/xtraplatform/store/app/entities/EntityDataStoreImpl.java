@@ -95,7 +95,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             valueEncoding,
             this::onStart,
             Optional.of(this::processEvent),
-            Optional.empty(), Optional.of(this::onUpdate));
+            Optional.empty(),
+            Optional.of(this::onUpdate));
     this.defaultsStore = defaultsStore;
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());

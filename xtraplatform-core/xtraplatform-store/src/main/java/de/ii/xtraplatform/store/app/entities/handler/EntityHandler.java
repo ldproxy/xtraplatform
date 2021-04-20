@@ -212,16 +212,27 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
       if (first) {
         this.first = false;
 
-        Method addReloadListener = getInstanceManager().getPojoObject().getClass()
-            .getMethod("addReloadListener", Class.class, Consumer.class);
+        Method addReloadListener =
+            getInstanceManager()
+                .getPojoObject()
+                .getClass()
+                .getMethod("addReloadListener", Class.class, Consumer.class);
 
-        addReloadListener.invoke(getInstanceManager().getPojoObject(), PersistentEntity.class,
-            (Consumer<PersistentEntity>) (PersistentEntity e) -> {
-              checkRegistration();
-            });
+        addReloadListener.invoke(
+            getInstanceManager().getPojoObject(),
+            PersistentEntity.class,
+            (Consumer<PersistentEntity>)
+                (PersistentEntity e) -> {
+                  checkRegistration();
+                });
       }
 
-    } catch (SecurityException | IllegalAccessException | IllegalArgumentException | NoSuchFieldException | NoSuchMethodException | InvocationTargetException e) {
+    } catch (SecurityException
+        | IllegalAccessException
+        | IllegalArgumentException
+        | NoSuchFieldException
+        | NoSuchMethodException
+        | InvocationTargetException e) {
       // LOGGER.error("ERR", e);
     }
   }
