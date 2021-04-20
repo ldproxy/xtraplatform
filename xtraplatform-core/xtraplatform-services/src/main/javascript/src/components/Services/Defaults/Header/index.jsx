@@ -18,7 +18,7 @@ const ServiceDefaultsHeader = ({
             label='Service Defaults'
             actions2={
                 <AsyncIcon
-                    size='small'
+                    size='list'
                     pending={mutationPending}
                     loading={mutationLoading}
                     success={mutationSuccess}
