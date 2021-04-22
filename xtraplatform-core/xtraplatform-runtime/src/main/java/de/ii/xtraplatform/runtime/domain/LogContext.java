@@ -148,7 +148,7 @@ public class LogContext {
     int numMessages = 0;
     String[] messages = new String[max];
     String prefix = messagePrefix;
-    while (Objects.nonNull(throwable) && max > 0) {
+    while (Objects.nonNull(current) && max > 0) {
       messages[numMessages] = getMessage(current);
       prefix += ": {}";
       numMessages++;
