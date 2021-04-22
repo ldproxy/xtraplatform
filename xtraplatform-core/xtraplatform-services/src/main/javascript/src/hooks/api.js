@@ -14,6 +14,7 @@ const SERVICES = gql`
             enabled
             status
             hasBackgroundTask
+            hasProgress
             progress
             message
         }
@@ -32,6 +33,7 @@ const SERVICE_STATUS = gql`
             enabled
             status
             hasBackgroundTask
+            hasProgress
             progress
             message
         }

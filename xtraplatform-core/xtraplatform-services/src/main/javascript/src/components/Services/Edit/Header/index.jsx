@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useFassets } from 'feature-u';
 
+import { Box } from 'grommet';
 import { Globe } from 'grommet-icons';
 import { Header, TaskProgress, AsyncIcon } from '@xtraplatform/core';
 import { serviceViewActions } from '../../constants';
@@ -37,7 +38,9 @@ const ServiceEditHeader = ({
             actions={
                 <>
                     {service.hasBackgroundTask && (
-                        <TaskProgress progress={service.progress} message={service.message} />
+                        <Box background='light-2' basis='1/4' flex={service.hasProgress ? 'grow' : 'shrink'} pad='xsmall' round='xsmall'>
+                            <TaskProgress hasProgress={service.hasProgress} progress={service.progress} message={service.message} truncate />
+                        </Box>
                     )}
                     <Actions
                         id={service.id}

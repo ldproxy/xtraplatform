@@ -52,8 +52,9 @@ const ServiceActions = ({
         });*/
     };
 
-    const isOnline = status === 'STARTED';
-    const isDisabled = !isOnline && enabled;
+    const isOnline = status === 'ACTIVE' || status === 'RELOADING';
+    const isLoading = status === 'LOADING';
+    const isDefective = status === 'DEFECTIVE';
     // not needed anymore, handled by cookies
     const parameters = ''; // secured ? `?token=${token}` : ''
 
@@ -63,26 +64,28 @@ const ServiceActions = ({
                 <Power
                     key='power'
                     hoverColor={
-                        isOnline ? 'status-critical' : isDisabled ? 'status-critical' : 'status-ok'
+                        isOnline ? 'status-critical' : isDefective ? 'status-critical'  : 'status-ok'
                     }>
                     <Anchor
                         icon={<PowerIcon />}
                         title={`${
                             isOnline
                                 ? t('services/ogc_api:services.stop._label')
-                                : isDisabled
+                                : isDefective
                                 ? 'Defective'
+                                : isLoading
+                                ? 'Initializing'
                                 : t('services/ogc_api:services.start._label')
                         }`}
                         color={
-                            isOnline
+                            isOnline || isLoading
                                 ? 'status-ok'
-                                : isDisabled
+                                : isDefective
                                 ? 'status-critical'
                                 : 'status-disabled'
                         }
                         onClick={() => onPower(!isOnline)}
-                        disabled={isDisabled}
+                        disabled={isDefective || isLoading}
                     />
                 </Power>
                 {ViewActions.map((ViewAction) => (

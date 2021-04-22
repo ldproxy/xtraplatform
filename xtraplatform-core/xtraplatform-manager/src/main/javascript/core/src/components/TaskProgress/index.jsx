@@ -2,13 +2,19 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { Box, Meter, Text } from 'grommet';
+import {SpinnerIcon} from '../'
 
-const TaskProgress = ({ progress, message }) => (
-    <Box>
+const TaskProgress = ({ message, hasProgress, progress, iconSize, truncate }) => (
+    hasProgress 
+    ? <Box fill='horizontal' align='center' title={truncate ? message : null}>
+        <Text size='small' truncate={truncate}>{message}</Text>
         <Meter
             type='bar'
-            margin={{ vertical: 'small' }}
+            round
+            size='large'
+            margin={{ top: 'xsmall' }}
             thickness='small'
+            background='white'
             values={[
                 {
                     value: progress,
@@ -16,7 +22,10 @@ const TaskProgress = ({ progress, message }) => (
                 },
             ]}
         />
+    </Box>
+    : <Box direction='row' justify='between' align='center' fill='horizontal'>
         <Text size='small'>{message}</Text>
+        <SpinnerIcon size='list' color='brand' /> 
     </Box>
 );
 

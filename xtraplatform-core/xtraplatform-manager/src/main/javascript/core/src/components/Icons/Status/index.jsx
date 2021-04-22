@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
-    StatusCritical,
+    Upgrade,
     StatusDisabled,
     StatusGood,
     StatusUnknown,
@@ -16,6 +16,7 @@ const VALUE_ICON = {
     warning: StatusWarning,
     critical: CircleAlert,
     disabled: StatusDisabled,
+    transit: Upgrade,
 };
 
 const IconsStatus = ({ value, ...rest }) => {
