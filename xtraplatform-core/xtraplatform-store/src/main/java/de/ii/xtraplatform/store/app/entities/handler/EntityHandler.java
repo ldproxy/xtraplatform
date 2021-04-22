@@ -29,6 +29,7 @@ import org.apache.felix.ipojo.architecture.ComponentTypeDescription;
 import org.apache.felix.ipojo.architecture.PropertyDescription;
 import org.apache.felix.ipojo.handlers.configuration.ConfigurationHandler;
 import org.apache.felix.ipojo.handlers.configuration.ConfigurationListener;
+import org.apache.felix.ipojo.handlers.providedservice.ProvidedService;
 import org.apache.felix.ipojo.handlers.providedservice.ProvidedServiceHandler;
 import org.apache.felix.ipojo.metadata.Attribute;
 import org.apache.felix.ipojo.metadata.Element;
@@ -99,6 +100,8 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
       metadata.addElement(provides);
       providedServices = metadata.getElements("Provides");
     }
+    //TODO: what if exists?
+    providedServices[0].addAttribute(new Attribute("specifications", inherited[0].getAttribute("interfaces").replace(", de.ii.xtraplatform.store.domain.entities.EntityState", "")));
     Element controller = new Element("controller", null);
     providedServices[0].addElement(controller);
     controller.addAttribute(new Attribute("field", "register"));
@@ -107,6 +110,15 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
     // AbstractPersistentEntity
     providedServices[0].addAttribute(new Attribute("post-registration", "onPostRegistration"));
     providedServices[0].addAttribute(new Attribute("post-unregistration", "onPostUnregistration"));
+
+    // add @ServiceController for field registerState in class AbstractPersistentEntity
+    Element providesState = new Element("Provides", null);
+    providesState.addAttribute(new Attribute("specifications", "{de.ii.xtraplatform.store.domain.entities.EntityState}"));
+    metadata.addElement(providesState);
+    Element controller2 = new Element("controller", null);
+    providesState.addElement(controller2);
+    controller2.addAttribute(new Attribute("field", "registerState"));
+    controller2.addAttribute(new Attribute("value", "false"));
 
     // add @Property(name = Entity.DATA_KEY) for method setData in class AbstractPersistentEntity
     Element properties;
@@ -201,16 +213,10 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
 
   private void checkRegistration() {
     try {
-      Field field = getInstanceManager().getPojoObject().getClass().getField("register");
-      if (!field.isAccessible()) {
-        field.setAccessible(true);
-      }
-      boolean register = (boolean) field.get(getInstanceManager().getPojoObject());
-
-      providedServiceHandler.onSet(null, "register", register);
-
       if (first) {
         this.first = false;
+
+        providedServiceHandler.onSet(null, "registerState", true);
 
         Method addReloadListener =
             getInstanceManager()
@@ -226,6 +232,14 @@ public class EntityHandler extends LifecycleCallbackHandler implements Configura
                   checkRegistration();
                 });
       }
+
+      Field field = getInstanceManager().getPojoObject().getClass().getField("register");
+      if (!field.isAccessible()) {
+        field.setAccessible(true);
+      }
+      boolean register = (boolean) field.get(getInstanceManager().getPojoObject());
+
+      providedServiceHandler.onSet(null, "register", register);
 
     } catch (SecurityException
         | IllegalAccessException

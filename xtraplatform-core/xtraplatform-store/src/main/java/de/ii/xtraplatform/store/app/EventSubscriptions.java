@@ -14,6 +14,8 @@ import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.ImmutableStateChangeEvent;
 import de.ii.xtraplatform.store.domain.StateChangeEvent;
 import de.ii.xtraplatform.store.domain.TypedEvent;
+import de.ii.xtraplatform.streams.domain.Event;
+import de.ii.xtraplatform.streams.domain.EventStream;
 import de.ii.xtraplatform.streams.domain.StreamRunner;
 import java.util.Map;
 import java.util.Objects;
@@ -30,7 +32,7 @@ public class EventSubscriptions {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventSubscriptions.class);
 
-  private final Map<String, EventStream> eventStreams;
+  private final Map<String, EventStream<Event>> eventStreams;
   private final StreamRunner streamRunner;
   private final ScheduledExecutorService executorService;
   private boolean isStarted;
@@ -56,7 +58,7 @@ public class EventSubscriptions {
           }
 
           for (String eventType : subscriber.getEventTypes()) {
-            EventStream eventStream = getEventStream(eventType);
+            EventStream<Event> eventStream = getEventStream(eventType);
             CompletableFuture<Void> cmp = new CompletableFuture<>();
             eventStream.foreach(
                 event -> {
@@ -99,7 +101,7 @@ public class EventSubscriptions {
     if (LOGGER.isTraceEnabled() && event instanceof EntityEvent) {
       LOGGER.trace("Emitting event: {} {}", event.type(), ((EntityEvent) event).identifier());
     }
-    final EventStream eventStream = getEventStream(event.type());
+    final EventStream<Event> eventStream = getEventStream(event.type());
 
     return eventStream.queue(event);
   }
@@ -114,13 +116,13 @@ public class EventSubscriptions {
     this.isStarted = true;
   }
 
-  private synchronized EventStream getEventStream(String eventType) {
+  private synchronized EventStream<Event> getEventStream(String eventType) {
     Objects.requireNonNull(eventType, "eventType may not be null");
     return eventStreams.computeIfAbsent(eventType, prefix -> createEventStream(eventType));
   }
 
-  private EventStream createEventStream(String eventType) {
-    EventStream eventStream = new EventStream(streamRunner, eventType);
+  private EventStream<Event> createEventStream(String eventType) {
+    EventStream<Event> eventStream = new EventStream<>(streamRunner, eventType);
 
     emitStateChange(eventStream, StateChangeEvent.STATE.REPLAYING, eventType);
 
@@ -132,7 +134,7 @@ public class EventSubscriptions {
     return eventStream;
   }
 
-  private void emitStateChange(EventStream eventStream, StateChangeEvent.STATE state, String type) {
+  private void emitStateChange(EventStream<Event> eventStream, StateChangeEvent.STATE state, String type) {
     eventStream.queue(ImmutableStateChangeEvent.builder().state(state).type(type).build());
   }
 }

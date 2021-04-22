@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.store.domain;
 
 import de.ii.xtraplatform.store.app.EventSourcingCache;
+import de.ii.xtraplatform.streams.domain.Event;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;

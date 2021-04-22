@@ -33,18 +33,23 @@ import org.slf4j.MDC;
 
 /** @author zahnen */
 public abstract class AbstractPersistentEntity<T extends EntityData>
-    implements PersistentEntity, Reloadable {
+    implements PersistentEntity, Reloadable, EntityState {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPersistentEntity.class);
 
   private final ExecutorService executorService;
   private final List<Consumer<PersistentEntity>> reloadListeners;
+  private final List<Consumer<EntityState>> stateChangeListeners;
+
+  @ServiceController(value = true, specification = EntityState.class) // is ignored here, but added by @Entity handler
+  private boolean registerState;
 
   @ServiceController(value = false) // is ignored here, but added by @Entity handler
   public boolean register;
 
   private T data;
   private Future<?> startup;
+  private EntityState.STATE state;
 
   public AbstractPersistentEntity() {
     this.executorService =
@@ -53,8 +58,11 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
                 Executors.newFixedThreadPool(
                     1, new ThreadFactoryBuilder().setNameFormat("entity.lifecycle-%d").build()));
     this.reloadListeners = new ArrayList<>();
+    this.stateChangeListeners = new ArrayList<>();
     this.data = null;
     this.startup = null;
+    //this.state = STATE.LOADING;
+    setState(STATE.LOADING);
   }
 
   @Override
@@ -86,8 +94,13 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("STARTING {} {} {} {}", getType(), getId(), shouldRegister(), register);
         }
-
+        setState(STATE.LOADING);
         triggerStartup(true, () -> {});
+      } else {
+        setState(STATE.DISABLED);
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("DISABLED {} {} {} {}", getType(), getId(), shouldRegister(), register);
+        }
       }
     }
   }
@@ -113,6 +126,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STARTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
+      setState(STATE.ACTIVE);
       onStarted();
     }
   }
@@ -124,6 +138,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STOPPED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
+      setState(STATE.DISABLED);
       onStopped();
     }
   }
@@ -134,6 +149,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("RELOADING {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
+      setState(STATE.RELOADING);
 
       cancelStartup();
 
@@ -141,6 +157,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
         triggerStartup(false, this::afterReload);
       } else {
         this.register = false;
+        setState(STATE.DISABLED);
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("DISABLED {} {} {} {}", getType(), getId(), shouldRegister(), register);
         }
@@ -171,8 +188,16 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
               } catch (InterruptedException e) {
                 if (LOGGER.isTraceEnabled()) {
                   LOGGER.trace(
-                      "INTERRUPTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
+                      "INTERRUPTED {} {} {} {}", getType(), getId(), shouldRegister(), register, e);
                 }
+                return;
+              } catch (Throwable e) {
+                if (LOGGER.isTraceEnabled()) {
+                  LOGGER.trace("DEFECTIVE {} {} {} {}", getType(), getId(), shouldRegister(), register, e);
+                }
+                this.register = false;
+                setState(STATE.DEFECTIVE);
+                onStartupFailure(e);
                 return;
               }
               then.run();
@@ -183,7 +208,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
         this.startup.get();
       } catch (InterruptedException | ExecutionException e) {
         if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace("INTERRUPTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
+          LOGGER.trace("INTERRUPTED {} {} {} {}", getType(), getId(), shouldRegister(), register, e);
         }
       }
     }
@@ -207,6 +232,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
 
   protected void onStopped() {}
 
+  protected void onStartupFailure(Throwable throwable) {}
+
   protected boolean shouldRegister() {
     return true;
   }
@@ -226,5 +253,34 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
             listener.accept(type.cast(entity));
           }
         });
+  }
+
+  @Override
+  public String getId() {
+    return PersistentEntity.super.getId();
+  }
+
+  @Override
+  public String getEntityType() {
+    return getType();
+  }
+
+  @Override
+  public EntityState.STATE getState() {
+    return state;
+  }
+
+  public void setState(STATE state) {
+    if (this.state != state) {
+      LOGGER.debug("{}: {} -> {}", getId(), this.state, state);
+      this.state = state;
+      stateChangeListeners.forEach(listener -> listener.accept(this));
+    }
+  }
+
+  @Override
+  public void addListener(
+      Consumer<EntityState> listener) {
+    stateChangeListeners.add(listener);
   }
 }
