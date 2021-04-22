@@ -134,7 +134,8 @@ public class EventSubscriptions {
     return eventStream;
   }
 
-  private void emitStateChange(EventStream<Event> eventStream, StateChangeEvent.STATE state, String type) {
+  private void emitStateChange(
+      EventStream<Event> eventStream, StateChangeEvent.STATE state, String type) {
     eventStream.queue(ImmutableStateChangeEvent.builder().state(state).type(type).build());
   }
 }

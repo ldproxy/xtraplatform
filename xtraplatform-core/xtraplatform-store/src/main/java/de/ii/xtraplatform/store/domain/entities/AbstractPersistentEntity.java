@@ -41,7 +41,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   private final List<Consumer<PersistentEntity>> reloadListeners;
   private final List<Consumer<EntityState>> stateChangeListeners;
 
-  @ServiceController(value = true, specification = EntityState.class) // is ignored here, but added by @Entity handler
+  @ServiceController(
+      value = true,
+      specification = EntityState.class) // is ignored here, but added by @Entity handler
   private boolean registerState;
 
   @ServiceController(value = false) // is ignored here, but added by @Entity handler
@@ -61,7 +63,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     this.stateChangeListeners = new ArrayList<>();
     this.data = null;
     this.startup = null;
-    //this.state = STATE.LOADING;
+    // this.state = STATE.LOADING;
     setState(STATE.LOADING);
   }
 
@@ -193,7 +195,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
                 return;
               } catch (Throwable e) {
                 if (LOGGER.isTraceEnabled()) {
-                  LOGGER.trace("DEFECTIVE {} {} {} {}", getType(), getId(), shouldRegister(), register, e);
+                  LOGGER.trace(
+                      "DEFECTIVE {} {} {} {}", getType(), getId(), shouldRegister(), register, e);
                 }
                 this.register = false;
                 setState(STATE.DEFECTIVE);
@@ -208,7 +211,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
         this.startup.get();
       } catch (InterruptedException | ExecutionException e) {
         if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace("INTERRUPTED {} {} {} {}", getType(), getId(), shouldRegister(), register, e);
+          LOGGER.trace(
+              "INTERRUPTED {} {} {} {}", getType(), getId(), shouldRegister(), register, e);
         }
       }
     }
@@ -279,8 +283,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   }
 
   @Override
-  public void addListener(
-      Consumer<EntityState> listener) {
+  public void addListener(Consumer<EntityState> listener) {
     stateChangeListeners.add(listener);
   }
 }

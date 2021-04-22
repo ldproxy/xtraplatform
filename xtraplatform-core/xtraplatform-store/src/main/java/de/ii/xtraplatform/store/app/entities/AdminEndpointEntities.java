@@ -97,12 +97,9 @@ public class AdminEndpointEntities implements AdminSubEndpoint {
     }
 
     private ImmutableMap<String, String> getEntityInfo(Identifier identifier) {
-      Optional<EntityState.STATE> state = entityRegistry.getEntityState(identifier.path().get(0), identifier.id());
-      return ImmutableMap.of(
-          "id",
-          identifier.id(),
-          "status",
-          state.orElse(STATE.UNKNOWN).name());
+      Optional<EntityState.STATE> state =
+          entityRegistry.getEntityState(identifier.path().get(0), identifier.id());
+      return ImmutableMap.of("id", identifier.id(), "status", state.orElse(STATE.UNKNOWN).name());
     }
   }
 }

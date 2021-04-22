@@ -38,16 +38,17 @@ import org.slf4j.LoggerFactory;
 @Component(publicFactory = false)
 @Provides
 @Instantiate
-@Whiteboards(whiteboards = {
-    @Wbp(
-        filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.PersistentEntity)",
-        onArrival = "onEntityArrival",
-        onDeparture = "onEntityDeparture"),
-    @Wbp(
-        filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityState)",
-        onArrival = "onEntityStateArrival",
-        onDeparture = "onEntityStateDeparture")
-})
+@Whiteboards(
+    whiteboards = {
+      @Wbp(
+          filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.PersistentEntity)",
+          onArrival = "onEntityArrival",
+          onDeparture = "onEntityDeparture"),
+      @Wbp(
+          filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityState)",
+          onArrival = "onEntityStateArrival",
+          onDeparture = "onEntityStateDeparture")
+    })
 public class EntityRegistryImpl implements EntityRegistry {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityRegistryImpl.class);
@@ -108,12 +109,13 @@ public class EntityRegistryImpl implements EntityRegistry {
       if (Objects.nonNull(entity)) {
 
         if (LOGGER.isDebugEnabled(MARKER.DI)) {
-          LOGGER.debug(MARKER.DI, "Registered entity STATE: {} {}", entity.getClass(), entity.getId());
+          LOGGER.debug(
+              MARKER.DI, "Registered entity STATE: {} {}", entity.getClass(), entity.getId());
         }
 
         this.entityStates.put(entity.getEntityType() + entity.getId(), entity);
-        entity.addListener(entityState -> entityStateListeners.forEach(listener -> listener.accept(entityState)));
-
+        entity.addListener(
+            entityState -> entityStateListeners.forEach(listener -> listener.accept(entityState)));
       }
     } catch (Throwable e) {
       LogContext.error(LOGGER, e, "Unexpected error");
@@ -126,7 +128,8 @@ public class EntityRegistryImpl implements EntityRegistry {
     if (Objects.nonNull(entity)) {
 
       if (LOGGER.isDebugEnabled(MARKER.DI)) {
-        LOGGER.debug(MARKER.DI, "Deregistered entity STATE: {} {}", entity.getClass(), entity.getId());
+        LOGGER.debug(
+            MARKER.DI, "Deregistered entity STATE: {} {}", entity.getClass(), entity.getId());
       }
 
       this.entityStates.remove(entity.getEntityType() + entity.getId());
@@ -168,8 +171,7 @@ public class EntityRegistryImpl implements EntityRegistry {
   }
 
   @Override
-  public void addEntityStateListener(
-      Consumer<EntityState> listener) {
+  public void addEntityStateListener(Consumer<EntityState> listener) {
     this.entityStateListeners.add(listener);
   }
 

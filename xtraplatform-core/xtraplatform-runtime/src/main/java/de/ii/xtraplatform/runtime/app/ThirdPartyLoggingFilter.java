@@ -30,7 +30,8 @@ public class ThirdPartyLoggingFilter extends TurboFilter {
       boolean sqlQueries,
       boolean sqlResults,
       boolean configDumps,
-      boolean stackTraces, boolean wiring) {
+      boolean stackTraces,
+      boolean wiring) {
     this.showThirdPartyLoggers = showThirdPartyLoggers;
     this.sqlQueries = sqlQueries;
     this.sqlResults = sqlResults;

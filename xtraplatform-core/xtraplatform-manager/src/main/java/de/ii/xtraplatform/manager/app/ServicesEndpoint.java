@@ -13,8 +13,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ObjectArrays;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.dropwizard.domain.Endpoint;
@@ -25,7 +23,6 @@ import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceStatus;
 import de.ii.xtraplatform.services.domain.TaskStatus;
-import de.ii.xtraplatform.streams.domain.EventStream;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
@@ -36,6 +33,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
 import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
+import de.ii.xtraplatform.streams.domain.EventStream;
 import de.ii.xtraplatform.streams.domain.StreamRunner;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
@@ -50,9 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
@@ -118,15 +113,19 @@ public class ServicesEndpoint implements Endpoint {
     this.serviceBackgroundTasks = serviceBackgroundTasks;
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);
     this.entityStateSubscriber = new ArrayList<>();
-    this.eventStream = new EventStream<>(new StreamRunner(bundleContext, actorSystemProvider, "sse", 1, 1024), "state");
+    this.eventStream =
+        new EventStream<>(
+            new StreamRunner(bundleContext, actorSystemProvider, "sse", 1, 1024), "state");
 
-    eventStream.foreach(event -> {
-      if (LOGGER.isTraceEnabled()) {
-        LOGGER.trace("BROADCASTING {}", entityStateSubscriber.size());
-      }
-      entityStateSubscriber.forEach(subscriber -> subscriber.accept(event));
-    });
-    entityRegistry.addEntityStateListener(event -> eventStream.queue(ImmutableEntityStateEvent.builder().from(event).build()));
+    eventStream.foreach(
+        event -> {
+          if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("BROADCASTING {}", entityStateSubscriber.size());
+          }
+          entityStateSubscriber.forEach(subscriber -> subscriber.accept(event));
+        });
+    entityRegistry.addEntityStateListener(
+        event -> eventStream.queue(ImmutableEntityStateEvent.builder().from(event).build()));
   }
 
   EntityDataStore<ServiceData> getServiceRepository(EntityDataStore<EntityData> entityRepository) {
@@ -275,17 +274,19 @@ public class ServicesEndpoint implements Endpoint {
     }
   }
 
-  //TODO: integrate in manager
-  //TODO: use JAX-RS Sse support when upgraded to Dropwizard 2.0
+  // TODO: integrate in manager
+  // TODO: use JAX-RS Sse support when upgraded to Dropwizard 2.0
   @Path("/_events")
   @GET
   @Produces("text/event-stream")
   public void getServiceEvents(
-      @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user, @Suspended final AsyncResponse asyncResponse, @Context final HttpServletRequest httpServletRequest) {
+      @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
+      @Suspended final AsyncResponse asyncResponse,
+      @Context final HttpServletRequest httpServletRequest) {
 
     // 3.
-    final HttpServletResponse httpServletResponse = (HttpServletResponse) httpServletRequest
-        .getAttribute("original.response");
+    final HttpServletResponse httpServletResponse =
+        (HttpServletResponse) httpServletRequest.getAttribute("original.response");
     final ServletOutputStream out;
 
     // 4.
@@ -297,22 +298,23 @@ public class ServicesEndpoint implements Endpoint {
       throw new IllegalStateException(e);
     }
 
-    entityStateSubscriber.add(entityStateEvent -> {
-      try {
-          // 8.
-          out.write("data:".getBytes());
-          objectMapper.writeValue(out, entityStateEvent);
-          out.write("\n\n".getBytes());
-          out.flush();
-      } catch (final IOException e) {
-        //client gone
-        try {
-          asyncResponse.resume("");
-        } catch (final RuntimeException re) {
-          // ignore
-        }
-      }
-    });
+    entityStateSubscriber.add(
+        entityStateEvent -> {
+          try {
+            // 8.
+            out.write("data:".getBytes());
+            objectMapper.writeValue(out, entityStateEvent);
+            out.write("\n\n".getBytes());
+            out.flush();
+          } catch (final IOException e) {
+            // client gone
+            try {
+              asyncResponse.resume("");
+            } catch (final RuntimeException re) {
+              // ignore
+            }
+          }
+        });
   }
 
   @Path("/{id}")
@@ -423,13 +425,13 @@ public class ServicesEndpoint implements Endpoint {
 
   private ServiceStatus getServiceStatus(ServiceData serviceData) {
 
-    STATE state = entityRegistry.getEntityState("services", serviceData.getId()).orElse(STATE.LOADING);
-    Optional<TaskStatus> currentTaskForService = serviceBackgroundTasks.getCurrentTaskForService(serviceData.getId());
+    STATE state =
+        entityRegistry.getEntityState("services", serviceData.getId()).orElse(STATE.LOADING);
+    Optional<TaskStatus> currentTaskForService =
+        serviceBackgroundTasks.getCurrentTaskForService(serviceData.getId());
 
     ImmutableServiceStatus.Builder serviceStatus =
-        ImmutableServiceStatus.builder()
-            .from(serviceData)
-            .status(state);
+        ImmutableServiceStatus.builder().from(serviceData).status(state);
 
     if (currentTaskForService.isPresent()) {
       serviceStatus
