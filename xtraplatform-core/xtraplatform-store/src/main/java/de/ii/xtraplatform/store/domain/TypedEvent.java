@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.store.domain;
 
+import de.ii.xtraplatform.streams.domain.Event;
+
 public interface TypedEvent extends Event {
   String type();
 }

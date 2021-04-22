@@ -23,18 +23,21 @@ public class ThirdPartyLoggingFilter extends TurboFilter {
   private final boolean sqlResults;
   private final boolean configDumps;
   private final boolean stackTraces;
+  private final boolean wiring;
 
   public ThirdPartyLoggingFilter(
       boolean showThirdPartyLoggers,
       boolean sqlQueries,
       boolean sqlResults,
       boolean configDumps,
-      boolean stackTraces) {
+      boolean stackTraces,
+      boolean wiring) {
     this.showThirdPartyLoggers = showThirdPartyLoggers;
     this.sqlQueries = sqlQueries;
     this.sqlResults = sqlResults;
     this.configDumps = configDumps;
     this.stackTraces = stackTraces;
+    this.wiring = wiring;
   }
 
   @Override
@@ -61,7 +64,11 @@ public class ThirdPartyLoggingFilter extends TurboFilter {
       return FilterReply.ACCEPT;
     }
 
-    if (showThirdPartyLoggers || logger.getName().startsWith("de.ii")) {
+    if (wiring && Objects.equals(marker, MARKER.DI)) {
+      return FilterReply.ACCEPT;
+    }
+
+    if (Objects.isNull(marker) && (showThirdPartyLoggers || logger.getName().startsWith("de.ii"))) {
       return FilterReply.NEUTRAL;
     }
 

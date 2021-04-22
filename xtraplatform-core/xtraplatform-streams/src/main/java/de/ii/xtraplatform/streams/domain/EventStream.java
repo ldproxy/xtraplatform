@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.store.app;
+package de.ii.xtraplatform.streams.domain;
 
 import akka.NotUsed;
 import akka.japi.function.Procedure;
@@ -13,23 +13,21 @@ import akka.stream.OverflowStrategy;
 import akka.stream.QueueOfferResult;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.SourceQueueWithComplete;
-import de.ii.xtraplatform.store.domain.Event;
-import de.ii.xtraplatform.streams.domain.StreamRunner;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-public class EventStream {
+public class EventStream<T extends Event> {
 
   private final StreamRunner streamRunner;
-  private final CompletableFuture<SourceQueueWithComplete<Event>> eventQueue;
-  private final Source<Event, NotUsed> eventStream;
-  private CompletableFuture<SourceQueueWithComplete<Event>> eventQueueChain;
+  private final CompletableFuture<SourceQueueWithComplete<T>> eventQueue;
+  private final Source<T, NotUsed> eventStream;
+  private CompletableFuture<SourceQueueWithComplete<T>> eventQueueChain;
   private final String eventType;
 
   public EventStream(StreamRunner streamRunner, String eventType) {
     this.eventQueue = new CompletableFuture<>();
     this.eventStream =
-        Source.<Event>queue(1024, OverflowStrategy.backpressure())
+        Source.<T>queue(1024, OverflowStrategy.backpressure())
             .mapMaterializedValue(
                 queue -> {
                   eventQueue.complete(queue);
@@ -40,11 +38,11 @@ public class EventStream {
     this.eventType = eventType;
   }
 
-  public void foreach(Consumer<Event> eventConsumer) {
-    streamRunner.runForeach(eventStream, (Procedure<Event>) eventConsumer::accept);
+  public void foreach(Consumer<T> eventConsumer) {
+    streamRunner.runForeach(eventStream, (Procedure<T>) eventConsumer::accept);
   }
 
-  public synchronized CompletableFuture<QueueOfferResult> queue(Event event) {
+  public synchronized CompletableFuture<QueueOfferResult> queue(T event) {
     // eventQueue = eventQueue.thenComposeAsync(queue ->
     // queue.offer(event).handleAsync((queueOfferResult, throwable) -> queue));
     // TODO: to apply backpressure join queue as well as offer; but then we block indefinitely if

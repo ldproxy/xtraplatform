@@ -23,6 +23,7 @@ public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
   private boolean sqlResults;
   private boolean configDumps;
   private boolean stackTraces;
+  private boolean wiring;
 
   public XtraPlatformLoggingFactory() {
     super();
@@ -31,6 +32,7 @@ public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
     this.sqlResults = false;
     this.configDumps = false;
     this.stackTraces = false;
+    this.wiring = false;
   }
 
   @Override
@@ -39,12 +41,10 @@ public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
 
     LoggingUtil.getLoggerContext().resetTurboFilterList();
 
-    // if (!showThirdPartyLoggers) {
     LoggingUtil.getLoggerContext()
         .addTurboFilter(
             new ThirdPartyLoggingFilter(
-                showThirdPartyLoggers, sqlQueries, sqlResults, configDumps, stackTraces));
-    // }
+                showThirdPartyLoggers, sqlQueries, sqlResults, configDumps, stackTraces, wiring));
   }
 
   @JsonProperty("showThirdPartyLoggers")
@@ -87,6 +87,14 @@ public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
 
   public void setStackTraces(boolean stackTraces) {
     this.stackTraces = stackTraces;
+  }
+
+  public boolean isWiring() {
+    return wiring;
+  }
+
+  public void setWiring(boolean wiring) {
+    this.wiring = wiring;
   }
 
   @JsonProperty("type")

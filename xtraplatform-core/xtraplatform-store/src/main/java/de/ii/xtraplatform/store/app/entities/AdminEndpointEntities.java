@@ -14,13 +14,14 @@ import de.ii.xtraplatform.dropwizard.domain.Jackson;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
-import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
+import de.ii.xtraplatform.store.domain.entities.EntityState;
+import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.servlet.ServletException;
@@ -31,18 +32,15 @@ import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 @Provides
 @Instantiate
 public class AdminEndpointEntities implements AdminSubEndpoint {
 
-  enum Status {
-    HEALTHY,
-    ACTIVE,
-    FAILED,
-    DISABLED
-  }
+  private static final Logger LOGGER = LoggerFactory.getLogger(AdminEndpointEntities.class);
 
   private final HttpServlet servlet;
   private final EntityDataStore<?> entityDataStore;
@@ -72,7 +70,6 @@ public class AdminEndpointEntities implements AdminSubEndpoint {
   class EntitiesServlet extends HttpServlet {
     private static final long serialVersionUID = 3772654177231086757L;
     private static final String CONTENT_TYPE = "application/json";
-    private static final String CONTENT = "pong";
     private static final String CACHE_CONTROL = "Cache-Control";
     private static final String NO_CACHE = "must-revalidate,no-cache,no-store";
 
@@ -86,6 +83,8 @@ public class AdminEndpointEntities implements AdminSubEndpoint {
 
       LinkedHashMap<String, List<Map<String, String>>> entities =
           entityDataStore.identifiers().stream()
+              .sorted(Comparator.naturalOrder())
+              .peek(identifier -> LOGGER.debug("{}", identifier))
               .collect(
                   Collectors.groupingBy(
                       identifier -> identifier.path().get(0),
@@ -98,18 +97,9 @@ public class AdminEndpointEntities implements AdminSubEndpoint {
     }
 
     private ImmutableMap<String, String> getEntityInfo(Identifier identifier) {
-      // TODO: same id different type
-      Optional<PersistentEntity> entity =
-          entityRegistry
-              .getEntity(PersistentEntity.class, identifier.id())
-              .filter(
-                  persistentEntity ->
-                      Objects.equals(persistentEntity.getType(), identifier.path().get(0)));
-      return ImmutableMap.of(
-          "id",
-          identifier.id(),
-          "status",
-          entity.isPresent() ? Status.ACTIVE.name() : Status.DISABLED.name());
+      Optional<EntityState.STATE> state =
+          entityRegistry.getEntityState(identifier.path().get(0), identifier.id());
+      return ImmutableMap.of("id", identifier.id(), "status", state.orElse(STATE.UNKNOWN).name());
     }
   }
 }

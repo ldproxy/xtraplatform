@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.store.domain;
 
+import de.ii.xtraplatform.streams.domain.Event;
 import org.immutables.value.Value;
 
 @Value.Immutable

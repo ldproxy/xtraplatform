@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.services.domain;
 
+import de.ii.xtraplatform.store.domain.entities.EntityState;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -20,10 +21,15 @@ public interface ServiceStatus extends ServiceData {
     STOPPED
   }
 
-  STATUS getStatus();
+  EntityState.STATE getStatus();
 
   @Value.Default
   default boolean getHasBackgroundTask() {
+    return false;
+  }
+
+  @Value.Default
+  default boolean getHasProgress() {
     return false;
   }
 

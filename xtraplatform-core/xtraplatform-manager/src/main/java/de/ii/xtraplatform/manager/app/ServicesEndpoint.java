@@ -30,7 +30,11 @@ import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
+import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
 import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
+import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
+import de.ii.xtraplatform.streams.domain.EventStream;
+import de.ii.xtraplatform.streams.domain.StreamRunner;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -38,13 +42,18 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -55,12 +64,16 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
+import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,22 +94,38 @@ public class ServicesEndpoint implements Endpoint {
   private final EntityDataDefaultsStore defaultsStore;
   private final ServiceBackgroundTasks serviceBackgroundTasks;
   private final ObjectMapper objectMapper;
+  private final List<Consumer<EntityStateEvent>> entityStateSubscriber;
+  private final EventStream<EntityStateEvent> eventStream;
 
   ServicesEndpoint(
+      @org.apache.felix.ipojo.annotations.Context BundleContext bundleContext,
+      @Requires ActorSystemProvider actorSystemProvider,
       @Requires EntityDataStore<EntityData> entityRepository,
       @Requires EntityRegistry entityRegistry,
       @Requires EntityFactory entityFactory,
-      @Requires EntityDataDefaultsStore defaultsStore
-      /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/ ) {
-    // TODO: relies on EntityFactory, ServiceData might not be registered yet
-    // this.serviceRepository = entityRepository.forType(ServiceData.class);
+      @Requires EntityDataDefaultsStore defaultsStore,
+      @Requires ServiceBackgroundTasks serviceBackgroundTasks) {
     this.entityRepository = entityRepository;
     this.serviceRepository = getServiceRepository(entityRepository);
     this.entityRegistry = entityRegistry;
     this.entityFactory = entityFactory;
     this.defaultsStore = defaultsStore;
-    this.serviceBackgroundTasks = null; // serviceBackgroundTasks;
+    this.serviceBackgroundTasks = serviceBackgroundTasks;
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);
+    this.entityStateSubscriber = new ArrayList<>();
+    this.eventStream =
+        new EventStream<>(
+            new StreamRunner(bundleContext, actorSystemProvider, "sse", 1, 1024), "state");
+
+    eventStream.foreach(
+        event -> {
+          if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("BROADCASTING {}", entityStateSubscriber.size());
+          }
+          entityStateSubscriber.forEach(subscriber -> subscriber.accept(event));
+        });
+    entityRegistry.addEntityStateListener(
+        event -> eventStream.queue(ImmutableEntityStateEvent.builder().from(event).build()));
   }
 
   EntityDataStore<ServiceData> getServiceRepository(EntityDataStore<EntityData> entityRepository) {
@@ -245,6 +274,49 @@ public class ServicesEndpoint implements Endpoint {
     }
   }
 
+  // TODO: integrate in manager
+  // TODO: use JAX-RS Sse support when upgraded to Dropwizard 2.0
+  @Path("/_events")
+  @GET
+  @Produces("text/event-stream")
+  public void getServiceEvents(
+      @Parameter(in = ParameterIn.COOKIE, hidden = true) @Auth User user,
+      @Suspended final AsyncResponse asyncResponse,
+      @Context final HttpServletRequest httpServletRequest) {
+
+    // 3.
+    final HttpServletResponse httpServletResponse =
+        (HttpServletResponse) httpServletRequest.getAttribute("original.response");
+    final ServletOutputStream out;
+
+    // 4.
+    httpServletResponse.setHeader("Content-Type", "text/event-stream");
+    try {
+      httpServletResponse.flushBuffer();
+      out = httpServletResponse.getOutputStream();
+    } catch (final IOException e) {
+      throw new IllegalStateException(e);
+    }
+
+    entityStateSubscriber.add(
+        entityStateEvent -> {
+          try {
+            // 8.
+            out.write("data:".getBytes());
+            objectMapper.writeValue(out, entityStateEvent);
+            out.write("\n\n".getBytes());
+            out.flush();
+          } catch (final IOException e) {
+            // client gone
+            try {
+              asyncResponse.resume("");
+            } catch (final RuntimeException re) {
+              // ignore
+            }
+          }
+        });
+  }
+
   @Path("/{id}")
   @GET
   @CacheControl(noCache = true)
@@ -353,33 +425,28 @@ public class ServicesEndpoint implements Endpoint {
 
   private ServiceStatus getServiceStatus(ServiceData serviceData) {
 
-    boolean started = entityRegistry.getEntity(Service.class, serviceData.getId()).isPresent();
-
-    if (serviceData.hasError()) {
-      started = false;
-    }
-
-    boolean loading = serviceData.isLoading();
-
+    STATE state =
+        entityRegistry.getEntityState("services", serviceData.getId()).orElse(STATE.LOADING);
     Optional<TaskStatus> currentTaskForService =
-        Optional
-            .empty(); // TODO serviceBackgroundTasks.getCurrentTaskForService(serviceData.getId());
+        serviceBackgroundTasks.getCurrentTaskForService(serviceData.getId());
 
     ImmutableServiceStatus.Builder serviceStatus =
-        ImmutableServiceStatus.builder()
-            .from(serviceData)
-            .status(started ? ServiceStatus.STATUS.STARTED : ServiceStatus.STATUS.STOPPED);
+        ImmutableServiceStatus.builder().from(serviceData).status(state);
+
     if (currentTaskForService.isPresent()) {
       serviceStatus
           .hasBackgroundTask(true)
+          .hasProgress(true)
           .progress((int) Math.round(currentTaskForService.get().getProgress() * 100))
           .message(
               String.format(
                   "%s: %s",
                   currentTaskForService.get().getLabel(),
                   currentTaskForService.get().getStatusMessage()));
-    } else if (loading) {
+    } else if (state == STATE.LOADING) {
       serviceStatus.hasBackgroundTask(true).message("Initializing");
+    } else if (state == STATE.RELOADING) {
+      serviceStatus.hasBackgroundTask(true).message("Reloading");
     }
 
     return serviceStatus.build();

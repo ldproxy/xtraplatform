@@ -18,6 +18,12 @@ public interface EntityRegistry {
 
   <T extends PersistentEntity> Optional<T> getEntity(Class<T> type, String id);
 
+  Optional<PersistentEntity> getEntity(String type, String id);
+
+  Optional<EntityState.STATE> getEntityState(String type, String id);
+
+  void addEntityStateListener(Consumer<EntityState> listener);
+
   void addEntityListener(BiConsumer<String, PersistentEntity> listener);
 
   <T extends PersistentEntity> void addEntityListener(

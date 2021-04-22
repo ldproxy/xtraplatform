@@ -5,6 +5,39 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { Box, Text, Heading } from 'grommet';
 import { Tile, StatusIcon, SpinnerIcon, TaskProgress } from '@xtraplatform/core';
 
+const getStatusIconType = status => {
+    switch (status) {
+        case "ACTIVE":    
+        case "RELOADING":              
+            return "ok"
+        case "DISABLED":            
+            return "disabled"
+        case "DEFECTIVE":            
+            return "critical"
+        case "LOADING":           
+            return "transit"    
+        default:
+            return "unknown";
+    }
+}
+
+const getStatusText = status => {
+    switch (status) {
+        case "ACTIVE":            
+            return "Online"
+        case "DISABLED":            
+            return "Offline"
+        case "DEFECTIVE":            
+            return "Defective"
+        case "LOADING":         
+            return "Initializing"
+        case "RELOADING":            
+            return "Reloading"    
+        default:
+            return "Unknown";
+    }
+}
+
 const ServiceIndexMainTile = ({
     id,
     label,
@@ -12,6 +45,7 @@ const ServiceIndexMainTile = ({
     status,
     message,
     progress,
+    hasProgress,
     hasBackgroundTask,
     isSelected,
     isCompact,
@@ -22,8 +56,6 @@ const ServiceIndexMainTile = ({
 
     // TODO: define somewhere (json or graphql schema?)
     const isInitializing = status === 'INITIALIZING';
-    const isOnline = status === 'STARTED';
-    const isDisabled = !isOnline && enabled;
     const iconSize = isCompact ? 'list' : 'medium';
 
     // TODO: define somewhere else
@@ -32,20 +64,12 @@ const ServiceIndexMainTile = ({
     const location = useLocation();
 
     const taskProgress = hasBackgroundTask ? (
-        <TaskProgress progress={progress} message={message} />
+        <TaskProgress hasProgress={hasProgress} progress={progress} message={message} iconSize={iconSize} />
     ) : null;
-    const statusText = isInitializing
-        ? 'Initializing'
-        : isOnline
-        ? 'Published'
-        : isDisabled
-        ? 'Defective'
-        : 'Offline';
-    const statusIcon = isInitializing ? (
-        <SpinnerIcon size={iconSize} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-    ) : (
+    const statusText = getStatusText(status);
+    const statusIcon = (
         <StatusIcon
-            value={isOnline ? 'ok' : isDisabled ? 'critical' : 'disabled'}
+            value={getStatusIconType(status)}
             size={iconSize}
             a11yTitle={statusText}
             title={statusText}
@@ -64,9 +88,10 @@ const ServiceIndexMainTile = ({
             background='background-front'
             hoverStyle='border'
             hoverColorIndex='accent-1'
-            hoverBorderSize='large'>
+            hoverBorderSize='large'
+            pad='none'>
             {/* Card */}
-            <Box fill='horizontal' textSize='small'>
+            <Box fill='horizontal' textSize='small' pad="small">
                 <Box direction='row' justify='between' align='center' fill='horizontal'>
                     <Text
                         size={isCompact ? 'xsmall' : 'small'}
@@ -97,19 +122,13 @@ const ServiceIndexMainTile = ({
                             {label}
                         </Heading>
                     </Box>
-                )}
-                {!isCompact && (
-                    <Box direction='row' justify='between' align='center'>
-                        {hasBackgroundTask ? (
-                            <span>
-                                <span style={{ verticalAlign: 'middle' }}>{taskProgress}</span>
-                            </span>
-                        ) : (
-                            ''
-                        )}
+                )}                
+            </Box>
+            {!isCompact && taskProgress && (
+                    <Box direction='row' justify='between' align='center' fill='horizontal' background='light-2' pad='small'>
+                        {taskProgress}
                     </Box>
                 )}
-            </Box>
         </Tile>
     );
 };

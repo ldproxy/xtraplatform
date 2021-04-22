@@ -3,6 +3,13 @@ import { lighten } from 'polished';
 
 export default (base) => ({
     global: {
+        colors: {
+            border: {
+                dark: 'light-4',
+                light: 'light-4',
+            },
+            'status-transit': 'status-unknown'
+        },
         edgeSize: {
             xxlarge: '192px',
         },
