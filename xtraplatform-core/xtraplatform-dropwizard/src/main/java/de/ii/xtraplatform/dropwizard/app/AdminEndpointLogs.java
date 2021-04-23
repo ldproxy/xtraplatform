@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.dropwizard.app;
 
 import ch.qos.logback.classic.LoggerContext;
@@ -61,32 +68,39 @@ public class AdminEndpointLogs implements AdminSubEndpoint {
       resp.setHeader(CACHE_CONTROL, NO_CACHE);
       resp.setContentType(CONTENT_TYPE);
 
-      String level = loggerContext.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME)
-          .getLevel().toString();
+      String level =
+          loggerContext
+              .getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME)
+              .getLevel()
+              .toString();
 
-      Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter = loggerContext.getTurboFilterList().stream()
-          .filter(turboFilter -> turboFilter instanceof ThirdPartyLoggingFilter).map(turboFilter -> (ThirdPartyLoggingFilter)turboFilter).findFirst();
+      Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter =
+          loggerContext.getTurboFilterList().stream()
+              .filter(turboFilter -> turboFilter instanceof ThirdPartyLoggingFilter)
+              .map(turboFilter -> (ThirdPartyLoggingFilter) turboFilter)
+              .findFirst();
 
       try (PrintWriter writer = resp.getWriter()) {
         objectMapper.writeValue(writer, getLogInfo(level, optionalThirdPartyLoggingFilter));
       }
     }
 
-    private ImmutableMap<String, Object> getLogInfo(String level, Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter) {
+    private ImmutableMap<String, Object> getLogInfo(
+        String level, Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter) {
       return ImmutableMap.of(
-              "level", level,
-              "filter", getFilterInfo(optionalThirdPartyLoggingFilter)
-          );
+          "level", level, "filter", getFilterInfo(optionalThirdPartyLoggingFilter));
     }
 
-    private ImmutableMap<String, Boolean> getFilterInfo(Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter) {
+    private ImmutableMap<String, Boolean> getFilterInfo(
+        Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter) {
       return optionalThirdPartyLoggingFilter
-          .map(thirdPartyLoggingFilter -> ImmutableMap.of(
-              "sqlQueries", thirdPartyLoggingFilter.isSqlQueries(),
-              "sqlResults", thirdPartyLoggingFilter.isSqlResults(),
-              "configDumps", thirdPartyLoggingFilter.isConfigDumps(),
-              "stackTraces", thirdPartyLoggingFilter.isStackTraces()
-          ))
+          .map(
+              thirdPartyLoggingFilter ->
+                  ImmutableMap.of(
+                      "sqlQueries", thirdPartyLoggingFilter.isSqlQueries(),
+                      "sqlResults", thirdPartyLoggingFilter.isSqlResults(),
+                      "configDumps", thirdPartyLoggingFilter.isConfigDumps(),
+                      "stackTraces", thirdPartyLoggingFilter.isStackTraces()))
           .orElse(ImmutableMap.of());
     }
   }

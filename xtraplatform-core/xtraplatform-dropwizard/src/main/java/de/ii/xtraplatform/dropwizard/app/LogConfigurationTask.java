@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.dropwizard.app;
 
 import ch.qos.logback.classic.LoggerContext;
@@ -39,16 +46,23 @@ public class LogConfigurationTask extends Task {
       throws Exception {
     if (LOGGER.isTraceEnabled()) LOGGER.trace("Log filter request: {}", parameters);
 
-    Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter = loggerContext.getTurboFilterList().stream()
-        .filter(turboFilter -> turboFilter instanceof ThirdPartyLoggingFilter).map(turboFilter -> (ThirdPartyLoggingFilter)turboFilter).findFirst();
+    Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter =
+        loggerContext.getTurboFilterList().stream()
+            .filter(turboFilter -> turboFilter instanceof ThirdPartyLoggingFilter)
+            .map(turboFilter -> (ThirdPartyLoggingFilter) turboFilter)
+            .findFirst();
 
-    optionalThirdPartyLoggingFilter.ifPresent(thirdPartyLoggingFilter -> {
-      getFiltersToEnable(parameters).forEach(filter -> setFilter(thirdPartyLoggingFilter, filter, true));
-      getFiltersToDisable(parameters).forEach(filter -> setFilter(thirdPartyLoggingFilter, filter, false));
-    });
+    optionalThirdPartyLoggingFilter.ifPresent(
+        thirdPartyLoggingFilter -> {
+          getFiltersToEnable(parameters)
+              .forEach(filter -> setFilter(thirdPartyLoggingFilter, filter, true));
+          getFiltersToDisable(parameters)
+              .forEach(filter -> setFilter(thirdPartyLoggingFilter, filter, false));
+        });
   }
 
-  private void setFilter(ThirdPartyLoggingFilter thirdPartyLoggingFilter, String filter, boolean enable) {
+  private void setFilter(
+      ThirdPartyLoggingFilter thirdPartyLoggingFilter, String filter, boolean enable) {
     switch (filter) {
       case "sqlQueries":
         thirdPartyLoggingFilter.setSqlQueries(enable);
@@ -90,5 +104,4 @@ public class LogConfigurationTask extends Task {
             })
         .collect(Collectors.toList());
   }
-
 }
