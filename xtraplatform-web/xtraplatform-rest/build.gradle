@@ -1,8 +1,0 @@
-
-dependencies {
-    provided project(':xtraplatform-openapi')
-    provided project(':xtraplatform-server')
-    
-    provided group: 'de.interactive_instruments', name: 'xtraplatform-entities'
-    provided group: 'de.interactive_instruments', name: 'xtraplatform-service-api'    
-}
