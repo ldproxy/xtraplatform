@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.runtime.app;
+package de.ii.xtraplatform.runtime.domain;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -18,12 +18,12 @@ import org.slf4j.Marker;
 /** @author zahnen */
 public class ThirdPartyLoggingFilter extends TurboFilter {
 
-  private final boolean showThirdPartyLoggers;
-  private final boolean sqlQueries;
-  private final boolean sqlResults;
-  private final boolean configDumps;
-  private final boolean stackTraces;
-  private final boolean wiring;
+  private boolean showThirdPartyLoggers;
+  private boolean sqlQueries;
+  private boolean sqlResults;
+  private boolean configDumps;
+  private boolean stackTraces;
+  private boolean wiring;
 
   public ThirdPartyLoggingFilter(
       boolean showThirdPartyLoggers,
@@ -73,5 +73,53 @@ public class ThirdPartyLoggingFilter extends TurboFilter {
     }
 
     return FilterReply.DENY;
+  }
+
+  public boolean isShowThirdPartyLoggers() {
+    return showThirdPartyLoggers;
+  }
+
+  public void setShowThirdPartyLoggers(boolean showThirdPartyLoggers) {
+    this.showThirdPartyLoggers = showThirdPartyLoggers;
+  }
+
+  public boolean isSqlQueries() {
+    return sqlQueries;
+  }
+
+  public void setSqlQueries(boolean sqlQueries) {
+    this.sqlQueries = sqlQueries;
+  }
+
+  public boolean isSqlResults() {
+    return sqlResults;
+  }
+
+  public void setSqlResults(boolean sqlResults) {
+    this.sqlResults = sqlResults;
+  }
+
+  public boolean isConfigDumps() {
+    return configDumps;
+  }
+
+  public void setConfigDumps(boolean configDumps) {
+    this.configDumps = configDumps;
+  }
+
+  public boolean isStackTraces() {
+    return stackTraces;
+  }
+
+  public void setStackTraces(boolean stackTraces) {
+    this.stackTraces = stackTraces;
+  }
+
+  public boolean isWiring() {
+    return wiring;
+  }
+
+  public void setWiring(boolean wiring) {
+    this.wiring = wiring;
   }
 }

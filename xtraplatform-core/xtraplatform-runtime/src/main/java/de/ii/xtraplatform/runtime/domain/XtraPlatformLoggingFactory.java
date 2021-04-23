@@ -10,7 +10,6 @@ package de.ii.xtraplatform.runtime.domain;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import de.ii.xtraplatform.runtime.app.ThirdPartyLoggingFilter;
 import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.logging.LoggingUtil;
 
