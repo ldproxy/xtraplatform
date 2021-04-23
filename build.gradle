@@ -4,9 +4,6 @@ task assembleAll {
 task checkAll {
     dependsOn gradle.includedBuilds*.task(':checkAll')
 }
-task bintrayUploadAll {
-    dependsOn gradle.includedBuilds*.task(':bintrayUploadAll')
-}
 task publishAll {
     dependsOn gradle.includedBuilds*.task(':publishAll')
 }
