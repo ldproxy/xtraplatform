@@ -276,7 +276,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
 
   public void setState(STATE state) {
     if (this.state != state) {
-      LOGGER.debug("{}: {} -> {}", getId(), this.state, state);
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("{}: {} -> {}", getId(), this.state, state);
+      }
       this.state = state;
       stateChangeListeners.forEach(listener -> listener.accept(this));
     }
