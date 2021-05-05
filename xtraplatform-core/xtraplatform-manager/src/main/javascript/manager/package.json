@@ -1,6 +1,6 @@
 {
     "name": "@xtraplatform/manager",
-    "version": "2.0.0-beta.12",
+    "version": "2.0.0",
     "author": "interactive instruments GmbH",
     "license": "MPL-2.0",
     "module": "src/index.js",
@@ -11,7 +11,7 @@
     },
     "peerDependencies": {
         "@apollo/client": "^3",
-        "@xtraplatform/core": "^2.0.0-beta.14",
+        "@xtraplatform/core": "^2.0.0",
         "feature-u": "^3",
         "grommet": "^2",
         "grommet-icons": "^4",
@@ -27,8 +27,8 @@
         "@apollo/client": "^3",
         "@neutrinojs/airbnb": "^9.3.0",
         "@neutrinojs/mocha": "^9.3.0",
-        "@xtraplatform/core": "^2.0.0-beta.14",
-        "@xtraplatform/neutrino": "^2.0.0-beta.4",
+        "@xtraplatform/core": "^2.0.0",
+        "@xtraplatform/neutrino": "^2.0.0",
         "core-js": "^3",
         "eslint": "*",
         "eslint-import-resolver-node": "*",
