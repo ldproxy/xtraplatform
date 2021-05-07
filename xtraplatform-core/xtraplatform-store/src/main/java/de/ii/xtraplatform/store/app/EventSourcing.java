@@ -24,6 +24,7 @@ import de.ii.xtraplatform.store.domain.StateChangeEvent;
 import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.streams.domain.Event;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -56,7 +58,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   private final Supplier<CompletableFuture<Void>> onStart;
   private final Optional<Function<ReplayEvent, List<ReplayEvent>>> replayEventProcessor;
   private final Optional<Function<MutationEvent, List<MutationEvent>>> mutationEventProcessor;
-  private final Optional<BiConsumer<Identifier, T>> updateHook;
+  private final Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> updateHook;
   private final Optional<BiConsumer<Identifier, T>> valueValidator;
   private final Set<String> started;
   private final ExecutorService executorService;
@@ -68,7 +70,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       Supplier<CompletableFuture<Void>> onStart,
       Optional<Function<ReplayEvent, List<ReplayEvent>>> replayEventProcessor,
       Optional<Function<MutationEvent, List<MutationEvent>>> mutationEventProcessor,
-      Optional<BiConsumer<Identifier, T>> updateHook) {
+      Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> updateHook) {
     this(
         eventStore,
         eventTypes,
@@ -87,7 +89,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       Supplier<CompletableFuture<Void>> onStart,
       Optional<Function<ReplayEvent, List<ReplayEvent>>> replayEventProcessor,
       Optional<Function<MutationEvent, List<MutationEvent>>> mutationEventProcessor,
-      Optional<BiConsumer<Identifier, T>> updateHook,
+      Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> updateHook,
       Optional<BiConsumer<Identifier, T>> valueValidator) {
     this.eventStore = eventStore;
     this.eventTypes = eventTypes;
@@ -161,11 +163,18 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       }
     } else if (event instanceof ReloadEvent && updateHook.isPresent()) {
       List<Identifier> identifiers = getIdentifiers(((ReloadEvent) event).filter());
-      identifiers.forEach(
-          identifier -> {
-            T data = getFromCache(identifier);
-            updateHook.get().accept(identifier, data);
-          });
+
+      identifiers.stream()
+          // TODO: set priority per entity type (for now alphabetic works:
+          //  codelists < providers < services)
+          .sorted(Comparator.comparing(identifier -> identifier.path().get(0)))
+          .reduce(
+              CompletableFuture.completedFuture((Void)null),
+              (completableFuture, identifier) ->
+                  completableFuture.thenCompose(
+                      ignore2 -> updateHook.get().apply(identifier, getFromCache(identifier))),
+              (first, second) -> first.thenCompose(ignore2 -> second))
+          .join();
     }
   }
 

@@ -14,6 +14,7 @@ import de.ii.xtraplatform.store.domain.entities.handler.Entity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,7 +48,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   private boolean registerState;
 
   @ServiceController(value = false) // is ignored here, but added by @Entity handler
-  public boolean register;
+  public volatile boolean register;
 
   private T data;
   private Future<?> startup;
@@ -59,8 +60,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
             (ThreadPoolExecutor)
                 Executors.newFixedThreadPool(
                     1, new ThreadFactoryBuilder().setNameFormat("entity.lifecycle-%d").build()));
-    this.reloadListeners = new ArrayList<>();
-    this.stateChangeListeners = new ArrayList<>();
+    this.reloadListeners = new CopyOnWriteArrayList<>();
+    this.stateChangeListeners = new CopyOnWriteArrayList<>();
     this.data = null;
     this.startup = null;
     // this.state = STATE.LOADING;
@@ -128,8 +129,10 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STARTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
-      setState(STATE.ACTIVE);
-      onStarted();
+      if (state == STATE.LOADING) {
+        onStarted();
+        setState(STATE.ACTIVE);
+      }
     }
   }
 
@@ -140,8 +143,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STOPPED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
-      setState(STATE.DISABLED);
       onStopped();
+      setState(STATE.DISABLED);
     }
   }
 
@@ -168,15 +171,20 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   }
 
   private void afterReload() {
-    if (LOGGER.isTraceEnabled()) {
-      LOGGER.trace("RELOADED {} {} {} {}", getType(), getId(), shouldRegister(), register);
-    }
     reloadListeners.forEach(listener -> listener.accept(this));
 
-    if (register) {
-      onReloaded();
-    } else {
-      LOGGER.trace("SUBSEQUENT FAILURE" /*, data*/);
+    try (MDC.MDCCloseable closeable =
+        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("RELOADED {} {} {} {}", getType(), getId(), shouldRegister(), register);
+      }
+
+      if (register) {
+        onReloaded();
+        setState(STATE.ACTIVE);
+      } else {
+        LOGGER.trace("SUBSEQUENT FAILURE" /*, data*/);
+      }
     }
   }
 
@@ -199,9 +207,8 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
                       "DEFECTIVE {} {} {} {}", getType(), getId(), shouldRegister(), register, e);
                 }
                 this.register = false;
-                setState(STATE.DEFECTIVE);
                 onStartupFailure(e);
-                return;
+                setState(STATE.DEFECTIVE);
               }
               then.run();
             });
@@ -251,12 +258,16 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
 
   @Override
   public <U extends PersistentEntity> void addReloadListener(Class<U> type, Consumer<U> listener) {
-    this.reloadListeners.add(
-        (entity) -> {
-          if (type.isAssignableFrom(entity.getClass())) {
-            listener.accept(type.cast(entity));
-          }
-        });
+    //TODO: only used by ServiceBackgroundTasksImpl, so there is max 1 listener,
+    // but under certain circumstances it is added multiple times
+    if (reloadListeners.isEmpty()) {
+      this.reloadListeners.add(
+          (entity) -> {
+            if (type.isAssignableFrom(entity.getClass())) {
+              listener.accept(type.cast(entity));
+            }
+          });
+    }
   }
 
   @Override

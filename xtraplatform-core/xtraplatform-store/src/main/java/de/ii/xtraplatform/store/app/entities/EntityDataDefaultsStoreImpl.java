@@ -88,6 +88,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             this::onStart,
             Optional.of(this::processReplayEvent),
             Optional.of(this::processMutationEvent),
+            Optional.empty(),
             Optional.of(biConsumerMayThrow(this::validateDefaults)));
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
