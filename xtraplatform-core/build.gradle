@@ -12,7 +12,7 @@ ext {
     versionSuffix = project.findProperty('snapshot') == 'true' ? '-SNAPSHOT' : ''
 }
 
-version = '3.5.0' + versionSuffix
+version = '3.5.1' + versionSuffix
 
 dependencies {
     bundle subprojects
