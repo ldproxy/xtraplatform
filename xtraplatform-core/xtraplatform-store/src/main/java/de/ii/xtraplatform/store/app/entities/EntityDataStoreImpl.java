@@ -330,7 +330,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       if (LOGGER.isDebugEnabled()) LOGGER.debug("Reloading entity: {}", identifier);
       EntityData hydratedData = hydrateData(identifier, entityData);
 
-      return entityFactory.updateInstance(identifier.path().get(0), identifier.id(), hydratedData)
+      return entityFactory
+          .updateInstance(identifier.path().get(0), identifier.id(), hydratedData)
           .thenAccept(ignore -> CompletableFuture.completedFuture(null));
     }
   }

@@ -169,7 +169,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
           //  codelists < providers < services)
           .sorted(Comparator.comparing(identifier -> identifier.path().get(0)))
           .reduce(
-              CompletableFuture.completedFuture((Void)null),
+              CompletableFuture.completedFuture((Void) null),
               (completableFuture, identifier) ->
                   completableFuture.thenCompose(
                       ignore2 -> updateHook.get().apply(identifier, getFromCache(identifier))),

@@ -42,8 +42,7 @@ public interface EntityFactory {
   CompletableFuture<PersistentEntity> createInstance(
       String entityType, String id, EntityData entityData);
 
-  CompletableFuture<Void> updateInstance(
-      String entityType, String id, EntityData entityData);
+  CompletableFuture<Void> updateInstance(String entityType, String id, EntityData entityData);
 
   void deleteInstance(String entityType, String id);
 

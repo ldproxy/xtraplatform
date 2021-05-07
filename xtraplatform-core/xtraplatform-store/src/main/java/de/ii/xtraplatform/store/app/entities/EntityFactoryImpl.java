@@ -134,15 +134,16 @@ public class EntityFactoryImpl implements EntityFactory {
           }
         });
 
-    entityRegistry.addEntityStateListener(entityState -> {
-      if (entityState.getState() != STATE.RELOADING) {
-        String instanceId = String
-            .format("%s/%s", entityState.getEntityType(), entityState.getId());
-        if (instanceReloadListeners.containsKey(instanceId)) {
-          instanceReloadListeners.get(instanceId).complete(null);
-        }
-      }
-    });
+    entityRegistry.addEntityStateListener(
+        entityState -> {
+          if (entityState.getState() != STATE.RELOADING) {
+            String instanceId =
+                String.format("%s/%s", entityState.getEntityType(), entityState.getId());
+            if (instanceReloadListeners.containsKey(instanceId)) {
+              instanceReloadListeners.get(instanceId).complete(null);
+            }
+          }
+        });
   }
 
   private synchronized void onFactoryArrival(ServiceReference<ComponentFactory> ref) {

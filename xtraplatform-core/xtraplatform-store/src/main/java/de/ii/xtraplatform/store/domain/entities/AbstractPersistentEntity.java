@@ -11,7 +11,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.domain.entities.handler.Entity;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -258,7 +257,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
 
   @Override
   public <U extends PersistentEntity> void addReloadListener(Class<U> type, Consumer<U> listener) {
-    //TODO: only used by ServiceBackgroundTasksImpl, so there is max 1 listener,
+    // TODO: only used by ServiceBackgroundTasksImpl, so there is max 1 listener,
     // but under certain circumstances it is added multiple times
     if (reloadListeners.isEmpty()) {
       this.reloadListeners.add(
