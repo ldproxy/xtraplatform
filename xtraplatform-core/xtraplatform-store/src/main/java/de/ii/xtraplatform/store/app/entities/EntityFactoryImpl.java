@@ -25,6 +25,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityHydrator;
 import de.ii.xtraplatform.store.domain.entities.EntityMigration;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
+import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
 import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
 import de.ii.xtraplatform.store.domain.entities.handler.Entity;
 import java.util.Arrays;
@@ -95,6 +96,7 @@ public class EntityFactoryImpl implements EntityFactory {
   private final Map<String, DeclarationHandle> instanceHandles;
   private final Map<String, CompletableFuture<PersistentEntity>> instanceRegistration;
   private final Map<String, Integer> instanceConfigurationHashes;
+  private final Map<String, CompletableFuture<Void>> instanceReloadListeners;
   private final Map<String, ComponentFactory> componentFactories;
   private final Map<String, String> entityClasses;
   private final Map<Class<?>, String> entityDataTypes;
@@ -103,6 +105,7 @@ public class EntityFactoryImpl implements EntityFactory {
   private final Map<String, Map<Long, EntityMigration<EntityData, EntityData>>> entityMigrations;
   private final Map<String, EntityDataDefaults<EntityData>> entityDataDefaults;
   private final ScheduledExecutorService executorService;
+  private final EntityRegistry entityRegistry;
 
   protected EntityFactoryImpl(
       @Context BundleContext context,
@@ -112,7 +115,8 @@ public class EntityFactoryImpl implements EntityFactory {
     this.declarationBuilderService = declarationBuilderService;
     this.instanceHandles = new ConcurrentHashMap<>();
     this.instanceRegistration = new ConcurrentHashMap<>();
-    this.instanceConfigurationHashes = new ConcurrentHashMap<String, Integer>();
+    this.instanceConfigurationHashes = new ConcurrentHashMap<>();
+    this.instanceReloadListeners = new ConcurrentHashMap<>();
     this.componentFactories = new ConcurrentHashMap<>();
     this.entityClasses = new ConcurrentHashMap<>();
     this.entityDataTypes = new ConcurrentHashMap<>();
@@ -121,11 +125,23 @@ public class EntityFactoryImpl implements EntityFactory {
     this.entityMigrations = new ConcurrentHashMap<>();
     this.entityDataDefaults = new ConcurrentHashMap<>();
     this.executorService = new ScheduledThreadPoolExecutor(1);
+    this.entityRegistry = entityRegistry;
 
     entityRegistry.addEntityListener(
         (instanceId, entity) -> {
           if (instanceRegistration.containsKey(instanceId)) {
             instanceRegistration.get(instanceId).complete(entity);
+          }
+        });
+
+    entityRegistry.addEntityStateListener(
+        entityState -> {
+          if (entityState.getState() != STATE.RELOADING) {
+            String instanceId =
+                String.format("%s/%s", entityState.getEntityType(), entityState.getId());
+            if (instanceReloadListeners.containsKey(instanceId)) {
+              instanceReloadListeners.get(instanceId).complete(null);
+            }
           }
         });
   }
@@ -575,7 +591,7 @@ public class EntityFactoryImpl implements EntityFactory {
   }
 
   @Override
-  public CompletableFuture<PersistentEntity> updateInstance(
+  public CompletableFuture<Void> updateInstance(
       String entityType, String id, EntityData entityData) {
     try (MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
 
@@ -597,8 +613,11 @@ public class EntityFactoryImpl implements EntityFactory {
       String specificEntityType = getSpecificEntityType(entityType, entityData.getEntitySubType());
       ComponentFactory componentFactory = componentFactories.get(specificEntityType);
       ComponentInstance instance = componentFactory.getInstanceByName(instanceId);
+      CompletableFuture<Void> reloaded = new CompletableFuture<>();
 
       if (Objects.nonNull(instance)) {
+        this.instanceReloadListeners.put(instanceId, reloaded);
+
         Dictionary<String, Object> configuration = new Hashtable<>();
         configuration.put(Factory.INSTANCE_NAME_PROPERTY, instanceId);
         configuration.put(Entity.DATA_KEY, entityData);
@@ -608,10 +627,11 @@ public class EntityFactoryImpl implements EntityFactory {
           instanceConfigurationHashes.put(instanceId, entityData.hashCode());
         } catch (Throwable e) {
           LogContext.error(LOGGER, e, "Could not reload configuration");
+          reloaded.complete(null);
         }
       }
 
-      return CompletableFuture.completedFuture(null);
+      return reloaded;
     }
   }
 
