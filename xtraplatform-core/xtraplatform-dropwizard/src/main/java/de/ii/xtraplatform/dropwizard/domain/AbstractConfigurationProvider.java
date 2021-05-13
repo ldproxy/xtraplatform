@@ -82,7 +82,7 @@ public abstract class AbstractConfigurationProvider<T extends XtraPlatformConfig
     String[] arguments = {DW_CMD, configurationFilePath};
 
     try {
-      if (cli.run(arguments)) {
+      if (cli.run(arguments).isEmpty()) {
         T cfg = configuration.get(30, TimeUnit.SECONDS);
         Environment env = environment.get(30, TimeUnit.SECONDS);
 

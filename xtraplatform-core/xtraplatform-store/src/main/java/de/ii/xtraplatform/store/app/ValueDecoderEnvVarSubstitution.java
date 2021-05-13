@@ -13,11 +13,11 @@ import de.ii.xtraplatform.store.domain.ValueDecoderMiddleware;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import org.apache.commons.text.StrSubstitutor;
+import org.apache.commons.text.StringSubstitutor;
 
 public class ValueDecoderEnvVarSubstitution implements ValueDecoderMiddleware<byte[]> {
 
-  private final StrSubstitutor substitutor;
+  private final StringSubstitutor substitutor;
 
   public ValueDecoderEnvVarSubstitution() {
     this.substitutor = new EnvironmentVariableSubstitutor(false, true);

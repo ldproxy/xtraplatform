@@ -8,7 +8,6 @@
 package de.ii.xtraplatform.store.app;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableMultimap;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.ImmutableEventFilter;
@@ -16,6 +15,7 @@ import io.dropwizard.servlets.tasks.Task;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.felix.ipojo.annotations.Component;
@@ -42,7 +42,7 @@ public class StoreReloadTask extends Task {
   }
 
   @Override
-  public void execute(ImmutableMultimap<String, String> parameters, PrintWriter output)
+  public void execute(Map<String, List<String>> parameters, PrintWriter output)
       throws Exception {
     if (LOGGER.isTraceEnabled()) LOGGER.trace("Reload request: {}", parameters);
 
@@ -71,11 +71,11 @@ public class StoreReloadTask extends Task {
     eventStore.replay(filter);
   }
 
-  private List<String> getEntityTypes(ImmutableMultimap<String, String> parameters) {
+  private List<String> getEntityTypes(Map<String, List<String>> parameters) {
     return getValueList(parameters.get("types"));
   }
 
-  private List<String> getIds(ImmutableMultimap<String, String> parameters) {
+  private List<String> getIds(Map<String, List<String>> parameters) {
     return getValueList(parameters.get("ids"));
   }
 
