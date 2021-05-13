@@ -45,7 +45,7 @@ public class ServiceContextBinder extends AbstractBinder
 
   public static class ServiceFactory implements Supplier<Service> {
 
-    private final ContainerRequestContext  containerRequestContext;
+    private final ContainerRequestContext containerRequestContext;
 
     @Inject
     public ServiceFactory(ContainerRequestContext containerRequestContext) {

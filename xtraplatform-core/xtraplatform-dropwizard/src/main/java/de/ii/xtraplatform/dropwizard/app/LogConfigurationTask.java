@@ -42,8 +42,7 @@ public class LogConfigurationTask extends Task {
   }
 
   @Override
-  public void execute(Map<String, List<String>> parameters, PrintWriter output)
-      throws Exception {
+  public void execute(Map<String, List<String>> parameters, PrintWriter output) throws Exception {
     if (LOGGER.isTraceEnabled()) LOGGER.trace("Log filter request: {}", parameters);
 
     Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter =

@@ -42,7 +42,7 @@ public class ServiceDataContextBinder extends AbstractBinder
 
   public static class ServiceDataFactory implements Supplier<ServiceData> {
 
-    private final ContainerRequestContext  containerRequestContext;
+    private final ContainerRequestContext containerRequestContext;
 
     @Inject
     public ServiceDataFactory(ContainerRequestContext containerRequestContext) {
@@ -51,8 +51,7 @@ public class ServiceDataContextBinder extends AbstractBinder
 
     @Override
     public ServiceData get() {
-      return (ServiceData)
-          containerRequestContext.getProperty(SERVICE_DATA_CONTEXT_KEY);
+      return (ServiceData) containerRequestContext.getProperty(SERVICE_DATA_CONTEXT_KEY);
     }
   }
 }
