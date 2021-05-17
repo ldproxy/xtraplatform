@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.auth.app.external;
 
-import com.google.common.cache.CacheBuilderSpec;
+import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthorizer;
 import de.ii.xtraplatform.dropwizard.domain.AuthProvider;
@@ -52,7 +52,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User> {
         new CachingAuthenticator<String, User>(
             dropwizard.getEnvironment().metrics(),
             tokenAuthenticator,
-            CacheBuilderSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
+            CaffeineSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
 
     // TODO OAuthEdaAuthFIlter extends OAuthCredentialAuthFilter
     // override filter, get stuff from ContainerRequestContext

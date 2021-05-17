@@ -9,13 +9,13 @@ package de.ii.xtraplatform.dropwizard.app;
 
 import ch.qos.logback.classic.LoggerContext;
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableMultimap;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.runtime.domain.ThirdPartyLoggingFilter;
 import io.dropwizard.servlets.tasks.Task;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,8 +42,7 @@ public class LogConfigurationTask extends Task {
   }
 
   @Override
-  public void execute(ImmutableMultimap<String, String> parameters, PrintWriter output)
-      throws Exception {
+  public void execute(Map<String, List<String>> parameters, PrintWriter output) throws Exception {
     if (LOGGER.isTraceEnabled()) LOGGER.trace("Log filter request: {}", parameters);
 
     Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter =
@@ -85,11 +84,11 @@ public class LogConfigurationTask extends Task {
     }
   }
 
-  private List<String> getFiltersToEnable(ImmutableMultimap<String, String> parameters) {
+  private List<String> getFiltersToEnable(Map<String, List<String>> parameters) {
     return getValueList(parameters.get("enable"));
   }
 
-  private List<String> getFiltersToDisable(ImmutableMultimap<String, String> parameters) {
+  private List<String> getFiltersToDisable(Map<String, List<String>> parameters) {
     return getValueList(parameters.get("disable"));
   }
 

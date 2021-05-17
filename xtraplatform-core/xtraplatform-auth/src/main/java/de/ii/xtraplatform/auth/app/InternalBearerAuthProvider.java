@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.auth.app;
 
-import com.google.common.cache.CacheBuilderSpec;
+import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import com.google.common.collect.Lists;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
@@ -52,7 +52,7 @@ public class InternalBearerAuthProvider implements AuthProvider<User> {
         new CachingAuthenticator<String, User>(
             dropwizard.getEnvironment().metrics(),
             tokenAuthenticator,
-            CacheBuilderSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
+            CaffeineSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
 
     AuthFilter<String, User> authFilter =
         new SplitCookieCredentialAuthFilter.Builder<User>()

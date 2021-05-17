@@ -8,15 +8,16 @@
 package de.ii.xtraplatform.manager.app;
 
 import de.ii.xtraplatform.services.domain.ServiceData;
+import java.util.function.Supplier;
+import javax.inject.Inject;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.ext.Provider;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
-import org.glassfish.hk2.utilities.Binder;
-import org.glassfish.hk2.utilities.binding.AbstractBinder;
+import org.glassfish.jersey.internal.inject.AbstractBinder;
+import org.glassfish.jersey.internal.inject.Binder;
 import org.glassfish.jersey.process.internal.RequestScoped;
-import org.glassfish.jersey.server.internal.inject.AbstractContainerRequestValueFactory;
 
 /** @author zahnen */
 @Component
@@ -39,12 +40,18 @@ public class ServiceDataContextBinder extends AbstractBinder
     containerRequestContext.setProperty(SERVICE_DATA_CONTEXT_KEY, serviceData);
   }
 
-  public static class ServiceDataFactory extends AbstractContainerRequestValueFactory<ServiceData> {
+  public static class ServiceDataFactory implements Supplier<ServiceData> {
+
+    private final ContainerRequestContext containerRequestContext;
+
+    @Inject
+    public ServiceDataFactory(ContainerRequestContext containerRequestContext) {
+      this.containerRequestContext = containerRequestContext;
+    }
 
     @Override
-    @RequestScoped
-    public ServiceData provide() {
-      return (ServiceData) getContainerRequest().getProperty(SERVICE_DATA_CONTEXT_KEY);
+    public ServiceData get() {
+      return (ServiceData) containerRequestContext.getProperty(SERVICE_DATA_CONTEXT_KEY);
     }
   }
 }

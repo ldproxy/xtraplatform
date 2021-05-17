@@ -72,6 +72,7 @@ public class ServicesEndpoint implements Endpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServicesEndpoint.class);
 
+  private final BundleContext bundleContext;
   private final EntityRegistry entityRegistry;
   private final ServiceInjectableContext serviceContext;
   private final Dropwizard dropwizard;
@@ -80,15 +81,15 @@ public class ServicesEndpoint implements Endpoint {
   private Map<String, ServiceEndpoint> serviceResources;
   private Map<MediaType, ServiceListingProvider> serviceListingProviders;
 
-  @org.apache.felix.ipojo.annotations.Context private BundleContext context;
-
   public ServicesEndpoint(
+      @org.apache.felix.ipojo.annotations.Context BundleContext bundleContext,
       @Requires EntityRegistry entityRegistry,
       @Requires Dropwizard dropwizard,
       @Requires XtraPlatform xtraPlatform,
       @Requires ServiceInjectableContext serviceContext) {
     this.serviceResources = new LinkedHashMap<>();
     this.serviceListingProviders = new LinkedHashMap<>();
+    this.bundleContext = bundleContext;
     this.entityRegistry = entityRegistry;
     this.xtraPlatform = xtraPlatform;
     this.dropwizard = dropwizard;
@@ -96,7 +97,7 @@ public class ServicesEndpoint implements Endpoint {
   }
 
   public synchronized void onServiceResourceArrival(ServiceReference<ServiceEndpoint> ref) {
-    ServiceEndpoint sr = context.getService(ref);
+    ServiceEndpoint sr = bundleContext.getService(ref);
     String type = (String) ref.getProperty(ServiceEndpoint.SERVICE_TYPE_KEY);
     if (sr != null && type != null) {
       serviceResources.put(type, sr);
@@ -104,7 +105,7 @@ public class ServicesEndpoint implements Endpoint {
   }
 
   public synchronized void onServiceResourceDeparture(ServiceReference<ServiceEndpoint> ref) {
-    ServiceEndpoint sr = context.getService(ref);
+    ServiceEndpoint sr = bundleContext.getService(ref);
     String type = (String) ref.getProperty(ServiceEndpoint.SERVICE_TYPE_KEY);
     if (sr != null && type != null) {
       serviceResources.remove(type);
@@ -113,7 +114,7 @@ public class ServicesEndpoint implements Endpoint {
 
   public synchronized void onServiceListingProviderArrival(
       ServiceReference<ServiceListingProvider> ref) {
-    ServiceListingProvider serviceListingProvider = context.getService(ref);
+    ServiceListingProvider serviceListingProvider = bundleContext.getService(ref);
     MediaType type = serviceListingProvider.getMediaType();
     if (serviceListingProvider != null && type != null) {
       serviceListingProviders.put(type, serviceListingProvider);
@@ -122,7 +123,7 @@ public class ServicesEndpoint implements Endpoint {
 
   public synchronized void onServiceListingProviderDeparture(
       ServiceReference<ServiceListingProvider> ref) {
-    ServiceListingProvider serviceListingProvider = context.getService(ref);
+    ServiceListingProvider serviceListingProvider = bundleContext.getService(ref);
     if (serviceListingProvider != null) {
       MediaType type = serviceListingProvider.getMediaType();
       if (type != null) {

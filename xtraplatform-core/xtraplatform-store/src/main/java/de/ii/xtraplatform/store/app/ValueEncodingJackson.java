@@ -38,6 +38,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions.ScalarStyle;
 import org.yaml.snakeyaml.DumperOptions.Version;
 
 // TODO: make default format and supported formats configurable
@@ -246,14 +247,14 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     }
 
     @Override
-    protected void _writeScalar(String value, String type, Character style) throws IOException {
+    protected void _writeScalar(String value, String type, ScalarStyle style) throws IOException {
       if (type.equals("string") && value.isEmpty()) {
-        super._writeScalar(value, type, STYLE_QUOTED);
+        super._writeScalar(value, type, ScalarStyle.DOUBLE_QUOTED);
       } else if (type.equals("string")
-          && !STYLE_QUOTED.equals(style)
+          && ScalarStyle.DOUBLE_QUOTED != style
           && Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS.enabledIn(_formatFeatures)
           && PLAIN_NUMBER_P_FIXED.matcher(value).matches()) {
-        super._writeScalar(value, type, STYLE_QUOTED);
+        super._writeScalar(value, type, ScalarStyle.DOUBLE_QUOTED);
       } else {
         super._writeScalar(value, type, style);
       }

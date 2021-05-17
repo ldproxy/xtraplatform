@@ -12,7 +12,7 @@ ext {
     versionSuffix = project.findProperty('snapshot') == 'true' ? '-SNAPSHOT' : ''
 }
 
-version = '3.5.1' + versionSuffix
+version = '4.0.0' + versionSuffix
 
 dependencies {
     bundle subprojects
@@ -24,7 +24,8 @@ dependencies {
     bundle group: 'org.apache.felix', name: 'org.apache.felix.eventadmin', version: '1.5.0'
 
     // felix http
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '4.0.4'
+    bundle group: 'org.apache.felix', name: 'org.apache.felix.http.servlet-api', version: '1.1.2'
+    bundle group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '4.1.2'
     bundle group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '4.0.0'
 
     //felix ipojo
