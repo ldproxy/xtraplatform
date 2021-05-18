@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,11 +91,11 @@ public class StreamRunner implements Closeable {
     return run(source, Sink.foreach(procedure), Keep.right());
   }
 
-  public <U> CompletionStage<U> run(RunnableGraphWithMdc<CompletionStage<U>> graph) {
-    return runGraph(graph.getGraph());
+  public <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph) {
+    return runGraph(graph.getGraph(), graph.getExceptionHandler());
   }
 
-  private <U> CompletionStage<U> runGraph(RunnableGraph<CompletionStage<U>> graph) {
+  private <U> CompletionStage<U> runGraph(RunnableGraph<CompletionStage<U>> graph, Function<Throwable, U> exceptionHandler) {
     if (getCapacity() == DYNAMIC_CAPACITY) {
       return graph.run(materializer);
     }
@@ -105,21 +106,27 @@ public class StreamRunner implements Closeable {
         () ->
             graph
                 .run(materializer)
+                .exceptionally(
+                    throwable -> {
+                      U result = exceptionHandler.apply(throwable);
+
+                      if (Objects.isNull(result)) {
+                        completableFuture.completeExceptionally(throwable);
+                      } else {
+                        completableFuture.complete(result);
+                      }
+
+                      runNext();
+
+                      return result;
+                    })
                 .thenAccept(
                     LogContext.withMdc(
                         t -> {
                           completableFuture.complete(t);
 
                           runNext();
-                        }))
-                .exceptionally(
-                    throwable -> {
-                      completableFuture.completeExceptionally(throwable);
-
-                      runNext();
-
-                      return null;
-                    });
+                        }));
 
     run(task);
 

@@ -8,8 +8,14 @@
 package de.ii.xtraplatform.streams.domain;
 
 import akka.stream.javadsl.RunnableGraph;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
-@FunctionalInterface
-public interface RunnableGraphWithMdc<T> {
-  RunnableGraph<T> getGraph();
+public interface RunnableGraphWrapper<T> {
+
+  RunnableGraph<CompletionStage<T>> getGraph();
+
+  default Function<Throwable, T> getExceptionHandler() {
+    return null;
+  }
 }
