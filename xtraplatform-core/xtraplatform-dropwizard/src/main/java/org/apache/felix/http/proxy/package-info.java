@@ -17,8 +17,7 @@
  * under the License.
  */
 
-//@Version("3.1.0")
+// @Version("3.1.0")
 package org.apache.felix.http.proxy;
 
-//import org.osgi.annotation.versioning.Version;
-
+// import org.osgi.annotation.versioning.Version;
