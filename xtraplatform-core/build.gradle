@@ -20,13 +20,13 @@ dependencies {
     bundle group: 'org.slf4j', name: 'osgi-over-slf4j', version: '1.7.25'
 
     // felix
-    //bundle group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.12'
     bundle group: 'org.apache.felix', name: 'org.apache.felix.eventadmin', version: '1.5.0'
 
     // felix http
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.http.servlet-api', version: '1.1.2'
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '4.1.2'
-    bundle group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '4.0.0'
+    //TODO: bridge and whiteboard currently need servlet 3 but work fine with 4,
+    // so versions with classifier servlet4 and adjusted manifests were deployed to dl.interactive-instruments.de
+    bundle group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '4.1.2-servlet4'
+    bundle group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '4.0.0-servlet4'
 
     //felix ipojo
     bundle group: 'org.apache.felix', name: 'org.apache.felix.ipojo', version: '1.12.1'
