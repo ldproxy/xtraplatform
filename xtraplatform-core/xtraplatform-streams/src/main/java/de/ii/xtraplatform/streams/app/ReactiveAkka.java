@@ -31,6 +31,11 @@ public class ReactiveAkka implements Reactive {
     return new RunnerAkka(context, actorSystemProvider, name);
   }
 
+  @Override
+  public Runner runner(String name, int capacity, int queueSize) {
+    return new RunnerAkka(context, actorSystemProvider, name, capacity, queueSize);
+  }
+
   static <W> RunnableGraph<CompletionStage<W>> getGraph(Stream<W> stream) {
     if (stream instanceof StreamDefault) {
       return getGraph((StreamDefault<?, W>) stream);

@@ -16,6 +16,8 @@ public interface Reactive {
 
   Runner runner(String name);
 
+  Runner runner(String name, int capacity, int queueSize);
+
   interface Source<T> {
 
     <U> Source<U> via(Transformer<T, U> transformer);

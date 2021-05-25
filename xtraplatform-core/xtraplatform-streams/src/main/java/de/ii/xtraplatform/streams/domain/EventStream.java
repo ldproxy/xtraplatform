@@ -8,7 +8,6 @@
 package de.ii.xtraplatform.streams.domain;
 
 import akka.NotUsed;
-import akka.japi.function.Procedure;
 import akka.stream.OverflowStrategy;
 import akka.stream.QueueOfferResult;
 import akka.stream.javadsl.Source;
@@ -18,13 +17,13 @@ import java.util.function.Consumer;
 
 public class EventStream<T extends Event> {
 
-  private final StreamRunner streamRunner;
+  private final Reactive.Runner streamRunner;
   private final CompletableFuture<SourceQueueWithComplete<T>> eventQueue;
   private final Source<T, NotUsed> eventStream;
   private CompletableFuture<SourceQueueWithComplete<T>> eventQueueChain;
   private final String eventType;
 
-  public EventStream(StreamRunner streamRunner, String eventType) {
+  public EventStream(Reactive.Runner streamRunner, String eventType) {
     this.eventQueue = new CompletableFuture<>();
     this.eventStream =
         Source.<T>queue(1024, OverflowStrategy.backpressure())
@@ -39,7 +38,11 @@ public class EventStream<T extends Event> {
   }
 
   public void foreach(Consumer<T> eventConsumer) {
-    streamRunner.runForeach(eventStream, (Procedure<T>) eventConsumer::accept);
+    Reactive.RunnableStream<Void> reactiveStream = Reactive.Source.akka(eventStream)
+        .to(Reactive.Sink.foreach(eventConsumer))
+        .on(streamRunner);
+    reactiveStream.run();
+    //streamRunner.runForeach(eventStream, (Procedure<T>) eventConsumer::accept);
   }
 
   public synchronized CompletableFuture<QueueOfferResult> queue(T event) {

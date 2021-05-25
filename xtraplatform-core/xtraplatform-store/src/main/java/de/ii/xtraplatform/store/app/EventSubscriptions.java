@@ -16,7 +16,7 @@ import de.ii.xtraplatform.store.domain.StateChangeEvent;
 import de.ii.xtraplatform.store.domain.TypedEvent;
 import de.ii.xtraplatform.streams.domain.Event;
 import de.ii.xtraplatform.streams.domain.EventStream;
-import de.ii.xtraplatform.streams.domain.StreamRunner;
+import de.ii.xtraplatform.streams.domain.Reactive;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -33,11 +33,11 @@ public class EventSubscriptions {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventSubscriptions.class);
 
   private final Map<String, EventStream<Event>> eventStreams;
-  private final StreamRunner streamRunner;
+  private final Reactive.Runner streamRunner;
   private final ScheduledExecutorService executorService;
   private boolean isStarted;
 
-  protected EventSubscriptions(StreamRunner streamRunner) {
+  protected EventSubscriptions(Reactive.Runner streamRunner) {
     this.eventStreams = new ConcurrentHashMap<>();
     this.streamRunner = streamRunner;
     this.executorService = new ScheduledThreadPoolExecutor(1);

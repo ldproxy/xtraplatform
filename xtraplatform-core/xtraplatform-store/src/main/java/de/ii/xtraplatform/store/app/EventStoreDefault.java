@@ -20,8 +20,7 @@ import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.store.domain.ImmutableReloadEvent;
 import de.ii.xtraplatform.store.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
-import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
-import de.ii.xtraplatform.streams.domain.StreamRunner;
+import de.ii.xtraplatform.streams.domain.Reactive;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -29,12 +28,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
 import org.apache.felix.ipojo.annotations.Validate;
-import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,13 +48,12 @@ public class EventStoreDefault implements EventStore {
   private final boolean isReadOnly;
 
   EventStoreDefault(
-      @Context BundleContext bundleContext,
       @Requires XtraPlatform xtraPlatform,
-      @Requires ActorSystemProvider actorSystemProvider,
-      @Requires EventStoreDriver eventStoreDriver) {
+      @Requires EventStoreDriver eventStoreDriver,
+      @Requires Reactive reactive) {
     this.driver = eventStoreDriver;
     this.subscriptions =
-        new EventSubscriptions(new StreamRunner(bundleContext, actorSystemProvider, "events"));
+        new EventSubscriptions(reactive.runner("events"));
     this.storeConfiguration = xtraPlatform.getConfiguration().store;
     this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
   }
