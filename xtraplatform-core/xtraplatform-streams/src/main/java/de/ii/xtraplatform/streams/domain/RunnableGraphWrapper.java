@@ -16,6 +16,6 @@ public interface RunnableGraphWrapper<T> {
   RunnableGraph<CompletionStage<T>> getGraph();
 
   default Function<Throwable, T> getExceptionHandler() {
-    return null;
+    return throwable -> null;
   }
 }

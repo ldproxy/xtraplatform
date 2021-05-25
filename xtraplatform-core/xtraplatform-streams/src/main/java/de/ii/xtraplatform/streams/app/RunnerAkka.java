@@ -5,26 +5,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.streams.domain;
+package de.ii.xtraplatform.streams.app;
 
-import akka.Done;
-import akka.NotUsed;
 import akka.actor.ActorSystem;
-import akka.japi.function.Function2;
-import akka.japi.function.Procedure;
 import akka.stream.ActorMaterializer;
 import akka.stream.ActorMaterializerSettings;
-import akka.stream.javadsl.Flow;
-import akka.stream.javadsl.JavaFlowSupport;
-import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.RunnableGraph;
-import akka.stream.javadsl.Sink;
-import akka.stream.javadsl.Source;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
+import de.ii.xtraplatform.streams.domain.Reactive.Runner;
+import de.ii.xtraplatform.streams.domain.Reactive.Stream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Objects;
@@ -37,9 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.ExecutionContextExecutor;
 
-public class StreamRunner implements Closeable {
+public class RunnerAkka implements Runner, Closeable {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(StreamRunner.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(RunnerAkka.class);
   public static final int DYNAMIC_CAPACITY = -1;
 
   private final ActorMaterializer materializer;
@@ -49,11 +43,11 @@ public class StreamRunner implements Closeable {
   private final ConcurrentLinkedQueue<Runnable> queue;
   private final AtomicInteger running;
 
-  public StreamRunner(BundleContext context, ActorSystemProvider actorSystemProvider, String name) {
+  public RunnerAkka(BundleContext context, ActorSystemProvider actorSystemProvider, String name) {
     this(context, actorSystemProvider, name, DYNAMIC_CAPACITY, DYNAMIC_CAPACITY);
   }
 
-  public StreamRunner(
+  public RunnerAkka(
       BundleContext context,
       ActorSystemProvider actorSystemProvider,
       String name,
@@ -63,7 +57,7 @@ public class StreamRunner implements Closeable {
         capacity, queueSize);
   }
 
-  StreamRunner(
+  RunnerAkka(
       ActorSystem actorSystem,
       String name,
       int capacity,
@@ -83,49 +77,9 @@ public class StreamRunner implements Closeable {
     this.running = new AtomicInteger(0);
   }
 
-  //2x
-  public <T, U, V> CompletionStage<V> run(Source<T, U> source, Sink<T, CompletionStage<V>> sink) {
-    return run(LogContextStream.graphWithMdc(source, sink, Keep.right()));
-  }
-
-  //5x
-  public <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph) {
-    return runGraph(null);
-  }
-
-  public <T, U, V, W> CompletionStage<W> run(ReactiveStream<T, U, V, W> reactiveStream) {
-    try {
-      Source<T, NotUsed> source = JavaFlowSupport.Source
-          .fromPublisher(reactiveStream.getSource().with(materializer));
-
-      Flow<T, U, NotUsed> flow = JavaFlowSupport.Flow
-          .fromProcessor(() -> reactiveStream.getProcessor().with(materializer));
-
-      Flow<U, U, NotUsed> sink = JavaFlowSupport.Flow
-          .fromProcessor(() -> reactiveStream.getSink().with(materializer));
-
-      Source<U, NotUsed> resultSource = LogContextStream.withMdc(source)
-          .via(flow)
-          .via(sink);
-
-      RunnableGraph<CompletionStage<W>> graph;
-
-      if (reactiveStream.getResultCombiner().isPresent()) {
-        Sink<U, CompletionStage<V>> combinerSink = Sink
-            .fold(reactiveStream.getEmptyResult(),
-                (result, item) -> reactiveStream.getResultCombiner().get().apply(result, item));
-
-        graph = resultSource.toMat(combinerSink, (left, right) -> reactiveStream.onComplete(right));
-      } else {
-        graph = resultSource.toMat(Sink.ignore(), (left, right) -> reactiveStream
-            .onComplete(right.thenApply(done -> reactiveStream.getEmptyResult())));
-      }
-
-      return runGraph(graph);
-
-    } catch (Exception e) {
-      throw new IllegalStateException(e);
-    }
+  @Override
+  public <X> CompletionStage<X> run(Stream<X> stream) {
+    return runGraph(ReactiveAkka.getGraph(stream));
   }
 
   private <U> CompletionStage<U> runGraph(RunnableGraph<CompletionStage<U>> graph) {

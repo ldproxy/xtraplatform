@@ -9,6 +9,10 @@ dependencies {
     embeddedExport group: 'com.typesafe.akka', name: 'akka-http_2.12',   version: '10.1.12'
     embeddedExport group: 'com.typesafe.akka', name: 'akka-slf4j_2.12', version: '2.5.31'
     embeddedFlatExport group: 'com.typesafe.akka', name: 'akka-osgi_2.12',   version: '2.5.31'
+
+    embedded "io.reactivex.rxjava3:rxjava:3.0.12"
+
+    testImplementation group: 'com.typesafe.akka', name: 'akka-testkit_2.12',   version: '2.5.31'
 }
  
 jar {
