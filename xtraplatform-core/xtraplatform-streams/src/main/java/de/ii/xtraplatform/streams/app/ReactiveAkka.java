@@ -14,14 +14,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
+import org.apache.felix.ipojo.annotations.Component;
+import org.apache.felix.ipojo.annotations.Context;
+import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
+import org.apache.felix.ipojo.annotations.Requires;
 import org.osgi.framework.BundleContext;
 
+@Component
+@Provides
+@Instantiate
 public class ReactiveAkka implements Reactive {
 
   private final BundleContext context;
   private final ActorSystemProvider actorSystemProvider;
 
-  public ReactiveAkka(BundleContext context, ActorSystemProvider actorSystemProvider) {
+  public ReactiveAkka(@Context BundleContext context, @Requires ActorSystemProvider actorSystemProvider) {
     this.context = context;
     this.actorSystemProvider = actorSystemProvider;
   }

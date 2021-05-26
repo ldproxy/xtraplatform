@@ -1,9 +1,12 @@
 package de.ii.xtraplatform.streams.domain;
 
+import akka.stream.javadsl.Sink;
+import akka.stream.javadsl.Source;
 import de.ii.xtraplatform.streams.app.SinkDefault;
 import de.ii.xtraplatform.streams.app.SinkDefault.Type;
 import de.ii.xtraplatform.streams.app.SourceDefault;
 import de.ii.xtraplatform.streams.app.TransformerDefault;
+import java.io.Closeable;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.CompletionStage;
@@ -21,6 +24,10 @@ public interface Reactive {
   interface Source<T> {
 
     <U> Source<U> via(Transformer<T, U> transformer);
+
+    default <U, V extends Source<U>> V via(TransformerCustomSource<T, U, V> transformer) {
+      return transformer.getCustomSource(via((Transformer<T, U>) transformer));
+    }
 
     <V> BasicStream<T, V> to(Sink<T, V> sink);
 
@@ -89,6 +96,10 @@ public interface Reactive {
 
   }
 
+  interface TransformerCustomSource<T, U, V extends Source<U>> extends TransformerCustom<T, U> {
+    V getCustomSource(Source<U> source);
+  }
+
   interface Sink<U, V> {
 
     static <T> Sink<T, Void> ignore() {
@@ -140,9 +151,22 @@ public interface Reactive {
     CompletionStage<X> run();
   }
 
-  interface Runner {
+  interface Runner extends Closeable {
+
+    int DYNAMIC_CAPACITY = -1;
+
+    //2x
+    @Deprecated
+    <T, U, V> CompletionStage<V> run(akka.stream.javadsl.Source<T, U> source,
+        akka.stream.javadsl.Sink<T, CompletionStage<V>> sink);
+
+    //5x
+    @Deprecated
+    <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph);
 
     <X> CompletionStage<X> run(Stream<X> stream);
+
+    int getCapacity();
   }
 
 }

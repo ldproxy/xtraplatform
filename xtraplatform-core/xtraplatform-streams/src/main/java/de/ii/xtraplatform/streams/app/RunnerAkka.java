@@ -10,16 +10,20 @@ package de.ii.xtraplatform.streams.app;
 import akka.actor.ActorSystem;
 import akka.stream.ActorMaterializer;
 import akka.stream.ActorMaterializerSettings;
+import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.RunnableGraph;
+import akka.stream.javadsl.Sink;
+import akka.stream.javadsl.Source;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
+import de.ii.xtraplatform.streams.domain.LogContextStream;
 import de.ii.xtraplatform.streams.domain.Reactive.Runner;
 import de.ii.xtraplatform.streams.domain.Reactive.Stream;
-import java.io.Closeable;
+import de.ii.xtraplatform.streams.domain.RunnableGraphWrapper;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -31,10 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.ExecutionContextExecutor;
 
-public class RunnerAkka implements Runner, Closeable {
+public class RunnerAkka implements Runner {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RunnerAkka.class);
-  public static final int DYNAMIC_CAPACITY = -1;
 
   private final ActorMaterializer materializer;
   private final String name;
@@ -44,7 +47,7 @@ public class RunnerAkka implements Runner, Closeable {
   private final AtomicInteger running;
 
   public RunnerAkka(BundleContext context, ActorSystemProvider actorSystemProvider, String name) {
-    this(context, actorSystemProvider, name, DYNAMIC_CAPACITY, DYNAMIC_CAPACITY);
+    this(context, actorSystemProvider, name, Runner.DYNAMIC_CAPACITY, Runner.DYNAMIC_CAPACITY);
   }
 
   public RunnerAkka(
@@ -77,6 +80,20 @@ public class RunnerAkka implements Runner, Closeable {
     this.running = new AtomicInteger(0);
   }
 
+  //2x
+  @Override
+  @Deprecated
+  public <T, U, V> CompletionStage<V> run(Source<T, U> source, Sink<T, CompletionStage<V>> sink) {
+    return run(LogContextStream.graphWithMdc(source, sink, Keep.right()));
+  }
+
+  //5x
+  @Override
+  @Deprecated
+  public <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph) {
+    return runGraph(graph.getGraph());
+  }
+
   @Override
   public <X> CompletionStage<X> run(Stream<X> stream) {
     return runGraph(ReactiveAkka.getGraph(stream));
@@ -86,7 +103,7 @@ public class RunnerAkka implements Runner, Closeable {
 
     CompletableFuture<U> completableFuture = new CompletableFuture<>();
 
-    if (getCapacity() == DYNAMIC_CAPACITY) {
+    if (getCapacity() == Runner.DYNAMIC_CAPACITY) {
       graph.run(materializer)
           .exceptionally(
               throwable -> {
@@ -149,12 +166,13 @@ public class RunnerAkka implements Runner, Closeable {
     return materializer.system().dispatcher();
   }
 
+  @Override
   public int getCapacity() {
     return capacity;
   }
 
   private static Config getConfig(String name, int capacity) {
-    return capacity == DYNAMIC_CAPACITY ? getDefaultConfig(name)
+    return capacity == Runner.DYNAMIC_CAPACITY ? getDefaultConfig(name)
         : getConfig(name, capacity, capacity);
   }
 
