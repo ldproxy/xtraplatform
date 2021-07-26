@@ -114,8 +114,7 @@ public class ServicesEndpoint implements Endpoint {
     this.serviceBackgroundTasks = serviceBackgroundTasks;
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);
     this.entityStateSubscriber = new ArrayList<>();
-    this.eventStream =
-        new EventStream<>(reactive.runner("sse", 1, 1024), "state");
+    this.eventStream = new EventStream<>(reactive.runner("sse", 1, 1024), "state");
 
     eventStream.foreach(
         event -> {

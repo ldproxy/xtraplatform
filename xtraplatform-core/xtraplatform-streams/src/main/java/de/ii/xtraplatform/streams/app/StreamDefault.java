@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.streams.app;
 
 import de.ii.xtraplatform.streams.domain.Reactive.BasicStream;
@@ -42,7 +49,7 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
 
   @Override
   public <W1> StreamWithResult<V, W1> withResult(W1 initial) {
-    return new StreamDefault<>(source, ((SinkDefault<V, W>)sink).withResult(initial), initial);
+    return new StreamDefault<>(source, ((SinkDefault<V, W>) sink).withResult(initial), initial);
   }
 
   @Override
@@ -87,24 +94,25 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
   CompletionStage<W> onComplete(CompletionStage<W> resultStage) {
     CompletableFuture<W> completableFuture = new CompletableFuture<>();
 
-    resultStage.whenComplete((result, throwable) -> {
-      System.out.printf("onComplete %s%n", throwable);
+    resultStage.whenComplete(
+        (result, throwable) -> {
+          System.out.printf("onComplete %s%n", throwable);
 
-      if (Objects.isNull(throwable)) {
-        completableFuture.complete(result);
-      } else {
-        onError(throwable, completableFuture);
-      }
-    });
+          if (Objects.isNull(throwable)) {
+            completableFuture.complete(result);
+          } else {
+            onError(throwable, completableFuture);
+          }
+        });
 
     return completableFuture;
   }
 
   void onError(Throwable throwable, CompletableFuture<W> resultFuture) {
-    Throwable actualThrowable = throwable instanceof CompletionException && Objects
-        .nonNull(throwable.getCause())
-        ? throwable.getCause()
-        : throwable;
+    Throwable actualThrowable =
+        throwable instanceof CompletionException && Objects.nonNull(throwable.getCause())
+            ? throwable.getCause()
+            : throwable;
     System.out.printf("onError %s%n", actualThrowable);
 
     if (errorHandler.isPresent()) {
@@ -133,6 +141,7 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
     public StreamDefault<V, W> getStream() {
       return StreamDefault.this;
     }
+
     public Function<W, X> getFinalizer() {
       return finalizer;
     }

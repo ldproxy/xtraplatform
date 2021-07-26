@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.streams.app;
 
 import de.ii.xtraplatform.streams.domain.Reactive.BasicStream;
@@ -10,7 +17,13 @@ import java.util.concurrent.Flow.Publisher;
 
 public class SourceDefault<T> implements Source<T> {
 
-  enum Type {ITERABLE, PUBLISHER, SINGLE, INPUT_STREAM, AKKA}
+  enum Type {
+    ITERABLE,
+    PUBLISHER,
+    SINGLE,
+    INPUT_STREAM,
+    AKKA
+  }
 
   private final Type type;
   private final Iterable<T> iterable;
@@ -35,14 +48,19 @@ public class SourceDefault<T> implements Source<T> {
     this(Type.INPUT_STREAM, null, null, null, inputStream, null);
   }
 
-  //TODO: remove
+  // TODO: remove
   @Deprecated
   public SourceDefault(akka.stream.javadsl.Source<T, ?> akkaSource) {
     this(Type.AKKA, null, null, null, null, akkaSource);
   }
 
-  SourceDefault(Type type, Iterable<T> iterable, Flow.Publisher<T> publisher, T item,
-      InputStream inputStream, akka.stream.javadsl.Source<T, ?> akkaSource) {
+  SourceDefault(
+      Type type,
+      Iterable<T> iterable,
+      Flow.Publisher<T> publisher,
+      T item,
+      InputStream inputStream,
+      akka.stream.javadsl.Source<T, ?> akkaSource) {
     this.type = type;
     this.iterable = iterable;
     this.publisher = publisher;
@@ -50,7 +68,6 @@ public class SourceDefault<T> implements Source<T> {
     this.inputStream = inputStream;
     this.akkaSource = akkaSource;
   }
-
 
   @Override
   public <U> Source<U> via(Transformer<T, U> transformer) {

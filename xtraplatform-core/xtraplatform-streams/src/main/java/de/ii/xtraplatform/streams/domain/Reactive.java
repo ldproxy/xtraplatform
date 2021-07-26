@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.streams.domain;
 
 import akka.stream.javadsl.Sink;
@@ -47,7 +54,7 @@ public interface Reactive {
       return new SourceDefault<>(inputStream);
     }
 
-    //TODO: remove
+    // TODO: remove
     @Deprecated
     static <T> Source<T> akka(akka.stream.javadsl.Source<T, ?> akkaSource) {
       return new SourceDefault<>(akkaSource);
@@ -93,10 +100,8 @@ public interface Reactive {
     }
   }
 
-  interface TranformerCustomFuseable<T, V> extends TranformerCustomFuseableIn<T, T, V>,
-      TranformerCustomFuseableOut<T, T, V> {
-
-  }
+  interface TranformerCustomFuseable<T, V>
+      extends TranformerCustomFuseableIn<T, T, V>, TranformerCustomFuseableOut<T, T, V> {}
 
   interface TransformerCustomSource<T, U, V extends Source<U>> extends TransformerCustom<T, U> {
     V getCustomSource(Source<U> source);
@@ -161,12 +166,13 @@ public interface Reactive {
 
     int DYNAMIC_CAPACITY = -1;
 
-    //2x
+    // 2x
     @Deprecated
-    <T, U, V> CompletionStage<V> run(akka.stream.javadsl.Source<T, U> source,
+    <T, U, V> CompletionStage<V> run(
+        akka.stream.javadsl.Source<T, U> source,
         akka.stream.javadsl.Sink<T, CompletionStage<V>> sink);
 
-    //5x
+    // 5x
     @Deprecated
     <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph);
 
@@ -174,5 +180,4 @@ public interface Reactive {
 
     int getCapacity();
   }
-
 }

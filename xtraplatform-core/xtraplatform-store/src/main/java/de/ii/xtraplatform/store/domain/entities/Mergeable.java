@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2021 interactive instruments GmbH
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -8,5 +8,5 @@
 package de.ii.xtraplatform.store.domain.entities;
 
 public interface Mergeable<T> {
-    T mergeInto(T source);
+  T mergeInto(T source);
 }

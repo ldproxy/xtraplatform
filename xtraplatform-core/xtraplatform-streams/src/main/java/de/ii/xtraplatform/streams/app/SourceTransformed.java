@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.streams.app;
 
 import de.ii.xtraplatform.streams.domain.Reactive.BasicStream;
@@ -39,11 +46,14 @@ public class SourceTransformed<T, U> implements Source<U> {
   }
 
   private <U1> boolean isFuseable(Transformer<U, U1> transformer) {
-    return this.transformer instanceof TranformerCustomFuseableOut && transformer instanceof TranformerCustomFuseableIn
-        && ((TranformerCustomFuseableOut<T, U, ?>) this.transformer).canFuse((TranformerCustomFuseableIn<U, U1, ?>) transformer);
+    return this.transformer instanceof TranformerCustomFuseableOut
+        && transformer instanceof TranformerCustomFuseableIn
+        && ((TranformerCustomFuseableOut<T, U, ?>) this.transformer)
+            .canFuse((TranformerCustomFuseableIn<U, U1, ?>) transformer);
   }
 
-  private <U1, V> Transformer<T, U1> fuse(Transformer<T, U> transformer1, Transformer<U, U1> transformer2) {
+  private <U1, V> Transformer<T, U1> fuse(
+      Transformer<T, U> transformer1, Transformer<U, U1> transformer2) {
     TranformerCustomFuseableOut<T, U, V> out = (TranformerCustomFuseableOut<T, U, V>) transformer1;
     TranformerCustomFuseableIn<U, U1, V> in = (TranformerCustomFuseableIn<U, U1, V>) transformer2;
 

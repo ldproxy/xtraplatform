@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.streams.app;
 
 import de.ii.xtraplatform.streams.domain.Reactive.TranformerCustomFuseableIn;
@@ -10,7 +17,8 @@ public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut
   private final TranformerCustomFuseableOut<T, U, W> transformer1;
   private final TransformerCustom<U, V> transformer2;
 
-  public TransformerFused(TranformerCustomFuseableOut<T, U, W> transformer1,
+  public TransformerFused(
+      TranformerCustomFuseableOut<T, U, W> transformer1,
       TranformerCustomFuseableIn<U, V, W> transformer2) {
     this.transformer1 = transformer1;
     this.transformer2 = transformer2;
@@ -39,8 +47,7 @@ public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut
   }
 
   @Override
-  public void fuse(
-      TranformerCustomFuseableIn<V, ?, ? extends W> tranformerCustomFuseableIn) {
+  public void fuse(TranformerCustomFuseableIn<V, ?, ? extends W> tranformerCustomFuseableIn) {
     if (!canFuse(tranformerCustomFuseableIn)) {
       throw new IllegalArgumentException();
     }
@@ -48,8 +55,9 @@ public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut
   }
 
   @Override
-  public boolean canFuse(
-      TranformerCustomFuseableIn<V, ?, ?> tranformerCustomFuseableIn) {
-    return transformer2 instanceof TranformerCustomFuseableOut && ((TranformerCustomFuseableOut<U, V, W>) transformer2).canFuse(tranformerCustomFuseableIn);
+  public boolean canFuse(TranformerCustomFuseableIn<V, ?, ?> tranformerCustomFuseableIn) {
+    return transformer2 instanceof TranformerCustomFuseableOut
+        && ((TranformerCustomFuseableOut<U, V, W>) transformer2)
+            .canFuse(tranformerCustomFuseableIn);
   }
 }

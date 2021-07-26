@@ -38,11 +38,10 @@ public class EventStream<T extends Event> {
   }
 
   public void foreach(Consumer<T> eventConsumer) {
-    Reactive.RunnableStream<Void> reactiveStream = Reactive.Source.akka(eventStream)
-        .to(Reactive.Sink.foreach(eventConsumer))
-        .on(streamRunner);
+    Reactive.RunnableStream<Void> reactiveStream =
+        Reactive.Source.akka(eventStream).to(Reactive.Sink.foreach(eventConsumer)).on(streamRunner);
     reactiveStream.run();
-    //streamRunner.runForeach(eventStream, (Procedure<T>) eventConsumer::accept);
+    // streamRunner.runForeach(eventStream, (Procedure<T>) eventConsumer::accept);
   }
 
   public synchronized CompletableFuture<QueueOfferResult> queue(T event) {

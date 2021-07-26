@@ -56,15 +56,14 @@ public class RunnerAkka implements Runner {
       String name,
       int capacity,
       int queueSize) {
-    this(actorSystemProvider.getActorSystem(context, getConfig(name, capacity), "akka"), name,
-        capacity, queueSize);
+    this(
+        actorSystemProvider.getActorSystem(context, getConfig(name, capacity), "akka"),
+        name,
+        capacity,
+        queueSize);
   }
 
-  RunnerAkka(
-      ActorSystem actorSystem,
-      String name,
-      int capacity,
-      int queueSize) {
+  RunnerAkka(ActorSystem actorSystem, String name, int capacity, int queueSize) {
     if (capacity != 0) {
       ActorMaterializerSettings settings =
           ActorMaterializerSettings.create(actorSystem).withDispatcher(getDispatcherName(name));
@@ -80,14 +79,14 @@ public class RunnerAkka implements Runner {
     this.running = new AtomicInteger(0);
   }
 
-  //2x
+  // 2x
   @Override
   @Deprecated
   public <T, U, V> CompletionStage<V> run(Source<T, U> source, Sink<T, CompletionStage<V>> sink) {
     return run(LogContextStream.graphWithMdc(source, sink, Keep.right()));
   }
 
-  //5x
+  // 5x
   @Override
   @Deprecated
   public <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph) {
@@ -104,7 +103,8 @@ public class RunnerAkka implements Runner {
     CompletableFuture<U> completableFuture = new CompletableFuture<>();
 
     if (getCapacity() == Runner.DYNAMIC_CAPACITY) {
-      graph.run(materializer)
+      graph
+          .run(materializer)
           .exceptionally(
               throwable -> {
                 completableFuture.completeExceptionally(throwable);
@@ -114,7 +114,8 @@ public class RunnerAkka implements Runner {
     } else {
       Runnable task =
           () -> {
-            graph.run(materializer)
+            graph
+                .run(materializer)
                 .exceptionally(
                     throwable -> {
                       completableFuture.completeExceptionally(throwable);
@@ -172,7 +173,8 @@ public class RunnerAkka implements Runner {
   }
 
   private static Config getConfig(String name, int capacity) {
-    return capacity == Runner.DYNAMIC_CAPACITY ? getDefaultConfig(name)
+    return capacity == Runner.DYNAMIC_CAPACITY
+        ? getDefaultConfig(name)
         : getConfig(name, capacity, capacity);
   }
 
