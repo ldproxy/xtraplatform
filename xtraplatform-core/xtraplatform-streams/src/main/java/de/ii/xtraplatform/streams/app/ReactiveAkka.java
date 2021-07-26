@@ -2,15 +2,19 @@ package de.ii.xtraplatform.streams.app;
 
 import akka.Done;
 import akka.NotUsed;
+import akka.japi.function.Creator;
+import akka.stream.IOResult;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.JavaFlowSupport;
 import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.RunnableGraph;
+import akka.stream.javadsl.Source;
 import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
 import de.ii.xtraplatform.streams.domain.Reactive;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
@@ -29,7 +33,8 @@ public class ReactiveAkka implements Reactive {
   private final BundleContext context;
   private final ActorSystemProvider actorSystemProvider;
 
-  public ReactiveAkka(@Context BundleContext context, @Requires ActorSystemProvider actorSystemProvider) {
+  public ReactiveAkka(@Context BundleContext context,
+      @Requires ActorSystemProvider actorSystemProvider) {
     this.context = context;
     this.actorSystemProvider = actorSystemProvider;
   }
@@ -71,7 +76,7 @@ public class ReactiveAkka implements Reactive {
               (result, item) -> stream.getItemHandler().get().apply(result, item));
 
       return source.alsoToMat(combinerSink, Keep.right())
-          .toMat(sink, (left, right) -> stream.onComplete(left));
+          .toMat(sink, (left, right) -> stream.onComplete(right.thenCompose(r -> left)));
     }
 
     return source.toMat(sink, (left, right) -> stream.onComplete(right));
@@ -235,10 +240,12 @@ public class ReactiveAkka implements Reactive {
         transformerCustom.onPush(u);
 
         return items;
-      }).watchTermination((notUsed, completionStage) -> {
-        completionStage.whenComplete((done, throwable) -> transformerCustom.onComplete());
-        return notUsed;
-      });
+      }).concatLazy(akka.stream.javadsl.Source
+              .fromIterator((Creator<Iterator<V>>) () -> {
+                items.clear();
+                transformerCustom.onComplete();
+                return items.listIterator();
+              }));
 
       transformerCustom.init(items::add);
     }

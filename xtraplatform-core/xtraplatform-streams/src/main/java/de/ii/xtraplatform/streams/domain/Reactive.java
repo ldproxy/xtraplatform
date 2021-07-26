@@ -77,13 +77,15 @@ public interface Reactive {
   interface TranformerCustomFuseableIn<T, U, V> extends TransformerCustom<T, U> {
 
     V fuseableSink();
+
+    void afterInit(Runnable runnable);
   }
 
   interface TranformerCustomFuseableOut<T, U, V> extends TransformerCustom<T, U> {
 
-    Class<V> getFusionInterface();
+    Class<? extends V> getFusionInterface();
 
-    void fuse(TranformerCustomFuseableIn<U, ?, V> tranformerCustomFuseableIn);
+    void fuse(TranformerCustomFuseableIn<U, ?, ? extends V> tranformerCustomFuseableIn);
 
     default boolean canFuse(TranformerCustomFuseableIn<U, ?, ?> tranformerCustomFuseableIn) {
       return getFusionInterface()
@@ -98,6 +100,10 @@ public interface Reactive {
 
   interface TransformerCustomSource<T, U, V extends Source<U>> extends TransformerCustom<T, U> {
     V getCustomSource(Source<U> source);
+  }
+
+  interface TransformerCustomSink<T, U, V extends Sink<T, ?>> extends TransformerCustom<T, U> {
+    V getCustomSink(Sink<T, ?> sink);
   }
 
   interface Sink<U, V> {

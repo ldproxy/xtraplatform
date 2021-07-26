@@ -5,9 +5,9 @@ import de.ii.xtraplatform.streams.domain.Reactive.TranformerCustomFuseableOut;
 import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustom;
 import java.util.function.Consumer;
 
-public class TransformerFused<T, U, V, W> implements TransformerCustom<T, V> {
+public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut<T, V, W> {
 
-  private final TransformerCustom<T, U> transformer1;
+  private final TranformerCustomFuseableOut<T, U, W> transformer1;
   private final TransformerCustom<U, V> transformer2;
 
   public TransformerFused(TranformerCustomFuseableOut<T, U, W> transformer1,
@@ -31,5 +31,25 @@ public class TransformerFused<T, U, V, W> implements TransformerCustom<T, V> {
   public void onComplete() {
     transformer1.onComplete();
     transformer2.onComplete();
+  }
+
+  @Override
+  public Class<? extends W> getFusionInterface() {
+    return transformer1.getFusionInterface();
+  }
+
+  @Override
+  public void fuse(
+      TranformerCustomFuseableIn<V, ?, ? extends W> tranformerCustomFuseableIn) {
+    if (!canFuse(tranformerCustomFuseableIn)) {
+      throw new IllegalArgumentException();
+    }
+    ((TranformerCustomFuseableOut<U, V, W>) transformer2).fuse(tranformerCustomFuseableIn);
+  }
+
+  @Override
+  public boolean canFuse(
+      TranformerCustomFuseableIn<V, ?, ?> tranformerCustomFuseableIn) {
+    return transformer2 instanceof TranformerCustomFuseableOut && ((TranformerCustomFuseableOut<U, V, W>) transformer2).canFuse(tranformerCustomFuseableIn);
   }
 }
