@@ -96,8 +96,6 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
 
     resultStage.whenComplete(
         (result, throwable) -> {
-          System.out.printf("onComplete %s%n", throwable);
-
           if (Objects.isNull(throwable)) {
             completableFuture.complete(result);
           } else {
