@@ -200,7 +200,8 @@ public class ReactiveAkka implements Reactive {
     return akkaSource2;
   }
 
-  static <U, V, W> akka.stream.javadsl.Flow<U, W, ?> assemble(TransformerChained<U, V, W> transformer) {
+  static <U, V, W> akka.stream.javadsl.Flow<U, W, ?> assemble(
+      TransformerChained<U, V, W> transformer) {
     Transformer<U, V> transformer1 = transformer.getTransformer1();
     Transformer<V, W> transformer2 = transformer.getTransformer2();
     akka.stream.javadsl.Flow<U, V, ?> akkaFlow1 = assemble(transformer1);

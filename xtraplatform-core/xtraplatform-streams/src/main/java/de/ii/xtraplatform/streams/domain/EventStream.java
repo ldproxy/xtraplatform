@@ -13,7 +13,6 @@ import akka.stream.QueueOfferResult;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.SourceQueueWithComplete;
 import de.ii.xtraplatform.streams.domain.Reactive.Sink;
-import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 

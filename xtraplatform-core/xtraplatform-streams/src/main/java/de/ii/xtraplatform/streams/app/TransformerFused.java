@@ -11,9 +11,9 @@ import de.ii.xtraplatform.streams.domain.Reactive.Sink;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReducedTransformed;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkTransformed;
-import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustomFuseableIn;
 import de.ii.xtraplatform.streams.domain.Reactive.TranformerCustomFuseableOut;
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
+import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustomFuseableIn;
 import java.util.function.Consumer;
 
 public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut<T, V, W> {
@@ -67,12 +67,12 @@ public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut
 
   @Override
   public <V1> Transformer<T, V1> via(Transformer<V, V1> transformer) {
-    if (transformer instanceof TransformerCustomFuseableIn && canFuse(
-        (TransformerCustomFuseableIn<V, ?, ?>) transformer)) {
+    if (transformer instanceof TransformerCustomFuseableIn
+        && canFuse((TransformerCustomFuseableIn<V, ?, ?>) transformer)) {
       return new TransformerFused<>(this, (TransformerCustomFuseableIn<V, V1, W>) transformer);
     }
     if (transformer instanceof TransformerChained) {
-      return via((TransformerChained<V, ?, V1>)transformer);
+      return via((TransformerChained<V, ?, V1>) transformer);
     }
 
     return new TransformerChained<>(this, transformer);
@@ -80,8 +80,8 @@ public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut
 
   public <V1, W1> Transformer<T, V1> via(TransformerChained<V, W1, V1> transformer) {
     Transformer<V, W1> transformer1 = transformer.getTransformer1();
-    if (transformer1 instanceof TransformerCustomFuseableIn && canFuse(
-        (TransformerCustomFuseableIn<V, W1, ?>) transformer1)) {
+    if (transformer1 instanceof TransformerCustomFuseableIn
+        && canFuse((TransformerCustomFuseableIn<V, W1, ?>) transformer1)) {
       Transformer<W1, V1> transformer2 = transformer.getTransformer2();
       Transformer<T, W1> via = via(transformer1);
       new TransformerChained<>(via, transformer2);
@@ -92,8 +92,11 @@ public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut
 
   @Override
   public <X> SinkReducedTransformed<T, V, X> to(SinkReduced<V, X> sink) {
-    if (sink instanceof SinkTransformedImpl && ((SinkTransformedImpl<V, ?, X>) sink).getTransformer() instanceof TransformerCustomFuseableIn) {
-      TransformerCustomFuseableIn<V, ?, W> x = x(((SinkTransformedImpl<V, ?, X>) sink).getTransformer());
+    if (sink instanceof SinkTransformedImpl
+        && ((SinkTransformedImpl<V, ?, X>) sink).getTransformer()
+            instanceof TransformerCustomFuseableIn) {
+      TransformerCustomFuseableIn<V, ?, W> x =
+          x(((SinkTransformedImpl<V, ?, X>) sink).getTransformer());
       if (canFuse(x)) {
         fuse(x);
       }

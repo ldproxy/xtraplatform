@@ -38,7 +38,10 @@ public class TransformerDefault<T, U> implements Transformer<T, U> {
     this(Type.REDUCE, null, null, item, reducer);
   }
 
-  TransformerDefault(Type type, Function<T, U> function, Consumer<T> consumer,
+  TransformerDefault(
+      Type type,
+      Function<T, U> function,
+      Consumer<T> consumer,
       U item,
       BiFunction<U, T, U> reducer) {
     this.type = type;
@@ -49,8 +52,7 @@ public class TransformerDefault<T, U> implements Transformer<T, U> {
   }
 
   @Override
-  public <V> Transformer<T, V> via(
-      Transformer<U, V> transformer) {
+  public <V> Transformer<T, V> via(Transformer<U, V> transformer) {
     return new TransformerChained<>(this, transformer);
   }
 

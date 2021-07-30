@@ -11,7 +11,6 @@ import de.ii.xtraplatform.streams.domain.Reactive.BasicStream;
 import de.ii.xtraplatform.streams.domain.Reactive.RunnableStream;
 import de.ii.xtraplatform.streams.domain.Reactive.Runner;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
-import de.ii.xtraplatform.streams.domain.Reactive.SinkReducedTransformed;
 import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import de.ii.xtraplatform.streams.domain.Reactive.Stream;
 import de.ii.xtraplatform.streams.domain.Reactive.StreamWithResult;

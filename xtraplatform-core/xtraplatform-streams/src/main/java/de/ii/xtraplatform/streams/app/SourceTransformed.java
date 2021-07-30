@@ -11,9 +11,9 @@ import de.ii.xtraplatform.streams.domain.Reactive.BasicStream;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReducedTransformed;
 import de.ii.xtraplatform.streams.domain.Reactive.Source;
-import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustomFuseableIn;
 import de.ii.xtraplatform.streams.domain.Reactive.TranformerCustomFuseableOut;
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
+import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustomFuseableIn;
 
 public class SourceTransformed<T, U> implements Source<U> {
 
@@ -37,26 +37,27 @@ public class SourceTransformed<T, U> implements Source<U> {
     Transformer<U, U1> transformer1 = transformer.getTransformer1();
     Transformer<U1, W> transformer2 = transformer.getTransformer2();
 
-    Source<U1> via1 = transformer1 instanceof TransformerChained
-        ? via((TransformerChained<U, ?, U1>)transformer1)
-        : via(transformer1);
+    Source<U1> via1 =
+        transformer1 instanceof TransformerChained
+            ? via((TransformerChained<U, ?, U1>) transformer1)
+            : via(transformer1);
 
-    Source<W> via2 = transformer2 instanceof TransformerChained
-        ? via1.via((TransformerChained<U1, ?, W>)transformer2)
-        : via1.via(transformer2);
+    Source<W> via2 =
+        transformer2 instanceof TransformerChained
+            ? via1.via((TransformerChained<U1, ?, W>) transformer2)
+            : via1.via(transformer2);
 
     return via2;
   }
 
-  //TODO: fuse
+  // TODO: fuse
   @Override
   public <V> BasicStream<U, V> to(SinkReduced<U, V> sink) {
     return new StreamDefault<>(this, sink);
   }
 
   @Override
-  public <V, W> BasicStream<V, W> to(
-      SinkReducedTransformed<U, V, W> sink) {
+  public <V, W> BasicStream<V, W> to(SinkReducedTransformed<U, V, W> sink) {
     if (sink instanceof SinkTransformedImpl) {
       Transformer<U, V> transformer = ((SinkTransformedImpl<U, V, W>) sink).getTransformer();
       SinkReduced<V, W> sink1 = ((SinkTransformedImpl<U, V, W>) sink).getSink();

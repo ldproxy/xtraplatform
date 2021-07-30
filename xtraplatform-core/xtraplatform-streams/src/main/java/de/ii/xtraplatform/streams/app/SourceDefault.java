@@ -81,10 +81,10 @@ public class SourceDefault<T> implements Source<T> {
   }
 
   @Override
-  public <V, W> BasicStream<V, W> to(
-      SinkReducedTransformed<T, V, W> sink) {
+  public <V, W> BasicStream<V, W> to(SinkReducedTransformed<T, V, W> sink) {
     if (sink instanceof SinkTransformedImpl) {
-      return via(((SinkTransformedImpl<T, V, W>) sink).getTransformer()).to(((SinkTransformedImpl<T, V, W>) sink).getSink());
+      return via(((SinkTransformedImpl<T, V, W>) sink).getTransformer())
+          .to(((SinkTransformedImpl<T, V, W>) sink).getSink());
     }
     return null;
   }

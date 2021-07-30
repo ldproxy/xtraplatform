@@ -103,7 +103,7 @@ public interface Reactive {
     }
 
     default SinkTransformed<T, U> to(Sink<U> sink) {
-      return to((SinkReduced<U, Void>)sink);
+      return to((SinkReduced<U, Void>) sink);
     }
 
     static <T, U> Transformer<T, U> map(Function<T, U> function) {
@@ -142,11 +142,10 @@ public interface Reactive {
 
   interface TranformerCustomFuseableOut<T, U, V> extends TransformerCustom<T, U> {
 
-
     @Override
     default <W> Transformer<T, W> via(Transformer<U, W> transformer) {
-      if (transformer instanceof TransformerCustomFuseableIn && canFuse(
-          (TransformerCustomFuseableIn<U, W, ?>) transformer)) {
+      if (transformer instanceof TransformerCustomFuseableIn
+          && canFuse((TransformerCustomFuseableIn<U, W, ?>) transformer)) {
         return new TransformerFused<>(this, (TransformerCustomFuseableIn<U, W, V>) transformer);
       }
 
@@ -164,9 +163,7 @@ public interface Reactive {
   }
 
   interface TransformerCustomFuseable<T, V>
-      extends TransformerCustomFuseableIn<T, T, V>, TranformerCustomFuseableOut<T, T, V> {
-
-  }
+      extends TransformerCustomFuseableIn<T, T, V>, TranformerCustomFuseableOut<T, T, V> {}
 
   interface TransformerCustomSource<T, U, V extends Source<U>> extends TransformerCustom<T, U> {
 
@@ -221,25 +218,25 @@ public interface Reactive {
     }
 
     static SinkReducedTransformed<byte[], byte[], byte[]> reduceByteArray() {
-      Transformer<byte[], ByteArrayOutputStream> reduce = Transformer.reduce(
-          new ByteArrayOutputStream(), (outputStream, bytes) -> {
-            outputStream.writeBytes(bytes);
-            return outputStream;
-          });
-      Transformer<ByteArrayOutputStream, byte[]> map = Transformer.map(ByteArrayOutputStream::toByteArray);
+      Transformer<byte[], ByteArrayOutputStream> reduce =
+          Transformer.reduce(
+              new ByteArrayOutputStream(),
+              (outputStream, bytes) -> {
+                outputStream.writeBytes(bytes);
+                return outputStream;
+              });
+      Transformer<ByteArrayOutputStream, byte[]> map =
+          Transformer.map(ByteArrayOutputStream::toByteArray);
 
       return reduce.via(map).to(Sink.head());
     }
   }
 
-  interface SinkReduced<U, V> extends Sink<U> {
-  }
+  interface SinkReduced<U, V> extends Sink<U> {}
 
-  interface SinkTransformed<T, U> extends Sink<T> {
-  }
+  interface SinkTransformed<T, U> extends Sink<T> {}
 
-  interface SinkReducedTransformed<T, U, V> extends SinkTransformed<T, U>, SinkReduced<T, V> {
-  }
+  interface SinkReducedTransformed<T, U, V> extends SinkTransformed<T, U>, SinkReduced<T, V> {}
 
   interface Stream<V> {
 
