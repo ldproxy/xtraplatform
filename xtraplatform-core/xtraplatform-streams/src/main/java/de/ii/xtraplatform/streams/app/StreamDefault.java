@@ -114,8 +114,6 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
         throwable instanceof CompletionException && Objects.nonNull(throwable.getCause())
             ? throwable.getCause()
             : throwable;
-    System.out.printf("onError %s%n", actualThrowable);
-
     if (errorHandler.isPresent()) {
       try {
         resultFuture.complete(errorHandler.get().apply(result, actualThrowable));
