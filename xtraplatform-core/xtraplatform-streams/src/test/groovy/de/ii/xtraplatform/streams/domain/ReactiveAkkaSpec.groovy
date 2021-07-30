@@ -5,7 +5,7 @@ import akka.testkit.javadsl.TestKit
 import com.typesafe.config.Config
 import de.ii.xtraplatform.streams.app.ReactiveAkka
 import de.ii.xtraplatform.streams.domain.Reactive.Source
-import de.ii.xtraplatform.streams.domain.Reactive.Sink
+import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer
 import org.osgi.framework.BundleContext
 import spock.lang.Shared
@@ -52,7 +52,7 @@ class ReactiveAkkaSpec extends Specification {
     def "success"() {
         given:
         Reactive.Stream<Integer> stream = Source.iterable(1..5)
-                .to(Sink.head())
+                .to(SinkReduced.head())
         //Reactive.Stream<Integer> stream = sourceFromRange(1, 5)
         //        .to(reactive.sinks().head())
 
@@ -125,7 +125,7 @@ class ReactiveAkkaSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerThrowingAtIndex(2))
-                .to(Sink.ignore())
+                .to(SinkReduced.ignore())
                 .withResult([:] as Map<String, Object>)
                 .handleError((result, throwable) -> {throw new IllegalStateException()})
 
@@ -141,7 +141,7 @@ class ReactiveAkkaSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerLogging())
-                .to(Sink.ignore())
+                .to(SinkReduced.ignore())
                 .withResult([success: true] as Map<String, Object>)
                 .handleError((result, throwable) -> {result.error = throwable; return result;})
 
@@ -157,7 +157,7 @@ class ReactiveAkkaSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerLogging())
-                .to(Sink.ignore())
+                .to(SinkReduced.ignore())
                 .withResult([success: true, ids: []] as Map<String, Object>)
                 .handleError((result, throwable) -> {result.error = throwable; return result;})
                 .handleItem((result, id) -> {
@@ -178,7 +178,7 @@ class ReactiveAkkaSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerLogging())
-                .to(Sink.ignore())
+                .to(SinkReduced.ignore())
                 .withResult([success: true, ids: []] as Map<String, Object>)
                 .handleError((result, throwable) -> {result.error = throwable; return result;})
                 .handleItem((result, id) -> {
@@ -197,7 +197,7 @@ class ReactiveAkkaSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerLogging())
-                .to(Sink.ignore())
+                .to(SinkReduced.ignore())
                 .withResult([success: false] as Map<String, Object>)
                 .handleError((result, throwable) -> {result.error = throwable; return result;})
                 .handleEnd(result -> {result.success = true; return result;})
@@ -214,7 +214,7 @@ class ReactiveAkkaSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerLogging())
-                .to(Sink.ignore())
+                .to(SinkReduced.ignore())
                 .withResult([success: false] as Map<String, Object>)
                 .handleError((result, throwable) -> {result.error = throwable; return result;})
                 .handleEnd(result -> {throw new IllegalStateException()})
@@ -244,8 +244,8 @@ class ReactiveAkkaSpec extends Specification {
         })*/
     }
 
-    static Sink<Integer, Void> sinkThrowingAtIndex(int index) {
-        return Sink.foreach((Integer i) -> {
+    static SinkReduced<Integer, Void> sinkThrowingAtIndex(int index) {
+        return SinkReduced.foreach((Integer i) -> {
             if (i == index) throw new IllegalStateException()
             println(i + " sink")
         })

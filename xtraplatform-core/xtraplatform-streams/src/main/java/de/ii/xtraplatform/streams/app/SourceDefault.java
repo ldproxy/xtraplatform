@@ -8,7 +8,8 @@
 package de.ii.xtraplatform.streams.app;
 
 import de.ii.xtraplatform.streams.domain.Reactive.BasicStream;
-import de.ii.xtraplatform.streams.domain.Reactive.Sink;
+import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
+import de.ii.xtraplatform.streams.domain.Reactive.SinkReducedTransformed;
 import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
 import java.io.InputStream;
@@ -75,8 +76,17 @@ public class SourceDefault<T> implements Source<T> {
   }
 
   @Override
-  public <V> BasicStream<T, V> to(Sink<T, V> sink) {
+  public <V> BasicStream<T, V> to(SinkReduced<T, V> sink) {
     return new StreamDefault<>(this, sink);
+  }
+
+  @Override
+  public <V, W> BasicStream<V, W> to(
+      SinkReducedTransformed<T, V, W> sink) {
+    if (sink instanceof SinkTransformedImpl) {
+      return via(((SinkTransformedImpl<T, V, W>) sink).getTransformer()).to(((SinkTransformedImpl<T, V, W>) sink).getSink());
+    }
+    return null;
   }
 
   public Type getType() {

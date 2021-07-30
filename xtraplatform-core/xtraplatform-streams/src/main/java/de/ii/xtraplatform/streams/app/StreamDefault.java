@@ -10,7 +10,8 @@ package de.ii.xtraplatform.streams.app;
 import de.ii.xtraplatform.streams.domain.Reactive.BasicStream;
 import de.ii.xtraplatform.streams.domain.Reactive.RunnableStream;
 import de.ii.xtraplatform.streams.domain.Reactive.Runner;
-import de.ii.xtraplatform.streams.domain.Reactive.Sink;
+import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
+import de.ii.xtraplatform.streams.domain.Reactive.SinkReducedTransformed;
 import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import de.ii.xtraplatform.streams.domain.Reactive.Stream;
 import de.ii.xtraplatform.streams.domain.Reactive.StreamWithResult;
@@ -25,16 +26,16 @@ import java.util.function.Function;
 public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<V, W> {
 
   private final Source<V> source;
-  private final Sink<V, W> sink;
+  private final SinkReduced<V, W> sink;
   private final W result;
   private Optional<BiFunction<W, Throwable, W>> errorHandler;
   private Optional<BiFunction<W, V, W>> itemHandler;
 
-  public StreamDefault(Source<V> source, Sink<V, W> sink) {
+  public StreamDefault(Source<V> source, SinkReduced<V, W> sink) {
     this(source, sink, null);
   }
 
-  StreamDefault(Source<V> source, Sink<V, W> sink, W initialResult) {
+  StreamDefault(Source<V> source, SinkReduced<V, W> sink, W initialResult) {
     this.source = source;
     this.sink = sink;
     this.result = initialResult;
@@ -49,6 +50,9 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
 
   @Override
   public <W1> StreamWithResult<V, W1> withResult(W1 initial) {
+    if (sink instanceof SinkTransformedImpl) {
+      boolean br = true;
+    }
     return new StreamDefault<>(source, ((SinkDefault<V, W>) sink).withResult(initial), initial);
   }
 
@@ -75,7 +79,7 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
     return source;
   }
 
-  public Sink<V, W> getSink() {
+  public SinkReduced<V, W> getSink() {
     return sink;
   }
 

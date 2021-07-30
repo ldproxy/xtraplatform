@@ -12,6 +12,8 @@ import akka.stream.OverflowStrategy;
 import akka.stream.QueueOfferResult;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.SourceQueueWithComplete;
+import de.ii.xtraplatform.streams.domain.Reactive.Sink;
+import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -39,7 +41,7 @@ public class EventStream<T extends Event> {
 
   public void foreach(Consumer<T> eventConsumer) {
     Reactive.RunnableStream<Void> reactiveStream =
-        Reactive.Source.akka(eventStream).to(Reactive.Sink.foreach(eventConsumer)).on(streamRunner);
+        Reactive.Source.akka(eventStream).to(Sink.foreach(eventConsumer)).on(streamRunner);
     reactiveStream.run();
     // streamRunner.runForeach(eventStream, (Procedure<T>) eventConsumer::accept);
   }

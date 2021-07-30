@@ -7,12 +7,14 @@
  */
 package de.ii.xtraplatform.streams.domain;
 
-import akka.stream.javadsl.Sink;
-import akka.stream.javadsl.Source;
 import de.ii.xtraplatform.streams.app.SinkDefault;
 import de.ii.xtraplatform.streams.app.SinkDefault.Type;
+import de.ii.xtraplatform.streams.app.SinkTransformedImpl;
 import de.ii.xtraplatform.streams.app.SourceDefault;
+import de.ii.xtraplatform.streams.app.TransformerChained;
 import de.ii.xtraplatform.streams.app.TransformerDefault;
+import de.ii.xtraplatform.streams.app.TransformerFused;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,7 +38,17 @@ public interface Reactive {
       return transformer.getCustomSource(via((Transformer<T, U>) transformer));
     }
 
-    <V> BasicStream<T, V> to(Sink<T, V> sink);
+    <V> BasicStream<T, V> to(SinkReduced<T, V> sink);
+
+    default BasicStream<T, Void> to(Sink<T> sink) {
+      return to((SinkReduced<T, Void>) sink);
+    }
+
+    <V, W> BasicStream<V, W> to(SinkReducedTransformed<T, V, W> sink);
+
+    default <V> BasicStream<V, Void> to(SinkTransformed<T, V> sink) {
+      return to((SinkReducedTransformed<T, V, Void>) sink);
+    }
 
     static <T> Source<T> iterable(Iterable<T> iterable) {
       return new SourceDefault<>(iterable);
@@ -63,6 +75,37 @@ public interface Reactive {
 
   interface Transformer<T, U> {
 
+    default <V> Transformer<T, V> via(Transformer<U, V> transformer) {
+      return new TransformerChained<>(this, transformer);
+    }
+
+    default <W> SinkReducedTransformed<T, U, W> to(SinkReduced<U, W> sink) {
+      return new SinkTransformedImpl<>(this, sink);
+    }
+
+    default <W, X> SinkReducedTransformed<T, X, W> to(SinkReducedTransformed<U, X, W> sink) {
+      if (sink instanceof SinkTransformedImpl) {
+        SinkReducedTransformed<T, X, W> merge = merge((SinkTransformedImpl<U, X, W>) sink);
+
+        return merge;
+      }
+      throw new UnsupportedOperationException();
+    }
+
+    default <V, W> SinkReducedTransformed<T, V, W> merge(SinkTransformedImpl<U, V, W> sink) {
+      Transformer<U, V> transformer = sink.getTransformer();
+      SinkReduced<V, W> sink1 = sink.getSink();
+
+      Transformer<T, V> via = via(transformer);
+      SinkReducedTransformed<T, V, W> to = via.to(sink1);
+
+      return to;
+    }
+
+    default SinkTransformed<T, U> to(Sink<U> sink) {
+      return to((SinkReduced<U, Void>)sink);
+    }
+
     static <T, U> Transformer<T, U> map(Function<T, U> function) {
       return new TransformerDefault<>(function);
     }
@@ -70,9 +113,18 @@ public interface Reactive {
     static <T> Transformer<T, T> peek(Consumer<T> consumer) {
       return new TransformerDefault<>(consumer);
     }
+
+    static <T, U> Transformer<T, U> reduce(U zero, BiFunction<U, T, U> reducer) {
+      return new TransformerDefault<>(zero, reducer);
+    }
   }
 
   interface TransformerCustom<T, U> extends Transformer<T, U> {
+
+    @Override
+    default <V> Transformer<T, V> via(Transformer<U, V> transformer) {
+      return new TransformerChained<>(this, transformer);
+    }
 
     void init(Consumer<U> push);
 
@@ -81,7 +133,7 @@ public interface Reactive {
     void onComplete();
   }
 
-  interface TranformerCustomFuseableIn<T, U, V> extends TransformerCustom<T, U> {
+  interface TransformerCustomFuseableIn<T, U, V> extends TransformerCustom<T, U> {
 
     V fuseableSink();
 
@@ -90,52 +142,103 @@ public interface Reactive {
 
   interface TranformerCustomFuseableOut<T, U, V> extends TransformerCustom<T, U> {
 
+
+    @Override
+    default <W> Transformer<T, W> via(Transformer<U, W> transformer) {
+      if (transformer instanceof TransformerCustomFuseableIn && canFuse(
+          (TransformerCustomFuseableIn<U, W, ?>) transformer)) {
+        return new TransformerFused<>(this, (TransformerCustomFuseableIn<U, W, V>) transformer);
+      }
+
+      return TransformerCustom.super.via(transformer);
+    }
+
     Class<? extends V> getFusionInterface();
 
-    void fuse(TranformerCustomFuseableIn<U, ?, ? extends V> tranformerCustomFuseableIn);
+    void fuse(TransformerCustomFuseableIn<U, ?, ? extends V> transformerCustomFuseableIn);
 
-    default boolean canFuse(TranformerCustomFuseableIn<U, ?, ?> tranformerCustomFuseableIn) {
+    default boolean canFuse(TransformerCustomFuseableIn<U, ?, ?> transformerCustomFuseableIn) {
       return getFusionInterface()
-          .isAssignableFrom(tranformerCustomFuseableIn.fuseableSink().getClass());
+          .isAssignableFrom(transformerCustomFuseableIn.fuseableSink().getClass());
     }
   }
 
-  interface TranformerCustomFuseable<T, V>
-      extends TranformerCustomFuseableIn<T, T, V>, TranformerCustomFuseableOut<T, T, V> {}
+  interface TransformerCustomFuseable<T, V>
+      extends TransformerCustomFuseableIn<T, T, V>, TranformerCustomFuseableOut<T, T, V> {
+
+  }
 
   interface TransformerCustomSource<T, U, V extends Source<U>> extends TransformerCustom<T, U> {
+
     V getCustomSource(Source<U> source);
   }
 
-  interface TransformerCustomSink<T, U, V extends Sink<T, ?>> extends TransformerCustom<T, U> {
-    V getCustomSink(Sink<T, ?> sink);
+  /*interface TransformerCustomSink<T, U, V extends SinkWrapper<T>, W extends SinkWrapperReduced<T, ?>> extends TransformerCustom<T, U> {
+
+    //TODO: does not work since SinkReduced<U, X> does not match SinkWrapperReduced<T, ?>
+    <X> W to(SinkReduced<U, X> sink);
+
+    default V to(Sink<U> sink) {
+      return getCustomSink(TransformerCustom.super.to(sink));
+    }
+
+    V getCustomSink(Sink<T> sink);
   }
 
-  interface Sink<U, V> {
+  interface SinkWrapper<T> extends Sink<T> {
 
-    static <T> Sink<T, Void> ignore() {
+    Sink<T> getDelegate();
+  }
+
+  interface SinkWrapperReduced<T, V> extends SinkReduced<T, V> {
+
+    SinkReduced<T, V> getDelegate();
+  }*/
+
+  interface Sink<U> {
+    static <T> Sink<T> ignore() {
       return new SinkDefault<>(Type.IGNORE);
     }
 
-    static <T> Sink<T, T> head() {
+    static <T> SinkReduced<T, T> head() {
       return new SinkDefault<>(Type.HEAD);
     }
 
-    static <T> Sink<T, Void> subscriber(Flow.Subscriber<T> subscriber) {
+    static <T> Sink<T> subscriber(Flow.Subscriber<T> subscriber) {
       return new SinkDefault<>(subscriber);
     }
 
-    static <T> Sink<T, Void> foreach(Consumer<T> consumer) {
+    static <T> Sink<T> foreach(Consumer<T> consumer) {
       return new SinkDefault<>(consumer);
     }
 
-    static <T, W> Sink<T, W> reduce(W zero, BiFunction<W, T, W> reducer) {
+    static <T, W> SinkReduced<T, W> reduce(W zero, BiFunction<W, T, W> reducer) {
       return new SinkDefault<>(zero, reducer);
     }
 
-    static Sink<byte[], Void> outputStream(OutputStream outputStream) {
+    static Sink<byte[]> outputStream(OutputStream outputStream) {
       return new SinkDefault<>(outputStream);
     }
+
+    static SinkReducedTransformed<byte[], byte[], byte[]> reduceByteArray() {
+      Transformer<byte[], ByteArrayOutputStream> reduce = Transformer.reduce(
+          new ByteArrayOutputStream(), (outputStream, bytes) -> {
+            outputStream.writeBytes(bytes);
+            return outputStream;
+          });
+      Transformer<ByteArrayOutputStream, byte[]> map = Transformer.map(ByteArrayOutputStream::toByteArray);
+
+      return reduce.via(map).to(Sink.head());
+    }
+  }
+
+  interface SinkReduced<U, V> extends Sink<U> {
+  }
+
+  interface SinkTransformed<T, U> extends Sink<T> {
+  }
+
+  interface SinkReducedTransformed<T, U, V> extends SinkTransformed<T, U>, SinkReduced<T, V> {
   }
 
   interface Stream<V> {

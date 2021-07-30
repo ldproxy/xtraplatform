@@ -7,19 +7,23 @@
  */
 package de.ii.xtraplatform.streams.app;
 
-import de.ii.xtraplatform.streams.domain.Reactive.TranformerCustomFuseableIn;
+import de.ii.xtraplatform.streams.domain.Reactive.Sink;
+import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
+import de.ii.xtraplatform.streams.domain.Reactive.SinkReducedTransformed;
+import de.ii.xtraplatform.streams.domain.Reactive.SinkTransformed;
+import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustomFuseableIn;
 import de.ii.xtraplatform.streams.domain.Reactive.TranformerCustomFuseableOut;
-import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustom;
+import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
 import java.util.function.Consumer;
 
 public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut<T, V, W> {
 
   private final TranformerCustomFuseableOut<T, U, W> transformer1;
-  private final TransformerCustom<U, V> transformer2;
+  private final TransformerCustomFuseableIn<U, V, W> transformer2;
 
   public TransformerFused(
       TranformerCustomFuseableOut<T, U, W> transformer1,
-      TranformerCustomFuseableIn<U, V, W> transformer2) {
+      TransformerCustomFuseableIn<U, V, W> transformer2) {
     this.transformer1 = transformer1;
     this.transformer2 = transformer2;
     transformer1.fuse(transformer2);
@@ -47,17 +51,63 @@ public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut
   }
 
   @Override
-  public void fuse(TranformerCustomFuseableIn<V, ?, ? extends W> tranformerCustomFuseableIn) {
-    if (!canFuse(tranformerCustomFuseableIn)) {
+  public void fuse(TransformerCustomFuseableIn<V, ?, ? extends W> transformerCustomFuseableIn) {
+    if (!canFuse(transformerCustomFuseableIn)) {
       throw new IllegalArgumentException();
     }
-    ((TranformerCustomFuseableOut<U, V, W>) transformer2).fuse(tranformerCustomFuseableIn);
+    ((TranformerCustomFuseableOut<U, V, W>) transformer2).fuse(transformerCustomFuseableIn);
   }
 
   @Override
-  public boolean canFuse(TranformerCustomFuseableIn<V, ?, ?> tranformerCustomFuseableIn) {
+  public boolean canFuse(TransformerCustomFuseableIn<V, ?, ?> transformerCustomFuseableIn) {
     return transformer2 instanceof TranformerCustomFuseableOut
         && ((TranformerCustomFuseableOut<U, V, W>) transformer2)
-            .canFuse(tranformerCustomFuseableIn);
+            .canFuse(transformerCustomFuseableIn);
+  }
+
+  @Override
+  public <V1> Transformer<T, V1> via(Transformer<V, V1> transformer) {
+    if (transformer instanceof TransformerCustomFuseableIn && canFuse(
+        (TransformerCustomFuseableIn<V, ?, ?>) transformer)) {
+      return new TransformerFused<>(this, (TransformerCustomFuseableIn<V, V1, W>) transformer);
+    }
+    if (transformer instanceof TransformerChained) {
+      return via((TransformerChained<V, ?, V1>)transformer);
+    }
+
+    return new TransformerChained<>(this, transformer);
+  }
+
+  public <V1, W1> Transformer<T, V1> via(TransformerChained<V, W1, V1> transformer) {
+    Transformer<V, W1> transformer1 = transformer.getTransformer1();
+    if (transformer1 instanceof TransformerCustomFuseableIn && canFuse(
+        (TransformerCustomFuseableIn<V, W1, ?>) transformer1)) {
+      Transformer<W1, V1> transformer2 = transformer.getTransformer2();
+      Transformer<T, W1> via = via(transformer1);
+      new TransformerChained<>(via, transformer2);
+    }
+
+    return new TransformerChained<>(this, transformer);
+  }
+
+  @Override
+  public <X> SinkReducedTransformed<T, V, X> to(SinkReduced<V, X> sink) {
+    if (sink instanceof SinkTransformedImpl && ((SinkTransformedImpl<V, ?, X>) sink).getTransformer() instanceof TransformerCustomFuseableIn) {
+      TransformerCustomFuseableIn<V, ?, W> x = x(((SinkTransformedImpl<V, ?, X>) sink).getTransformer());
+      if (canFuse(x)) {
+        fuse(x);
+      }
+    }
+
+    return TranformerCustomFuseableOut.super.to(sink);
+  }
+
+  @Override
+  public SinkTransformed<T, V> to(Sink<V> sink) {
+    return TranformerCustomFuseableOut.super.to(sink);
+  }
+
+  private <X> TransformerCustomFuseableIn<V, X, W> x(Transformer<V, X> transformer) {
+    return (TransformerCustomFuseableIn<V, X, W>) transformer;
   }
 }

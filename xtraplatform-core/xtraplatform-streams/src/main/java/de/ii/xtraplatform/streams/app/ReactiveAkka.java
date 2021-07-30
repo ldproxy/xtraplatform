@@ -144,13 +144,29 @@ public class ReactiveAkka implements Reactive {
       return akkaSource.via(flow);
     }
 
+    if (transformer instanceof TransformerChained) {
+      return assemble(akkaSource, (TransformerChained<U, ?, V>) transformer);
+    }
+
     if (transformer instanceof TransformerCustom) {
       Flow<U, V, ?> flow = new AsymmetricFlow<>((TransformerCustom<U, V>) transformer).flow;
       return akkaSource.via(flow);
     }
 
+    throw new IllegalStateException();
+  }
+
+  static <U, V> akka.stream.javadsl.Flow<U, V, ?> assemble(Transformer<U, V> transformer) {
+    if (transformer instanceof TransformerDefault) {
+      return assemble((TransformerDefault<U, V>) transformer);
+    }
+
     if (transformer instanceof TransformerChained) {
-      return assemble(akkaSource, (TransformerChained<U, ?, V>) transformer);
+      return assemble((TransformerChained<U, ?, V>) transformer);
+    }
+
+    if (transformer instanceof TransformerCustom) {
+      return new AsymmetricFlow<>((TransformerCustom<U, V>) transformer).flow;
     }
 
     throw new IllegalStateException();
@@ -166,6 +182,9 @@ public class ReactiveAkka implements Reactive {
               transformer.getConsumer().accept(u);
               return (V) u;
             });
+      case REDUCE:
+        akka.stream.javadsl.Flow<U, U, NotUsed> flow1 = akka.stream.javadsl.Flow.create();
+        return flow1.fold(transformer.getItem(), transformer.getReducer()::apply);
     }
 
     throw new IllegalStateException();
@@ -181,9 +200,51 @@ public class ReactiveAkka implements Reactive {
     return akkaSource2;
   }
 
-  static <U, V> akka.stream.javadsl.Sink<U, CompletionStage<V>> assemble(Reactive.Sink<U, V> sink) {
+  static <U, V, W> akka.stream.javadsl.Flow<U, W, ?> assemble(TransformerChained<U, V, W> transformer) {
+    Transformer<U, V> transformer1 = transformer.getTransformer1();
+    Transformer<V, W> transformer2 = transformer.getTransformer2();
+    akka.stream.javadsl.Flow<U, V, ?> akkaFlow1 = assemble(transformer1);
+    akka.stream.javadsl.Flow<V, W, ?> akkaFlow2 = assemble(transformer2);
+
+    return akkaFlow1.via(akkaFlow2);
+  }
+
+  static <U, V> akka.stream.javadsl.Sink<U, CompletionStage<V>> assemble(SinkReduced<U, V> sink) {
     if (sink instanceof SinkDefault) {
       return assemble((SinkDefault<U, V>) sink);
+    }
+    if (sink instanceof SinkTransformedImpl) {
+      return assemble((SinkTransformedImpl<U, ?, V>) sink);
+    }
+
+    throw new IllegalStateException();
+  }
+
+  static <U, V, W> akka.stream.javadsl.Sink<U, CompletionStage<W>> assemble(
+      SinkTransformedImpl<U, V, W> sink) {
+
+    SinkReduced<V, W> sink1 = sink.getSink();
+    akka.stream.javadsl.Sink<V, CompletionStage<W>> akkaSink = assemble(sink1);
+    Transformer<U, V> transformer = sink.getTransformer();
+
+    return assemble(transformer, akkaSink);
+  }
+
+  static <U, V, W> akka.stream.javadsl.Sink<U, CompletionStage<W>> assemble(
+      Transformer<U, V> transformer, akka.stream.javadsl.Sink<V, CompletionStage<W>> akkaSink) {
+    if (transformer instanceof TransformerDefault) {
+      Flow<U, V, ?> flow = assemble((TransformerDefault<U, V>) transformer);
+      return flow.toMat(akkaSink, Keep.right());
+    }
+
+    if (transformer instanceof TransformerChained) {
+      Flow<U, V, ?> flow = assemble((TransformerChained<U, ?, V>) transformer);
+      return flow.toMat(akkaSink, Keep.right());
+    }
+
+    if (transformer instanceof TransformerCustom) {
+      Flow<U, V, ?> flow = new AsymmetricFlow<>((TransformerCustom<U, V>) transformer).flow;
+      return flow.toMat(akkaSink, Keep.right());
     }
 
     throw new IllegalStateException();

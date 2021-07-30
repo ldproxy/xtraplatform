@@ -7,14 +7,14 @@
  */
 package de.ii.xtraplatform.streams.app;
 
-import de.ii.xtraplatform.streams.domain.Reactive.Sink;
+import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
 import java.io.OutputStream;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-public class SinkDefault<U, V> implements Sink<U, V> {
+public class SinkDefault<U, V> implements SinkReduced<U, V> {
 
   public enum Type {
     IGNORE,
