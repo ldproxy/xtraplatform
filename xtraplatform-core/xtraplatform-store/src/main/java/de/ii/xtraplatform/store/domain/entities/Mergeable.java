@@ -5,11 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.streams.domain;
+package de.ii.xtraplatform.store.domain.entities;
 
-import akka.stream.javadsl.RunnableGraph;
-
-@FunctionalInterface
-public interface RunnableGraphWithMdc<T> {
-  RunnableGraph<T> getGraph();
+public interface Mergeable<T> {
+  T mergeInto(T source);
 }

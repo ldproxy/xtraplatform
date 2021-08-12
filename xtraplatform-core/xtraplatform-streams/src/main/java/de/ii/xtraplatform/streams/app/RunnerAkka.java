@@ -5,12 +5,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.streams.domain;
+package de.ii.xtraplatform.streams.app;
 
-import akka.Done;
 import akka.actor.ActorSystem;
-import akka.japi.function.Function2;
-import akka.japi.function.Procedure;
 import akka.stream.ActorMaterializer;
 import akka.stream.ActorMaterializerSettings;
 import akka.stream.javadsl.Keep;
@@ -22,7 +19,11 @@ import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import de.ii.xtraplatform.runtime.domain.LogContext;
-import java.io.Closeable;
+import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
+import de.ii.xtraplatform.streams.domain.LogContextStream;
+import de.ii.xtraplatform.streams.domain.Reactive.Runner;
+import de.ii.xtraplatform.streams.domain.Reactive.Stream;
+import de.ii.xtraplatform.streams.domain.RunnableGraphWrapper;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -34,10 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.ExecutionContextExecutor;
 
-public class StreamRunner implements Closeable {
+public class RunnerAkka implements Runner {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(StreamRunner.class);
-  public static final int DYNAMIC_CAPACITY = -1;
+  private static final Logger LOGGER = LoggerFactory.getLogger(RunnerAkka.class);
 
   private final ActorMaterializer materializer;
   private final String name;
@@ -46,25 +46,29 @@ public class StreamRunner implements Closeable {
   private final ConcurrentLinkedQueue<Runnable> queue;
   private final AtomicInteger running;
 
-  public StreamRunner(BundleContext context, ActorSystemProvider actorSystemProvider, String name) {
-    this(context, actorSystemProvider, name, DYNAMIC_CAPACITY, DYNAMIC_CAPACITY);
+  public RunnerAkka(BundleContext context, ActorSystemProvider actorSystemProvider, String name) {
+    this(context, actorSystemProvider, name, Runner.DYNAMIC_CAPACITY, Runner.DYNAMIC_CAPACITY);
   }
 
-  public StreamRunner(
+  public RunnerAkka(
       BundleContext context,
       ActorSystemProvider actorSystemProvider,
       String name,
       int capacity,
       int queueSize) {
-    Config config =
-        capacity == DYNAMIC_CAPACITY ? getDefaultConfig(name) : getConfig(name, capacity, capacity);
+    this(
+        actorSystemProvider.getActorSystem(context, getConfig(name, capacity), "akka"),
+        name,
+        capacity,
+        queueSize);
+  }
 
+  RunnerAkka(ActorSystem actorSystem, String name, int capacity, int queueSize) {
     if (capacity != 0) {
-      ActorSystem system = actorSystemProvider.getActorSystem(context, config, "akka");
       ActorMaterializerSettings settings =
-          ActorMaterializerSettings.create(system).withDispatcher(getDispatcherName(name));
+          ActorMaterializerSettings.create(actorSystem).withDispatcher(getDispatcherName(name));
 
-      this.materializer = ActorMaterializer.create(settings, system);
+      this.materializer = ActorMaterializer.create(settings, actorSystem);
     } else {
       this.materializer = null;
     }
@@ -75,43 +79,43 @@ public class StreamRunner implements Closeable {
     this.running = new AtomicInteger(0);
   }
 
+  // 2x
+  @Override
+  @Deprecated
   public <T, U, V> CompletionStage<V> run(Source<T, U> source, Sink<T, CompletionStage<V>> sink) {
-    return run(source, sink, Keep.right());
+    return run(LogContextStream.graphWithMdc(source, sink, Keep.right()));
   }
 
-  public <T, U, V, W> CompletionStage<W> run(
-      Source<T, U> source,
-      Sink<T, CompletionStage<V>> sink,
-      Function2<U, CompletionStage<V>, CompletionStage<W>> combiner) {
-    return run(LogContextStream.graphWithMdc(source, sink, combiner));
-  }
-
-  public <T, U> CompletionStage<Done> runForeach(Source<T, U> source, Procedure<T> procedure) {
-    return run(source, Sink.foreach(procedure), Keep.right());
-  }
-
-  public <U> CompletionStage<U> run(RunnableGraphWithMdc<CompletionStage<U>> graph) {
+  // 5x
+  @Override
+  @Deprecated
+  public <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph) {
     return runGraph(graph.getGraph());
   }
 
+  @Override
+  public <X> CompletionStage<X> run(Stream<X> stream) {
+    return runGraph(ReactiveAkka.getGraph(stream));
+  }
+
   private <U> CompletionStage<U> runGraph(RunnableGraph<CompletionStage<U>> graph) {
-    if (getCapacity() == DYNAMIC_CAPACITY) {
-      return graph.run(materializer);
-    }
 
     CompletableFuture<U> completableFuture = new CompletableFuture<>();
 
-    Runnable task =
-        () ->
+    if (getCapacity() == Runner.DYNAMIC_CAPACITY) {
+      graph
+          .run(materializer)
+          .exceptionally(
+              throwable -> {
+                completableFuture.completeExceptionally(throwable);
+                return null;
+              })
+          .thenAccept(completableFuture::complete);
+    } else {
+      Runnable task =
+          () -> {
             graph
                 .run(materializer)
-                .thenAccept(
-                    LogContext.withMdc(
-                        t -> {
-                          completableFuture.complete(t);
-
-                          runNext();
-                        }))
                 .exceptionally(
                     throwable -> {
                       completableFuture.completeExceptionally(throwable);
@@ -119,9 +123,17 @@ public class StreamRunner implements Closeable {
                       runNext();
 
                       return null;
-                    });
+                    })
+                .thenAccept(
+                    LogContext.withMdc(
+                        t -> {
+                          completableFuture.complete(t);
 
-    run(task);
+                          runNext();
+                        }));
+          };
+      run(task);
+    }
 
     return completableFuture;
   }
@@ -155,8 +167,15 @@ public class StreamRunner implements Closeable {
     return materializer.system().dispatcher();
   }
 
+  @Override
   public int getCapacity() {
     return capacity;
+  }
+
+  private static Config getConfig(String name, int capacity) {
+    return capacity == Runner.DYNAMIC_CAPACITY
+        ? getDefaultConfig(name)
+        : getConfig(name, capacity, capacity);
   }
 
   private static Config getDefaultConfig(String name) {

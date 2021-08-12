@@ -34,7 +34,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
 import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
 import de.ii.xtraplatform.streams.domain.EventStream;
-import de.ii.xtraplatform.streams.domain.StreamRunner;
+import de.ii.xtraplatform.streams.domain.Reactive;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -104,7 +104,8 @@ public class ServicesEndpoint implements Endpoint {
       @Requires EntityRegistry entityRegistry,
       @Requires EntityFactory entityFactory,
       @Requires EntityDataDefaultsStore defaultsStore,
-      @Requires ServiceBackgroundTasks serviceBackgroundTasks) {
+      @Requires ServiceBackgroundTasks serviceBackgroundTasks,
+      @Requires Reactive reactive) {
     this.entityRepository = entityRepository;
     this.serviceRepository = getServiceRepository(entityRepository);
     this.entityRegistry = entityRegistry;
@@ -113,9 +114,7 @@ public class ServicesEndpoint implements Endpoint {
     this.serviceBackgroundTasks = serviceBackgroundTasks;
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);
     this.entityStateSubscriber = new ArrayList<>();
-    this.eventStream =
-        new EventStream<>(
-            new StreamRunner(bundleContext, actorSystemProvider, "sse", 1, 1024), "state");
+    this.eventStream = new EventStream<>(reactive.runner("sse", 1, 1024), "state");
 
     eventStream.foreach(
         event -> {

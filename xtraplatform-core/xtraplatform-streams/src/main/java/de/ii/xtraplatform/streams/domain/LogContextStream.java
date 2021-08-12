@@ -50,12 +50,12 @@ public class LogContextStream {
     return function;
   }
 
-  public static <T, U, V> RunnableGraphWithMdc<CompletionStage<V>> graphWithMdc(
+  public static <T, U, V> RunnableGraphWrapper<V> graphWithMdc(
       Source<T, U> source, Sink<T, CompletionStage<V>> sink) {
     return graphWithMdc(source, sink, Keep.right());
   }
 
-  public static <T, U, V, W> RunnableGraphWithMdc<CompletionStage<W>> graphWithMdc(
+  public static <T, U, V, W> RunnableGraphWrapper<W> graphWithMdc(
       Source<T, U> source,
       Sink<T, CompletionStage<V>> sink,
       Function2<U, CompletionStage<V>, CompletionStage<W>> combiner) {

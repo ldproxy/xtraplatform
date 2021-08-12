@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.io.IOContext;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
@@ -83,7 +84,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
             .registerModule(DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER)
             .registerModule(DESERIALIZE_API_BUILDINGBLOCK_MIGRATION)
             .setDefaultMergeable(true)
-            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     this.mappers =
         ImmutableMap.of(
