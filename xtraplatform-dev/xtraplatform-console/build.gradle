@@ -1,6 +1,6 @@
 
 dependencies {	
-	provided group: 'org.apache.felix', name: 'org.apache.felix.webconsole', version: '4.6.0'
+	provided group: 'org.apache.felix', name: 'org.apache.felix.webconsole', version: '4.6.0-servlet4'
     
     embeddedExport group: 'org.json', name: 'json', version: '20070829'
 }
