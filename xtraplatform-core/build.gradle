@@ -12,7 +12,7 @@ ext {
     versionSuffix = (project.hasProperty('branch') && project.getProperty('branch') != 'master' ? ('-' + project.getProperty('branch')) : '') + (project.findProperty('snapshot') == 'true' ? '-SNAPSHOT' : '')
 }
 
-version = '4.0.0' + versionSuffix
+version = '4.0.1' + versionSuffix
 
 dependencies {
     bundle subprojects
