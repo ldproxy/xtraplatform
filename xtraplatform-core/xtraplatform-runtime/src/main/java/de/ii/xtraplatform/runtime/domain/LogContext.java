@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.slf4j.Marker;
+import org.slf4j.event.Level;
 
 /** @author zahnen */
 public class LogContext {
@@ -129,7 +130,24 @@ public class LogContext {
     Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
     args[messagePrefixArgs.length] = getMessage(throwable);
 
-    logThrowable(logger, throwable, messagePrefix + ": {}", args);
+    logThrowable(logger, Level.ERROR, throwable, messagePrefix + ": {}", args);
+  }
+
+  /**
+   * Log the message of a Throwable with a custom prefix in the INFO level and log the stacktrace of
+   * the Throwable in the DEBUG level with the STACKTRACE marker.
+   *
+   * @param logger The Logger to use
+   * @param throwable The throwable to log
+   * @param messagePrefix The message prefix
+   * @param messagePrefixArgs The message prefix substitutions
+   */
+  public static void errorAsInfo(
+      Logger logger, Throwable throwable, String messagePrefix, Object... messagePrefixArgs) {
+    Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
+    args[messagePrefixArgs.length] = getMessage(throwable);
+
+    logThrowable(logger, Level.INFO, throwable, messagePrefix + ": {}", args);
   }
 
   /**
@@ -161,12 +179,16 @@ public class LogContext {
       System.arraycopy(messages, 0, args, messagePrefixArgs.length, numMessages);
     }
 
-    logThrowable(logger, throwable, prefix, args);
+    logThrowable(logger, Level.ERROR, throwable, prefix, args);
   }
 
   private static void logThrowable(
-      Logger logger, Throwable throwable, String message, Object... messageArgs) {
-    logger.error(message, messageArgs);
+      Logger logger, Level level, Throwable throwable, String message, Object... messageArgs) {
+    if (level == Level.INFO) {
+      logger.info(message, messageArgs);
+    } else {
+      logger.error(message, messageArgs);
+    }
     if (logger.isDebugEnabled(MARKER.STACKTRACE)) {
       logger.debug(MARKER.STACKTRACE, "Stacktrace:", throwable);
     }
