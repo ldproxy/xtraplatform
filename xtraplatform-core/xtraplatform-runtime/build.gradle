@@ -14,9 +14,10 @@ dependencies {
     systemBundle group: 'org.threeten', name: 'threeten-extra', version: '1.5.0'
 
     systemBundle group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'
-    systemBundle group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.12'
-    systemBundle group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
-    systemBundle group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
+    systemBundle group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
+    systemBundle group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.3.0.1'
+    systemBundle group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.3.3'
+    systemBundle group: 'org.glassfish.jersey.media', name: 'jersey-media-jaxb', version: '2.33'
 
 }
 
