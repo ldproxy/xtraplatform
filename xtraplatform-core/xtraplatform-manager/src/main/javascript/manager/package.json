@@ -25,8 +25,8 @@
     },
     "devDependencies": {
         "@apollo/client": "^3",
-        "@neutrinojs/airbnb": "^9.3.0",
-        "@neutrinojs/mocha": "^9.3.0",
+        "@neutrinojs/airbnb": "^9.5.0",
+        "@neutrinojs/mocha": "^9.5.0",
         "@xtraplatform/core": "^2.0.0",
         "@xtraplatform/neutrino": "^2.0.0",
         "core-js": "^3",
@@ -41,23 +41,23 @@
         "grommet": "^2",
         "grommet-icons": "^4",
         "mocha": "^8",
-        "neutrino": "^9.3.0",
+        "neutrino": "^9.5.0",
         "prop-types": "^15",
         "react": "^16",
         "react-dom": "^16",
-        "react-i18next": "^11.8.5",
+        "react-i18next": "^11.12.0",
         "react-is": "^16",
         "react-router-dom": "^5",
-        "regenerator-runtime": "^0.13.3",
+        "regenerator-runtime": "^0.13.9",
         "styled-components": "^5"
     },
     "dependencies": {
         "apollo-link-rest": "^0.8.0-beta.0",
-        "graphql": "^15.3.0",
+        "graphql": "^15.5.3",
         "graphql-anywhere": "^4.2.7",
-        "i18next": "^19.8.4",
-        "i18next-browser-languagedetector": "^6.0.1",
+        "i18next": "^19.9.2",
+        "i18next-browser-languagedetector": "^6.1.2",
         "jwt-decode": "^2.2.0",
-        "qs": "^6.9.4"
+        "qs": "^6.10.1"
     }
 }
