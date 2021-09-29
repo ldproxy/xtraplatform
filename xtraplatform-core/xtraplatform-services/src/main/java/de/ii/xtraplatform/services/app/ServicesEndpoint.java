@@ -21,7 +21,6 @@ import de.ii.xtraplatform.services.domain.ServiceListingProvider;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Hidden;
-import java.io.IOException;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,8 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -43,7 +40,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import org.apache.felix.ipojo.annotations.Component;
@@ -193,7 +189,8 @@ public class ServicesEndpoint implements Endpoint {
   @Path("/___static___/{file: .+}")
   @Produces(MediaType.WILDCARD)
   @CacheControl(maxAge = 3600)
-  public Response getFile(@PathParam("file") String file,
+  public Response getFile(
+      @PathParam("file") String file,
       @Context final HttpServletRequest request,
       @Context final HttpServletResponse response) {
 

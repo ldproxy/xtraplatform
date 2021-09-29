@@ -181,9 +181,10 @@ public class StaticResourceServlet extends HttpServlet {
   }
 
   private CachedAsset loadAsset(String key) throws URISyntaxException, IOException {
-    String cleanKey = key.startsWith("/rest/services/___static___")
-        ? key.replace("/rest/services/___static___", "")
-        : key;
+    String cleanKey =
+        key.startsWith("/rest/services/___static___")
+            ? key.replace("/rest/services/___static___", "")
+            : key;
     checkArgument(cleanKey.startsWith(uriPath));
     final String requestedResourcePath = SLASHES.trimFrom(cleanKey.substring(uriPath.length()));
     final String absoluteRequestedResourcePath =
