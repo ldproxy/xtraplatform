@@ -18,6 +18,4 @@ public interface ServiceListingProvider {
   MediaType getMediaType();
 
   Response getServiceListing(List<ServiceData> services, URI uri);
-
-  Response getStaticAsset(String path);
 }

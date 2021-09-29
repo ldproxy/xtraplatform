@@ -12,8 +12,10 @@ import de.ii.xtraplatform.dropwizard.app.amdatu.DefaultPages;
 import de.ii.xtraplatform.dropwizard.app.amdatu.InvalidEntryException;
 import de.ii.xtraplatform.dropwizard.app.amdatu.ResourceEntry;
 import de.ii.xtraplatform.dropwizard.app.amdatu.ResourceKeyParser;
+import de.ii.xtraplatform.dropwizard.domain.StaticResourceHandler;
 import de.ii.xtraplatform.dropwizard.domain.StaticResourceServlet;
 import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -22,10 +24,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.Servlet;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
+import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.extender.Extender;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -36,22 +42,40 @@ import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 @Component
-// @Provides(specifications=StaticResourceRegistry.class)
+@Provides
 @Instantiate
 @Extender(
     onArrival = "onBundleArrival",
     onDeparture = "onBundleDeparture",
     extension = StaticResourceConstants.WEB_RESOURCE_KEY)
-public class StaticResourceRegistry {
+public class StaticResourceRegistry implements StaticResourceHandler {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StaticResourceRegistry.class);
 
   private final BundleContext bundleContext;
   private final Map<Long, List<ServiceRegistration>> servlets;
+  private final Map<String, Servlet> servlets2;
 
   public StaticResourceRegistry(@Context BundleContext bundleContext) {
     this.bundleContext = bundleContext;
     this.servlets = new ConcurrentHashMap<>();
+    this.servlets2 = new ConcurrentHashMap<>();
+  }
+
+  @Override
+  public boolean handle(String path, HttpServletRequest request, HttpServletResponse response) {
+    for (String prefix : servlets2.keySet()) {
+      if (path.startsWith(prefix) || ("/" + path).startsWith(prefix)) {
+        try {
+          servlets2.get(prefix).service(request, response);
+          return true;
+        } catch (ServletException | IOException e) {
+          return false;
+        }
+      }
+    }
+
+    return false;
   }
 
   private synchronized void onBundleArrival(Bundle bundle, String header) {
@@ -92,6 +116,8 @@ public class StaticResourceRegistry {
         ServiceRegistration serviceRegistration =
             bundleContext.registerService(Servlet.class.getName(), staticResourceServlet, props);
         serviceRegistrations.add(serviceRegistration);
+
+        servlets2.put(entry.getAlias(), staticResourceServlet);
       }
       servlets.put(bundle.getBundleId(), serviceRegistrations);
 
