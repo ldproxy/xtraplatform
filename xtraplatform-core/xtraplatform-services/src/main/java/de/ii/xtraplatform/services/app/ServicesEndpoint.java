@@ -10,6 +10,7 @@ package de.ii.xtraplatform.services.app;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.dropwizard.domain.MediaTypeCharset;
+import de.ii.xtraplatform.dropwizard.domain.StaticResourceHandler;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.services.domain.Service;
@@ -27,6 +28,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
@@ -77,6 +80,7 @@ public class ServicesEndpoint implements Endpoint {
   private final ServiceInjectableContext serviceContext;
   private final Dropwizard dropwizard;
   private final XtraPlatform xtraPlatform;
+  private final StaticResourceHandler staticResourceHandler;
 
   private Map<String, ServiceEndpoint> serviceResources;
   private Map<MediaType, ServiceListingProvider> serviceListingProviders;
@@ -86,7 +90,8 @@ public class ServicesEndpoint implements Endpoint {
       @Requires EntityRegistry entityRegistry,
       @Requires Dropwizard dropwizard,
       @Requires XtraPlatform xtraPlatform,
-      @Requires ServiceInjectableContext serviceContext) {
+      @Requires ServiceInjectableContext serviceContext,
+      @Requires StaticResourceHandler staticResourceHandler) {
     this.serviceResources = new LinkedHashMap<>();
     this.serviceListingProviders = new LinkedHashMap<>();
     this.bundleContext = bundleContext;
@@ -94,6 +99,7 @@ public class ServicesEndpoint implements Endpoint {
     this.xtraPlatform = xtraPlatform;
     this.dropwizard = dropwizard;
     this.serviceContext = serviceContext;
+    this.staticResourceHandler = staticResourceHandler;
   }
 
   public synchronized void onServiceResourceArrival(ServiceReference<ServiceEndpoint> ref) {
@@ -179,16 +185,19 @@ public class ServicesEndpoint implements Endpoint {
     return Response.ok().entity(services).build();
   }
 
-  // TODO
   @GET
   @Path("/___static___/{file: .+}")
   @Produces(MediaType.WILDCARD)
   @CacheControl(maxAge = 3600)
-  public Response getFile(@PathParam("file") String file) {
-    // LOGGER.debug("FILE {})", file);
+  public Response getFile(
+      @PathParam("file") String file,
+      @Context final HttpServletRequest request,
+      @Context final HttpServletResponse response) {
 
-    if (serviceListingProviders.containsKey(MediaType.TEXT_HTML_TYPE)) {
-      return serviceListingProviders.get(MediaType.TEXT_HTML_TYPE).getStaticAsset(file);
+    boolean handled = staticResourceHandler.handle(file, request, response);
+
+    if (handled) {
+      return Response.ok().build();
     }
 
     return Response.status(Response.Status.NOT_FOUND).build();
