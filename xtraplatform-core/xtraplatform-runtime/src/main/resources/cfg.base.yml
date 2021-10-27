@@ -3,6 +3,7 @@ server:
   applicationConnectors:
     - type: http
       port: '7080'
+      useForwardedHeaders: true
   adminConnectors:
     - type: http
       port: '7081'
