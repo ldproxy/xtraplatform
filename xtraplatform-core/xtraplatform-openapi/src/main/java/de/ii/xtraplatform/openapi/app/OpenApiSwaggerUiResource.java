@@ -8,9 +8,11 @@
 package de.ii.xtraplatform.openapi.app;
 
 /** @author zahnen */
+import com.google.common.io.Files;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
 import java.net.URL;
+import java.util.Objects;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -40,10 +42,30 @@ public class OpenApiSwaggerUiResource implements OpenApiViewerResource {
     try {
       URL url = bc.getBundle().getResource(file);
 
+      if (Objects.isNull(url)) {
+        throw new NotFoundException();
+      }
+
       return Response.ok((StreamingOutput) output -> Resources.asByteSource(url).copyTo(output))
+          .type(getMimeType(file))
           .build();
-    } catch (Exception e) {
+    } catch (Throwable e) {
       throw new NotFoundException();
+    }
+  }
+
+  private String getMimeType(String file) {
+    switch (Files.getFileExtension(file)) {
+      case "js":
+        return "application/javascript";
+      case "css":
+        return "text/css";
+      case "html":
+        return "text/html";
+      case "png":
+        return "image/png";
+      default:
+        return "application/octet-stream";
     }
   }
 }
