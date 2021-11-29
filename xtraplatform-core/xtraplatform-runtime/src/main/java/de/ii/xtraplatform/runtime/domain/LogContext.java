@@ -151,8 +151,8 @@ public class LogContext {
   }
 
   /**
-   * Log the message of a Throwable with a custom prefix in the DEBUG level and log the stacktrace of
-   * the Throwable in the DEBUG level with the STACKTRACE marker.
+   * Log the message of a Throwable with a custom prefix in the DEBUG level and log the stacktrace
+   * of the Throwable in the DEBUG level with the STACKTRACE marker.
    *
    * @param logger The Logger to use
    * @param throwable The throwable to log
