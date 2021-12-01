@@ -11,5 +11,7 @@ package de.ii.xtraplatform.services.domain;
 public interface Scheduler {
   TaskStatus launch(Task task);
 
-  TaskQueue createQueue(String id);
+  String schedule(Runnable runnable, String cronPattern);
+
+  TaskQueue createQueue(String id, int capacity);
 }

@@ -10,6 +10,24 @@ package de.ii.xtraplatform.services.domain;
 /** @author zahnen */
 public interface TaskContext extends TaskProgress {
 
+  int getMaxPartials();
+
+  int getCurrentPartial();
+
+  default boolean isPartial() {
+    return getMaxPartials() > 1;
+  }
+
+  default boolean isFirstPartial() {
+    return getCurrentPartial() == 1;
+  }
+
+  default boolean matchesPartialModulo(int number) {
+    return (number % getMaxPartials()) == (getCurrentPartial() - 1);
+  }
+
+  String getThreadName();
+
   void pauseIfRequested();
 
   boolean isStopped();

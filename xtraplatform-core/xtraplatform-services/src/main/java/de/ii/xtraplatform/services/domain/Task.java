@@ -16,6 +16,8 @@ public interface Task {
 
   String getLabel();
 
+  int getMaxPartials();
+
   void run(TaskContext taskContext);
 
   default void logContext() {

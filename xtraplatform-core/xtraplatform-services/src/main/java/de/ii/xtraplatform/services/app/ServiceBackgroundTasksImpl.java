@@ -9,10 +9,12 @@ package de.ii.xtraplatform.services.app;
 
 import de.ii.xtraplatform.di.domain.Registry;
 import de.ii.xtraplatform.di.domain.RegistryState;
+import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.services.domain.Scheduler;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceBackgroundTask;
 import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
+import de.ii.xtraplatform.services.domain.Task;
 import de.ii.xtraplatform.services.domain.TaskQueue;
 import de.ii.xtraplatform.services.domain.TaskStatus;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
@@ -55,11 +57,15 @@ public class ServiceBackgroundTasksImpl
 
   ServiceBackgroundTasksImpl(
       @Context BundleContext context,
+      @Requires XtraPlatform xtraPlatform,
       @Requires Scheduler scheduler,
       @Requires EntityRegistry entityRegistry) {
     this.tasks = new RegistryState<>(SERVICE_BACKGROUND_TASK, context);
     this.scheduler = scheduler;
-    this.commonQueue = scheduler.createQueue(ServiceBackgroundTasks.COMMON_QUEUE);
+    this.commonQueue =
+        scheduler.createQueue(
+            ServiceBackgroundTasks.COMMON_QUEUE,
+            xtraPlatform.getConfiguration().backgroundTasks.maxThreads);
     this.taskQueues = new ConcurrentHashMap<>();
     taskQueues.put(COMMON_QUEUE, commonQueue);
     entityRegistry.addEntityListener(Service.class, this::onServiceStart, true);
@@ -112,22 +118,20 @@ public class ServiceBackgroundTasksImpl
     }
   }
 
-  // TODO
   private <T extends Service> void schedule(T service, ServiceBackgroundTask<T> task) {
     if (task.runOnStart(service)) {
-
-      // LOGGER.debug("RUNNING TASK {} FOR {}", task.getLabel(), service.getId());
       taskQueues.get(task.getQueue()).launch(task.getTask(service, task.getLabel()), 5000);
     }
     if (task.runPeriodic(service).isPresent()) {
-      // LOGGER.debug("SCHEDULE TASK {} FOR {} WITH {}", task.getLabel(), service.getId(),
-      // task.runPeriodic(service).get());
+      TaskQueue taskQueue = taskQueues.get(task.getQueue());
+      Task task1 = task.getTask(service, task.getLabel());
+      scheduler.schedule(() -> taskQueue.launch(task1), task.runPeriodic(service).get());
     }
   }
 
   @Override
   public TaskQueue createQueue(String taskType) {
-    TaskQueue queue = scheduler.createQueue(taskType);
+    TaskQueue queue = scheduler.createQueue(taskType, 1);
     taskQueues.put(taskType, queue);
 
     return queue;
