@@ -17,6 +17,8 @@ public interface TaskStatus {
 
   String getLabel();
 
+  String getThreadName();
+
   String getStatusMessage();
 
   double getProgress();

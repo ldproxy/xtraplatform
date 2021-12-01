@@ -10,19 +10,51 @@ package de.ii.xtraplatform.services.app;
 import de.ii.xtraplatform.services.domain.TaskContext;
 import it.sauronsoftware.cron4j.Task;
 import it.sauronsoftware.cron4j.TaskExecutionContext;
+import java.util.Objects;
+import java.util.Optional;
 
 /** @author zahnen */
 public class TaskCron4j extends Task {
 
   private final de.ii.xtraplatform.services.domain.Task task;
+  private final int maxPartials;
+  private final int partial;
+  private final String threadName;
 
-  public TaskCron4j(de.ii.xtraplatform.services.domain.Task task) {
+  public TaskCron4j(de.ii.xtraplatform.services.domain.Task task, int threadNumber) {
+    this(task, 1, 1, threadNumber);
+  }
+
+  public TaskCron4j(de.ii.xtraplatform.services.domain.Task task, int maxPartials, int partial, int threadNumber) {
     this.task = task;
+    this.maxPartials = maxPartials;
+    this.partial = partial;
+    this.threadName = "bg-task-" + threadNumber;
+  }
+
+  public de.ii.xtraplatform.services.domain.Task getTask() {
+    return task;
+  }
+
+  public int getMaxPartials() {
+    return maxPartials;
+  }
+
+  public int getPartial() {
+    return partial;
+  }
+
+  public boolean isPartial() {
+    return getMaxPartials() > 1;
+  }
+
+  public String getThreadName() {
+    return threadName;
   }
 
   @Override
   public void execute(TaskExecutionContext taskExecutionContext) throws RuntimeException {
-    final TaskContext taskContext = new TaskContextCron4j(taskExecutionContext);
+    final TaskContext taskContext = new TaskContextCron4j(taskExecutionContext, maxPartials, partial, threadName);
     task.run(taskContext);
   }
 

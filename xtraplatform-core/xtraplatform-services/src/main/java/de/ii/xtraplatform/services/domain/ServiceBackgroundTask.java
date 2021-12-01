@@ -27,23 +27,29 @@ public interface ServiceBackgroundTask<T extends Service> {
     return Optional.empty();
   }
 
+  default int getMaxPartials(T service) {
+    return 1;
+  }
+
   default String getQueue() {
     return ServiceBackgroundTasks.COMMON_QUEUE;
   }
 
   default Task getTask(T service, String label) {
-    return new BoundTask<>(service, label, this::run);
+    return new BoundTask<>(service, label, getMaxPartials(service), this::run);
   }
 
   class BoundTask<T extends Service> implements Task {
 
     private final T service;
     private final String label;
+    private final int maxPartials;
     private final BiConsumer<T, TaskContext> runnable;
 
-    public BoundTask(T service, String label, BiConsumer<T, TaskContext> runnable) {
+    public BoundTask(T service, String label, int maxPartials,  BiConsumer<T, TaskContext> runnable) {
       this.service = service;
       this.label = label;
+      this.maxPartials = maxPartials;
       this.runnable = runnable;
     }
 
@@ -58,10 +64,15 @@ public interface ServiceBackgroundTask<T extends Service> {
     }
 
     @Override
+    public int getMaxPartials() {
+      return maxPartials;
+    }
+
+    @Override
     public void run(TaskContext taskContext) {
       Runnable taskWithMdc =
           () -> {
-            Thread.currentThread().setName("bg-task-1");
+            Thread.currentThread().setName(taskContext.getThreadName());
             logContext();
             runnable.accept(service, taskContext);
           };

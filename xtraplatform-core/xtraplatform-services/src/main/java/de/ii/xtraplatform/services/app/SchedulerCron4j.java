@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.felix.ipojo.annotations.Component;
@@ -38,14 +39,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.threeten.extra.AmountFormats;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Component
 @Provides
 @Instantiate
-/*@Wbp(
-filter = "(objectClass=de.ii.xtraplatform.services.domain.SchedulerTask)",
-onArrival = "onTaskArrival",
-onDeparture = "onTaskDeparture")*/
 public class SchedulerCron4j implements Scheduler {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerCron4j.class);
@@ -62,13 +61,16 @@ public class SchedulerCron4j implements Scheduler {
     scheduler.addSchedulerListener(
         new SchedulerListener() {
           @Override
-          public void taskLaunching(TaskExecutor executor) {}
+          public void taskLaunching(TaskExecutor executor) {
+          }
 
           @Override
-          public void taskSucceeded(TaskExecutor executor) {}
+          public void taskSucceeded(TaskExecutor executor) {
+          }
 
           @Override
-          public void taskFailed(TaskExecutor executor, Throwable exception) {}
+          public void taskFailed(TaskExecutor executor, Throwable exception) {
+          }
         });
   }
 
@@ -81,53 +83,58 @@ public class SchedulerCron4j implements Scheduler {
   public void stop() {
     scheduler.stop();
   }
-  /*
-  public synchronized void onTaskArrival(ServiceReference<SchedulerTask> ref) {
-    SchedulerTask task = context.getService(ref);
-
-    String id = scheduler.schedule(task.getPattern(), task.getTask());
-    task.setId(id);
-  }
-
-  public synchronized void onTaskDeparture(ServiceReference<SchedulerTask> ref) {
-    SchedulerTask task = context.getService(ref);
-
-    scheduler.deschedule(task.getId());
-  }*/
 
   @Override
   public TaskStatus launch(Task task) {
+    TaskCron4j taskCron4j = new TaskCron4j(task, 1);
+    final TaskExecutor taskExecutor = scheduler.launch(taskCron4j);
 
-    final TaskExecutor taskExecutor = scheduler.launch(new TaskCron4j(task));
-
-    return new TaskStatusCron4j(task.getId(), task.getLabel(), taskExecutor);
+    return new TaskStatusCron4j(taskCron4j, taskExecutor);
   }
 
   @Override
-  public TaskQueue createQueue(String id) {
+  public String schedule(Runnable runnable, String cronPattern) {
+    return scheduler.schedule(cronPattern, runnable);
+  }
+
+  @Override
+  public TaskQueue createQueue(String id, int maxConcurrentTasks) {
     return new TaskQueue() {
       private final BlockingQueue<Pair<Task, CompletableFuture<TaskStatus>>> queue =
           new LinkedBlockingQueue<>();
-      private TaskStatus currentTask;
+      private final BlockingQueue<TaskStatus> currentTasks = new LinkedBlockingQueue<>(
+          maxConcurrentTasks);
+      private final BlockingQueue<Integer> threadNumbers = new LinkedBlockingQueue<>(
+          IntStream.rangeClosed(1, maxConcurrentTasks).boxed().collect(Collectors.toList()));
+
 
       @Override
       public synchronized CompletableFuture<TaskStatus> launch(Task task) {
-        TaskStatus runningTask = this.currentTask;
-        if (Objects.nonNull(runningTask)
-            && Objects.equals(runningTask.getId(), task.getId())
-            && Objects.equals(runningTask.getLabel(), task.getLabel())) {
-          if (LOGGER.isDebugEnabled())
-            LOGGER.debug("Ignoring task {} for {}, already running", task.getLabel(), task.getId());
-          return CompletableFuture.failedFuture(new IllegalArgumentException());
+        Thread.currentThread().setName("bg-task-0");
+        task.logContext();
+        cleanup();
+
+        for (TaskStatus runningTask : currentTasks) {
+          if (Objects.nonNull(runningTask)
+              && Objects.equals(runningTask.getId(), task.getId())
+              && Objects.equals(runningTask.getLabel(), task.getLabel())) {
+            if (LOGGER.isDebugEnabled()) {
+              LOGGER.debug("Ignoring task '{}' for '{}', already running", task.getLabel(),
+                  task.getId());
+            }
+            return CompletableFuture.failedFuture(new IllegalArgumentException());
+          }
         }
+
         if (getFutureTasks().stream()
             .anyMatch(
                 futureTask ->
                     Objects.equals(futureTask.getId(), task.getId())
                         && Objects.equals(futureTask.getLabel(), task.getLabel()))) {
-          if (LOGGER.isDebugEnabled())
+          if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(
-                "Ignoring task {} for {}, already in queue", task.getLabel(), task.getId());
+                "Ignoring task '{}' for '{}', already in queue", task.getLabel(), task.getId());
+          }
           return CompletableFuture.failedFuture(new IllegalArgumentException());
         }
 
@@ -136,7 +143,7 @@ public class SchedulerCron4j implements Scheduler {
 
         queue.offer(new ImmutablePair<>(task, taskStatusCompletableFuture));
 
-        checkQueue(false);
+        checkQueue();
 
         return taskStatusCompletableFuture;
       }
@@ -167,9 +174,10 @@ public class SchedulerCron4j implements Scheduler {
             o -> {
               boolean removed = queue.remove(o);
               if (removed) {
-                if (LOGGER.isTraceEnabled())
+                if (LOGGER.isTraceEnabled()) {
                   LOGGER.trace(
                       "REMOVED TASK {} -> {}", o.getLeft().getLabel(), o.getLeft().getId());
+                }
               }
             });
       }
@@ -179,58 +187,108 @@ public class SchedulerCron4j implements Scheduler {
         return queue.stream().map(Pair::getLeft).collect(Collectors.toList());
       }
 
+      //TODO: list of currentTasks
       @Override
       public Optional<TaskStatus> getCurrentTask() {
-        return Optional.ofNullable(currentTask);
+        return Optional.ofNullable(currentTasks.peek());
       }
 
-      private synchronized void checkQueue(boolean currentIsDone) {
-        if (currentIsDone) {
-          this.currentTask = null;
-        }
-        if (Objects.isNull(currentTask) || currentTask.isDone()) {
-          Thread.currentThread().setName("bg-task-1");
+      private synchronized void checkQueue() {
+        cleanup();
+
+        if (currentTasks.remainingCapacity() > 0) {
           final Pair<Task, CompletableFuture<TaskStatus>> task = queue.poll();
+
           if (Objects.nonNull(task)) {
-            task.getLeft().logContext();
-            LOGGER.info("{} started", task.getLeft().getLabel());
-            this.currentTask = SchedulerCron4j.this.launch(task.getLeft());
-            task.getRight().complete(currentTask);
-            currentTask.onChange(
-                (progress, message) -> {
-                  if (LOGGER.isDebugEnabled()) {
-                    Thread.currentThread().setName("bg-task-1");
-                    LOGGER.debug(
-                        "{}: {} [{}]",
-                        task.getLeft().getLabel(),
-                        message,
-                        new DecimalFormat("#%").format(progress));
-                  }
-                },
-                1000);
-            currentTask.onDone(
-                (optionalThrowable) -> {
-                  Thread.currentThread().setName("bg-task-1");
+            if (task.getLeft().getMaxPartials() > 1 && currentTasks.remainingCapacity() > 1) {
+              int maxPartials = Math.min(currentTasks.remainingCapacity(), task.getLeft()
+                  .getMaxPartials());
 
-                  if (optionalThrowable.isPresent()) {
-                    LogContext.errorChain(
-                        LOGGER, optionalThrowable.get(), "{} failed", task.getLeft().getLabel());
-                  } else {
-                    String time = pretty(currentTask.getEndTime() - currentTask.getStartTime());
+              for (int i = 1; i <= maxPartials; i++) {
+                int threadNumber = Objects.requireNonNullElse(threadNumbers.poll(), 1);
+                TaskCron4j taskCron4j = new TaskCron4j(task.getLeft(), maxPartials, i, threadNumber);
+                final TaskExecutor taskExecutor = scheduler.launch(taskCron4j);
+                TaskStatus currentTask = new TaskStatusCron4j(taskCron4j, taskExecutor);
 
-                    LOGGER.info("{} finished in {}", task.getLeft().getLabel(), time);
-                  }
-
-                  checkQueue(true);
+                addLogging(taskCron4j, currentTask, threadNumber);
+                currentTask.onDone(throwable -> {
+                  threadNumbers.offer(threadNumber);
+                  checkQueue();
                 });
+                currentTasks.offer(currentTask);
+
+                //TODO: currently not used?
+                //task.getRight().complete(currentTask);
+              }
+            } else {
+              int threadNumber = Objects.requireNonNullElse(threadNumbers.poll(), 1);
+              TaskCron4j taskCron4j = new TaskCron4j(task.getLeft(), threadNumber);
+              final TaskExecutor taskExecutor = scheduler.launch(taskCron4j);
+              TaskStatus currentTask = new TaskStatusCron4j(taskCron4j, taskExecutor);
+
+              addLogging(taskCron4j, currentTask, threadNumber);
+              currentTask.onDone(throwable -> {
+                threadNumbers.offer(threadNumber);
+                checkQueue();
+              });
+              currentTasks.offer(currentTask);
+
+              task.getRight().complete(currentTask);
+            }
           }
         }
       }
 
-      private String pretty(long milliseconds) {
-        Duration d = Duration.ofSeconds(milliseconds / 1000);
-        return AmountFormats.wordBased(d, Locale.ENGLISH);
+      private synchronized void cleanup() {
+        currentTasks.removeIf(TaskStatus::isDone);
       }
     };
+  }
+
+  private void addLogging(TaskCron4j taskCron4j, TaskStatus taskStatus, int threadNum) {
+    String threadName = "bg-task-" + threadNum;
+    Thread.currentThread().setName(threadName);
+
+    Task task = taskCron4j.getTask();
+    task.logContext();
+    String partialSuffix = taskCron4j.isPartial()
+        ? String.format(" [%d/%d]", taskCron4j.getPartial(), taskCron4j.getMaxPartials())
+        : "";
+    String part = taskCron4j.isPartial()
+        ? String.format(" (part [%d/%d])", taskCron4j.getPartial(), taskCron4j.getMaxPartials())
+        : "";
+    LOGGER.info("{}{} started", task.getLabel(), part);
+
+    taskStatus.onChange(
+        (progress, message) -> {
+          if (LOGGER.isDebugEnabled()) {
+            Thread.currentThread().setName(threadName);
+            LOGGER.debug(
+                "{}: {} [{}]{}",
+                task.getLabel(),
+                message,
+                new DecimalFormat("#%").format(progress),
+                partialSuffix);
+          }
+        },
+        1000);
+    taskStatus.onDone(
+        (optionalThrowable) -> {
+          Thread.currentThread().setName(threadName);
+
+          if (optionalThrowable.isPresent()) {
+            LogContext.errorChain(
+                LOGGER, optionalThrowable.get(), "{} failed{}", task.getLabel(), partialSuffix);
+          } else {
+            String time = pretty(taskStatus.getEndTime() - taskStatus.getStartTime());
+
+            LOGGER.info("{}{} finished in {}", task.getLabel(), part, time);
+          }
+        });
+  }
+
+  private static String pretty(long milliseconds) {
+    Duration d = Duration.ofSeconds(milliseconds / 1000);
+    return AmountFormats.wordBased(d, Locale.ENGLISH);
   }
 }

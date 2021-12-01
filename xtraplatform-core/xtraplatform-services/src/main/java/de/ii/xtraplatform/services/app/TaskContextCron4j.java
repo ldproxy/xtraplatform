@@ -13,9 +13,16 @@ import it.sauronsoftware.cron4j.TaskExecutionContext;
 /** @author zahnen */
 public class TaskContextCron4j implements TaskContext {
   private final TaskExecutionContext taskExecutionContext;
+  private final int maxPartials;
+  private final int partial;
+  private final String threadName;
 
-  public TaskContextCron4j(TaskExecutionContext taskExecutionContext) {
+  public TaskContextCron4j(TaskExecutionContext taskExecutionContext, int maxPartials, int partial,
+      String threadName) {
     this.taskExecutionContext = taskExecutionContext;
+    this.maxPartials = maxPartials;
+    this.partial = partial;
+    this.threadName = threadName;
   }
 
   @Override
@@ -26,6 +33,21 @@ public class TaskContextCron4j implements TaskContext {
   @Override
   public void setCompleteness(double completeness) {
     taskExecutionContext.setCompleteness(completeness);
+  }
+
+  @Override
+  public int getMaxPartials() {
+    return maxPartials;
+  }
+
+  @Override
+  public int getCurrentPartial() {
+    return partial;
+  }
+
+  @Override
+  public String getThreadName() {
+    return threadName;
   }
 
   @Override

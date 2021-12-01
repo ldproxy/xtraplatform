@@ -7,9 +7,13 @@
  */
 package de.ii.xtraplatform.services.domain;
 
+import java.util.Optional;
+
 /** @author zahnen */
 public interface Scheduler {
   TaskStatus launch(Task task);
 
-  TaskQueue createQueue(String id);
+  String schedule(Runnable runnable, String cronPattern);
+
+  TaskQueue createQueue(String id, int capacity);
 }

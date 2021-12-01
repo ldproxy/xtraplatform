@@ -14,18 +14,23 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 public class TaskStatusCron4j implements TaskStatus {
+  private static final Logger LOGGER = LoggerFactory.getLogger(TaskStatusCron4j.class);
 
   private final String id;
   private final String label;
+  private final String threadName;
   private long endTime;
   private final TaskExecutor taskExecutor;
 
-  public TaskStatusCron4j(String id, String label, TaskExecutor taskExecutor) {
-    this.id = id;
-    this.label = label;
+  public TaskStatusCron4j(TaskCron4j taskCron4j, TaskExecutor taskExecutor) {
+    this.id = taskCron4j.getTask().getId();
+    this.label = taskCron4j.getTask().getLabel();
+    this.threadName = taskCron4j.getThreadName();
     this.taskExecutor = taskExecutor;
     this.endTime = 0;
 
@@ -64,6 +69,11 @@ public class TaskStatusCron4j implements TaskStatus {
   }
 
   @Override
+  public String getThreadName() {
+    return threadName;
+  }
+
+  @Override
   public String getStatusMessage() {
     return taskExecutor.getStatusMessage();
   }
@@ -85,7 +95,7 @@ public class TaskStatusCron4j implements TaskStatus {
 
   @Override
   public boolean isDone() {
-    return taskExecutor.getStartTime() >= 0 && !taskExecutor.isAlive();
+    return taskExecutor.getStartTime() >= 0 && endTime > 0;
   }
 
   @Override
