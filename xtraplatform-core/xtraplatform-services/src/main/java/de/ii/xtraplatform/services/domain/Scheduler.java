@@ -7,8 +7,6 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-import java.util.Optional;
-
 /** @author zahnen */
 public interface Scheduler {
   TaskStatus launch(Task task);

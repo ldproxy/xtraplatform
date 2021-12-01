@@ -46,7 +46,8 @@ public interface ServiceBackgroundTask<T extends Service> {
     private final int maxPartials;
     private final BiConsumer<T, TaskContext> runnable;
 
-    public BoundTask(T service, String label, int maxPartials,  BiConsumer<T, TaskContext> runnable) {
+    public BoundTask(
+        T service, String label, int maxPartials, BiConsumer<T, TaskContext> runnable) {
       this.service = service;
       this.label = label;
       this.maxPartials = maxPartials;

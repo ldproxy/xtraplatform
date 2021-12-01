@@ -17,8 +17,8 @@ public class TaskContextCron4j implements TaskContext {
   private final int partial;
   private final String threadName;
 
-  public TaskContextCron4j(TaskExecutionContext taskExecutionContext, int maxPartials, int partial,
-      String threadName) {
+  public TaskContextCron4j(
+      TaskExecutionContext taskExecutionContext, int maxPartials, int partial, String threadName) {
     this.taskExecutionContext = taskExecutionContext;
     this.maxPartials = maxPartials;
     this.partial = partial;

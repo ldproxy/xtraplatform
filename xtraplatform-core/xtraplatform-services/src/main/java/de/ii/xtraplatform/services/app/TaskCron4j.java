@@ -10,8 +10,6 @@ package de.ii.xtraplatform.services.app;
 import de.ii.xtraplatform.services.domain.TaskContext;
 import it.sauronsoftware.cron4j.Task;
 import it.sauronsoftware.cron4j.TaskExecutionContext;
-import java.util.Objects;
-import java.util.Optional;
 
 /** @author zahnen */
 public class TaskCron4j extends Task {
@@ -25,7 +23,11 @@ public class TaskCron4j extends Task {
     this(task, 1, 1, threadNumber);
   }
 
-  public TaskCron4j(de.ii.xtraplatform.services.domain.Task task, int maxPartials, int partial, int threadNumber) {
+  public TaskCron4j(
+      de.ii.xtraplatform.services.domain.Task task,
+      int maxPartials,
+      int partial,
+      int threadNumber) {
     this.task = task;
     this.maxPartials = maxPartials;
     this.partial = partial;
@@ -54,7 +56,8 @@ public class TaskCron4j extends Task {
 
   @Override
   public void execute(TaskExecutionContext taskExecutionContext) throws RuntimeException {
-    final TaskContext taskContext = new TaskContextCron4j(taskExecutionContext, maxPartials, partial, threadName);
+    final TaskContext taskContext =
+        new TaskContextCron4j(taskExecutionContext, maxPartials, partial, threadName);
     task.run(taskContext);
   }
 

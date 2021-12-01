@@ -62,7 +62,10 @@ public class ServiceBackgroundTasksImpl
       @Requires EntityRegistry entityRegistry) {
     this.tasks = new RegistryState<>(SERVICE_BACKGROUND_TASK, context);
     this.scheduler = scheduler;
-    this.commonQueue = scheduler.createQueue(ServiceBackgroundTasks.COMMON_QUEUE, xtraPlatform.getConfiguration().backgroundTasks.maxThreads);
+    this.commonQueue =
+        scheduler.createQueue(
+            ServiceBackgroundTasks.COMMON_QUEUE,
+            xtraPlatform.getConfiguration().backgroundTasks.maxThreads);
     this.taskQueues = new ConcurrentHashMap<>();
     taskQueues.put(COMMON_QUEUE, commonQueue);
     entityRegistry.addEntityListener(Service.class, this::onServiceStart, true);

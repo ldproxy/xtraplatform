@@ -7,9 +7,7 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 public interface TaskContext extends TaskProgress {
 
   int getMaxPartials();

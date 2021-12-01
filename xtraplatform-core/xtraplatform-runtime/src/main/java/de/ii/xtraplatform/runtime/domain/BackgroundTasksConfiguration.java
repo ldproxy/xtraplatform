@@ -14,5 +14,9 @@ import javax.validation.constraints.NotNull;
 
 public class BackgroundTasksConfiguration {
 
-  @Valid @NotNull @Min(1) @JsonProperty public int maxThreads = 1;
+  @Valid
+  @NotNull
+  @Min(1)
+  @JsonProperty
+  public int maxThreads = 1;
 }

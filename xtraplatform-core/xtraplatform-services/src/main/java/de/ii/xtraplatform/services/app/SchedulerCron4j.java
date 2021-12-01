@@ -39,9 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.threeten.extra.AmountFormats;
 
-/**
- * @author zahnen
- */
+/** @author zahnen */
 @Component
 @Provides
 @Instantiate
@@ -61,16 +59,13 @@ public class SchedulerCron4j implements Scheduler {
     scheduler.addSchedulerListener(
         new SchedulerListener() {
           @Override
-          public void taskLaunching(TaskExecutor executor) {
-          }
+          public void taskLaunching(TaskExecutor executor) {}
 
           @Override
-          public void taskSucceeded(TaskExecutor executor) {
-          }
+          public void taskSucceeded(TaskExecutor executor) {}
 
           @Override
-          public void taskFailed(TaskExecutor executor, Throwable exception) {
-          }
+          public void taskFailed(TaskExecutor executor, Throwable exception) {}
         });
   }
 
@@ -102,11 +97,11 @@ public class SchedulerCron4j implements Scheduler {
     return new TaskQueue() {
       private final BlockingQueue<Pair<Task, CompletableFuture<TaskStatus>>> queue =
           new LinkedBlockingQueue<>();
-      private final BlockingQueue<TaskStatus> currentTasks = new LinkedBlockingQueue<>(
-          maxConcurrentTasks);
-      private final BlockingQueue<Integer> threadNumbers = new LinkedBlockingQueue<>(
-          IntStream.rangeClosed(1, maxConcurrentTasks).boxed().collect(Collectors.toList()));
-
+      private final BlockingQueue<TaskStatus> currentTasks =
+          new LinkedBlockingQueue<>(maxConcurrentTasks);
+      private final BlockingQueue<Integer> threadNumbers =
+          new LinkedBlockingQueue<>(
+              IntStream.rangeClosed(1, maxConcurrentTasks).boxed().collect(Collectors.toList()));
 
       @Override
       public synchronized CompletableFuture<TaskStatus> launch(Task task) {
@@ -119,8 +114,8 @@ public class SchedulerCron4j implements Scheduler {
               && Objects.equals(runningTask.getId(), task.getId())
               && Objects.equals(runningTask.getLabel(), task.getLabel())) {
             if (LOGGER.isDebugEnabled()) {
-              LOGGER.debug("Ignoring task '{}' for '{}', already running", task.getLabel(),
-                  task.getId());
+              LOGGER.debug(
+                  "Ignoring task '{}' for '{}', already running", task.getLabel(), task.getId());
             }
             return CompletableFuture.failedFuture(new IllegalArgumentException());
           }
@@ -187,7 +182,7 @@ public class SchedulerCron4j implements Scheduler {
         return queue.stream().map(Pair::getLeft).collect(Collectors.toList());
       }
 
-      //TODO: list of currentTasks
+      // TODO: list of currentTasks
       @Override
       public Optional<TaskStatus> getCurrentTask() {
         return Optional.ofNullable(currentTasks.peek());
@@ -201,24 +196,26 @@ public class SchedulerCron4j implements Scheduler {
 
           if (Objects.nonNull(task)) {
             if (task.getLeft().getMaxPartials() > 1 && currentTasks.remainingCapacity() > 1) {
-              int maxPartials = Math.min(currentTasks.remainingCapacity(), task.getLeft()
-                  .getMaxPartials());
+              int maxPartials =
+                  Math.min(currentTasks.remainingCapacity(), task.getLeft().getMaxPartials());
 
               for (int i = 1; i <= maxPartials; i++) {
                 int threadNumber = Objects.requireNonNullElse(threadNumbers.poll(), 1);
-                TaskCron4j taskCron4j = new TaskCron4j(task.getLeft(), maxPartials, i, threadNumber);
+                TaskCron4j taskCron4j =
+                    new TaskCron4j(task.getLeft(), maxPartials, i, threadNumber);
                 final TaskExecutor taskExecutor = scheduler.launch(taskCron4j);
                 TaskStatus currentTask = new TaskStatusCron4j(taskCron4j, taskExecutor);
 
                 addLogging(taskCron4j, currentTask, threadNumber);
-                currentTask.onDone(throwable -> {
-                  threadNumbers.offer(threadNumber);
-                  checkQueue();
-                });
+                currentTask.onDone(
+                    throwable -> {
+                      threadNumbers.offer(threadNumber);
+                      checkQueue();
+                    });
                 currentTasks.offer(currentTask);
 
-                //TODO: currently not used?
-                //task.getRight().complete(currentTask);
+                // TODO: currently not used?
+                // task.getRight().complete(currentTask);
               }
             } else {
               int threadNumber = Objects.requireNonNullElse(threadNumbers.poll(), 1);
@@ -227,10 +224,11 @@ public class SchedulerCron4j implements Scheduler {
               TaskStatus currentTask = new TaskStatusCron4j(taskCron4j, taskExecutor);
 
               addLogging(taskCron4j, currentTask, threadNumber);
-              currentTask.onDone(throwable -> {
-                threadNumbers.offer(threadNumber);
-                checkQueue();
-              });
+              currentTask.onDone(
+                  throwable -> {
+                    threadNumbers.offer(threadNumber);
+                    checkQueue();
+                  });
               currentTasks.offer(currentTask);
 
               task.getRight().complete(currentTask);
@@ -251,12 +249,14 @@ public class SchedulerCron4j implements Scheduler {
 
     Task task = taskCron4j.getTask();
     task.logContext();
-    String partialSuffix = taskCron4j.isPartial()
-        ? String.format(" [%d/%d]", taskCron4j.getPartial(), taskCron4j.getMaxPartials())
-        : "";
-    String part = taskCron4j.isPartial()
-        ? String.format(" (part [%d/%d])", taskCron4j.getPartial(), taskCron4j.getMaxPartials())
-        : "";
+    String partialSuffix =
+        taskCron4j.isPartial()
+            ? String.format(" [%d/%d]", taskCron4j.getPartial(), taskCron4j.getMaxPartials())
+            : "";
+    String part =
+        taskCron4j.isPartial()
+            ? String.format(" (part [%d/%d])", taskCron4j.getPartial(), taskCron4j.getMaxPartials())
+            : "";
     LOGGER.info("{}{} started", task.getLabel(), part);
 
     taskStatus.onChange(
