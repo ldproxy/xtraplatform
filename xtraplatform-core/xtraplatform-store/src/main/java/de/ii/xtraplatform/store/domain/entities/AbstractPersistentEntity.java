@@ -169,6 +169,18 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
+  protected final void doReload() {
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("MANUAL RELOAD");
+    }
+
+    executorService.submit(
+        () -> {
+          LogContext.put(LogContext.CONTEXT.SERVICE, getId());
+          onReload();
+        });
+  }
+
   private void afterReload() {
     reloadListeners.forEach(listener -> listener.accept(this));
 
