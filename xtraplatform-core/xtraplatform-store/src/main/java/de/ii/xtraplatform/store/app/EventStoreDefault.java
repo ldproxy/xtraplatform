@@ -22,6 +22,7 @@ import de.ii.xtraplatform.store.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.streams.domain.Reactive;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -125,9 +126,7 @@ public class EventStoreDefault implements EventStore {
                   boolean matches = filter.matches(event);
 
                   if (matches) {
-                    /*LOGGER.debug("ALLOW {type: {}, path: {}, id: {}}", event.type(), event.identifier()
-                    .path(), event.identifier()
-                                  .id());*/
+                    // LOGGER.debug("ALLOW {}", event.asPath());
                     if (Objects.equals(event.type(), "entities")
                         || Objects.equals(event.type(), "overrides")) {
                       String id =
@@ -168,11 +167,12 @@ public class EventStoreDefault implements EventStore {
                     }
                     return true;
                   }
-                  /*LOGGER.debug("SKIP {type: {}, path: {}, id: {}}", event.type(), event.identifier()
-                  .path(), event.identifier()
-                                .id());*/
+                  // LOGGER.debug("SKIP {}", event.asPath());
                   return false;
                 })
+            // TODO: set priority per event type (for now alphabetic works:
+            //  defaults < entities < overrides)
+            .sorted(Comparator.naturalOrder())
             .collect(Collectors.toList());
 
     deleteEvents.forEach(
