@@ -126,7 +126,7 @@ public class EventStoreDefault implements EventStore {
                   boolean matches = filter.matches(event);
 
                   if (matches) {
-                    //LOGGER.debug("ALLOW {}", event.asPath());
+                    // LOGGER.debug("ALLOW {}", event.asPath());
                     if (Objects.equals(event.type(), "entities")
                         || Objects.equals(event.type(), "overrides")) {
                       String id =
@@ -167,7 +167,7 @@ public class EventStoreDefault implements EventStore {
                     }
                     return true;
                   }
-                  //LOGGER.debug("SKIP {}", event.asPath());
+                  // LOGGER.debug("SKIP {}", event.asPath());
                   return false;
                 })
             // TODO: set priority per event type (for now alphabetic works:
