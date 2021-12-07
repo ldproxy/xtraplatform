@@ -167,12 +167,13 @@ public class ServicesEndpoint implements Endpoint {
                                 .get(0)
                                 .equals(MediaType.WILDCARD_TYPE))
                         ? containerRequestContext.getAcceptableMediaTypes().get(0)
-                        : containerRequestContext
-                                .getHeaderString("user-agent")
-                                .toLowerCase()
-                                .contains("google-site-verification")
+                        : (Objects.nonNull(containerRequestContext.getHeaderString("user-agent"))
+                                && containerRequestContext
+                                    .getHeaderString("user-agent")
+                                    .toLowerCase()
+                                    .contains("google-site-verification")
                             ? MediaType.TEXT_HTML_TYPE
-                            : MediaType.APPLICATION_JSON_TYPE;
+                            : MediaType.APPLICATION_JSON_TYPE);
 
     if (serviceListingProviders.containsKey(mediaType)) {
       Response serviceListing =
