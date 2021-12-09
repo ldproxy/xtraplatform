@@ -271,14 +271,14 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   public <U extends PersistentEntity> void addReloadListener(Class<U> type, Consumer<U> listener) {
     // TODO: only used by ServiceBackgroundTasksImpl, so there is max 1 listener,
     // but under certain circumstances it is added multiple times
-    if (reloadListeners.isEmpty()) {
-      this.reloadListeners.add(
-          (entity) -> {
-            if (type.isAssignableFrom(entity.getClass())) {
-              listener.accept(type.cast(entity));
-            }
-          });
-    }
+    // if (reloadListeners.isEmpty()) {
+    this.reloadListeners.add(
+        (entity) -> {
+          if (type.isAssignableFrom(entity.getClass())) {
+            listener.accept(type.cast(entity));
+          }
+        });
+    // }
   }
 
   @Override
