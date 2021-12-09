@@ -13,5 +13,7 @@ public interface Scheduler {
 
   String schedule(Runnable runnable, String cronPattern);
 
+  void deschedule(String jobId);
+
   TaskQueue createQueue(String id, int capacity);
 }

@@ -93,6 +93,11 @@ public class SchedulerCron4j implements Scheduler {
   }
 
   @Override
+  public void deschedule(String jobId) {
+    scheduler.deschedule(jobId);
+  }
+
+  @Override
   public TaskQueue createQueue(String id, int maxConcurrentTasks) {
     return new TaskQueue() {
       private final BlockingQueue<Pair<Task, CompletableFuture<TaskStatus>>> queue =
