@@ -19,10 +19,12 @@ import de.ii.xtraplatform.services.domain.TaskQueue;
 import de.ii.xtraplatform.services.domain.TaskStatus;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.Reloadable;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
@@ -54,6 +56,7 @@ public class ServiceBackgroundTasksImpl
   private final Scheduler scheduler;
   private final TaskQueue commonQueue;
   private final Map<String, TaskQueue> taskQueues;
+  private final Map<String, List<String>> cronJobs;
 
   ServiceBackgroundTasksImpl(
       @Context BundleContext context,
@@ -67,6 +70,7 @@ public class ServiceBackgroundTasksImpl
             ServiceBackgroundTasks.COMMON_QUEUE,
             xtraPlatform.getConfiguration().backgroundTasks.maxThreads);
     this.taskQueues = new ConcurrentHashMap<>();
+    this.cronJobs = new ConcurrentHashMap<>();
     taskQueues.put(COMMON_QUEUE, commonQueue);
     entityRegistry.addEntityListener(Service.class, this::onServiceStart, true);
     entityRegistry.addEntityGoneListener(Service.class, this::onServiceStop);
@@ -108,6 +112,7 @@ public class ServiceBackgroundTasksImpl
     commonQueue.getFutureTasks().stream()
         .filter(task -> Objects.equals(task.getId(), service.getId()))
         .forEach(commonQueue::remove);
+    stopCronJobs(service.getId());
   }
 
   private <T extends Service, U extends Service> void scheduleIfMatching(
@@ -125,7 +130,21 @@ public class ServiceBackgroundTasksImpl
     if (task.runPeriodic(service).isPresent()) {
       TaskQueue taskQueue = taskQueues.get(task.getQueue());
       Task task1 = task.getTask(service, task.getLabel());
-      scheduler.schedule(() -> taskQueue.launch(task1), task.runPeriodic(service).get());
+      startCronJob(service.getId(), task.runPeriodic(service).get(), () -> taskQueue.launch(task1));
+    }
+  }
+
+  private void startCronJob(String serviceId, String cronPattern, Runnable runnable) {
+    if (!cronJobs.containsKey(serviceId)) {
+      cronJobs.put(serviceId, new CopyOnWriteArrayList<>());
+    }
+    String jobId = scheduler.schedule(runnable, cronPattern);
+    cronJobs.get(serviceId).add(jobId);
+  }
+
+  private void stopCronJobs(String serviceId) {
+    if (cronJobs.containsKey(serviceId)) {
+      cronJobs.get(serviceId).forEach(scheduler::deschedule);
     }
   }
 
