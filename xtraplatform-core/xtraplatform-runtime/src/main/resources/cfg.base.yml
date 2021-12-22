@@ -15,6 +15,7 @@ server:
     appenders: []
   shutdownGracePeriod: 5s
   enableThreadNameFilter: false
+  registerDefaultExceptionMappers: false
 
 httpClient:
   timeout: 30s
