@@ -87,5 +87,7 @@ public class XtraPlatformConfiguration extends Configuration {
   @Valid @NotNull @JsonProperty
   public BackgroundTasksConfiguration backgroundTasks = new BackgroundTasksConfiguration();
 
+  @Valid @NotNull @JsonProperty public ProjConfiguration proj = new ProjConfiguration();
+
   @Valid @JsonProperty public ClusterConfiguration cluster;
 }
