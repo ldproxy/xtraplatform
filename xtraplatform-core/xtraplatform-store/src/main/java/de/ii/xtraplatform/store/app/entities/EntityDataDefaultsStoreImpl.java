@@ -81,7 +81,9 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       @Requires EntityFactory entityFactory) {
     this.entityFactory = entityFactory;
     this.eventStore = eventStore;
-    this.valueEncoding = new ValueEncodingJackson<>(jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+    this.valueEncoding =
+        new ValueEncodingJackson<>(
+            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
@@ -96,7 +98,9 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
     valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getDefaults, eventSourcing));
 
-    this.valueEncodingBuilder = new ValueEncodingJackson<>(jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+    this.valueEncodingBuilder =
+        new ValueEncodingJackson<>(
+            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
     valueEncodingBuilder.addDecoderMiddleware(
         new ValueDecoderBase<>(
             this::getNewBuilder,
@@ -112,7 +116,9 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               }
             }));
 
-    this.valueEncodingMap = new ValueEncodingJackson<>(jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+    this.valueEncodingMap =
+        new ValueEncodingJackson<>(
+            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
             identifier -> new LinkedHashMap<>(),
@@ -128,7 +134,9 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               }
             }));
 
-    this.valueEncodingEntity = new ValueEncodingJackson<>(jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+    this.valueEncodingEntity =
+        new ValueEncodingJackson<>(
+            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
     valueEncodingEntity.addDecoderMiddleware(
         new ValueDecoderWithBuilder<>(
             this::getBuilder,
@@ -273,17 +281,20 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     Identifier defaultsIdentifier =
         subType.isPresent()
             ? ImmutableIdentifier.builder()
-            .id(EntityDataDefaultsStore.EVENT_TYPE)
-            .addAllPath(identifier.path())
-            .addPath(subType.get().toLowerCase())
-            .build()
+                .id(EntityDataDefaultsStore.EVENT_TYPE)
+                .addAllPath(identifier.path())
+                .addPath(subType.get().toLowerCase())
+                .build()
             : ImmutableIdentifier.builder()
                 .id(EntityDataDefaultsStore.EVENT_TYPE)
                 .addAllPath(identifier.path())
                 .build();
 
     return valueEncodingMap.deserialize(
-        defaultsIdentifier, valueEncodingEntity.serialize(entityData), valueEncoding.getDefaultFormat(), false);
+        defaultsIdentifier,
+        valueEncodingEntity.serialize(entityData),
+        valueEncoding.getDefaultFormat(),
+        false);
   }
 
   @Override

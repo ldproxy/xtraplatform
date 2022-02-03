@@ -77,11 +77,9 @@ public class EventStoreDriverFs implements EventStoreDriver {
   EventStoreDriverFs(@Context BundleContext bundleContext, @Requires XtraPlatform xtraPlatform) {
     this(bundleContext.getProperty(Constants.DATA_DIR_KEY), xtraPlatform.getConfiguration().store);
   }
+
   public EventStoreDriverFs(String dataDirectory, StoreConfiguration storeConfiguration) {
-    this.storeDirectory =
-        getStoreDirectory(
-            dataDirectory,
-            storeConfiguration);
+    this.storeDirectory = getStoreDirectory(dataDirectory, storeConfiguration);
     this.eventPaths =
         new EventPaths(
             storeDirectory,
@@ -89,13 +87,9 @@ public class EventStoreDriverFs implements EventStoreDriver {
             storeConfiguration.overridesPathPatterns,
             this::adjustPathPattern);
     this.isEnabled = true; // TODO: xtraPlatform.getConfiguration().store.driver = StoreDriver.FS
-    this.isReadOnly =
-        storeConfiguration.mode == StoreConfiguration.StoreMode.READ_ONLY;
+    this.isReadOnly = storeConfiguration.mode == StoreConfiguration.StoreMode.READ_ONLY;
 
-    this.additionalDirectories =
-        getAdditionalDirectories(
-            dataDirectory,
-            storeConfiguration);
+    this.additionalDirectories = getAdditionalDirectories(dataDirectory, storeConfiguration);
     this.additionalEventPaths =
         additionalDirectories.stream()
             .map(

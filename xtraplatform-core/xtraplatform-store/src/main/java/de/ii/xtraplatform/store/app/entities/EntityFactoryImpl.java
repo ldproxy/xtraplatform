@@ -212,10 +212,14 @@ public class EntityFactoryImpl implements EntityFactory {
     this.entityDataTypes.put(entityDataClass, entityType);
   }
 
-  public void registerEntityDataClass(String entityType, Optional<String> entitySubType, Class<? extends EntityData> entityDataClass, EntityDataBuilder<? extends EntityData> builder) {
+  public void registerEntityDataClass(
+      String entityType,
+      Optional<String> entitySubType,
+      Class<? extends EntityData> entityDataClass,
+      EntityDataBuilder<? extends EntityData> builder) {
     String specificEntityType = getSpecificEntityType(entityType, entitySubType);
-    this.entityDataBuilders.put(specificEntityType,
-        (Class<EntityDataBuilder<EntityData>>) builder.getClass());
+    this.entityDataBuilders.put(
+        specificEntityType, (Class<EntityDataBuilder<EntityData>>) builder.getClass());
     this.entityDataTypes.put(entityDataClass, specificEntityType);
   }
 
@@ -342,7 +346,10 @@ public class EntityFactoryImpl implements EntityFactory {
     }
   }
 
-  public void registerEntityDataDefaults(String entityType, Optional<String> entitySubType, EntityDataDefaults<? extends EntityData> defaults) {
+  public void registerEntityDataDefaults(
+      String entityType,
+      Optional<String> entitySubType,
+      EntityDataDefaults<? extends EntityData> defaults) {
     String specificEntityType = getSpecificEntityType(entityType, entitySubType);
     this.entityDataDefaults.put(specificEntityType, (EntityDataDefaults<EntityData>) defaults);
   }

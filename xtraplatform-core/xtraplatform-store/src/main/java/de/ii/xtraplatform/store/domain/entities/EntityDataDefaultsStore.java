@@ -23,8 +23,7 @@ public interface EntityDataDefaultsStore extends MergeableKeyValueStore<Map<Stri
       Map<String, Object> data,
       List<String> ignoreKeys);
 
-  Map<String, Object> asMap(Identifier identifier, EntityData entityData)
-      throws IOException;
+  Map<String, Object> asMap(Identifier identifier, EntityData entityData) throws IOException;
 
   Optional<Map<String, Object>> getAllDefaults(Identifier identifier, Optional<String> subType);
 

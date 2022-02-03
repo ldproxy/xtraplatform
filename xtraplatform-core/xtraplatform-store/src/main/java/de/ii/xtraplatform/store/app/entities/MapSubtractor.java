@@ -83,20 +83,25 @@ public class MapSubtractor {
 
     for (Object item : right) {
       boolean removed = diff.remove(item);
-      //TODO: listEntryIdentifiers
+      // TODO: listEntryIdentifiers
       if (!removed) {
-        if (item instanceof Map && ((Map<String, Object>)item).containsKey("buildingBlock")) {
-          Optional<Object> leftMatch = left.stream()
-              .filter(leftItem -> leftItem instanceof Map
-                  && ((Map<String, Object>) leftItem).containsKey("buildingBlock")
-                  && Objects.equals(((Map<String, Object>) leftItem).get("buildingBlock"),
-                  ((Map<String, Object>) item).get("buildingBlock")))
-              .findFirst();
+        if (item instanceof Map && ((Map<String, Object>) item).containsKey("buildingBlock")) {
+          Optional<Object> leftMatch =
+              left.stream()
+                  .filter(
+                      leftItem ->
+                          leftItem instanceof Map
+                              && ((Map<String, Object>) leftItem).containsKey("buildingBlock")
+                              && Objects.equals(
+                                  ((Map<String, Object>) leftItem).get("buildingBlock"),
+                                  ((Map<String, Object>) item).get("buildingBlock")))
+                  .findFirst();
           if (leftMatch.isPresent()) {
-            Map<String, Object> subtracted = subtract(
-                (Map<String, Object>) leftMatch.get(),
-                (Map<String, Object>) item,
-                ImmutableList.of("buildingBlock"));
+            Map<String, Object> subtracted =
+                subtract(
+                    (Map<String, Object>) leftMatch.get(),
+                    (Map<String, Object>) item,
+                    ImmutableList.of("buildingBlock"));
             diff.set(diff.indexOf(leftMatch.get()), subtracted);
           }
         }

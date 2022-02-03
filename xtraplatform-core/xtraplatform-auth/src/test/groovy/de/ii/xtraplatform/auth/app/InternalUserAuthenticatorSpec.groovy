@@ -116,6 +116,11 @@ class InternalUserAuthenticatorSpec extends Specification {
         }
 
         @Override
+        EntityData fromBytes(Identifier identifier, byte[] entityData) throws IOException {
+            return null
+        }
+
+        @Override
         List<String> ids(String... path) {
             return ImmutableList.of("testAdmin", "testUser")
         }

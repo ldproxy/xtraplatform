@@ -88,8 +88,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.isEventStoreReadOnly = eventStore.isReadOnly();
     this.entityFactory = entityFactory;
     this.additionalEvents = new ConcurrentLinkedQueue<>();
-    this.valueEncoding = new ValueEncodingJackson<>(jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
-    this.valueEncodingMap = new ValueEncodingJackson<>(jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+    this.valueEncoding =
+        new ValueEncodingJackson<>(
+            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+    this.valueEncodingMap =
+        new ValueEncodingJackson<>(
+            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
@@ -380,8 +384,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   @Override
-  public EntityData fromBytes(Identifier identifier, byte[] entityData)
-      throws IOException {
+  public EntityData fromBytes(Identifier identifier, byte[] entityData) throws IOException {
     return valueEncoding.deserialize(
         identifier, entityData, valueEncoding.getDefaultFormat(), true);
   }
