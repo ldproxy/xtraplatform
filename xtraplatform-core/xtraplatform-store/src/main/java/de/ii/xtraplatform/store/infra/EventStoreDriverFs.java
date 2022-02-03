@@ -20,6 +20,7 @@ import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
 import de.ii.xtraplatform.store.app.EventPaths;
+import de.ii.xtraplatform.store.app.xpk.XpkReader;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.Identifier;
@@ -74,32 +75,35 @@ public class EventStoreDriverFs implements EventStoreDriver {
   private final boolean isReadOnly;
 
   EventStoreDriverFs(@Context BundleContext bundleContext, @Requires XtraPlatform xtraPlatform) {
+    this(bundleContext.getProperty(Constants.DATA_DIR_KEY), xtraPlatform.getConfiguration().store);
+  }
+  public EventStoreDriverFs(String dataDirectory, StoreConfiguration storeConfiguration) {
     this.storeDirectory =
         getStoreDirectory(
-            bundleContext.getProperty(Constants.DATA_DIR_KEY),
-            xtraPlatform.getConfiguration().store);
+            dataDirectory,
+            storeConfiguration);
     this.eventPaths =
         new EventPaths(
             storeDirectory,
-            xtraPlatform.getConfiguration().store.instancePathPattern,
-            xtraPlatform.getConfiguration().store.overridesPathPatterns,
+            storeConfiguration.instancePathPattern,
+            storeConfiguration.overridesPathPatterns,
             this::adjustPathPattern);
     this.isEnabled = true; // TODO: xtraPlatform.getConfiguration().store.driver = StoreDriver.FS
     this.isReadOnly =
-        xtraPlatform.getConfiguration().store.mode == StoreConfiguration.StoreMode.READ_ONLY;
+        storeConfiguration.mode == StoreConfiguration.StoreMode.READ_ONLY;
 
     this.additionalDirectories =
         getAdditionalDirectories(
-            bundleContext.getProperty(Constants.DATA_DIR_KEY),
-            xtraPlatform.getConfiguration().store);
+            dataDirectory,
+            storeConfiguration);
     this.additionalEventPaths =
         additionalDirectories.stream()
             .map(
                 additionalDirectory ->
                     new EventPaths(
                         additionalDirectory,
-                        xtraPlatform.getConfiguration().store.instancePathPattern,
-                        xtraPlatform.getConfiguration().store.overridesPathPatterns,
+                        storeConfiguration.instancePathPattern,
+                        storeConfiguration.overridesPathPatterns,
                         this::adjustPathPattern))
             .collect(Collectors.toList());
   }
@@ -160,6 +164,16 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
   @Override
   public Stream<EntityEvent> loadEventStream() {
+    // TODO
+    Path pkgDir = storeDirectory.getParent().resolve("pkgs");
+    try {
+      XpkReader xpkReader = new XpkReader();
+      xpkReader.readPackages(pkgDir, (path, payload) -> LOGGER.error("PKG ENTRY {}", path));
+    } catch (Throwable e) {
+      // ignore
+      LOGGER.error("", e);
+    }
+
     try {
       return Stream.concat(
           eventPaths

@@ -61,7 +61,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
   private final List<ValueDecoderMiddleware<byte[]>> decoderPreProcessor;
   private final List<ValueDecoderMiddleware<T>> decoderMiddleware;
 
-  public ValueEncodingJackson(Jackson jackson) {
+  public ValueEncodingJackson(Jackson jackson, boolean failOnUnknownProperties) {
 
     ObjectMapper jsonMapper =
         jackson
@@ -86,6 +86,11 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
             .setDefaultMergeable(true)
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+
+    if (failOnUnknownProperties) {
+      jsonMapper.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+      yamlMapper.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
 
     this.mappers =
         ImmutableMap.of(

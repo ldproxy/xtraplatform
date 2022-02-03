@@ -12,6 +12,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
+import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
@@ -78,7 +79,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private final EventSourcing<EntityData> eventSourcing;
   private final EntityDataDefaultsStore defaultsStore;
 
-  protected EntityDataStoreImpl(
+  public EntityDataStoreImpl(
+      @Requires XtraPlatform xtraPlatform,
       @Requires EventStore eventStore,
       @Requires Jackson jackson,
       @Requires EntityFactory entityFactory,
@@ -86,8 +88,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.isEventStoreReadOnly = eventStore.isReadOnly();
     this.entityFactory = entityFactory;
     this.additionalEvents = new ConcurrentLinkedQueue<>();
-    this.valueEncoding = new ValueEncodingJackson<>(jackson);
-    this.valueEncodingMap = new ValueEncodingJackson<>(jackson);
+    this.valueEncoding = new ValueEncodingJackson<>(jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+    this.valueEncodingMap = new ValueEncodingJackson<>(jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
@@ -378,6 +380,13 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   @Override
+  public EntityData fromBytes(Identifier identifier, byte[] entityData)
+      throws IOException {
+    return valueEncoding.deserialize(
+        identifier, entityData, valueEncoding.getDefaultFormat(), true);
+  }
+
+  @Override
   public CompletableFuture<EntityData> put(String id, EntityData data, String... path) {
     final Identifier identifier = Identifier.from(id, path);
 
@@ -436,7 +445,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
           .whenComplete(
               (entityData, throwable) -> {
                 if (Objects.nonNull(entityData)) {
-                  onUpdate(identifier, entityData);
+                  onUpdate(identifier, entityData).join();
                 } else if (Objects.nonNull(throwable)) {
                   onFailure(identifier, throwable);
                 }

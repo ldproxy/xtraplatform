@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapDifference;
@@ -15,9 +16,11 @@ import com.google.common.collect.Maps;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public class MapSubtractor {
 
@@ -25,10 +28,10 @@ public class MapSubtractor {
       Map<String, Object> data, Map<String, Object> defaults, List<String> ignoreKeys) {
 
     if (Objects.equals(data, defaults)) {
-      return ImmutableMap.of();
+      return new LinkedHashMap<>();
     }
 
-    ImmutableMap.Builder<String, Object> result = ImmutableMap.builder();
+    Map<String, Object> result = new LinkedHashMap<>();
 
     MapDifference<String, Object> difference = Maps.difference(data, defaults);
 
@@ -72,14 +75,32 @@ public class MapSubtractor {
       }
     }
 
-    return result.build();
+    return result;
   }
 
   private Collection<Object> subtract(Collection<Object> left, Collection<Object> right) {
     ArrayList<Object> diff = Lists.newArrayList(left);
 
     for (Object item : right) {
-      diff.remove(item);
+      boolean removed = diff.remove(item);
+      //TODO: listEntryIdentifiers
+      if (!removed) {
+        if (item instanceof Map && ((Map<String, Object>)item).containsKey("buildingBlock")) {
+          Optional<Object> leftMatch = left.stream()
+              .filter(leftItem -> leftItem instanceof Map
+                  && ((Map<String, Object>) leftItem).containsKey("buildingBlock")
+                  && Objects.equals(((Map<String, Object>) leftItem).get("buildingBlock"),
+                  ((Map<String, Object>) item).get("buildingBlock")))
+              .findFirst();
+          if (leftMatch.isPresent()) {
+            Map<String, Object> subtracted = subtract(
+                (Map<String, Object>) leftMatch.get(),
+                (Map<String, Object>) item,
+                ImmutableList.of("buildingBlock"));
+            diff.set(diff.indexOf(leftMatch.get()), subtracted);
+          }
+        }
+      }
     }
 
     return diff;

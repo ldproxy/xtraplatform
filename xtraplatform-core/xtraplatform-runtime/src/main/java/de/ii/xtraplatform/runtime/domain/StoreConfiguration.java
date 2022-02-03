@@ -32,6 +32,8 @@ public class StoreConfiguration {
 
   @Valid @NotNull @JsonProperty public boolean secured = false;
 
+  @Valid @NotNull @JsonProperty public boolean failOnUnknownProperties = false;
+
   // defaultValuesPathPattern
   @Valid @NotNull @JsonProperty
   public List<String> defaultValuesPathPatterns =

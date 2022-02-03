@@ -95,4 +95,9 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
       throws IOException {
     return getDecorated().fromMap(identifier, entityData);
   }
+
+  @Override
+  default EntityData fromBytes(Identifier identifier, byte[] entityData) throws IOException {
+    return getDecorated().fromBytes(identifier, entityData);
+  }
 }

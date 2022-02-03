@@ -24,6 +24,9 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
 
   EntityData fromMap(Identifier identifier, Map<String, Object> entityData) throws IOException;
 
+  EntityData fromBytes(Identifier identifier, byte[] entityData)
+      throws IOException;
+
   CompletableFuture<T> patch(String id, Map<String, Object> partialData, String... path);
 
   ValueEncoding<EntityData> getValueEncoding();
