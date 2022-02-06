@@ -98,8 +98,7 @@ public class SourceDefault<T> implements Source<T> {
   }
 
   @Override
-  public Source<T> mapError(
-      Function<Throwable, Throwable> errorMapper) {
+  public Source<T> mapError(Function<Throwable, Throwable> errorMapper) {
     this.errorMapper = Optional.ofNullable(errorMapper);
 
     return this;

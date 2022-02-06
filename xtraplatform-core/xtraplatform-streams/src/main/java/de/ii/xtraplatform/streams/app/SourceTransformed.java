@@ -16,7 +16,6 @@ import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
 import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustomFuseableIn;
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 
 public class SourceTransformed<T, U> implements Source<U> {
@@ -76,8 +75,7 @@ public class SourceTransformed<T, U> implements Source<U> {
   }
 
   @Override
-  public Source<U> mapError(
-      Function<Throwable, Throwable> errorMapper) {
+  public Source<U> mapError(Function<Throwable, Throwable> errorMapper) {
     source.mapError(errorMapper);
 
     return this;
@@ -106,12 +104,15 @@ public class SourceTransformed<T, U> implements Source<U> {
   }
 
   private <U1> boolean isFuseable(Transformer<U, U1> transformer) {
-    TranformerCustomFuseableOut<?, U, ?> fuseableOut = this.transformer instanceof TranformerCustomFuseableOut
-        ? (TranformerCustomFuseableOut<T, U, ?>) this.transformer
-        : this.transformer instanceof TransformerChained
-            && ((TransformerChained<T, ?, U>)this.transformer).getTransformer2() instanceof TranformerCustomFuseableOut
-          ? (TranformerCustomFuseableOut<?, U, ?>) ((TransformerChained<T, ?, U>)this.transformer).getTransformer2()
-            : null;
+    TranformerCustomFuseableOut<?, U, ?> fuseableOut =
+        this.transformer instanceof TranformerCustomFuseableOut
+            ? (TranformerCustomFuseableOut<T, U, ?>) this.transformer
+            : this.transformer instanceof TransformerChained
+                    && ((TransformerChained<T, ?, U>) this.transformer).getTransformer2()
+                        instanceof TranformerCustomFuseableOut
+                ? (TranformerCustomFuseableOut<?, U, ?>)
+                    ((TransformerChained<T, ?, U>) this.transformer).getTransformer2()
+                : null;
 
     return transformer instanceof TransformerCustomFuseableIn
         && Objects.nonNull(fuseableOut)
@@ -123,13 +124,15 @@ public class SourceTransformed<T, U> implements Source<U> {
     TransformerCustomFuseableIn<U, U1, V> in = (TransformerCustomFuseableIn<U, U1, V>) transformer2;
 
     if (transformer1 instanceof TranformerCustomFuseableOut) {
-      TranformerCustomFuseableOut<T, U, V> out = (TranformerCustomFuseableOut<T, U, V>) transformer1;
+      TranformerCustomFuseableOut<T, U, V> out =
+          (TranformerCustomFuseableOut<T, U, V>) transformer1;
       return new TransformerFused<>(out, in);
     }
 
     TransformerChained<T, U2, U> chained = (TransformerChained<T, U2, U>) transformer1;
     Transformer<T, U2> other = chained.getTransformer1();
-    TranformerCustomFuseableOut<U2, U, V> out = (TranformerCustomFuseableOut<U2, U, V>) chained.getTransformer2();
+    TranformerCustomFuseableOut<U2, U, V> out =
+        (TranformerCustomFuseableOut<U2, U, V>) chained.getTransformer2();
 
     return new TransformerChained<>(other, new TransformerFused<>(out, in));
   }

@@ -46,11 +46,9 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
     this.itemHandler = Optional.empty();
 
     if (source instanceof SourceDefault) {
-      ((SourceDefault<V>) source).getErrorMapper()
-          .ifPresent(errorMappers::add);
+      ((SourceDefault<V>) source).getErrorMapper().ifPresent(errorMappers::add);
     } else if (source instanceof SourceTransformed) {
-      ((SourceTransformed<?, ?>) source).getSource().getErrorMapper()
-          .ifPresent(errorMappers::add);
+      ((SourceTransformed<?, ?>) source).getSource().getErrorMapper().ifPresent(errorMappers::add);
     }
   }
 

@@ -229,11 +229,12 @@ public class ReactiveAkka implements Reactive {
         return flow2.fold(transformer.getItem(), transformer.getReducer()::apply);
       case FLATMAP:
         akka.stream.javadsl.Flow<U, U, NotUsed> flow3 = akka.stream.javadsl.Flow.create();
-        return flow3.flatMapConcat(u -> {
-          Source<V> source = transformer.getFlatMap().apply(u);
-          akka.stream.javadsl.Source<V, ?> akkaSource = assemble(source);
-          return akkaSource;
-        });
+        return flow3.flatMapConcat(
+            u -> {
+              Source<V> source = transformer.getFlatMap().apply(u);
+              akka.stream.javadsl.Source<V, ?> akkaSource = assemble(source);
+              return akkaSource;
+            });
     }
 
     throw new IllegalStateException();

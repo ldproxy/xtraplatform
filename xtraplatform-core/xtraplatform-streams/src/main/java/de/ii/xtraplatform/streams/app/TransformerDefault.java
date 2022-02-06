@@ -60,7 +60,8 @@ public class TransformerDefault<T, U> implements Transformer<T, U> {
   TransformerDefault(
       Type type,
       Function<T, U> function,
-      Predicate<T> predicate, Consumer<T> consumer,
+      Predicate<T> predicate,
+      Consumer<T> consumer,
       U item,
       BiFunction<U, T, U> reducer,
       Function<T, Source<U>> flatMap) {
