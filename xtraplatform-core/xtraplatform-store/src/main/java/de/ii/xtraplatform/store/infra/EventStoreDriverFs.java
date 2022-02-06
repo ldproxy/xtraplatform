@@ -20,7 +20,6 @@ import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
 import de.ii.xtraplatform.store.app.EventPaths;
-import de.ii.xtraplatform.store.app.xpk.XpkReader;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.Identifier;
@@ -158,16 +157,6 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
   @Override
   public Stream<EntityEvent> loadEventStream() {
-    // TODO
-    Path pkgDir = storeDirectory.getParent().resolve("pkgs");
-    try {
-      XpkReader xpkReader = new XpkReader();
-      xpkReader.readPackages(pkgDir, (path, payload) -> LOGGER.error("PKG ENTRY {}", path));
-    } catch (Throwable e) {
-      // ignore
-      LOGGER.error("", e);
-    }
-
     try {
       return Stream.concat(
           eventPaths
