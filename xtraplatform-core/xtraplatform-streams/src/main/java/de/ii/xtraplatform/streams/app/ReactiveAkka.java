@@ -14,14 +14,17 @@ import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.JavaFlowSupport;
 import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.RunnableGraph;
+import akka.stream.javadsl.Source;
 import akka.stream.javadsl.StreamConverters;
 import akka.util.ByteString;
 import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
 import de.ii.xtraplatform.streams.domain.Reactive;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
@@ -99,12 +102,30 @@ public class ReactiveAkka implements Reactive {
   }
 
   static <U> akka.stream.javadsl.Source<U, ?> assemble(Reactive.Source<U> source) {
+    akka.stream.javadsl.Source<U, ?> assembled = null;
+    Optional<Source<U>> prepend = Optional.empty();
+    Optional<Source<U>> mergeSorted = Optional.empty();
+    Optional<Comparator<U>> mergeSortedComparator = Optional.empty();
+
     if (source instanceof SourceDefault) {
-      return assemble((SourceDefault<U>) source);
+      assembled = assemble((SourceDefault<U>) source);
+      prepend = ((SourceDefault<U>) source).getPrepend();
+      mergeSorted = ((SourceDefault<U>) source).getMergeSorted();
+      mergeSortedComparator = ((SourceDefault<U>) source).getMergeSortedComparator();
     }
 
     if (source instanceof SourceTransformed) {
-      return assemble((SourceTransformed<?, U>) source);
+      assembled = assemble((SourceTransformed<?, U>) source);
+    }
+
+    if (Objects.nonNull(assembled)) {
+      if (prepend.isPresent()) {
+        return assembled.prepend(assemble(prepend.get()));
+      } else if (mergeSorted.isPresent() && mergeSortedComparator.isPresent()) {
+        return assembled.mergeSorted(assemble(mergeSorted.get()), mergeSortedComparator.get());
+      }
+
+      return assembled;
     }
 
     throw new IllegalStateException();
@@ -157,16 +178,34 @@ public class ReactiveAkka implements Reactive {
   }
 
   static <U, V> akka.stream.javadsl.Flow<U, V, ?> assemble(Transformer<U, V> transformer) {
+    Flow<U, V, ?> assembled = null;
+    Optional<Source<V>> prepend = Optional.empty();
+    Optional<Source<V>> mergeSorted = Optional.empty();
+    Optional<Comparator<V>> mergeSortedComparator = Optional.empty();
+
     if (transformer instanceof TransformerDefault) {
-      return assemble((TransformerDefault<U, V>) transformer);
+      assembled = assemble((TransformerDefault<U, V>) transformer);
+      prepend = ((TransformerDefault<U, V>) transformer).getPrepend();
+      mergeSorted = ((TransformerDefault<U, V>) transformer).getMergeSorted();
+      mergeSortedComparator = ((TransformerDefault<U, V>) transformer).getMergeSortedComparator();
     }
 
     if (transformer instanceof TransformerChained) {
-      return assemble((TransformerChained<U, ?, V>) transformer);
+      assembled = assemble((TransformerChained<U, ?, V>) transformer);
     }
 
     if (transformer instanceof TransformerCustom) {
-      return new AsymmetricFlow<>((TransformerCustom<U, V>) transformer).flow;
+      assembled = new AsymmetricFlow<>((TransformerCustom<U, V>) transformer).flow;
+    }
+
+    if (Objects.nonNull(assembled)) {
+      if (prepend.isPresent()) {
+        return assembled.prepend(assemble(prepend.get()));
+      } else if (mergeSorted.isPresent() && mergeSortedComparator.isPresent()) {
+        return assembled.mergeSorted(assemble(mergeSorted.get()), mergeSortedComparator.get());
+      }
+
+      return assembled;
     }
 
     throw new IllegalStateException();
@@ -176,6 +215,9 @@ public class ReactiveAkka implements Reactive {
     switch (transformer.getType()) {
       case MAP:
         return akka.stream.javadsl.Flow.fromFunction(transformer.getFunction()::apply);
+      case FILTER:
+        akka.stream.javadsl.Flow<U, U, NotUsed> flow1 = akka.stream.javadsl.Flow.create();
+        return (Flow<U, V, ?>) flow1.filter(u -> transformer.getPredicate().test(u));
       case PEEK:
         return akka.stream.javadsl.Flow.fromFunction(
             u -> {
@@ -183,8 +225,15 @@ public class ReactiveAkka implements Reactive {
               return (V) u;
             });
       case REDUCE:
-        akka.stream.javadsl.Flow<U, U, NotUsed> flow1 = akka.stream.javadsl.Flow.create();
-        return flow1.fold(transformer.getItem(), transformer.getReducer()::apply);
+        akka.stream.javadsl.Flow<U, U, NotUsed> flow2 = akka.stream.javadsl.Flow.create();
+        return flow2.fold(transformer.getItem(), transformer.getReducer()::apply);
+      case FLATMAP:
+        akka.stream.javadsl.Flow<U, U, NotUsed> flow3 = akka.stream.javadsl.Flow.create();
+        return flow3.flatMapConcat(u -> {
+          Source<V> source = transformer.getFlatMap().apply(u);
+          akka.stream.javadsl.Source<V, ?> akkaSource = assemble(source);
+          return akkaSource;
+        });
     }
 
     throw new IllegalStateException();
@@ -290,6 +339,8 @@ public class ReactiveAkka implements Reactive {
         akka.stream.javadsl.Sink<byte[], CompletionStage<V>> sink9 =
             flow2.toMat(sink8, Keep.right());
         return (akka.stream.javadsl.Sink<U, CompletionStage<V>>) sink9;
+      case AKKA:
+        return sink.getAkkaSink();
     }
 
     throw new IllegalStateException();

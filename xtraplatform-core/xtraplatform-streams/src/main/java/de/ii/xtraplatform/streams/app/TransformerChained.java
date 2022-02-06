@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.streams.app;
 
+import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
+import java.util.Comparator;
 
 public class TransformerChained<T, U, V> implements Transformer<T, V> {
 
@@ -25,5 +27,19 @@ public class TransformerChained<T, U, V> implements Transformer<T, V> {
 
   public Transformer<U, V> getTransformer2() {
     return transformer2;
+  }
+
+  @Override
+  public Transformer<T, V> prepend(Source<V> other) {
+    transformer2.prepend(other);
+
+    return this;
+  }
+
+  @Override
+  public Transformer<T, V> mergeSorted(Source<V> other, Comparator<V> comparator) {
+    transformer2.mergeSorted(other, comparator);
+
+    return this;
   }
 }

@@ -14,6 +14,10 @@ import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import de.ii.xtraplatform.streams.domain.Reactive.TranformerCustomFuseableOut;
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
 import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustomFuseableIn;
+import java.util.Comparator;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 
 public class SourceTransformed<T, U> implements Source<U> {
 
@@ -71,6 +75,28 @@ public class SourceTransformed<T, U> implements Source<U> {
     throw new UnsupportedOperationException();
   }
 
+  @Override
+  public Source<U> mapError(
+      Function<Throwable, Throwable> errorMapper) {
+    source.mapError(errorMapper);
+
+    return this;
+  }
+
+  @Override
+  public Source<U> prepend(Source<U> other) {
+    transformer.prepend(other);
+
+    return this;
+  }
+
+  @Override
+  public Source<U> mergeSorted(Source<U> other, Comparator<U> comparator) {
+    transformer.mergeSorted(other, comparator);
+
+    return this;
+  }
+
   public SourceDefault<T> getSource() {
     return source;
   }
@@ -80,17 +106,31 @@ public class SourceTransformed<T, U> implements Source<U> {
   }
 
   private <U1> boolean isFuseable(Transformer<U, U1> transformer) {
-    return this.transformer instanceof TranformerCustomFuseableOut
-        && transformer instanceof TransformerCustomFuseableIn
-        && ((TranformerCustomFuseableOut<T, U, ?>) this.transformer)
-            .canFuse((TransformerCustomFuseableIn<U, U1, ?>) transformer);
+    TranformerCustomFuseableOut<?, U, ?> fuseableOut = this.transformer instanceof TranformerCustomFuseableOut
+        ? (TranformerCustomFuseableOut<T, U, ?>) this.transformer
+        : this.transformer instanceof TransformerChained
+            && ((TransformerChained<T, ?, U>)this.transformer).getTransformer2() instanceof TranformerCustomFuseableOut
+          ? (TranformerCustomFuseableOut<?, U, ?>) ((TransformerChained<T, ?, U>)this.transformer).getTransformer2()
+            : null;
+
+    return transformer instanceof TransformerCustomFuseableIn
+        && Objects.nonNull(fuseableOut)
+        && fuseableOut.canFuse((TransformerCustomFuseableIn<U, U1, ?>) transformer);
   }
 
-  private <U1, V> Transformer<T, U1> fuse(
+  private <U1, U2, V> Transformer<T, U1> fuse(
       Transformer<T, U> transformer1, Transformer<U, U1> transformer2) {
-    TranformerCustomFuseableOut<T, U, V> out = (TranformerCustomFuseableOut<T, U, V>) transformer1;
     TransformerCustomFuseableIn<U, U1, V> in = (TransformerCustomFuseableIn<U, U1, V>) transformer2;
 
-    return new TransformerFused<>(out, in);
+    if (transformer1 instanceof TranformerCustomFuseableOut) {
+      TranformerCustomFuseableOut<T, U, V> out = (TranformerCustomFuseableOut<T, U, V>) transformer1;
+      return new TransformerFused<>(out, in);
+    }
+
+    TransformerChained<T, U2, U> chained = (TransformerChained<T, U2, U>) transformer1;
+    Transformer<T, U2> other = chained.getTransformer1();
+    TranformerCustomFuseableOut<U2, U, V> out = (TranformerCustomFuseableOut<U2, U, V>) chained.getTransformer2();
+
+    return new TransformerChained<>(other, new TransformerFused<>(out, in));
   }
 }

@@ -11,9 +11,11 @@ import de.ii.xtraplatform.streams.domain.Reactive.Sink;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReducedTransformed;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkTransformed;
+import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import de.ii.xtraplatform.streams.domain.Reactive.TranformerCustomFuseableOut;
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
 import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustomFuseableIn;
+import java.util.Comparator;
 import java.util.function.Consumer;
 
 public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut<T, V, W> {
@@ -108,6 +110,20 @@ public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut
   @Override
   public SinkTransformed<T, V> to(Sink<V> sink) {
     return TranformerCustomFuseableOut.super.to(sink);
+  }
+
+  @Override
+  public Transformer<T, V> prepend(Source<V> other) {
+    transformer2.prepend(other);
+
+    return this;
+  }
+
+  @Override
+  public Transformer<T, V> mergeSorted(Source<V> other, Comparator<V> comparator) {
+    transformer2.mergeSorted(other, comparator);
+
+    return this;
   }
 
   private <X> TransformerCustomFuseableIn<V, X, W> x(Transformer<V, X> transformer) {
