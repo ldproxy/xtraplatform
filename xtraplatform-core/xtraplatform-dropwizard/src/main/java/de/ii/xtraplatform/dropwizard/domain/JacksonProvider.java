@@ -89,7 +89,9 @@ public class JacksonProvider implements Jackson {
             .registerModule(new Jdk8Module())
             .registerModule(new GuavaModule())
             .registerModule(new CaffeineModule())
-            .registerModule(new AfterburnerModule())//TODO: suppresses reflections warnings, but does not work with osgi .setUseValueClassLoader(false))
+            .registerModule(
+                new AfterburnerModule()) // TODO: suppresses reflections warnings, but does not work
+            // with osgi .setUseValueClassLoader(false))
             .registerModule(new FuzzyEnumModule())
             .registerModule(new JavaTimeModule())
             .setDefaultMergeable(false)
