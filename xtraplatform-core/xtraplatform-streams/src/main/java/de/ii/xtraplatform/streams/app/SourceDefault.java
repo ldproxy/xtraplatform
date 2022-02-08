@@ -13,8 +13,11 @@ import de.ii.xtraplatform.streams.domain.Reactive.SinkReducedTransformed;
 import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
 import java.io.InputStream;
+import java.util.Comparator;
+import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
+import java.util.function.Function;
 
 public class SourceDefault<T> implements Source<T> {
 
@@ -32,6 +35,10 @@ public class SourceDefault<T> implements Source<T> {
   private final T item;
   private final InputStream inputStream;
   private final akka.stream.javadsl.Source<T, ?> akkaSource;
+  private Optional<Function<Throwable, Throwable>> errorMapper;
+  private Source<T> prepend;
+  private Source<T> mergeSorted;
+  private Comparator<T> mergeSortedComparator;
 
   public SourceDefault(Iterable<T> iterable) {
     this(Type.ITERABLE, iterable, null, null, null, null);
@@ -68,6 +75,7 @@ public class SourceDefault<T> implements Source<T> {
     this.item = item;
     this.inputStream = inputStream;
     this.akkaSource = akkaSource;
+    this.errorMapper = Optional.empty();
   }
 
   @Override
@@ -87,6 +95,28 @@ public class SourceDefault<T> implements Source<T> {
           .to(((SinkTransformedImpl<T, V, W>) sink).getSink());
     }
     return null;
+  }
+
+  @Override
+  public Source<T> mapError(Function<Throwable, Throwable> errorMapper) {
+    this.errorMapper = Optional.ofNullable(errorMapper);
+
+    return this;
+  }
+
+  @Override
+  public Source<T> prepend(Source<T> other) {
+    this.prepend = other;
+
+    return this;
+  }
+
+  @Override
+  public Source<T> mergeSorted(Source<T> other, Comparator<T> comparator) {
+    this.mergeSorted = other;
+    this.mergeSortedComparator = comparator;
+
+    return this;
   }
 
   public Type getType() {
@@ -111,5 +141,21 @@ public class SourceDefault<T> implements Source<T> {
 
   public akka.stream.javadsl.Source<T, ?> getAkkaSource() {
     return akkaSource;
+  }
+
+  public Optional<Function<Throwable, Throwable>> getErrorMapper() {
+    return errorMapper;
+  }
+
+  public Optional<Source<T>> getPrepend() {
+    return Optional.ofNullable(prepend);
+  }
+
+  public Optional<Source<T>> getMergeSorted() {
+    return Optional.ofNullable(mergeSorted);
+  }
+
+  public Optional<Comparator<T>> getMergeSortedComparator() {
+    return Optional.ofNullable(mergeSortedComparator);
   }
 }

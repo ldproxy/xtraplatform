@@ -7,8 +7,10 @@
  */
 package de.ii.xtraplatform.streams.app;
 
+import akka.stream.javadsl.Sink;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
 import java.io.OutputStream;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.function.BiFunction;
@@ -22,7 +24,8 @@ public class SinkDefault<U, V> implements SinkReduced<U, V> {
     SUBSCRIBER,
     FOREACH,
     REDUCE,
-    OUTPUT_STREAM
+    OUTPUT_STREAM,
+    AKKA
   }
 
   private final Type type;
@@ -31,25 +34,30 @@ public class SinkDefault<U, V> implements SinkReduced<U, V> {
   private final V item;
   private final BiFunction<V, U, V> reducer;
   private final OutputStream outputStream;
+  private final Sink<U, CompletionStage<V>> akkaSink;
 
   public SinkDefault(Type type) {
-    this(type, null, null, null, null, null);
+    this(type, null, null, null, null, null, null);
   }
 
   public SinkDefault(Flow.Subscriber<U> subscriber) {
-    this(Type.SUBSCRIBER, subscriber, null, null, null, null);
+    this(Type.SUBSCRIBER, subscriber, null, null, null, null, null);
   }
 
   public SinkDefault(Consumer<U> consumer) {
-    this(Type.FOREACH, null, consumer, null, null, null);
+    this(Type.FOREACH, null, consumer, null, null, null, null);
   }
 
   public SinkDefault(V item, BiFunction<V, U, V> reducer) {
-    this(Type.REDUCE, null, null, item, reducer, null);
+    this(Type.REDUCE, null, null, item, reducer, null, null);
   }
 
   public SinkDefault(OutputStream outputStream) {
-    this(Type.OUTPUT_STREAM, null, null, null, null, outputStream);
+    this(Type.OUTPUT_STREAM, null, null, null, null, outputStream, null);
+  }
+
+  public SinkDefault(Sink<U, CompletionStage<V>> akkaSink) {
+    this(Type.AKKA, null, null, null, null, null, akkaSink);
   }
 
   SinkDefault(
@@ -58,17 +66,19 @@ public class SinkDefault<U, V> implements SinkReduced<U, V> {
       Consumer<U> consumer,
       V item,
       BiFunction<V, U, V> reducer,
-      OutputStream outputStream) {
+      OutputStream outputStream,
+      Sink<U, CompletionStage<V>> akkaSink) {
     this.type = type;
     this.subscriber = subscriber;
     this.consumer = consumer;
     this.item = item;
     this.reducer = reducer;
     this.outputStream = outputStream;
+    this.akkaSink = akkaSink;
   }
 
   <V1> SinkDefault<U, V1> withResult(V1 item) {
-    return new SinkDefault<U, V1>(type, subscriber, consumer, item, null, outputStream);
+    return new SinkDefault<U, V1>(type, subscriber, consumer, item, null, outputStream, null);
   }
 
   public Type getType() {
@@ -93,5 +103,9 @@ public class SinkDefault<U, V> implements SinkReduced<U, V> {
 
   public OutputStream getOutputStream() {
     return outputStream;
+  }
+
+  public Sink<U, CompletionStage<V>> getAkkaSink() {
+    return akkaSink;
   }
 }
