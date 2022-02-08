@@ -28,10 +28,15 @@ import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
+import io.dropwizard.jackson.CaffeineModule;
+import io.dropwizard.jackson.FuzzyEnumModule;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Context;
@@ -69,13 +74,24 @@ public class JacksonProvider implements Jackson {
     this.context = context;
   }
 
+  public JacksonProvider(List<JacksonSubTypeIds> subTypeIds) {
+    this((BundleContext) null);
+
+    subTypeIds.forEach(ids -> mapping.putAll(ids.getMapping()));
+  }
+
   private ObjectMapper configureMapper(ObjectMapper mapper) {
     return (ObjectMapper)
         mapper
             .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
-            .registerModules(new Jdk8Module(), new GuavaModule())
+            .registerModule(new Jdk8Module())
+            .registerModule(new GuavaModule())
+            .registerModule(new CaffeineModule())
+            .registerModule(new AfterburnerModule().setUseValueClassLoader(false))
+            .registerModule(new FuzzyEnumModule())
+            .registerModule(new JavaTimeModule())
             .setDefaultMergeable(false)
             .setHandlerInstantiator(dynamicHandlerInstantiator);
   }

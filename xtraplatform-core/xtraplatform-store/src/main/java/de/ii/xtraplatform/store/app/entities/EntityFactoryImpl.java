@@ -107,7 +107,7 @@ public class EntityFactoryImpl implements EntityFactory {
   private final ScheduledExecutorService executorService;
   private final EntityRegistry entityRegistry;
 
-  protected EntityFactoryImpl(
+  public EntityFactoryImpl(
       @Context BundleContext context,
       @Requires DeclarationBuilderService declarationBuilderService,
       @Requires EntityRegistry entityRegistry) {
@@ -210,6 +210,17 @@ public class EntityFactoryImpl implements EntityFactory {
 
     this.entityDataBuilders.put(entityType, builder);
     this.entityDataTypes.put(entityDataClass, entityType);
+  }
+
+  public void registerEntityDataClass(
+      String entityType,
+      Optional<String> entitySubType,
+      Class<? extends EntityData> entityDataClass,
+      EntityDataBuilder<? extends EntityData> builder) {
+    String specificEntityType = getSpecificEntityType(entityType, entitySubType);
+    this.entityDataBuilders.put(
+        specificEntityType, (Class<EntityDataBuilder<EntityData>>) builder.getClass());
+    this.entityDataTypes.put(entityDataClass, specificEntityType);
   }
 
   // TODO
@@ -333,6 +344,14 @@ public class EntityFactoryImpl implements EntityFactory {
         LOGGER.debug(MARKER.DI, "Registered entity data defaults: {}", specificEntityType);
       }
     }
+  }
+
+  public void registerEntityDataDefaults(
+      String entityType,
+      Optional<String> entitySubType,
+      EntityDataDefaults<? extends EntityData> defaults) {
+    String specificEntityType = getSpecificEntityType(entityType, entitySubType);
+    this.entityDataDefaults.put(specificEntityType, (EntityDataDefaults<EntityData>) defaults);
   }
 
   private synchronized void onDefaultsDeparture(
@@ -551,6 +570,9 @@ public class EntityFactoryImpl implements EntityFactory {
   @Override
   public CompletableFuture<PersistentEntity> createInstance(
       String entityType, String id, EntityData entityData) {
+    if (declarationBuilderService == null) {
+      return CompletableFuture.completedFuture(null);
+    }
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("CREATING ENTITY {} {} {}", entityType, id /*, entityData*/);
     }
@@ -593,6 +615,9 @@ public class EntityFactoryImpl implements EntityFactory {
   @Override
   public CompletableFuture<Void> updateInstance(
       String entityType, String id, EntityData entityData) {
+    if (declarationBuilderService == null) {
+      return CompletableFuture.completedFuture(null);
+    }
     try (MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
 
       String instanceId = entityType + "/" + id;

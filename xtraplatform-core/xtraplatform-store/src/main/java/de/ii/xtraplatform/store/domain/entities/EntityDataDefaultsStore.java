@@ -9,6 +9,7 @@ package de.ii.xtraplatform.store.domain.entities;
 
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.MergeableKeyValueStore;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +22,8 @@ public interface EntityDataDefaultsStore extends MergeableKeyValueStore<Map<Stri
       Optional<String> subType,
       Map<String, Object> data,
       List<String> ignoreKeys);
+
+  Map<String, Object> asMap(Identifier identifier, EntityData entityData) throws IOException;
 
   Optional<Map<String, Object>> getAllDefaults(Identifier identifier, Optional<String> subType);
 
