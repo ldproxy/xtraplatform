@@ -63,7 +63,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverFs.class);
   private static final String STORE_DIR_LEGACY = "config-store";
 
-  @ServiceController(value = false)
+  //@ServiceController(value = false)
   private boolean publish;
 
   private final Path storeDirectory;
