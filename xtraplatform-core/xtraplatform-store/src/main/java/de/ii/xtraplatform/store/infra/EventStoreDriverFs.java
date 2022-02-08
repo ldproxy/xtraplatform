@@ -49,7 +49,6 @@ import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.ServiceController;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
@@ -63,7 +62,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverFs.class);
   private static final String STORE_DIR_LEGACY = "config-store";
 
-  @ServiceController(value = false)
+  // @ServiceController(value = false)
   private boolean publish;
 
   private final Path storeDirectory;
