@@ -120,9 +120,10 @@ public class ReactiveAkka implements Reactive {
 
     if (Objects.nonNull(assembled)) {
       if (prepend.isPresent()) {
-        return assembled.prepend(assemble(prepend.get()));
-      } else if (mergeSorted.isPresent() && mergeSortedComparator.isPresent()) {
-        return assembled.mergeSorted(assemble(mergeSorted.get()), mergeSortedComparator.get());
+        assembled = assembled.prepend(assemble(prepend.get()));
+      }
+      if (mergeSorted.isPresent() && mergeSortedComparator.isPresent()) {
+        assembled = assembled.mergeSorted(assemble(mergeSorted.get()), mergeSortedComparator.get());
       }
 
       return assembled;
@@ -200,9 +201,10 @@ public class ReactiveAkka implements Reactive {
 
     if (Objects.nonNull(assembled)) {
       if (prepend.isPresent()) {
-        return assembled.prepend(assemble(prepend.get()));
-      } else if (mergeSorted.isPresent() && mergeSortedComparator.isPresent()) {
-        return assembled.mergeSorted(assemble(mergeSorted.get()), mergeSortedComparator.get());
+        assembled = assembled.prepend(assemble(prepend.get()));
+      }
+      if (mergeSorted.isPresent() && mergeSortedComparator.isPresent()) {
+        assembled = assembled.mergeSorted(assemble(mergeSorted.get()), mergeSortedComparator.get());
       }
 
       return assembled;
