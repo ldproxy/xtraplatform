@@ -547,6 +547,7 @@ public class EntityFactoryImpl implements EntityFactory {
             "Entity of type '{}' with id '{}' could not be hydrated",
             specificEntityType,
             id);
+        throw e;
       }
 
     } else if (entityHydrators.containsKey(entityType)) {
@@ -556,6 +557,7 @@ public class EntityFactoryImpl implements EntityFactory {
       } catch (Throwable e) {
         LogContext.error(
             LOGGER, e, "Entity of type '{}' with id '{}' could not be hydrated", entityType, id);
+        throw e;
       }
     }
 
