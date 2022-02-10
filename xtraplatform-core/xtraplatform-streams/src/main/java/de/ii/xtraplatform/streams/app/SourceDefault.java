@@ -14,6 +14,7 @@ import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
 import java.io.InputStream;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
@@ -106,15 +107,23 @@ public class SourceDefault<T> implements Source<T> {
 
   @Override
   public Source<T> prepend(Source<T> other) {
-    this.prepend = other;
+    if (Objects.nonNull(prepend)) {
+      prepend.prepend(other);
+    } else {
+      this.prepend = other;
+    }
 
     return this;
   }
 
   @Override
   public Source<T> mergeSorted(Source<T> other, Comparator<T> comparator) {
-    this.mergeSorted = other;
-    this.mergeSortedComparator = comparator;
+    if (Objects.nonNull(mergeSorted)) {
+      mergeSorted.mergeSorted(other, comparator);
+    } else {
+      this.mergeSorted = other;
+      this.mergeSortedComparator = comparator;
+    }
 
     return this;
   }
