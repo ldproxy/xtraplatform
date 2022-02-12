@@ -14,6 +14,8 @@ import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
 import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import de.ii.xtraplatform.streams.domain.Reactive.Stream;
 import de.ii.xtraplatform.streams.domain.Reactive.StreamWithResult;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -27,6 +29,7 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
   private final Source<V> source;
   private final SinkReduced<V, W> sink;
   private final W result;
+  private final List<Function<Throwable, Throwable>> errorMappers;
   private Optional<BiFunction<W, Throwable, W>> errorHandler;
   private Optional<BiFunction<W, V, W>> itemHandler;
 
@@ -38,8 +41,15 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
     this.source = source;
     this.sink = sink;
     this.result = initialResult;
+    this.errorMappers = new ArrayList<>();
     this.errorHandler = Optional.empty();
     this.itemHandler = Optional.empty();
+
+    if (source instanceof SourceDefault) {
+      ((SourceDefault<V>) source).getErrorMapper().ifPresent(errorMappers::add);
+    } else if (source instanceof SourceTransformed) {
+      ((SourceTransformed<?, ?>) source).getSource().getErrorMapper().ifPresent(errorMappers::add);
+    }
   }
 
   @Override

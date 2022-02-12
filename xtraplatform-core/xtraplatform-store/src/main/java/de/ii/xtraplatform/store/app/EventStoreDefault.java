@@ -53,8 +53,18 @@ public class EventStoreDefault implements EventStore {
       @Requires EventStoreDriver eventStoreDriver,
       @Requires Reactive reactive) {
     this.driver = eventStoreDriver;
-    this.subscriptions = new EventSubscriptions(reactive.runner("events"));
+    this.subscriptions = new EventSubscriptionsImpl(reactive.runner("events"));
     this.storeConfiguration = xtraPlatform.getConfiguration().store;
+    this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
+  }
+
+  public EventStoreDefault(
+      StoreConfiguration storeConfiguration,
+      EventStoreDriver eventStoreDriver,
+      EventSubscriptions subscriptions) {
+    this.driver = eventStoreDriver;
+    this.subscriptions = subscriptions;
+    this.storeConfiguration = storeConfiguration;
     this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
   }
 

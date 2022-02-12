@@ -49,7 +49,6 @@ import org.apache.felix.ipojo.annotations.Context;
 import org.apache.felix.ipojo.annotations.Instantiate;
 import org.apache.felix.ipojo.annotations.Provides;
 import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.ServiceController;
 import org.apache.felix.ipojo.annotations.Validate;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
@@ -63,7 +62,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverFs.class);
   private static final String STORE_DIR_LEGACY = "config-store";
 
-  @ServiceController(value = false)
+  // @ServiceController(value = false)
   private boolean publish;
 
   private final Path storeDirectory;
@@ -74,32 +73,29 @@ public class EventStoreDriverFs implements EventStoreDriver {
   private final boolean isReadOnly;
 
   EventStoreDriverFs(@Context BundleContext bundleContext, @Requires XtraPlatform xtraPlatform) {
-    this.storeDirectory =
-        getStoreDirectory(
-            bundleContext.getProperty(Constants.DATA_DIR_KEY),
-            xtraPlatform.getConfiguration().store);
+    this(bundleContext.getProperty(Constants.DATA_DIR_KEY), xtraPlatform.getConfiguration().store);
+  }
+
+  public EventStoreDriverFs(String dataDirectory, StoreConfiguration storeConfiguration) {
+    this.storeDirectory = getStoreDirectory(dataDirectory, storeConfiguration);
     this.eventPaths =
         new EventPaths(
             storeDirectory,
-            xtraPlatform.getConfiguration().store.instancePathPattern,
-            xtraPlatform.getConfiguration().store.overridesPathPatterns,
+            storeConfiguration.instancePathPattern,
+            storeConfiguration.overridesPathPatterns,
             this::adjustPathPattern);
     this.isEnabled = true; // TODO: xtraPlatform.getConfiguration().store.driver = StoreDriver.FS
-    this.isReadOnly =
-        xtraPlatform.getConfiguration().store.mode == StoreConfiguration.StoreMode.READ_ONLY;
+    this.isReadOnly = storeConfiguration.mode == StoreConfiguration.StoreMode.READ_ONLY;
 
-    this.additionalDirectories =
-        getAdditionalDirectories(
-            bundleContext.getProperty(Constants.DATA_DIR_KEY),
-            xtraPlatform.getConfiguration().store);
+    this.additionalDirectories = getAdditionalDirectories(dataDirectory, storeConfiguration);
     this.additionalEventPaths =
         additionalDirectories.stream()
             .map(
                 additionalDirectory ->
                     new EventPaths(
                         additionalDirectory,
-                        xtraPlatform.getConfiguration().store.instancePathPattern,
-                        xtraPlatform.getConfiguration().store.overridesPathPatterns,
+                        storeConfiguration.instancePathPattern,
+                        storeConfiguration.overridesPathPatterns,
                         this::adjustPathPattern))
             .collect(Collectors.toList());
   }

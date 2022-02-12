@@ -18,11 +18,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Comparator;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import scala.concurrent.ExecutionContextExecutor;
 
 public interface Reactive {
 
@@ -49,6 +52,12 @@ public interface Reactive {
     default <V> BasicStream<V, Void> to(SinkTransformed<T, V> sink) {
       return to((SinkReducedTransformed<T, V, Void>) sink);
     }
+
+    Source<T> mapError(Function<Throwable, Throwable> errorMapper);
+
+    Source<T> prepend(Source<T> other);
+
+    Source<T> mergeSorted(Source<T> other, Comparator<T> comparator);
 
     static <T> Source<T> iterable(Iterable<T> iterable) {
       return new SourceDefault<>(iterable);
@@ -106,8 +115,20 @@ public interface Reactive {
       return to((SinkReduced<U, Void>) sink);
     }
 
+    default Transformer<T, U> prepend(Source<U> other) {
+      throw new UnsupportedOperationException();
+    }
+
+    default Transformer<T, U> mergeSorted(Source<U> other, Comparator<U> comparator) {
+      throw new UnsupportedOperationException();
+    }
+
     static <T, U> Transformer<T, U> map(Function<T, U> function) {
       return new TransformerDefault<>(function);
+    }
+
+    static <T> Transformer<T, T> filter(Predicate<T> predicate) {
+      return new TransformerDefault<>(predicate);
     }
 
     static <T> Transformer<T, T> peek(Consumer<T> consumer) {
@@ -116,6 +137,10 @@ public interface Reactive {
 
     static <T, U> Transformer<T, U> reduce(U zero, BiFunction<U, T, U> reducer) {
       return new TransformerDefault<>(zero, reducer);
+    }
+
+    static <T, U> Transformer<T, U> flatMap(Function<T, Source<U>> flatMap) {
+      return new TransformerDefault<>(flatMap, true);
     }
   }
 
@@ -230,6 +255,12 @@ public interface Reactive {
 
       return reduce.via(map).to(Sink.head());
     }
+
+    // TODO: remove
+    @Deprecated
+    static <T, U> SinkReduced<T, U> akka(akka.stream.javadsl.Sink<T, CompletionStage<U>> akkaSink) {
+      return new SinkDefault<>(akkaSink);
+    }
   }
 
   interface SinkReduced<U, V> extends Sink<U> {}
@@ -277,6 +308,9 @@ public interface Reactive {
     <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph);
 
     <X> CompletionStage<X> run(Stream<X> stream);
+
+    @Deprecated
+    ExecutionContextExecutor getDispatcher();
 
     int getCapacity();
   }

@@ -163,6 +163,7 @@ public class RunnerAkka implements Runner {
     }
   }
 
+  @Override
   public ExecutionContextExecutor getDispatcher() {
     return materializer.system().dispatcher();
   }

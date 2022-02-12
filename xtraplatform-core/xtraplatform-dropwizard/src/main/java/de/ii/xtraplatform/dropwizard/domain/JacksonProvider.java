@@ -28,9 +28,13 @@ import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import io.dropwizard.jackson.CaffeineModule;
+import io.dropwizard.jackson.FuzzyEnumModule;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -66,7 +70,14 @@ public class JacksonProvider implements Jackson {
             .enable(SerializationFeature.INDENT_OUTPUT)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
-            .registerModules(new Jdk8Module(), new GuavaModule())
+            .registerModule(new Jdk8Module())
+            .registerModule(new GuavaModule())
+            .registerModule(new CaffeineModule())
+            .registerModule(
+                new AfterburnerModule()) // TODO: suppresses reflections warnings, but does not work
+            // with osgi .setUseValueClassLoader(false))
+            .registerModule(new FuzzyEnumModule())
+            .registerModule(new JavaTimeModule())
             .setDefaultMergeable(false)
             .setHandlerInstantiator(dynamicHandlerInstantiator);
   }
