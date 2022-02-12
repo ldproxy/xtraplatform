@@ -9,7 +9,7 @@ package de.ii.xtraplatform.web.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.web.domain.AbstractConfigurationProvider;
-import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
+import de.ii.xtraplatform.base.domain.XtraPlatformConfiguration;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

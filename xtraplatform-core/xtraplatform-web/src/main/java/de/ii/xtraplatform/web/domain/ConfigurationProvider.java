@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
-import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
+import de.ii.xtraplatform.base.domain.XtraPlatformConfiguration;
 
 @AutoMultiBind
 public interface ConfigurationProvider {

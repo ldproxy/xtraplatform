@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.web.app;
 
 import de.ii.xtraplatform.web.domain.Dropwizard;
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext;
 import io.dropwizard.jetty.NonblockingServletHolder;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

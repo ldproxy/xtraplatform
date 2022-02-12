@@ -8,8 +8,8 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.google.common.io.ByteSource;
-import de.ii.xtraplatform.runtime.domain.Constants;
-import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
+import de.ii.xtraplatform.base.domain.Constants;
+import de.ii.xtraplatform.base.domain.XtraPlatformConfiguration;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.nio.file.Path;

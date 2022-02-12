@@ -7,8 +7,8 @@
  */
 package de.ii.xtraplatform.web.domain;
 
-import de.ii.xtraplatform.runtime.domain.Constants.ENV;
-import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
+import de.ii.xtraplatform.base.domain.Constants.ENV;
+import de.ii.xtraplatform.base.domain.XtraPlatformConfiguration;
 import java.net.URI;
 
 public interface XtraPlatform {

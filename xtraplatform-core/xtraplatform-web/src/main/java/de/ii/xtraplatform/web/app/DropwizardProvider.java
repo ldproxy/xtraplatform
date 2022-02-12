@@ -20,10 +20,10 @@ import com.google.common.collect.ImmutableSet;
 import de.ii.xtraplatform.web.domain.ApplicationProvider;
 import de.ii.xtraplatform.web.domain.Dropwizard;
 import de.ii.xtraplatform.web.domain.MustacheResolverRegistry;
-import de.ii.xtraplatform.runtime.domain.Constants.ENV;
-import de.ii.xtraplatform.runtime.domain.Lifecycle;
-import de.ii.xtraplatform.runtime.domain.LogContext;
-import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
+import de.ii.xtraplatform.base.domain.Constants.ENV;
+import de.ii.xtraplatform.base.domain.Lifecycle;
+import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.XtraPlatformConfiguration;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.jetty.MutableServletContextHandler;
@@ -97,7 +97,7 @@ public class DropwizardProvider implements Dropwizard, Lifecycle {
       // is completed.
       controller = true;
 
-      LOGGER.debug("Initialized {} with configuration file {}", applicationName, cfgFile);
+      LOGGER.debug("User configurations: [{}]", cfgFile);
 
       run();
 

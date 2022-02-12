@@ -14,7 +14,7 @@ import de.ii.xtraplatform.web.domain.Dropwizard;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.web.domain.JaxRsChangeListener;
 import de.ii.xtraplatform.web.domain.JaxRsReg;
-import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.jetty.NonblockingServletHolder;
 import java.util.ArrayList;

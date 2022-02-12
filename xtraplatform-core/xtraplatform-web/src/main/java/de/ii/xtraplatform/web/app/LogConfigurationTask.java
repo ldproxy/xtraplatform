@@ -11,7 +11,7 @@ import ch.qos.logback.classic.LoggerContext;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
 import de.ii.xtraplatform.web.domain.Dropwizard;
-import de.ii.xtraplatform.runtime.domain.ThirdPartyLoggingFilter;
+import de.ii.xtraplatform.base.domain.ThirdPartyLoggingFilter;
 import io.dropwizard.servlets.tasks.Task;
 import java.io.PrintWriter;
 import java.util.Collection;

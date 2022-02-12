@@ -10,8 +10,8 @@ package de.ii.xtraplatform.web.app;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.io.ByteSource;
-import de.ii.xtraplatform.runtime.domain.ConfigurationReader;
-import de.ii.xtraplatform.runtime.domain.Constants;
+import de.ii.xtraplatform.base.domain.ConfigurationReader;
+import de.ii.xtraplatform.base.domain.Constants;
 import io.dropwizard.configuration.ConfigurationSourceProvider;
 import java.io.IOException;
 import java.io.InputStream;

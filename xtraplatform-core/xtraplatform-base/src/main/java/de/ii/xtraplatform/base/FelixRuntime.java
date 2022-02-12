@@ -72,7 +72,7 @@ public class FelixRuntime {
       LOGGER.debug("Data directory: {}", dataDir);
       //LOGGER.debug("Bundles directory: {}", bundlesDir);
       LOGGER.debug("Environment: {}", env);
-      LOGGER.debug("Base configs: {}", baseConfigs);
+      LOGGER.debug("Base configurations: {}", baseConfigs);
     }
 
     if (LOGGER.isDebugEnabled(LogContext.MARKER.DUMP)) {
