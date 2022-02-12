@@ -7,9 +7,11 @@
  */
 package de.ii.xtraplatform.dropwizard.domain;
 
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
 
-public interface ConfigurationProvider<T extends XtraPlatformConfiguration> {
+@AutoMultiBind
+public interface ConfigurationProvider {
 
-  T getConfiguration();
+  XtraPlatformConfiguration getConfiguration();
 }

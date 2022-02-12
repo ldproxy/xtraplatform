@@ -7,8 +7,10 @@
  */
 package de.ii.xtraplatform.dropwizard.domain;
 
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import javax.servlet.http.HttpServlet;
 
+@AutoMultiBind
 public interface AdminSubEndpoint {
 
   String getPath();

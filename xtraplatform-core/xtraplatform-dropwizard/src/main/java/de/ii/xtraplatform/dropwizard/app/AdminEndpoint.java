@@ -11,39 +11,28 @@ import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.codahale.metrics.servlets.PingServlet;
 import com.codahale.metrics.servlets.ThreadDumpServlet;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.dropwizard.domain.AdminSubEndpoint;
 import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.MessageFormat;
-import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
-@Component
-@Provides
-@Instantiate
-@Wbp(
-    filter = "(objectClass=de.ii.xtraplatform.dropwizard.domain.AdminSubEndpoint)",
-    onArrival = "onArrival",
-    onDeparture = "onDeparture")
+@Singleton
+@AutoBind
 public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AdminEndpoint.class);
@@ -75,35 +64,15 @@ public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
   private final ThreadDumpServlet threadDumpServlet;
   private final String serviceName;
   private final Set<AdminSubEndpoint> subEndpoints;
-  private final BundleContext bundleContext;
-  private ServletConfig servletConfig;
 
-  public AdminEndpoint(@Requires XtraPlatform xtraPlatform, @Context BundleContext bundleContext) {
+  @Inject
+  public AdminEndpoint(XtraPlatform xtraPlatform, Set<AdminSubEndpoint> subEndpoints) {
     this.serviceName = xtraPlatform.getApplicationName();
     this.healthCheckServlet = new HealthCheckServlet();
     this.metricsServlet = new MetricsServlet();
     this.pingServlet = new PingServlet();
     this.threadDumpServlet = new ThreadDumpServlet();
-    this.subEndpoints = new LinkedHashSet<>();
-    this.bundleContext = bundleContext;
-  }
-
-  @Override
-  public synchronized void onArrival(ServiceReference<AdminSubEndpoint> ref) {
-    AdminSubEndpoint subEndpoint = bundleContext.getService(ref);
-    subEndpoints.add(subEndpoint);
-    if (Objects.nonNull(servletConfig)) {
-      try {
-        subEndpoint.getServlet().init(servletConfig);
-      } catch (ServletException e) {
-        // ignore
-      }
-    }
-  }
-
-  @Override
-  public synchronized void onDeparture(ServiceReference<AdminSubEndpoint> ref) {
-    subEndpoints.remove(bundleContext.getService(ref));
+    this.subEndpoints = subEndpoints;
   }
 
   @Override
@@ -118,8 +87,6 @@ public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
     for (AdminSubEndpoint adminSubEndpoint : subEndpoints) {
       adminSubEndpoint.getServlet().init(config);
     }
-
-    this.servletConfig = config;
   }
 
   @Override

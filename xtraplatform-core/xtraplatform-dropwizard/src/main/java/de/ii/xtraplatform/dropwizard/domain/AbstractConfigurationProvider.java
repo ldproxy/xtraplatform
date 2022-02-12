@@ -11,7 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.dropwizard.app.MergingSourceProvider;
-import de.ii.xtraplatform.dropwizard.app.XtraServerFrameworkCommand;
+import de.ii.xtraplatform.dropwizard.app.XtraplatformCommand;
 import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
 import io.dropwizard.Application;
@@ -33,17 +33,17 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractConfigurationProvider<T extends XtraPlatformConfiguration>
-    implements ApplicationProvider<T>, ConfigurationProvider<T> {
+public abstract class AbstractConfigurationProvider
+    implements ApplicationProvider, ConfigurationProvider {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractConfigurationProvider.class);
   private static final String DW_CMD = "server";
 
-  private final CompletableFuture<T> configuration = new CompletableFuture<>();
+  private final CompletableFuture<XtraPlatformConfiguration> configuration = new CompletableFuture<>();
   private final CompletableFuture<Environment> environment = new CompletableFuture<>();
 
   @Override
-  public T getConfiguration() {
+  public XtraPlatformConfiguration getConfiguration() {
     try {
       return configuration.get();
     } catch (InterruptedException | ExecutionException e) {
@@ -70,20 +70,20 @@ public abstract class AbstractConfigurationProvider<T extends XtraPlatformConfig
   }
 
   @Override
-  public Pair<T, Environment> startWithFile(
-      Path configurationFile, Constants.ENV env, Consumer<Bootstrap<T>> initializer) {
-    Bootstrap<T> bootstrap = getBootstrap(initializer, env);
+  public Pair<XtraPlatformConfiguration, Environment> startWithFile(
+      Path configurationFile, Constants.ENV env, Consumer<Bootstrap<XtraPlatformConfiguration>> initializer) {
+    Bootstrap<XtraPlatformConfiguration> bootstrap = getBootstrap(initializer, env);
 
     return run(configurationFile.toString(), bootstrap);
   }
 
-  private Pair<T, Environment> run(String configurationFilePath, Bootstrap<T> bootstrap) {
+  private Pair<XtraPlatformConfiguration, Environment> run(String configurationFilePath, Bootstrap<XtraPlatformConfiguration> bootstrap) {
     final Cli cli = new Cli(new JarLocation(getClass()), bootstrap, System.out, System.err);
     String[] arguments = {DW_CMD, configurationFilePath};
 
     try {
       if (cli.run(arguments).isEmpty()) {
-        T cfg = configuration.get(30, TimeUnit.SECONDS);
+        XtraPlatformConfiguration cfg = configuration.get(30, TimeUnit.SECONDS);
         Environment env = environment.get(30, TimeUnit.SECONDS);
 
         return new ImmutablePair<>(cfg, env);
@@ -95,18 +95,18 @@ public abstract class AbstractConfigurationProvider<T extends XtraPlatformConfig
     throw new IllegalStateException();
   }
 
-  private Bootstrap<T> getBootstrap(Consumer<Bootstrap<T>> initializer, Constants.ENV env) {
-    Application<T> application =
-        new Application<T>() {
+  private Bootstrap<XtraPlatformConfiguration> getBootstrap(Consumer<Bootstrap<XtraPlatformConfiguration>> initializer, Constants.ENV env) {
+    Application<XtraPlatformConfiguration> application =
+        new Application<XtraPlatformConfiguration>() {
           @Override
-          public void run(T configuration, Environment environment) throws Exception {
+          public void run(XtraPlatformConfiguration configuration, Environment environment) throws Exception {
             AbstractConfigurationProvider.this.configuration.complete(configuration);
             AbstractConfigurationProvider.this.environment.complete(environment);
           }
         };
 
-    Bootstrap<T> bootstrap = new Bootstrap<>(application);
-    bootstrap.addCommand(new XtraServerFrameworkCommand<>(application));
+    Bootstrap<XtraPlatformConfiguration> bootstrap = new Bootstrap<>(application);
+    bootstrap.addCommand(new XtraplatformCommand<>(application));
 
     bootstrap.setConfigurationSourceProvider(
         new SubstitutingSourceProvider(

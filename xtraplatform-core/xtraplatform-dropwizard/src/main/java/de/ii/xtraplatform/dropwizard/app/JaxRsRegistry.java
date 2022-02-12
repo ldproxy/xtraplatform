@@ -7,9 +7,11 @@
  */
 package de.ii.xtraplatform.dropwizard.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.Sets;
 import de.ii.xtraplatform.dropwizard.domain.AuthProvider;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
+import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.dropwizard.domain.JaxRsChangeListener;
 import de.ii.xtraplatform.dropwizard.domain.JaxRsReg;
 import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
@@ -23,44 +25,33 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.DynamicFeature;
 import javax.ws.rs.ext.Provider;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.whiteboard.Wbp;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlet.ServletMapping;
 import org.eclipse.jetty.util.component.LifeCycle;
+import org.glassfish.jersey.internal.inject.Binder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 // used basic idea from https://github.com/hstaudacher/osgi-jax-rs-connector
 //
-@Component
-@Provides
-@Instantiate
-@Wbp(
-    filter = JaxRsRegistry.ANY_SERVICE_FILTER,
-    onArrival = "addingService",
-    onDeparture = "removedService")
+@Singleton
+@AutoBind
 public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JaxRsRegistry.class);
   public static final String PUBLISH = "de.ii.xsf.jaxrs.publish";
   public static final String ANY_SERVICE_FILTER = "(&(objectClass=*)(!(" + PUBLISH + "=false)))";
 
-  private final BundleContext context;
   private final MutableServletContextHandler server;
   private final SortedMap<Integer, Object> authProviders;
   private final List<Object> resourceCache;
@@ -72,9 +63,20 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
   private ResourceConfig jersey;
   private final List<JaxRsChangeListener> changeListeners;
 
-  JaxRsRegistry(@Context BundleContext context, @Requires Dropwizard dw) {
+  // TODO: DropwizardEnvironmentPlugin
+  // TODO: any other @Provider besides Binder?
+  // TODO: use marker interface to register Providers
+  @Inject
+  JaxRsRegistry(
+      Dropwizard dw,
+      Set<Endpoint> endpoints,
+      //Set<Binder> binders,
+      Set<AuthProvider<?>> authProviders
+      //Set<ContainerRequestFilter> containerRequestFilters,
+      //Set<ContainerResponseFilter> containerResponseFilters,
+      //Set<DynamicFeature> dynamicFeatures
+      ) {
     // super(context, context.createFilter(ANY_SERVICE_FILTER), null);
-    this.context = context;
     this.server = dw.getApplicationContext();
 
     this.authProviders = new TreeMap<>();
@@ -95,8 +97,8 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     this.isAuthProviderAvailable = false;
   }
 
-  public synchronized void addingService(ServiceReference reference) {
-    Object service = context.getService(reference);
+  public synchronized void addingService() {
+    Object service = null; // context.getService(reference);
 
     if (isRegisterable(service)) {
       if (isResource(service)) {
@@ -107,8 +109,8 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
         String type = null;
         int ranking = 0;
         try {
-          type = (String) reference.getProperty("provider.type");
-          ranking = (Integer) reference.getProperty("service.ranking");
+          // type = (String) reference.getProperty("provider.type");
+          // ranking = (Integer) reference.getProperty("service.ranking");
         } catch (NullPointerException e) {
         }
         if (type != null && type.equals("auth")) {
@@ -149,8 +151,8 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     changeListeners.add(changeListener);
   }
 
-  public synchronized void removedService(ServiceReference reference) {
-    Object service = context.getService(reference);
+  public synchronized void removedService() {
+    Object service = null; // context.getService(reference);
 
     if (isRegisterable(service)) {
       boolean removed = false;
@@ -162,8 +164,8 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
         String type = null;
         int ranking = 0;
         try {
-          type = (String) reference.getProperty("provider.type");
-          ranking = (Integer) reference.getProperty("service.ranking");
+          // type = (String) reference.getProperty("provider.type");
+          // ranking = (Integer) reference.getProperty("service.ranking");
         } catch (NullPointerException e) {
         }
         if (type != null && type.equals("auth")) {
@@ -177,7 +179,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
       }
     }
 
-    context.ungetService(reference);
+    // context.ungetService(reference);
   }
 
   private boolean isJerseyAvailable() {

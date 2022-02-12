@@ -7,23 +7,17 @@
  */
 package de.ii.xtraplatform.dropwizard.app;
 
-import static de.ii.xtraplatform.runtime.domain.Constants.DATA_DIR_KEY;
-
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.github.mustachejava.resolver.FileSystemResolver;
 import de.ii.xtraplatform.dropwizard.domain.PartialMustacheResolver;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.osgi.framework.BundleContext;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class FileSystemMustacheResolver extends FileSystemResolver
     implements PartialMustacheResolver {
 
@@ -35,11 +29,14 @@ public class FileSystemMustacheResolver extends FileSystemResolver
 
   private final Path templateDir;
 
-  public FileSystemMustacheResolver(@Context BundleContext bundleContext) {
-    super(Paths.get(bundleContext.getProperty(DATA_DIR_KEY)).toAbsolutePath().toFile());
-    this.templateDir =
-        Paths.get(bundleContext.getProperty(DATA_DIR_KEY), TEMPLATE_DIR_NAME, HTML_DIR_NAME)
-            .toAbsolutePath();
+  //TODO: via Xtraplatform?
+  @Inject
+  public FileSystemMustacheResolver() {
+    super(Path.of("").toAbsolutePath().toFile());
+    //super(Paths.get(bundleContext.getProperty(DATA_DIR_KEY)).toAbsolutePath().toFile());
+    this.templateDir = Path.of("");
+        //Paths.get(bundleContext.getProperty(DATA_DIR_KEY), TEMPLATE_DIR_NAME, HTML_DIR_NAME)
+          //  .toAbsolutePath();
   }
 
   @Override

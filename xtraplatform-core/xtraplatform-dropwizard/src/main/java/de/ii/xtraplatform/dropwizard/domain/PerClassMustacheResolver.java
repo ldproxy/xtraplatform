@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.dropwizard.domain;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -14,14 +15,16 @@ import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class PerClassMustacheResolver implements PartialMustacheResolver {
+
+  @Inject
+  public PerClassMustacheResolver() {
+  }
 
   @Override
   public int getSortPriority() {

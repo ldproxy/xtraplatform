@@ -19,18 +19,13 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.StreamingOutput;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.StaticServiceProperty;
-import org.osgi.service.http.whiteboard.HttpWhiteboardConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 
 // TODO
-@Component
+/*@Component
 @Provides(
     properties = {
       @StaticServiceProperty(
@@ -45,7 +40,7 @@ import org.slf4j.LoggerFactory;
                   + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME
                   + "=org.osgi.service.http)")
     })
-@Instantiate
+@Instantiate*/
 public class RobotsServlet extends HttpServlet implements ContainerResponseFilter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RobotsServlet.class);

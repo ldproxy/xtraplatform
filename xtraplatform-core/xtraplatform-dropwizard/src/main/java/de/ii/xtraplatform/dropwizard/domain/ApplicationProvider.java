@@ -17,12 +17,13 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.tuple.Pair;
 
-public interface ApplicationProvider<T extends XtraPlatformConfiguration> {
+//@AutoMultiBind
+public interface ApplicationProvider {
 
-  Class<T> getConfigurationClass();
+  Class<XtraPlatformConfiguration> getConfigurationClass();
 
   Optional<ByteSource> getConfigurationFileTemplate(String environment);
 
-  Pair<T, Environment> startWithFile(
-      Path configurationFile, Constants.ENV env, Consumer<Bootstrap<T>> initializer);
+  Pair<XtraPlatformConfiguration, Environment> startWithFile(
+      Path configurationFile, Constants.ENV env, Consumer<Bootstrap<XtraPlatformConfiguration>> initializer);
 }

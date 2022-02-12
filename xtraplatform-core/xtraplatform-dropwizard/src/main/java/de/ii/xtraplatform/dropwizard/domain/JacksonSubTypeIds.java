@@ -7,9 +7,11 @@
  */
 package de.ii.xtraplatform.dropwizard.domain;
 
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import java.util.Map;
 
 /** @author zahnen */
+@AutoMultiBind
 public interface JacksonSubTypeIds {
   Map<Class<?>, String> getMapping();
 }

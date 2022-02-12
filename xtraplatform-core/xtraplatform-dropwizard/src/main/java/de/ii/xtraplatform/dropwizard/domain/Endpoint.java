@@ -7,4 +7,7 @@
  */
 package de.ii.xtraplatform.dropwizard.domain;
 
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
+
+@AutoMultiBind
 public interface Endpoint {}

@@ -7,12 +7,14 @@
  */
 package de.ii.xtraplatform.dropwizard.domain;
 
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import java.security.Principal;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
 /** @author zahnen */
+@AutoMultiBind
 public interface AuthProvider<T extends Principal> {
   AuthDynamicFeature getAuthDynamicFeature();
 

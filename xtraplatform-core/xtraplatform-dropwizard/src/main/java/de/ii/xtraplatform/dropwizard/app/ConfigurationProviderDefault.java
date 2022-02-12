@@ -7,17 +7,20 @@
  */
 package de.ii.xtraplatform.dropwizard.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.dropwizard.domain.AbstractConfigurationProvider;
 import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class ConfigurationProviderDefault
-    extends AbstractConfigurationProvider<XtraPlatformConfiguration> {
+    extends AbstractConfigurationProvider {
+
+  @Inject
+  public ConfigurationProviderDefault() {
+  }
 
   @Override
   public Class<XtraPlatformConfiguration> getConfigurationClass() {

@@ -7,20 +7,23 @@
  */
 package de.ii.xtraplatform.dropwizard.app;
 
+import static de.ii.xtraplatform.dropwizard.app.WebServerDropwizard.JERSEY_ENDPOINT;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.core.Appender;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import de.ii.xtraplatform.dropwizard.domain.ApplicationProvider;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.dropwizard.domain.MustacheResolverRegistry;
-import de.ii.xtraplatform.runtime.domain.Constants;
 import de.ii.xtraplatform.runtime.domain.Constants.ENV;
+import de.ii.xtraplatform.runtime.domain.Lifecycle;
 import de.ii.xtraplatform.runtime.domain.LogContext;
 import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
@@ -34,37 +37,29 @@ import io.dropwizard.views.ViewBundle;
 import io.dropwizard.views.ViewRenderer;
 import java.net.URI;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.ServletContext;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.ServiceController;
-import org.apache.felix.ipojo.annotations.Validate;
+import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.glassfish.jersey.servlet.ServletContainer;
-import org.osgi.framework.BundleContext;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
-@Component
-@Provides
-@Instantiate
-public class DropwizardProvider implements Dropwizard {
+@Singleton
+@AutoBind
+public class DropwizardProvider implements Dropwizard, Lifecycle {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
 
   // Service not published by default
-  @ServiceController(value = false)
+  // @ServiceController(value = false)
   private boolean controller;
 
-  private final BundleContext context;
-  private final ApplicationProvider<XtraPlatformConfiguration> applicationProvider;
+  private final ApplicationProvider applicationProvider;
   private final MustacheResolverRegistry mustacheResolverRegistry;
   private final String applicationName;
   private final String applicationVersion;
@@ -74,33 +69,39 @@ public class DropwizardProvider implements Dropwizard {
   private Environment environment;
   private ServletContainer jerseyContainer;
   private ViewRenderer mustacheRenderer;
+  private Server server;
 
+  @Inject
   public DropwizardProvider(
-      @Context BundleContext context,
-      @Requires ApplicationProvider<XtraPlatformConfiguration> applicationProvider,
-      @Requires MustacheResolverRegistry mustacheResolverRegistry) {
-    this.context = context;
+      ApplicationProvider applicationProvider,
+      MustacheResolverRegistry mustacheResolverRegistry) {
     this.applicationProvider = applicationProvider;
     this.mustacheResolverRegistry = mustacheResolverRegistry;
-    this.applicationName = context.getProperty(Constants.APPLICATION_KEY);
-    this.applicationVersion = context.getProperty(Constants.VERSION_KEY);
-    this.applicationEnvironment = Constants.ENV.valueOf(context.getProperty(Constants.ENV_KEY));
+    this.applicationName = "TODO"; // context.getProperty(Constants.APPLICATION_KEY);
+    this.applicationVersion = "TODO"; // context.getProperty(Constants.VERSION_KEY);
+    this.applicationEnvironment =
+        ENV.DEVELOPMENT; // TODO.valueOf(context.getProperty(Constants.ENV_KEY));
   }
 
-  @Validate
-  public void start() {
+  @Override
+  public void onStart() {
     Thread.currentThread().setName("startup");
 
-    Path cfgFile = Paths.get(context.getProperty(Constants.USER_CONFIG_PATH_KEY));
+    Path cfgFile =
+        Path.of(
+            "/home/zahnen/development/configs-ldproxy/inspire-nrw/cfg.yml"); // TODO
+                                                                             // Paths.get(context.getProperty(Constants.USER_CONFIG_PATH_KEY));
 
     try {
-      start(cfgFile, applicationEnvironment);
+      init(cfgFile, applicationEnvironment);
 
       // publish the service once the initialization
       // is completed.
       controller = true;
 
       LOGGER.debug("Initialized {} with configuration file {}", applicationName, cfgFile);
+
+      run();
 
     } catch (Throwable ex) {
       LogContext.error(
@@ -109,7 +110,36 @@ public class DropwizardProvider implements Dropwizard {
     }
   }
 
-  private void start(Path cfgFilePath, ENV env) {
+  @Override
+  public void onStop() {
+    LOGGER.debug("onStop");
+    try {
+      server.stop();
+      server.join();
+    } catch (Exception e) {
+      LogContext.error(
+          LOGGER, e, "Error when stopping web server.");
+    }
+  }
+
+  private void run() throws Exception {
+
+    environment.jersey().setUrlPattern(JERSEY_ENDPOINT);
+
+    this.server = configuration.getServerFactory().build(environment);
+
+    //ServletRegistration.Dynamic servlet = dw.getServlets().addServlet("osgi", new ProxyServlet());
+    //servlet.addMapping(APP_ENDPOINT);
+
+    //addAdminEndpoint();
+
+    server.start();
+
+    LOGGER.info("Started web server at {}"/*, getUrl()*/);
+
+  }
+
+  private void init(Path cfgFilePath, ENV env) {
     Pair<XtraPlatformConfiguration, Environment> configurationEnvironmentPair =
         applicationProvider.startWithFile(cfgFilePath, env, this::initBootstrap);
 

@@ -7,44 +7,31 @@
  */
 package de.ii.xtraplatform.dropwizard.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.github.mustachejava.MustacheResolver;
 import de.ii.xtraplatform.dropwizard.domain.MustacheResolverRegistry;
 import de.ii.xtraplatform.dropwizard.domain.PartialMustacheResolver;
-import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import io.dropwizard.views.View;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
+import java.util.Set;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
-@Wbp(
-    filter = "(objectClass=de.ii.xtraplatform.dropwizard.domain.PartialMustacheResolver)",
-    onArrival = "onArrival",
-    onDeparture = "onDeparture")
+@Singleton
+@AutoBind
 public class MustacheResolverRegistryDefault implements MustacheResolverRegistry {
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(MustacheResolverRegistryDefault.class);
 
-  private final BundleContext bundleContext;
-  private final List<PartialMustacheResolver> partialMustacheResolvers;
+  private final Set<PartialMustacheResolver> partialMustacheResolvers;
 
-  public MustacheResolverRegistryDefault(@Context BundleContext bundleContext) {
-    this.bundleContext = bundleContext;
-    this.partialMustacheResolvers = new ArrayList<>();
+  @Inject
+  public MustacheResolverRegistryDefault(Set<PartialMustacheResolver> partialMustacheResolvers) {
+    this.partialMustacheResolvers = partialMustacheResolvers;
   }
 
   @Override
@@ -63,28 +50,5 @@ public class MustacheResolverRegistryDefault implements MustacheResolverRegistry
               partialMustacheResolver -> partialMustacheResolver.getReader(templateName, viewClass))
           .orElse(null);
     };
-  }
-
-  private synchronized void onArrival(ServiceReference<PartialMustacheResolver> ref) {
-    final PartialMustacheResolver extension = bundleContext.getService(ref);
-    int priority = extension.getSortPriority();
-
-    if (LOGGER.isDebugEnabled(MARKER.DI)) {
-      LOGGER.debug(
-          MARKER.DI,
-          "Registered partial mustache resolver with priority {}: {}",
-          priority,
-          extension);
-    }
-
-    partialMustacheResolvers.add(extension);
-  }
-
-  private synchronized void onDeparture(ServiceReference<PartialMustacheResolver> ref) {
-    final PartialMustacheResolver extension = bundleContext.getService(ref);
-
-    if (Objects.nonNull(extension)) {
-      partialMustacheResolvers.remove(extension);
-    }
   }
 }

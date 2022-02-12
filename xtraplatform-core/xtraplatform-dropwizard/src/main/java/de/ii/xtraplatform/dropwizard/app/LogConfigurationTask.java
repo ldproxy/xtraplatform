@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.dropwizard.app;
 
 import ch.qos.logback.classic.LoggerContext;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.runtime.domain.ThirdPartyLoggingFilter;
@@ -19,14 +20,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Requires;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Instantiate
+@Singleton
+@AutoBind
 public class LogConfigurationTask extends Task {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LogConfigurationTask.class);
@@ -34,7 +34,9 @@ public class LogConfigurationTask extends Task {
 
   private final LoggerContext loggerContext;
 
-  protected LogConfigurationTask(@Requires Dropwizard dropwizard) {
+  // TODO: DropwizardEnvironmentPlugin, AdminTaskRegistry
+  @Inject
+  protected LogConfigurationTask(Dropwizard dropwizard) {
     super("log-filter");
     this.loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 

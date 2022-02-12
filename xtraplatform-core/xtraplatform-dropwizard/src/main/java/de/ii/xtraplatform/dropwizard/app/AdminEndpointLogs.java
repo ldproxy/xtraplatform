@@ -9,6 +9,7 @@ package de.ii.xtraplatform.dropwizard.app;
 
 import ch.qos.logback.classic.LoggerContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.dropwizard.domain.AdminSubEndpoint;
 import de.ii.xtraplatform.dropwizard.domain.Jackson;
@@ -16,20 +17,17 @@ import de.ii.xtraplatform.runtime.domain.ThirdPartyLoggingFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Optional;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class AdminEndpointLogs implements AdminSubEndpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AdminEndpointLogs.class);
@@ -38,7 +36,8 @@ public class AdminEndpointLogs implements AdminSubEndpoint {
   private final ObjectMapper objectMapper;
   private final LoggerContext loggerContext;
 
-  public AdminEndpointLogs(@Requires Jackson jackson) {
+  @Inject
+  public AdminEndpointLogs(Jackson jackson) {
     this.objectMapper = jackson.getDefaultObjectMapper();
     this.servlet = new LogsServlet();
     this.loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();

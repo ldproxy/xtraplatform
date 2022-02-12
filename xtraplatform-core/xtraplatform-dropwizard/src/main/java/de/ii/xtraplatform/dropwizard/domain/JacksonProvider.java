@@ -28,45 +28,36 @@ import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
+import java.util.Set;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 // TODO: to store, only use for de/serialization
 // TODO: find all usages, is a generic version needed? also see Jackson.newObjectMapper()
-@Component
-@Provides
-@Instantiate
-@Wbp(
-    filter = "(objectClass=de.ii.xtraplatform.dropwizard.domain.JacksonSubTypeIds)",
-    onArrival = "onArrival",
-    onDeparture = "onDeparture")
+@Singleton
+@AutoBind
 public class JacksonProvider implements Jackson {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JacksonProvider.class);
 
   private final DynamicHandlerInstantiator dynamicHandlerInstantiator;
   private final ObjectMapper jsonMapper;
-  private final BundleContext context;
   private final BiMap<Class<?>, String> mapping;
 
-  public JacksonProvider(@Context BundleContext context) {
+  @Inject
+  public JacksonProvider(Set<JacksonSubTypeIds> subTypeIds) {
     this.dynamicHandlerInstantiator = new DynamicHandlerInstantiator();
     this.jsonMapper = configureMapper(new ObjectMapper());
     this.mapping = HashBiMap.create();
-    this.context = context;
+    subTypeIds.forEach(ids -> mapping.putAll(ids.getMapping()));
   }
 
   private ObjectMapper configureMapper(ObjectMapper mapper) {
@@ -78,24 +69,6 @@ public class JacksonProvider implements Jackson {
             .registerModules(new Jdk8Module(), new GuavaModule())
             .setDefaultMergeable(false)
             .setHandlerInstantiator(dynamicHandlerInstantiator);
-  }
-
-  public synchronized void onArrival(ServiceReference<JacksonSubTypeIds> ref) {
-    JacksonSubTypeIds ids = context.getService(ref);
-    if (ids != null) {
-      if (LOGGER.isDebugEnabled(MARKER.DI))
-        LOGGER.debug(MARKER.DI, "Registered Jackson subtype ids: {}", ids.getMapping());
-      mapping.putAll(ids.getMapping());
-    }
-  }
-
-  public synchronized void onDeparture(ServiceReference<JacksonSubTypeIds> ref) {
-    JacksonSubTypeIds ids = context.getService(ref);
-    if (ids != null) {
-      for (Class<?> clazz : ids.getMapping().keySet()) {
-        mapping.remove(clazz);
-      }
-    }
   }
 
   @Override

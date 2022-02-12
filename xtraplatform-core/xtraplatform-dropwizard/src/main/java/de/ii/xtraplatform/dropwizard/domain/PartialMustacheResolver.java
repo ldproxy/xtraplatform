@@ -7,8 +7,10 @@
  */
 package de.ii.xtraplatform.dropwizard.domain;
 
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import java.io.Reader;
 
+@AutoMultiBind
 public interface PartialMustacheResolver {
 
   int getSortPriority();
