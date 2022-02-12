@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.store.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
 import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
 import de.ii.xtraplatform.store.domain.EventStore;
@@ -18,15 +19,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Requires;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
-@Component
-@Instantiate
+@Singleton
+@AutoBind
 public class StoreReloadTask extends Task {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StoreReloadTask.class);
@@ -34,7 +34,9 @@ public class StoreReloadTask extends Task {
 
   private final EventStore eventStore;
 
-  protected StoreReloadTask(@Requires Dropwizard dropwizard, @Requires EventStore eventStore) {
+  //TODO: DropwizardEnvironmentPlugin, AdminTaskRegistry
+  @Inject
+  protected StoreReloadTask(Dropwizard dropwizard, EventStore eventStore) {
     super("reload-entities");
     this.eventStore = eventStore;
 

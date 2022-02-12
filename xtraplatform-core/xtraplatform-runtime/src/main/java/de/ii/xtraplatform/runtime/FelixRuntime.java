@@ -13,7 +13,9 @@ import com.google.common.base.Joiner;
 import com.google.common.io.ByteSource;
 import de.ii.xtraplatform.runtime.domain.ConfigurationReader;
 import de.ii.xtraplatform.runtime.domain.Constants;
+import de.ii.xtraplatform.runtime.domain.Lifecycle;
 import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.runtime.domain.Modules;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,9 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.felix.framework.Felix;
-import org.apache.felix.framework.util.FelixConstants;
-import org.apache.felix.main.AutoProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,24 +42,23 @@ public class FelixRuntime {
 
   private final String name;
   private final String version;
-  private Felix felix;
+  private final Modules modules;
 
-  public FelixRuntime(String name, String version) {
+  public FelixRuntime(String name, String version, Modules modules) {
     this.name = name;
     this.version = version;
+    this.modules = modules;
   }
 
   public void init(
       String[] args,
-      List<List<String>> bundles,
-      List<List<String>> devBundles,
       List<ByteSource> baseConfigs) {
     Map<String, String> felixConfig = new HashMap<>();
     Path dataDir =
         getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
-    Path bundlesDir =
+    /*Path bundlesDir =
         getBundlesDir(args)
-            .orElseThrow(() -> new IllegalArgumentException("No bundles directory found"));
+            .orElseThrow(() -> new IllegalArgumentException("No bundles directory found"));*/
     System.setProperty(TMP_DIR_PROP, dataDir.resolve(TMP_DIR_NAME).toAbsolutePath().toString());
     Constants.ENV env = parseEnvironment();
     ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
@@ -73,7 +71,7 @@ public class FelixRuntime {
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Data directory: {}", dataDir);
-      LOGGER.debug("Bundles directory: {}", bundlesDir);
+      //LOGGER.debug("Bundles directory: {}", bundlesDir);
       LOGGER.debug("Environment: {}", env);
       LOGGER.debug("Base configs: {}", baseConfigs);
     }
@@ -87,51 +85,7 @@ public class FelixRuntime {
       }
     }
 
-    String bundlePrefix =
-        "reference:file:" + bundlesDir.toAbsolutePath().toString().replaceAll(" ", "%20") + "/";
-    int startLevel = 1;
-
-    for (List<String> level : bundles) {
-      if (LOGGER.isTraceEnabled()) {
-        LOGGER.trace("Level {} Bundles: {}", startLevel, level);
-      }
-
-      String levelBundles =
-          level.stream().map(bundle -> bundlePrefix + bundle).collect(Collectors.joining(" "));
-
-      felixConfig.put(AutoProcessor.AUTO_START_PROP + "." + startLevel, levelBundles);
-
-      startLevel++;
-    }
-
-    if (env == Constants.ENV.DEVELOPMENT) {
-      for (List<String> level : devBundles) {
-        if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace("Level {} Bundles: {}", startLevel, level);
-        }
-
-        String levelBundles =
-            level.stream().map(bundle -> bundlePrefix + bundle).collect(Collectors.joining(" "));
-
-        felixConfig.put(AutoProcessor.AUTO_START_PROP + "." + startLevel, levelBundles);
-
-        startLevel++;
-      }
-    }
-
-    felixConfig.put(FelixConstants.FRAMEWORK_BEGINNING_STARTLEVEL, Integer.toString(startLevel));
-
-    felixConfig.put(
-        FelixConstants.FRAMEWORK_STORAGE,
-        dataDir.resolve(FELIX_CACHE_DIR_NAME).toAbsolutePath().toString());
-    felixConfig.put(
-        FelixConstants.FRAMEWORK_STORAGE_CLEAN, FelixConstants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT);
-    // Export the host provided service interface package.
-    felixConfig.put(
-        FelixConstants.FRAMEWORK_SYSTEMPACKAGES_EXTRA,
-        Joiner.on(',').withKeyValueSeparator(";version=").join(Exports.EXPORTS));
-    felixConfig.put(FelixConstants.FRAMEWORK_BOOTDELEGATION, "sun.misc");
-
+    //TODO: to Xtraplatform
     felixConfig.put(Constants.APPLICATION_KEY, name);
     felixConfig.put(Constants.VERSION_KEY, version);
     felixConfig.put(Constants.DATA_DIR_KEY, dataDir.toAbsolutePath().toString());
@@ -141,20 +95,12 @@ public class FelixRuntime {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("Felix config: {}", felixConfig);
     }
-
-    try {
-      this.felix = new Felix(felixConfig);
-      felix.init();
-    } catch (Exception ex) {
-      LogContext.error(LOGGER, ex, "Could not initialize felix");
-    }
-
-    AutoProcessor.process(felixConfig, felix.getBundleContext());
   }
 
   public void start() {
     try {
-      felix.start();
+      //felix.start();
+      modules.lifecycle().forEach(Lifecycle::onStart);
 
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("Felix started");
@@ -168,8 +114,9 @@ public class FelixRuntime {
     LOGGER.info("Shutting down {}", name);
 
     try {
-      felix.stop();
-      felix.waitForStop(timeout);
+      //felix.stop();
+      //felix.waitForStop(timeout);
+      modules.lifecycle().forEach(Lifecycle::onStop);
 
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("Felix stopped");
