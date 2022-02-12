@@ -5,17 +5,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.runtime;
+package de.ii.xtraplatform.base;
 
-import static de.ii.xtraplatform.runtime.domain.Constants.TMP_DIR_PROP;
+import static de.ii.xtraplatform.base.domain.Constants.TMP_DIR_PROP;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteSource;
-import de.ii.xtraplatform.runtime.domain.ConfigurationReader;
-import de.ii.xtraplatform.runtime.domain.Constants;
-import de.ii.xtraplatform.runtime.domain.Lifecycle;
-import de.ii.xtraplatform.runtime.domain.LogContext;
-import de.ii.xtraplatform.runtime.domain.Modules;
+import de.ii.xtraplatform.base.domain.ConfigurationReader;
+import de.ii.xtraplatform.base.domain.Constants;
+import de.ii.xtraplatform.base.domain.Lifecycle;
+import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.Modules;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

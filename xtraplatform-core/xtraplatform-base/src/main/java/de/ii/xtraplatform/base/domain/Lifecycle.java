@@ -1,4 +1,4 @@
-package de.ii.xtraplatform.runtime.domain;
+package de.ii.xtraplatform.base.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 
