@@ -20,14 +20,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
-public class XtraServerFrameworkCommand<T extends Configuration> extends EnvironmentCommand<T> {
+public class XtraplatformCommand<T extends Configuration> extends EnvironmentCommand<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServerCommand.class);
 
   private final Class<T> configurationClass;
   private Server server;
 
-  public XtraServerFrameworkCommand(Application<T> application) {
+  public XtraplatformCommand(Application<T> application) {
     super(application, "server", "Runs the Dropwizard application as an HTTP server");
     this.configurationClass = application.getConfigurationClass();
   }

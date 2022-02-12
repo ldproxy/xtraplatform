@@ -18,10 +18,11 @@ dependencies {
 
     testImplementation group: 'com.typesafe.akka', name: 'akka-testkit_2.12',   version: akkaVersion
 }
- 
+/*TODO
 jar {
     manifest {
         instruction 'Embed-Excludes', 'slf4j-api'
         instructionReplace 'Require-Capability', 'osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"'
     }
 }
+*/

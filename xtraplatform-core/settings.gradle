@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        mavenLocal()
         maven {
             url "https://dl.interactive-instruments.de/repository/maven-releases/"
         }
@@ -10,8 +11,12 @@ pluginManagement {
     }
 }
 
+//TODO
+includeBuild '../../xtraplatform-build'
+includeBuild '../../../ws-dagger/dagger-auto'
+
 rootDir.listFiles().each { file ->
-    if (file.isDirectory() && file.name.startsWith('xtraplatform-')) {
+    if (file.isDirectory() && file.name.startsWith('xtraplatform-') && (file.name.startsWith('xtraplatform-runtime') || file.name.startsWith('xtraplatform-dropwizard') || file.name.startsWith('xtraplatform-base'))) {
         include file.name
     }
 }

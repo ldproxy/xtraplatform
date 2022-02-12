@@ -13,7 +13,7 @@ dependencies {
     embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-core', version: swaggerVersion
     embeddedFlatExport 'io.github.classgraph:classgraph:4.8.65'
 } 
-
+/*TODO
 jar {
     manifest {
         instructionFirst 'Import-Package', '!com.google.gson'
@@ -21,3 +21,4 @@ jar {
         instructionFirst 'Import-Package', '!org.dom4j.io'
     }
 }
+*/

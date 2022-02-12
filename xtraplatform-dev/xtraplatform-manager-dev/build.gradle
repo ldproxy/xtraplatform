@@ -1,11 +1,11 @@
-
+/*TODO
 jar {
     manifest { 
         instruction 'X-Web-Resource-Version', '1.1'
         instruction 'X-Web-Resource', '/manager/js/xsf/devinfo;/manager/js/xsf/devinfo'
     }
 }
-
+*/
 // TODO: move template to resources, just substitute here
 task template {
     doLast {

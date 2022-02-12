@@ -1,4 +1,5 @@
 
+//TODO: to module plugin, configurable version
 configure(subprojects.findAll{it.name != 'xtraplatform-runtime'}) {
 
     dependencies {
@@ -7,18 +8,19 @@ configure(subprojects.findAll{it.name != 'xtraplatform-runtime'}) {
         annotationProcessor "org.immutables:value:2.8.8"
     }
 
-    compileJava {
+    //TODO
+    /*compileJava {
         File generatedSourceDir = new File(project.buildDir, 'generated/src/main/java/')
-        //project.mkdir(generatedSourceDir)
+        //generatedSourceDir.mkdirs()
         project.sourceSets.main.java { srcDir generatedSourceDir }
         options.annotationProcessorGeneratedSourcesDirectory = generatedSourceDir
         outputs.dir(generatedSourceDir)
-    }
-
+    }*/
+/*TODO
     jar {
         manifest {
             instructionFirst 'Import-Package', "!org.immutables.value"
         }
     }
-    
+*/
 }
