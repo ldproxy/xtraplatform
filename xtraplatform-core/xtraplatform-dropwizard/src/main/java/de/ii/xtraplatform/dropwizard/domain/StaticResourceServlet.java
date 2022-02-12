@@ -26,7 +26,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +64,7 @@ public class StaticResourceServlet extends HttpServlet {
   private final String resourcePath;
   private final String uriPath;
   private final Charset defaultCharset;
-  private final Bundle bundle;
+  private final Module module;
   private final DefaultPages defaultPages;
   private final Optional<String> rootRedirect;
 
@@ -90,7 +89,7 @@ public class StaticResourceServlet extends HttpServlet {
       String resourcePath,
       String uriPath,
       Charset defaultCharset,
-      Bundle bundle,
+      Module module,
       DefaultPages defaultPages,
       Optional<String> rootRedirect) {
     final String trimmedPath = SLASHES.trimFrom(resourcePath);
@@ -98,14 +97,14 @@ public class StaticResourceServlet extends HttpServlet {
     final String trimmedUri = SLASHES.trimTrailingFrom(uriPath);
     this.uriPath = trimmedUri.isEmpty() ? "/" : trimmedUri;
     this.defaultCharset = defaultCharset;
-    this.bundle = bundle;
+    this.module = module;
     this.defaultPages = defaultPages;
     this.rootRedirect = rootRedirect;
   }
 
   public StaticResourceServlet(
-      String resourcePath, String uriPath, Charset defaultCharset, Bundle bundle) {
-    this(resourcePath, uriPath, defaultCharset, bundle, new DefaultPages(), Optional.of("/"));
+      String resourcePath, String uriPath, Charset defaultCharset, Module module) {
+    this(resourcePath, uriPath, defaultCharset, module, new DefaultPages(), Optional.of("/"));
   }
 
   /*public URL getResourceURL() {
@@ -194,18 +193,19 @@ public class StaticResourceServlet extends HttpServlet {
     // Try to determine whether we're given a resource with an actual file, or that
     // it is pointing to an (internal) directory. In the latter case, use the default
     // pages to search instead...
-    if (bundle.findEntries(absoluteRequestedResourcePath, "*", false /* recurse */) == null) {
+    //TODO: get resources from module
+    /*if (module.findEntries(absoluteRequestedResourcePath, "*", false) == null) {
       // Not a directory, may be a real file?
-      requestedResourceURL = bundle.getResource(absoluteRequestedResourcePath);
+      requestedResourceURL = module.getResource(absoluteRequestedResourcePath);
     } else {
       // Given resource was a directory, stop looking for the actual resource
       // and check whether we can display a default page instead...
       String defaultPage = this.defaultPages.getDefaultPageFor(requestedResourcePath);
       if (!defaultPage.isEmpty()) {
         requestedResourceURL =
-            bundle.getResource(absoluteRequestedResourcePath + '/' + defaultPage);
+            module.getResource(absoluteRequestedResourcePath + '/' + defaultPage);
       }
-    }
+    }*/
 
     if (requestedResourceURL == null) {
       return null;

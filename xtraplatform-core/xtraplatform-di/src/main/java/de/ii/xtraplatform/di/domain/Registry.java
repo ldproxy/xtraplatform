@@ -9,8 +9,8 @@ package de.ii.xtraplatform.di.domain;
 
 import java.util.Collection;
 import java.util.Optional;
-import org.osgi.framework.ServiceReference;
 
+//TODO
 public interface Registry<T> {
 
   String ON_ARRIVAL_METHOD = "onArrival";
@@ -24,19 +24,19 @@ public interface Registry<T> {
 
     Optional<U> get(String... identifiers);
 
-    Optional<U> onArrival(ServiceReference<U> ref);
+    Optional<U> onArrival(U ref);
 
-    Optional<U> onDeparture(ServiceReference<U> ref);
+    Optional<U> onDeparture(U ref);
   }
 
   Registry.State<T> getRegistryState();
 
-  default void onArrival(ServiceReference<T> ref) {
+  default void onArrival(T ref) {
     Optional<T> t = getRegistryState().onArrival(ref);
     onRegister(t);
   }
 
-  default void onDeparture(ServiceReference<T> ref) {
+  default void onDeparture(T ref) {
     Optional<T> t = getRegistryState().onDeparture(ref);
     onDeregister(t);
   }

@@ -11,7 +11,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -19,25 +18,21 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import org.apache.felix.ipojo.architecture.PropertyDescription;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//TODO
 public final class RegistryState<T> implements Registry.State<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RegistryState.class);
   private static final Joiner JOINER = Joiner.on('.').skipNulls();
 
   private final String componentName;
-  private final BundleContext bundleContext;
   private final ImmutableList<String> componentProperties;
   private final Map<String, T> items;
 
-  public RegistryState(String name, BundleContext bundleContext, String... componentProperties) {
+  public RegistryState(String name, String... componentProperties) {
     this.componentName = name;
-    this.bundleContext = bundleContext;
     this.componentProperties =
         componentProperties.length > 0
             ? ImmutableList.copyOf(componentProperties)
@@ -56,10 +51,10 @@ public final class RegistryState<T> implements Registry.State<T> {
   }
 
   @Override
-  public synchronized Optional<T> onArrival(ServiceReference<T> ref) {
+  public synchronized Optional<T> onArrival(T ref) {
     if (Objects.nonNull(ref)) {
       Optional<String> identifier = getComponentIdentifier(ref, componentProperties);
-      T service = bundleContext.getService(ref);
+      T service = ref;//bundleContext.getService(ref);
 
       if (identifier.isPresent()) {
         this.items.put(identifier.get(), service);
@@ -76,7 +71,7 @@ public final class RegistryState<T> implements Registry.State<T> {
   }
 
   @Override
-  public synchronized Optional<T> onDeparture(ServiceReference<T> ref) {
+  public synchronized Optional<T> onDeparture(T ref) {
     if (Objects.nonNull(ref)) {
       Optional<String> identifier = getComponentIdentifier(ref, componentProperties);
 
@@ -93,7 +88,7 @@ public final class RegistryState<T> implements Registry.State<T> {
   }
 
   private Optional<String> getComponentIdentifier(
-      ServiceReference<T> component, List<String> properties) {
+      T component, List<String> properties) {
     final String identifier =
         properties.stream()
             .map(property -> getComponentProperty(component, property))
@@ -104,11 +99,11 @@ public final class RegistryState<T> implements Registry.State<T> {
     return Optional.ofNullable(Strings.emptyToNull(identifier));
   }
 
-  private Optional<String> getComponentProperty(ServiceReference<T> component, String property) {
+  private Optional<String> getComponentProperty(T component, String property) {
     if (Objects.isNull(component) || Objects.isNull(Strings.emptyToNull(property))) {
       return Optional.empty();
     }
-    try {
+    /*try {
 
       return Optional.ofNullable(
               (PropertyDescription[]) component.getProperty("component.properties"))
@@ -121,7 +116,7 @@ public final class RegistryState<T> implements Registry.State<T> {
           .or(() -> Optional.ofNullable((String) component.getProperty(property)));
     } catch (Throwable e) {
       // ignore
-    }
+    }*/
     return Optional.empty();
   }
 }

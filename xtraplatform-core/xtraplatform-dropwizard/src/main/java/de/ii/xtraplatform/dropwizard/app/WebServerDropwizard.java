@@ -17,31 +17,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletRegistration;
-import org.apache.felix.http.proxy.ProxyServlet;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Invalidate;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.Validate;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.MultiException;
-import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
-@Component(immediate = true, publicFactory = false)
-@Instantiate
+//TODO: no longer needed
 public class WebServerDropwizard {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(WebServerDropwizard.class);
   private static final String APP_ENDPOINT = "/*";
-  private static final String JERSEY_ENDPOINT = "/rest/*";
+  static final String JERSEY_ENDPOINT = "/rest/*";
 
-  private final BundleContext context;
   private final Dropwizard dw;
   private final AdminEndpointServlet adminEndpoint;
 
@@ -54,12 +43,10 @@ public class WebServerDropwizard {
   private final ScheduledExecutorService startStopThread;
 
   public WebServerDropwizard(
-      @Context BundleContext context,
-      @Requires Dropwizard dw,
-      @Requires AdminEndpointServlet adminEndpoint) {
+      Dropwizard dw,
+      AdminEndpointServlet adminEndpoint) {
 
     this.dw = dw;
-    this.context = context;
     this.adminEndpoint = adminEndpoint;
     this.url = "";
 
@@ -148,7 +135,7 @@ public class WebServerDropwizard {
     }
   }
 
-  @Validate
+  //@Validate
   protected void startBundle() {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("DW STARTBUNDLE");
@@ -157,7 +144,7 @@ public class WebServerDropwizard {
     start();
   }
 
-  @Invalidate
+  //@Invalidate
   protected void stopBundle() {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("DW STOPBUNDLE");
@@ -199,8 +186,8 @@ public class WebServerDropwizard {
 
       this.server = dw.getConfiguration().getServerFactory().build(dw.getEnvironment());
 
-      ServletRegistration.Dynamic servlet = dw.getServlets().addServlet("osgi", new ProxyServlet());
-      servlet.addMapping(APP_ENDPOINT);
+      //TODO ServletRegistration.Dynamic servlet = dw.getServlets().addServlet("osgi", new ProxyServlet());
+      // servlet.addMapping(APP_ENDPOINT);
 
       addAdminEndpoint();
 
@@ -237,14 +224,14 @@ public class WebServerDropwizard {
       init();
       // cleanup servletContext
       ServletContext servletContext = dw.getApplicationContext().getServletContext();
-      servletContext.setAttribute(BundleContext.class.getName(), context);
+      //servletContext.setAttribute(BundleContext.class.getName(), context);
     } else {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("DW CLEANUP 2");
       }
       // cleanup servletContext
       ServletContext servletContext = dw.getApplicationContext().getServletContext();
-      servletContext.setAttribute(BundleContext.class.getName(), context);
+      //servletContext.setAttribute(BundleContext.class.getName(), context);
       // cleanup metrics and jersey
       dw.resetServer();
     }

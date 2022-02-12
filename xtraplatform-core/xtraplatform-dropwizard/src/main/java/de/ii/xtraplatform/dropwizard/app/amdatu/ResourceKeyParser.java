@@ -10,7 +10,6 @@ package de.ii.xtraplatform.dropwizard.app.amdatu;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import org.osgi.framework.Constants;
 
 /**
  * Parse the {@link Constants#WEB_RESOURCE_KEY} header of a bundle manifest.
