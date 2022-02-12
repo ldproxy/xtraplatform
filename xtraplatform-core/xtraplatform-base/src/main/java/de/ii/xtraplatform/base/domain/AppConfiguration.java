@@ -17,16 +17,16 @@ import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-public class XtraPlatformConfiguration extends Configuration {
+public class AppConfiguration extends Configuration {
 
-  public XtraPlatformConfiguration() {}
+  public AppConfiguration() {}
 
-  @Valid @NotNull private XtraPlatformServerFactory server = new XtraPlatformServerFactory();
-  @Valid @Nullable private XtraPlatformLoggingFactory logging;
+  @Valid @NotNull private ServerConfiguration server = new ServerConfiguration();
+  @Valid @Nullable private LoggingConfiguration logging;
 
   @Override
   @JsonProperty("server")
-  public XtraPlatformServerFactory getServerFactory() {
+  public ServerConfiguration getServerFactory() {
     return server;
   }
 
@@ -35,7 +35,7 @@ public class XtraPlatformConfiguration extends Configuration {
   public void setServerFactory(ServerFactory factory) {}
 
   @JsonProperty("server")
-  public void setServerFactory(XtraPlatformServerFactory factory) {
+  public void setServerFactory(ServerConfiguration factory) {
     this.server = factory;
   }
 
@@ -50,7 +50,7 @@ public class XtraPlatformConfiguration extends Configuration {
   public synchronized void setLoggingFactory(LoggingFactory factory) {}
 
   @JsonProperty("logging")
-  public synchronized void setLoggingFactory(XtraPlatformLoggingFactory factory) {
+  public synchronized void setLoggingFactory(LoggingConfiguration factory) {
     this.logging = factory;
   }
 

@@ -7,23 +7,17 @@
  */
 package de.ii.xtraplatform.web.domain;
 
-import com.google.common.io.ByteSource;
 import de.ii.xtraplatform.base.domain.Constants;
-import de.ii.xtraplatform.base.domain.XtraPlatformConfiguration;
+import de.ii.xtraplatform.base.domain.AppConfiguration;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.tuple.Pair;
 
 //@AutoMultiBind
 public interface ApplicationProvider {
 
-  Class<XtraPlatformConfiguration> getConfigurationClass();
-
-  Optional<ByteSource> getConfigurationFileTemplate(String environment);
-
-  Pair<XtraPlatformConfiguration, Environment> startWithFile(
-      Path configurationFile, Constants.ENV env, Consumer<Bootstrap<XtraPlatformConfiguration>> initializer);
+  Pair<AppConfiguration, Environment> startWithFile(
+      Path configurationFile, Constants.ENV env, Consumer<Bootstrap<AppConfiguration>> initializer);
 }

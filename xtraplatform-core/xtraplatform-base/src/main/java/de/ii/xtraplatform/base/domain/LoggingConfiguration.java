@@ -14,8 +14,8 @@ import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.logging.LoggingUtil;
 
 /** @author zahnen */
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = XtraPlatformLoggingFactory.class)
-public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = LoggingConfiguration.class)
+public class LoggingConfiguration extends DefaultLoggingFactory {
 
   private boolean showThirdPartyLoggers;
   private boolean sqlQueries;
@@ -24,7 +24,7 @@ public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
   private boolean stackTraces;
   private boolean wiring;
 
-  public XtraPlatformLoggingFactory() {
+  public LoggingConfiguration() {
     super();
     this.showThirdPartyLoggers = false;
     this.sqlQueries = false;
@@ -42,7 +42,7 @@ public class XtraPlatformLoggingFactory extends DefaultLoggingFactory {
 
     LoggingUtil.getLoggerContext()
         .addTurboFilter(
-            new ThirdPartyLoggingFilter(
+            new LoggingFilter(
                 showThirdPartyLoggers, sqlQueries, sqlResults, configDumps, stackTraces, wiring));
   }
 

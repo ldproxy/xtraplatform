@@ -11,7 +11,7 @@ import ch.qos.logback.classic.LoggerContext;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
 import de.ii.xtraplatform.web.domain.Dropwizard;
-import de.ii.xtraplatform.base.domain.ThirdPartyLoggingFilter;
+import de.ii.xtraplatform.base.domain.LoggingFilter;
 import io.dropwizard.servlets.tasks.Task;
 import java.io.PrintWriter;
 import java.util.Collection;
@@ -47,41 +47,41 @@ public class LogConfigurationTask extends Task {
   public void execute(Map<String, List<String>> parameters, PrintWriter output) throws Exception {
     if (LOGGER.isTraceEnabled()) LOGGER.trace("Log filter request: {}", parameters);
 
-    Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter =
+    Optional<LoggingFilter> optionalThirdPartyLoggingFilter =
         loggerContext.getTurboFilterList().stream()
-            .filter(turboFilter -> turboFilter instanceof ThirdPartyLoggingFilter)
-            .map(turboFilter -> (ThirdPartyLoggingFilter) turboFilter)
+            .filter(turboFilter -> turboFilter instanceof LoggingFilter)
+            .map(turboFilter -> (LoggingFilter) turboFilter)
             .findFirst();
 
     optionalThirdPartyLoggingFilter.ifPresent(
-        thirdPartyLoggingFilter -> {
+        loggingFilter -> {
           getFiltersToEnable(parameters)
-              .forEach(filter -> setFilter(thirdPartyLoggingFilter, filter, true));
+              .forEach(filter -> setFilter(loggingFilter, filter, true));
           getFiltersToDisable(parameters)
-              .forEach(filter -> setFilter(thirdPartyLoggingFilter, filter, false));
+              .forEach(filter -> setFilter(loggingFilter, filter, false));
         });
   }
 
   private void setFilter(
-      ThirdPartyLoggingFilter thirdPartyLoggingFilter, String filter, boolean enable) {
+      LoggingFilter loggingFilter, String filter, boolean enable) {
     switch (filter) {
       case "sqlQueries":
-        thirdPartyLoggingFilter.setSqlQueries(enable);
+        loggingFilter.setSqlQueries(enable);
         break;
       case "sqlResults":
-        thirdPartyLoggingFilter.setSqlResults(enable);
+        loggingFilter.setSqlResults(enable);
         break;
       case "configDumps":
-        thirdPartyLoggingFilter.setConfigDumps(enable);
+        loggingFilter.setConfigDumps(enable);
         break;
       case "stackTraces":
-        thirdPartyLoggingFilter.setStackTraces(enable);
+        loggingFilter.setStackTraces(enable);
         break;
       case "*":
-        thirdPartyLoggingFilter.setSqlQueries(enable);
-        thirdPartyLoggingFilter.setSqlResults(enable);
-        thirdPartyLoggingFilter.setConfigDumps(enable);
-        thirdPartyLoggingFilter.setStackTraces(enable);
+        loggingFilter.setSqlQueries(enable);
+        loggingFilter.setSqlResults(enable);
+        loggingFilter.setConfigDumps(enable);
+        loggingFilter.setStackTraces(enable);
         break;
     }
   }

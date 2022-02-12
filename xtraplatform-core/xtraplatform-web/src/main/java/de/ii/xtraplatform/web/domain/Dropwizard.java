@@ -18,11 +18,9 @@ import javax.servlet.ServletContext;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 /** @author zahnen */
-public interface Dropwizard extends XtraPlatform {
-  // public static final String FLAG_ALLOW_SERVICE_READDING = "allowServiceReAdding";
-  // public static final String FLAG_USE_FORMATTED_JSON_OUTPUT = "useFormattedJsonOutput";
+//TODO: cleanup
+public interface Dropwizard {
 
-  // public Map<String,Boolean> getFlags();
   ServletEnvironment getServlets();
 
   ServletContext getServletContext();
@@ -32,16 +30,8 @@ public interface Dropwizard extends XtraPlatform {
   JerseyEnvironment getJersey();
 
   ServletContainer getJerseyContainer();
-  // public int getDebugLogMaxMinutes();
-  void attachLoggerAppender(Appender appender);
-
-  void detachLoggerAppender(Appender appender);
-
-  void setLoggingLevel(Level level);
 
   Environment getEnvironment();
-
-  void resetServer();
 
   ViewRenderer getMustacheRenderer();
 }

@@ -11,8 +11,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.dropwizard.server.DefaultServerFactory;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = XtraPlatformServerFactory.class)
-public class XtraPlatformServerFactory extends DefaultServerFactory {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = ServerConfiguration.class)
+public class ServerConfiguration extends DefaultServerFactory {
 
   private String externalUrl;
 

@@ -108,8 +108,8 @@ public class ConfigurationReader {
   public InputStream loadMergedConfig(InputStream userConfig, Constants.ENV env)
       throws IOException {
 
-    XtraPlatformConfiguration base =
-        mapper.readValue(getBaseConfig().openStream(), XtraPlatformConfiguration.class);
+    AppConfiguration base =
+        mapper.readValue(getBaseConfig().openStream(), AppConfiguration.class);
 
     for (ByteSource byteSource : configsToMergeAfterBase) {
       mergeMapper.readerForUpdating(base).readValue(byteSource.openStream());
@@ -122,7 +122,7 @@ public class ConfigurationReader {
     return new ByteArrayInputStream(mapper.writeValueAsBytes(base));
   }
 
-  public String loadMergedConfig(Path userConfig, Constants.ENV env) throws IOException {
+  public String loadMergedConfigAsString(Path userConfig, Constants.ENV env) throws IOException {
     String cfg =
         new ByteSource() {
           @Override
@@ -137,15 +137,25 @@ public class ConfigurationReader {
     return environmentVariableSubstitutor.replace(cfg);
   }
 
+  public AppConfiguration loadMergedConfig(Path userConfig, Constants.ENV env) throws IOException {
+    String cfg = loadMergedConfigAsString(userConfig, env);
+
+    return mapper.readValue(cfg, AppConfiguration.class);
+  }
+
+  public AppConfiguration configFromString(String cfg) throws IOException {
+    return mapper.readValue(cfg, AppConfiguration.class);
+  }
+
   public void loadMergedLogging(Path userConfig, Constants.ENV env) {
-    XtraPlatformLoggingFactory loggingFactory;
+    LoggingConfiguration loggingFactory;
 
     try {
       JsonNode jsonNodeBase = mapper.readTree(getBaseConfig().openStream());
 
       loggingFactory =
           mapper
-              .readerFor(XtraPlatformLoggingFactory.class)
+              .readerFor(LoggingConfiguration.class)
               .readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
 
       for (ByteSource byteSource : configsToMergeAfterBase) {
@@ -159,7 +169,7 @@ public class ConfigurationReader {
       mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNodeUser.at(LOGGING_CFG_KEY));
     } catch (Throwable e) {
       // use defaults
-      loggingFactory = new XtraPlatformLoggingFactory();
+      loggingFactory = new LoggingConfiguration();
     }
 
     applyLogFormat(loggingFactory, env);

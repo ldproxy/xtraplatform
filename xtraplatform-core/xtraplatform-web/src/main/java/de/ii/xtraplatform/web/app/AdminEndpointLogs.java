@@ -13,7 +13,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.web.domain.AdminSubEndpoint;
 import de.ii.xtraplatform.web.domain.Jackson;
-import de.ii.xtraplatform.base.domain.ThirdPartyLoggingFilter;
+import de.ii.xtraplatform.base.domain.LoggingFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Optional;
@@ -41,6 +41,11 @@ public class AdminEndpointLogs implements AdminSubEndpoint {
     this.objectMapper = jackson.getDefaultObjectMapper();
     this.servlet = new LogsServlet();
     this.loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+  }
+
+  @Override
+  public Optional<String> getLabel() {
+    return Optional.of("Logging");
   }
 
   @Override
@@ -73,10 +78,10 @@ public class AdminEndpointLogs implements AdminSubEndpoint {
               .getLevel()
               .toString();
 
-      Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter =
+      Optional<LoggingFilter> optionalThirdPartyLoggingFilter =
           loggerContext.getTurboFilterList().stream()
-              .filter(turboFilter -> turboFilter instanceof ThirdPartyLoggingFilter)
-              .map(turboFilter -> (ThirdPartyLoggingFilter) turboFilter)
+              .filter(turboFilter -> turboFilter instanceof LoggingFilter)
+              .map(turboFilter -> (LoggingFilter) turboFilter)
               .findFirst();
 
       try (PrintWriter writer = resp.getWriter()) {
@@ -85,21 +90,21 @@ public class AdminEndpointLogs implements AdminSubEndpoint {
     }
 
     private ImmutableMap<String, Object> getLogInfo(
-        String level, Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter) {
+        String level, Optional<LoggingFilter> optionalThirdPartyLoggingFilter) {
       return ImmutableMap.of(
           "level", level, "filter", getFilterInfo(optionalThirdPartyLoggingFilter));
     }
 
     private ImmutableMap<String, Boolean> getFilterInfo(
-        Optional<ThirdPartyLoggingFilter> optionalThirdPartyLoggingFilter) {
+        Optional<LoggingFilter> optionalThirdPartyLoggingFilter) {
       return optionalThirdPartyLoggingFilter
           .map(
-              thirdPartyLoggingFilter ->
+              loggingFilter ->
                   ImmutableMap.of(
-                      "sqlQueries", thirdPartyLoggingFilter.isSqlQueries(),
-                      "sqlResults", thirdPartyLoggingFilter.isSqlResults(),
-                      "configDumps", thirdPartyLoggingFilter.isConfigDumps(),
-                      "stackTraces", thirdPartyLoggingFilter.isStackTraces()))
+                      "sqlQueries", loggingFilter.isSqlQueries(),
+                      "sqlResults", loggingFilter.isSqlResults(),
+                      "configDumps", loggingFilter.isConfigDumps(),
+                      "stackTraces", loggingFilter.isStackTraces()))
           .orElse(ImmutableMap.of());
     }
   }

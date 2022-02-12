@@ -16,7 +16,7 @@ import java.util.Objects;
 import org.slf4j.Marker;
 
 /** @author zahnen */
-public class ThirdPartyLoggingFilter extends TurboFilter {
+public class LoggingFilter extends TurboFilter {
 
   private boolean showThirdPartyLoggers;
   private boolean sqlQueries;
@@ -25,7 +25,7 @@ public class ThirdPartyLoggingFilter extends TurboFilter {
   private boolean stackTraces;
   private boolean wiring;
 
-  public ThirdPartyLoggingFilter(
+  public LoggingFilter(
       boolean showThirdPartyLoggers,
       boolean sqlQueries,
       boolean sqlResults,

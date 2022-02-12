@@ -7,13 +7,15 @@
  */
 package de.ii.xtraplatform.web.domain;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
+import de.ii.xtraplatform.base.domain.Constants;
+import de.ii.xtraplatform.base.domain.Constants.ENV;
+import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.app.MergingSourceProvider;
 import de.ii.xtraplatform.web.app.XtraplatformCommand;
-import de.ii.xtraplatform.base.domain.Constants;
-import de.ii.xtraplatform.base.domain.XtraPlatformConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.cli.Cli;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -22,39 +24,46 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.JarLocation;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractConfigurationProvider
-    implements ApplicationProvider, ConfigurationProvider {
+//TODO: merge back into DropwizardProvider
+@Singleton
+@AutoBind
+public class ApplicationProviderDefault
+    implements ApplicationProvider {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractConfigurationProvider.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationProviderDefault.class);
   private static final String DW_CMD = "server";
 
-  private final CompletableFuture<XtraPlatformConfiguration> configuration = new CompletableFuture<>();
-  private final CompletableFuture<Environment> environment = new CompletableFuture<>();
+  private final CompletableFuture<AppConfiguration> configuration;
+  private final CompletableFuture<Environment> environment;
+  private final String applicationName;
+  private final String applicationVersion;
+  private final ENV applicationEnvironment;
 
-  @Override
-  public XtraPlatformConfiguration getConfiguration() {
-    try {
-      return configuration.get();
-    } catch (InterruptedException | ExecutionException e) {
-      return null;
-    }
+  @Inject
+  public ApplicationProviderDefault() {
+    this.configuration = new CompletableFuture<>();
+    this.environment = new CompletableFuture<>();
+    this.applicationName = "TODO"; // context.getProperty(Constants.APPLICATION_KEY);
+    this.applicationVersion = "TODO"; // context.getProperty(Constants.VERSION_KEY);
+    this.applicationEnvironment =
+        ENV.DEVELOPMENT; // TODO.valueOf(context.getProperty(Constants.ENV_KEY));
   }
 
-  @Override
+
   public Optional<ByteSource> getConfigurationFileTemplate(String environment) {
     return getConfigurationFileTemplateFromClassBundle(
-        environment, AbstractConfigurationProvider.class);
+        environment, ApplicationProviderDefault.class);
   }
 
   private Optional<ByteSource> getConfigurationFileTemplateFromClassBundle(
@@ -70,20 +79,20 @@ public abstract class AbstractConfigurationProvider
   }
 
   @Override
-  public Pair<XtraPlatformConfiguration, Environment> startWithFile(
-      Path configurationFile, Constants.ENV env, Consumer<Bootstrap<XtraPlatformConfiguration>> initializer) {
-    Bootstrap<XtraPlatformConfiguration> bootstrap = getBootstrap(initializer, env);
+  public Pair<AppConfiguration, Environment> startWithFile(
+      Path configurationFile, Constants.ENV env, Consumer<Bootstrap<AppConfiguration>> initializer) {
+    Bootstrap<AppConfiguration> bootstrap = getBootstrap(initializer, env);
 
     return run(configurationFile.toString(), bootstrap);
   }
 
-  private Pair<XtraPlatformConfiguration, Environment> run(String configurationFilePath, Bootstrap<XtraPlatformConfiguration> bootstrap) {
+  private Pair<AppConfiguration, Environment> run(String configurationFilePath, Bootstrap<AppConfiguration> bootstrap) {
     final Cli cli = new Cli(new JarLocation(getClass()), bootstrap, System.out, System.err);
     String[] arguments = {DW_CMD, configurationFilePath};
 
     try {
       if (cli.run(arguments).isEmpty()) {
-        XtraPlatformConfiguration cfg = configuration.get(30, TimeUnit.SECONDS);
+        AppConfiguration cfg = configuration.get(30, TimeUnit.SECONDS);
         Environment env = environment.get(30, TimeUnit.SECONDS);
 
         return new ImmutablePair<>(cfg, env);
@@ -95,23 +104,23 @@ public abstract class AbstractConfigurationProvider
     throw new IllegalStateException();
   }
 
-  private Bootstrap<XtraPlatformConfiguration> getBootstrap(Consumer<Bootstrap<XtraPlatformConfiguration>> initializer, Constants.ENV env) {
-    Application<XtraPlatformConfiguration> application =
-        new Application<XtraPlatformConfiguration>() {
+  private Bootstrap<AppConfiguration> getBootstrap(Consumer<Bootstrap<AppConfiguration>> initializer, Constants.ENV env) {
+    Application<AppConfiguration> application =
+        new Application<AppConfiguration>() {
           @Override
-          public void run(XtraPlatformConfiguration configuration, Environment environment) throws Exception {
-            AbstractConfigurationProvider.this.configuration.complete(configuration);
-            AbstractConfigurationProvider.this.environment.complete(environment);
+          public void run(AppConfiguration configuration, Environment environment) throws Exception {
+            ApplicationProviderDefault.this.configuration.complete(configuration);
+            ApplicationProviderDefault.this.environment.complete(environment);
           }
         };
 
-    Bootstrap<XtraPlatformConfiguration> bootstrap = new Bootstrap<>(application);
+    Bootstrap<AppConfiguration> bootstrap = new Bootstrap<>(application);
     bootstrap.addCommand(new XtraplatformCommand<>(application));
 
     bootstrap.setConfigurationSourceProvider(
         new SubstitutingSourceProvider(
             new MergingSourceProvider(
-                bootstrap.getConfigurationSourceProvider(), getAdditionalBaseConfigs(), env),
+                bootstrap.getConfigurationSourceProvider(), ImmutableList.of(), env),
             new EnvironmentVariableSubstitutor(false)));
 
     initializer.accept(bootstrap);
@@ -119,9 +128,5 @@ public abstract class AbstractConfigurationProvider
     bootstrap.registerMetrics();
 
     return bootstrap;
-  }
-
-  public List<ByteSource> getAdditionalBaseConfigs() {
-    return ImmutableList.of();
   }
 }

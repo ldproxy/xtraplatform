@@ -8,10 +8,15 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
+import java.util.Optional;
 import javax.servlet.http.HttpServlet;
 
 @AutoMultiBind
 public interface AdminSubEndpoint {
+
+  default Optional<String> getLabel() {
+    return Optional.empty();
+  }
 
   String getPath();
 

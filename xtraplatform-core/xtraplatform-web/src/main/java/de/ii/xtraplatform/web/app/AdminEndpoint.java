@@ -12,8 +12,8 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import com.codahale.metrics.servlets.PingServlet;
 import com.codahale.metrics.servlets.ThreadDumpServlet;
 import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.web.domain.AdminSubEndpoint;
-import de.ii.xtraplatform.web.domain.XtraPlatform;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.MessageFormat;
@@ -52,6 +52,7 @@ public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
               + "    <li><a href=\"{2}{3}\">Ping</a></li>%n"
               + "    <li><a href=\"{4}{5}\">Threads</a></li>%n"
               + "    <li><a href=\"{6}{7}?pretty=true\">Healthcheck</a></li>%n"
+              + "{9}"
               + "  </ul>%n"
               + "</body>%n"
               + "</html>");
@@ -66,8 +67,8 @@ public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
   private final Set<AdminSubEndpoint> subEndpoints;
 
   @Inject
-  public AdminEndpoint(XtraPlatform xtraPlatform, Set<AdminSubEndpoint> subEndpoints) {
-    this.serviceName = xtraPlatform.getApplicationName();
+  public AdminEndpoint(AppContext appContext, Set<AdminSubEndpoint> subEndpoints) {
+    this.serviceName = appContext.getName();
     this.healthCheckServlet = new HealthCheckServlet();
     this.metricsServlet = new MetricsServlet();
     this.pingServlet = new PingServlet();
@@ -94,6 +95,16 @@ public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
       throws ServletException, IOException {
     final String path = req.getContextPath() + req.getServletPath();
 
+    String subEndpointLinks = "";
+    for (AdminSubEndpoint adminSubEndpoint : subEndpoints) {
+      if (adminSubEndpoint.getLabel().isPresent()) {
+        subEndpointLinks +=
+            String.format(
+                "    <li><a href=\"%s%s\">%s</a></li>%n",
+                path, adminSubEndpoint.getPath(), adminSubEndpoint.getLabel().get());
+      }
+    }
+
     resp.setStatus(HttpServletResponse.SC_OK);
     resp.setHeader("Cache-Control", "must-revalidate,no-cache,no-store");
     resp.setContentType(CONTENT_TYPE);
@@ -110,7 +121,7 @@ public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
               path,
               DEFAULT_HEALTHCHECK_URI,
               path,
-              "",
+              subEndpointLinks,
               serviceName == null ? "" : " (" + serviceName + ")"));
     }
   }
