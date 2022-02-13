@@ -119,7 +119,7 @@ public class ConfigurationReader {
 
     AppConfiguration base = mapper.readValue(getBaseConfig().openStream(), AppConfiguration.class);
 
-    for (ByteSource byteSource : getBaseConfigs(env).values()) {
+    for (ByteSource byteSource : getEnvConfigs(env).values()) {
       mergeMapper.readerForUpdating(base).readValue(byteSource.openStream());
     }
 
@@ -164,7 +164,7 @@ public class ConfigurationReader {
       loggingFactory =
           mapper.readerFor(LoggingConfiguration.class).readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
 
-      for (ByteSource byteSource : getBaseConfigs(env).values()) {
+      for (ByteSource byteSource : getEnvConfigs(env).values()) {
         JsonNode jsonNodeMerge = mapper.readTree(byteSource.openStream());
 
         mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNodeMerge.at(LOGGING_CFG_KEY));
@@ -184,8 +184,16 @@ public class ConfigurationReader {
   }
 
   public Map<String, ByteSource> getBaseConfigs(Constants.ENV env) {
+    return Stream.concat(
+            Stream.of(
+                new SimpleEntry<>(
+                    Path.of("/").relativize(Path.of(CFG_FILE_BASE)).toString(), getBaseConfig())),
+            getEnvConfigs(env).entrySet().stream())
+        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private Map<String, ByteSource> getEnvConfigs(Constants.ENV env) {
     List<String> envConfigs = new ArrayList<>();
-    envConfigs.add(CFG_FILE_BASE);
     if (env.isDev() || env.isContainer()) {
       envConfigs.add(CFG_FILE_CONSOLE);
     } else {
