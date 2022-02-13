@@ -1,0 +1,7 @@
+---
+logging:
+  level: ERROR
+  showThirdPartyLoggers: ON
+  stackTraces: ON
+  loggers:
+    de.ii: DEBUG

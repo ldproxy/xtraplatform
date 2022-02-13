@@ -16,6 +16,7 @@ server:
   shutdownGracePeriod: 5s
   enableThreadNameFilter: false
   registerDefaultExceptionMappers: false
+  externalUrl: ${EXTERNAL_URL:-_DEFAULT_}
 
 httpClient:
   timeout: 30s

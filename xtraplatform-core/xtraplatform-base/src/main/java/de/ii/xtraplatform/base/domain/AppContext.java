@@ -2,6 +2,7 @@ package de.ii.xtraplatform.base.domain;
 
 import de.ii.xtraplatform.base.domain.Constants.ENV;
 import java.net.URI;
+import java.nio.file.Path;
 
 public interface AppContext {
 
@@ -10,6 +11,12 @@ public interface AppContext {
   String getVersion();
 
   ENV getEnvironment();
+
+  Path getDataDir();
+
+  Path getTmpDir();
+
+  Path getConfigurationFile();
 
   AppConfiguration getConfiguration();
 

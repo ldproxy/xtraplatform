@@ -16,6 +16,7 @@ import io.dropwizard.configuration.ConfigurationSourceProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 public class MergingSourceProvider implements ConfigurationSourceProvider {
 
@@ -31,7 +32,7 @@ public class MergingSourceProvider implements ConfigurationSourceProvider {
    * @param env
    */
   public MergingSourceProvider(
-      ConfigurationSourceProvider delegate, List<ByteSource> mergeAfterBase, Constants.ENV env) {
+      ConfigurationSourceProvider delegate, Map<String, ByteSource> mergeAfterBase, Constants.ENV env) {
     this.delegate = requireNonNull(delegate);
     this.configurationReader = new ConfigurationReader(mergeAfterBase);
     this.env = env;

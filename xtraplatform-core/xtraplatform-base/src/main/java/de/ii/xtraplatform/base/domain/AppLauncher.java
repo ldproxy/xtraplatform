@@ -20,7 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -37,7 +37,11 @@ public class AppLauncher implements AppContext {
   private final String name;
   private final String version;
   private Constants.ENV env;
+  private Path dataDir;
+  private Path tmpDir;
+  private Path cfgFile;
   private AppConfiguration cfg;
+  private URI uri;
 
   public AppLauncher(String name, String version) {
     this.name = name;
@@ -60,33 +64,39 @@ public class AppLauncher implements AppContext {
   }
 
   @Override
+  public Path getDataDir() {
+    return dataDir;
+  }
+
+  @Override
+  public Path getTmpDir() {
+    return tmpDir;
+  }
+
+  @Override
+  public Path getConfigurationFile() {
+    return cfgFile;
+  }
+
+  @Override
   public AppConfiguration getConfiguration() {
     return cfg;
   }
 
   @Override
   public URI getUri() {
-    if (Strings.isNullOrEmpty(getConfiguration().getServerFactory().getExternalUrl())) {
-      return URI.create(
-          String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort()));
-    }
-
-    return URI.create(
-        getConfiguration()
-            .getServerFactory()
-            .getExternalUrl()
-            .replace("rest/services/", "")
-            .replace("rest/services", ""));
+    return uri;
   }
 
-  public void init(String[] args, List<ByteSource> baseConfigs) throws IOException {
-    Path dataDir =
+  public void init(String[] args, Map<String, ByteSource> baseConfigs) throws IOException {
+    this.dataDir =
         getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
-    System.setProperty(TMP_DIR_PROP, dataDir.resolve(TMP_DIR_NAME).toAbsolutePath().toString());
+    this.tmpDir = dataDir.resolve(TMP_DIR_NAME).toAbsolutePath();
+    System.setProperty(TMP_DIR_PROP, tmpDir.toString());
 
     this.env = parseEnvironment();
     ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
-    Path cfgFile = configurationReader.getConfigurationFile(dataDir, env);
+    this.cfgFile = configurationReader.getConfigurationFile(dataDir, env);
 
     configurationReader.loadMergedLogging(cfgFile, env);
 
@@ -96,15 +106,25 @@ public class AppLauncher implements AppContext {
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Data directory: {}", dataDir);
       LOGGER.debug("Environment: {}", env);
-      LOGGER.debug("Base configurations: {}", baseConfigs);
-      LOGGER.debug("User configurations: [{}]", cfgFile);
     }
 
     String cfgString = configurationReader.loadMergedConfigAsString(cfgFile, env);
     this.cfg = configurationReader.configFromString(cfgString);
 
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Base configurations: {}", configurationReader.getBaseConfigs(env).keySet());
+      LOGGER.debug("User configurations: [{}]", cfgFile);
+    }
     if (LOGGER.isDebugEnabled(LogContext.MARKER.DUMP)) {
       LOGGER.debug(LogContext.MARKER.DUMP, "Application configuration: \n{}", cfgString);
+    }
+
+    String externalUrl = getConfiguration().getServerFactory().getExternalUrl();
+    if (Strings.isNullOrEmpty(externalUrl) || Objects.equals(externalUrl, ConfigurationReader.DEFAULT_VALUE)) {
+      this.uri =
+          URI.create(String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort()));
+    } else {
+      this.uri = URI.create(externalUrl.replace("rest/services/", "").replace("rest/services", ""));
     }
   }
 
@@ -161,7 +181,7 @@ public class AppLauncher implements AppContext {
                     .map(Enum::name)
                     .anyMatch(v -> Objects.equals(e, v)))
         .map(Constants.ENV::valueOf)
-        .orElse(Constants.ENV.PRODUCTION);
+        .orElse(Constants.ENV.NATIVE);
   }
 
   private String getScheme() {

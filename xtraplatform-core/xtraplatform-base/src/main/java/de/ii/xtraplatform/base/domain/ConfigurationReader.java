@@ -29,9 +29,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class ConfigurationReader {
 
@@ -40,10 +43,15 @@ public class ConfigurationReader {
     OTHER
   }
 
-  public static final String CONFIG_FILE_NAME = "cfg.yml";
-  public static final String CONFIG_FILE_NAME_LEGACY = "xtraplatform.json";
+  public static final String CFG_FILE_NAME = "cfg.yml";
+  public static final String CFG_FILE_NAME_LEGACY = "xtraplatform.json";
+  public static final String DEFAULT_VALUE = "_DEFAULT_";
 
-  private static final String BASE_CFG_FILE = "/cfg.base.yml";
+  private static final String CFG_FILE_BASE = "/cfg.base.yml";
+  private static final String CFG_FILE_CONSOLE = "/cfg.console.yml";
+  private static final String CFG_FILE_LOGFILE = "/cfg.logfile.yml";
+  private static final String CFG_FILE_DEV = "/cfg.dev.yml";
+
   private static final String LOGGING_CFG_KEY = "/logging";
   private static final Map<Constants.ENV, Map<APPENDER, String>> LOG_FORMATS =
       ImmutableMap.of(
@@ -53,7 +61,7 @@ public class ConfigurationReader {
                       "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %gray([%c{44}]) %magenta([%t]) %blue(%marker) %n%rEx",
                   APPENDER.OTHER,
                       "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} [%c{44}] [%t] %n%rEx"),
-          Constants.ENV.PRODUCTION,
+          Constants.ENV.NATIVE,
               ImmutableMap.of(
                   APPENDER.CONSOLE,
                       "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
@@ -67,11 +75,11 @@ public class ConfigurationReader {
                   APPENDER.OTHER,
                       "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"));
 
-  private final List<ByteSource> configsToMergeAfterBase;
+  private final Map<String, ByteSource> configsToMergeAfterBase;
   private final ObjectMapper mapper;
   private final ObjectMapper mergeMapper;
 
-  public ConfigurationReader(List<ByteSource> configsToMergeAfterBase) {
+  public ConfigurationReader(Map<String, ByteSource> configsToMergeAfterBase) {
     this.configsToMergeAfterBase = configsToMergeAfterBase;
 
     this.mapper =
@@ -82,14 +90,15 @@ public class ConfigurationReader {
   }
 
   public Path getConfigurationFile(Path dataDir, Constants.ENV environment) {
-    Path defaultPath = dataDir.resolve(CONFIG_FILE_NAME).toAbsolutePath();
-    Path legacyPath = dataDir.resolve(CONFIG_FILE_NAME_LEGACY).toAbsolutePath();
+    Path defaultPath = dataDir.resolve(CFG_FILE_NAME).toAbsolutePath();
+    Path legacyPath = dataDir.resolve(CFG_FILE_NAME_LEGACY).toAbsolutePath();
 
     if (Files.exists(defaultPath)) {
       return defaultPath;
     } else if (Files.exists(legacyPath)) {
       return legacyPath;
     } else {
+      // TODO
       Optional<ByteSource> configurationFileTemplate =
           getConfigurationFileTemplate(environment.name().toLowerCase());
 
@@ -108,16 +117,15 @@ public class ConfigurationReader {
   public InputStream loadMergedConfig(InputStream userConfig, Constants.ENV env)
       throws IOException {
 
-    AppConfiguration base =
-        mapper.readValue(getBaseConfig().openStream(), AppConfiguration.class);
+    AppConfiguration base = mapper.readValue(getBaseConfig().openStream(), AppConfiguration.class);
 
-    for (ByteSource byteSource : configsToMergeAfterBase) {
+    for (ByteSource byteSource : getBaseConfigs(env).values()) {
       mergeMapper.readerForUpdating(base).readValue(byteSource.openStream());
     }
 
     mergeMapper.readerForUpdating(base).readValue(userConfig);
 
-    applyLogFormat((DefaultLoggingFactory) base.getLoggingFactory(), env);
+    applyLogFormat(base.getLoggingConfiguration(), env);
 
     return new ByteArrayInputStream(mapper.writeValueAsBytes(base));
   }
@@ -154,11 +162,9 @@ public class ConfigurationReader {
       JsonNode jsonNodeBase = mapper.readTree(getBaseConfig().openStream());
 
       loggingFactory =
-          mapper
-              .readerFor(LoggingConfiguration.class)
-              .readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
+          mapper.readerFor(LoggingConfiguration.class).readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
 
-      for (ByteSource byteSource : configsToMergeAfterBase) {
+      for (ByteSource byteSource : getBaseConfigs(env).values()) {
         JsonNode jsonNodeMerge = mapper.readTree(byteSource.openStream());
 
         mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNodeMerge.at(LOGGING_CFG_KEY));
@@ -175,6 +181,30 @@ public class ConfigurationReader {
     applyLogFormat(loggingFactory, env);
 
     loggingFactory.configure(new MetricRegistry(), "xtraplatform");
+  }
+
+  public Map<String, ByteSource> getBaseConfigs(Constants.ENV env) {
+    List<String> envConfigs = new ArrayList<>();
+    envConfigs.add(CFG_FILE_BASE);
+    if (env.isDev() || env.isContainer()) {
+      envConfigs.add(CFG_FILE_CONSOLE);
+    } else {
+      envConfigs.add(CFG_FILE_LOGFILE);
+    }
+    if (env.isDev()) {
+      envConfigs.add(CFG_FILE_DEV);
+    }
+
+    return Stream.concat(
+            envConfigs.stream()
+                .map(
+                    cfgPath ->
+                        new SimpleEntry<>(
+                            Path.of("/").relativize(Path.of(cfgPath)).toString(),
+                            Resources.asByteSource(
+                                Resources.getResource(ConfigurationReader.class, cfgPath)))),
+            configsToMergeAfterBase.entrySet().stream())
+        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   @Deprecated
@@ -198,8 +228,8 @@ public class ConfigurationReader {
 
   // TODO: special console pattern
   // TODO: only set format if default is set, so custom format in cfg.yml is possible
-  private static void applyLogFormat(DefaultLoggingFactory loggingFactory, Constants.ENV env) {
-    loggingFactory.getAppenders().stream()
+  private static void applyLogFormat(LoggingConfiguration loggingConfiguration, Constants.ENV env) {
+    loggingConfiguration.getAppenders().stream()
         .filter(
             iLoggingEventAppenderFactory ->
                 iLoggingEventAppenderFactory instanceof AbstractAppenderFactory)
@@ -228,7 +258,7 @@ public class ConfigurationReader {
   }
 
   private ByteSource getBaseConfig() {
-    return Resources.asByteSource(Resources.getResource(getClass(), BASE_CFG_FILE));
+    return Resources.asByteSource(Resources.getResource(getClass(), CFG_FILE_BASE));
   }
 
   public Optional<ByteSource> getConfigurationFileTemplate(String environment) {

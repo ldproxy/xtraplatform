@@ -22,7 +22,7 @@ public class AppConfiguration extends Configuration {
   public AppConfiguration() {}
 
   @Valid @NotNull private ServerConfiguration server = new ServerConfiguration();
-  @Valid @Nullable private LoggingConfiguration logging;
+  @Valid @NotNull private LoggingConfiguration logging = new LoggingConfiguration();
 
   @Override
   @JsonProperty("server")
@@ -40,8 +40,13 @@ public class AppConfiguration extends Configuration {
   }
 
   @Override
-  @JsonProperty("logging")
+  @JsonIgnore
   public synchronized LoggingFactory getLoggingFactory() {
+    return logging;
+  }
+
+  @JsonProperty("logging")
+  public synchronized LoggingConfiguration getLoggingConfiguration() {
     return logging;
   }
 

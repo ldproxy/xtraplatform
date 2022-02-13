@@ -14,11 +14,11 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
 import de.ii.xtraplatform.base.domain.Lifecycle;
 import de.ii.xtraplatform.base.domain.LogContext;
-import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.domain.ApplicationProvider;
 import de.ii.xtraplatform.web.domain.Dropwizard;
 import de.ii.xtraplatform.web.domain.MustacheResolverRegistry;
@@ -76,37 +76,40 @@ public class DropwizardProvider implements Dropwizard, Lifecycle {
   public void onStart() {
     Thread.currentThread().setName("startup");
 
-    Path cfgFile =
-        Path.of(
-            "/home/zahnen/development/configs-ldproxy/inspire-nrw/cfg.yml"); // TODO
-                                                                             // Paths.get(context.getProperty(Constants.USER_CONFIG_PATH_KEY));
+    Path cfgFile = appContext.getConfigurationFile();
 
     try {
       init(cfgFile, appContext.getEnvironment());
-
-      run();
-
     } catch (Throwable ex) {
       LogContext.error(
-          LOGGER, ex, "Error initializing {} with configuration file {}", appContext.getName(), cfgFile);
+          LOGGER,
+          ex,
+          "Error initializing {} with configuration file {}",
+          appContext.getName(),
+          cfgFile);
+      System.exit(1);
+    }
+
+    try {
+      run();
+      LOGGER.info("Started web server at {}", appContext.getUri());
+    } catch (Throwable ex) {
+      LogContext.error(LOGGER, ex, "Error starting {}", appContext.getName());
       System.exit(1);
     }
   }
 
   @Override
   public void onStop() {
-    LOGGER.debug("onStop");
     try {
       server.stop();
       server.join();
     } catch (Exception e) {
-      LogContext.error(
-          LOGGER, e, "Error when stopping web server.");
+      LogContext.error(LOGGER, e, "Error when stopping web server");
     }
   }
 
   private void run() throws Exception {
-
     environment.jersey().setUrlPattern(JERSEY_ENDPOINT);
 
     this.server = configuration.getServerFactory().build(environment);
@@ -114,9 +117,6 @@ public class DropwizardProvider implements Dropwizard, Lifecycle {
     addAdminEndpoint();
 
     server.start();
-
-    LOGGER.info("Started web server at {}", appContext.getUri());
-
   }
 
   private void addAdminEndpoint() {

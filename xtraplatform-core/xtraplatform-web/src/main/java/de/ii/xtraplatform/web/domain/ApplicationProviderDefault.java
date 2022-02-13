@@ -9,6 +9,7 @@ package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.base.domain.Constants;
@@ -119,8 +120,8 @@ public class ApplicationProviderDefault
 
     bootstrap.setConfigurationSourceProvider(
         new SubstitutingSourceProvider(
-            new MergingSourceProvider(
-                bootstrap.getConfigurationSourceProvider(), ImmutableList.of(), env),
+            new MergingSourceProvider( //TODO: baseConfigs
+                bootstrap.getConfigurationSourceProvider(), ImmutableMap.of(), env),
             new EnvironmentVariableSubstitutor(false)));
 
     initializer.accept(bootstrap);

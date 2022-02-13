@@ -16,8 +16,26 @@ public class Constants {
   public static final String TMP_DIR_PROP = "java.io.tmpdir";
 
   public enum ENV {
-    PRODUCTION,
-    DEVELOPMENT,
-    CONTAINER,
+    DEVELOPMENT {
+      @Override
+      public boolean isDev() {
+        return true;
+      }
+    },
+    CONTAINER {
+      @Override
+      public boolean isContainer() {
+        return true;
+      }
+    },
+    NATIVE;
+
+    public boolean isDev() {
+      return false;
+    }
+
+    public boolean isContainer() {
+      return false;
+    }
   }
 }
