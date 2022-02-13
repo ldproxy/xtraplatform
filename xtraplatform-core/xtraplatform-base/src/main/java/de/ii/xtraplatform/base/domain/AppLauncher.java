@@ -113,7 +113,7 @@ public class AppLauncher implements AppContext {
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Base configurations: {}", configurationReader.getBaseConfigs(env).keySet());
-      LOGGER.debug("User configurations: [{}]", cfgFile);
+      LOGGER.debug("User configurations: [{}]", cfgFile.toFile().exists() ? cfgFile : "");
     }
     if (LOGGER.isDebugEnabled(LogContext.MARKER.DUMP)) {
       LOGGER.debug(LogContext.MARKER.DUMP, "Application configuration: \n{}", cfgString);

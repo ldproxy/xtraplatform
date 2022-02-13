@@ -114,16 +114,17 @@ public class ConfigurationReader {
     }
   }
 
-  public InputStream loadMergedConfig(InputStream userConfig, Constants.ENV env)
+  public InputStream loadMergedConfig(Optional<InputStream> userConfig, Constants.ENV env)
       throws IOException {
-
     AppConfiguration base = mapper.readValue(getBaseConfig().openStream(), AppConfiguration.class);
 
     for (ByteSource byteSource : getEnvConfigs(env).values()) {
       mergeMapper.readerForUpdating(base).readValue(byteSource.openStream());
     }
 
-    mergeMapper.readerForUpdating(base).readValue(userConfig);
+    if (userConfig.isPresent()) {
+      mergeMapper.readerForUpdating(base).readValue(userConfig.get());
+    }
 
     applyLogFormat(base.getLoggingConfiguration(), env);
 
@@ -131,11 +132,15 @@ public class ConfigurationReader {
   }
 
   public String loadMergedConfigAsString(Path userConfig, Constants.ENV env) throws IOException {
+    Optional<InputStream> inputStream =
+        userConfig.toFile().exists()
+            ? Optional.of(Files.newInputStream(userConfig))
+            : Optional.empty();
     String cfg =
         new ByteSource() {
           @Override
           public InputStream openStream() throws IOException {
-            return loadMergedConfig(Files.newInputStream(userConfig), env);
+            return loadMergedConfig(inputStream, env);
           }
         }.asCharSource(Charsets.UTF_8).read();
 
@@ -143,12 +148,6 @@ public class ConfigurationReader {
         new EnvironmentVariableSubstitutor(false);
 
     return environmentVariableSubstitutor.replace(cfg);
-  }
-
-  public AppConfiguration loadMergedConfig(Path userConfig, Constants.ENV env) throws IOException {
-    String cfg = loadMergedConfigAsString(userConfig, env);
-
-    return mapper.readValue(cfg, AppConfiguration.class);
   }
 
   public AppConfiguration configFromString(String cfg) throws IOException {
@@ -170,9 +169,11 @@ public class ConfigurationReader {
         mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNodeMerge.at(LOGGING_CFG_KEY));
       }
 
-      JsonNode jsonNodeUser = mapper.readTree(userConfig.toFile());
+      if (userConfig.toFile().exists()) {
+        JsonNode jsonNodeUser = mapper.readTree(userConfig.toFile());
 
-      mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNodeUser.at(LOGGING_CFG_KEY));
+        mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNodeUser.at(LOGGING_CFG_KEY));
+      }
     } catch (Throwable e) {
       // use defaults
       loggingFactory = new LoggingConfiguration();

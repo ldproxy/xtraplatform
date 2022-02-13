@@ -15,8 +15,10 @@ import de.ii.xtraplatform.base.domain.Constants;
 import io.dropwizard.configuration.ConfigurationSourceProvider;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class MergingSourceProvider implements ConfigurationSourceProvider {
 
@@ -41,8 +43,11 @@ public class MergingSourceProvider implements ConfigurationSourceProvider {
   /** {@inheritDoc} */
   @Override
   public InputStream open(String path) throws IOException {
+    if (!Path.of(path).toFile().exists()) {
+      return configurationReader.loadMergedConfig(Optional.empty(), env);
+    }
     try (final InputStream in = delegate.open(path)) {
-      return configurationReader.loadMergedConfig(in, env);
+      return configurationReader.loadMergedConfig(Optional.ofNullable(in), env);
     }
   }
 }
