@@ -8,7 +8,8 @@
 package de.ii.xtraplatform.openapi.app;
 
 /** @author zahnen */
-import de.ii.xtraplatform.dropwizard.domain.Endpoint;
+import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -17,6 +18,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -29,16 +32,11 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 @Hidden
 @Path("/api")
 public class DynamicOpenApiResource implements Endpoint {
@@ -48,9 +46,10 @@ public class DynamicOpenApiResource implements Endpoint {
   private final DynamicOpenApiChangeListener openApi;
   private final OpenApiViewerResource openApiViewerResource;
 
+  @Inject
   public DynamicOpenApiResource(
-      @Requires OpenApiViewerResource openApiViewerResource,
-      @Requires DynamicOpenApiChangeListener openApi) {
+      OpenApiViewerResource openApiViewerResource,
+      DynamicOpenApiChangeListener openApi) {
     this.openApi = openApi;
     this.openApiViewerResource = openApiViewerResource;
   }

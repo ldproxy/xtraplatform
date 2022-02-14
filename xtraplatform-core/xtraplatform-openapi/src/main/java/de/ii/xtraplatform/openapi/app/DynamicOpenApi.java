@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.openapi.app;
 
-import de.ii.xtraplatform.dropwizard.domain.JaxRsReg;
+import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.Lifecycle;
+import de.ii.xtraplatform.web.domain.JaxRsConsumer;
 import io.swagger.v3.core.filter.OpenAPISpecFilter;
 import io.swagger.v3.core.filter.SpecFilter;
 import io.swagger.v3.core.util.Json;
@@ -19,10 +21,15 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Cookie;
@@ -32,59 +39,57 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
-public class DynamicOpenApi extends BaseOpenApiResource implements DynamicOpenApiChangeListener {
+@Singleton
+@AutoBind
+public class DynamicOpenApi extends BaseOpenApiResource implements DynamicOpenApiChangeListener,
+    Lifecycle, JaxRsConsumer {
 
   private static Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApi.class);
   public static final MediaType YAML_TYPE = new MediaType("application", "yaml");
   public static final String YAML = "application/yaml";
-  private final JaxRsReg registry;
+  //private final JaxRsReg registry;
 
   private OpenAPI openApiSpec;
-  private boolean upToDate;
 
-  public DynamicOpenApi(@Requires JaxRsReg registry) {
-    this.registry = registry;
-  }
-
-  @Validate
-  private void start() {
-    registry.addChangeListener(this);
-  }
-
-  private synchronized void scan() {
-    Reader reader = new Reader(new OpenAPI());
-    this.openApiSpec = reader.read(getResourceClasses());
-    openApiSpec.addServersItem(new Server().url("/rest"));
-    openApiSpec
-        .getComponents()
-        .addSecuritySchemes(
-            "JWT",
-            new SecurityScheme()
-                .type(SecurityScheme.Type.HTTP)
-                .scheme("bearer")
-                .bearerFormat("JWT"));
-    openApiSpec.addSecurityItem(new SecurityRequirement().addList("JWT"));
-    this.upToDate = true;
-  }
-
-  private synchronized Set<Class<?>> getResourceClasses() {
-    return registry.getResources().stream().map(Object::getClass).collect(Collectors.toSet());
+  @Inject
+  public DynamicOpenApi() {
+    //this.registry = registry;
   }
 
   @Override
-  public synchronized void jaxRsChanged() {
-    this.upToDate = false;
+  public void onStart() {
+    //scan();
+  }
+
+  @Override
+  public Consumer<Set<Object>> getConsumer() {
+    return this::scan;
+  }
+
+  private synchronized void scan(Set<Object> resources) {
+    Set<Class<?>> resourceClasses = resources.stream().map(Object::getClass).collect(Collectors.toSet());
+    Reader reader = new Reader(new OpenAPI());
+    this.openApiSpec = reader.read(resourceClasses);
+    openApiSpec.addServersItem(new Server().url("/rest"));
+    if (Objects.nonNull(openApiSpec.getComponents())) {
+      openApiSpec
+          .getComponents()
+          .addSecuritySchemes(
+              "JWT",
+              new SecurityScheme()
+                  .type(SecurityScheme.Type.HTTP)
+                  .scheme("bearer")
+                  .bearerFormat("JWT"));
+    }
+    openApiSpec.addSecurityItem(new SecurityRequirement().addList("JWT"));
+  }
+
+  private synchronized Set<Class<?>> getResourceClasses() {
+    //TODO
+    return new HashSet<>(); //registry.getResources().stream().map(Object::getClass).collect(Collectors.toSet());
   }
 
   @Override
@@ -98,13 +103,6 @@ public class DynamicOpenApi extends BaseOpenApiResource implements DynamicOpenAp
   public Response getOpenApi(
       HttpHeaders headers, UriInfo uriInfo, String type, OpenAPISpecFilter specFilter)
       throws Exception {
-
-    synchronized (DynamicOpenApi.class) {
-      if (!upToDate) {
-        scan();
-      }
-    }
-
     if (openApiSpec == null) {
       return Response.status(404).build();
     }

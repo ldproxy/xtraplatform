@@ -1,24 +1,25 @@
-
 ext {
-    swaggerVersion='2.1.2'
+    swaggerVersion = '2.1.13'
 }
 
 dependencies {
-    provided project(':xtraplatform-dropwizard')
+    provided project(':xtraplatform-web')
 
     embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: swaggerVersion
     embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-models', version: swaggerVersion
     embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-annotations', version: swaggerVersion
     embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-integration', version: swaggerVersion
     embeddedFlatExport group: 'io.swagger.core.v3', name: 'swagger-core', version: swaggerVersion
-    embeddedFlatExport 'io.github.classgraph:classgraph:4.8.65'
-} 
-/*TODO
-jar {
-    manifest {
-        instructionFirst 'Import-Package', '!com.google.gson'
-        instructionFirst 'Import-Package', '!org.dom4j'
-        instructionFirst 'Import-Package', '!org.dom4j.io'
-    }
+    embeddedFlatExport 'io.github.classgraph:classgraph:4.8.138'
 }
-*/
+
+moduleInfo {
+    exports = [
+            '!io.github.classgraph*',
+            '!nonapi.io.github.classgraph*',
+    ]
+    requires = [
+            'java.logging',
+            'java.xml',
+    ]
+}

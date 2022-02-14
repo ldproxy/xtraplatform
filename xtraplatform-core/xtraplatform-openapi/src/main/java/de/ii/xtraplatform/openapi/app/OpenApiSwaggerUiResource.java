@@ -8,39 +8,35 @@
 package de.ii.xtraplatform.openapi.app;
 
 /** @author zahnen */
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
 import java.net.URL;
 import java.util.Objects;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class OpenApiSwaggerUiResource implements OpenApiViewerResource {
 
   private static Logger LOGGER = LoggerFactory.getLogger(OpenApiSwaggerUiResource.class);
 
-  private final BundleContext bc;
+  @Inject
+  public OpenApiSwaggerUiResource() {
 
-  public OpenApiSwaggerUiResource(@Context BundleContext bc) {
-    this.bc = bc;
   }
 
   @Override
   public Response getFile(String file) {
     try {
-      URL url = bc.getBundle().getResource(file);
+      URL url = Resources.getResource(getClass(), file);
 
       if (Objects.isNull(url)) {
         throw new NotFoundException();

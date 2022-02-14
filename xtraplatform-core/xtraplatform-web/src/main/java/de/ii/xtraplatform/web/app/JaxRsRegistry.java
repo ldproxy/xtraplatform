@@ -13,6 +13,7 @@ import de.ii.xtraplatform.web.domain.AuthProvider;
 import de.ii.xtraplatform.web.domain.Dropwizard;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.web.domain.JaxRsChangeListener;
+import de.ii.xtraplatform.web.domain.JaxRsConsumer;
 import de.ii.xtraplatform.web.domain.JaxRsReg;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import io.dropwizard.jetty.MutableServletContextHandler;
@@ -62,6 +63,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
   private final Dropwizard dw;
   private ResourceConfig jersey;
   private final List<JaxRsChangeListener> changeListeners;
+  private final List<JaxRsConsumer> consumers;
 
   // TODO: DropwizardEnvironmentPlugin
   // TODO: any other @Provider besides Binder?
@@ -70,6 +72,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
   JaxRsRegistry(
       Dropwizard dw,
       Set<Endpoint> endpoints,
+      Set<JaxRsConsumer> consumers,
       //Set<Binder> binders,
       Set<AuthProvider<?>> authProviders
       //Set<ContainerRequestFilter> containerRequestFilters,
@@ -84,6 +87,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     this.providerCache = new ArrayList<>();
     this.filterCache = new ArrayList<>();
     this.changeListeners = new ArrayList<>();
+    this.consumers = new ArrayList<>(consumers);
 
     if (server.isAvailable()) {
       isJerseyAvailable = true;
@@ -253,6 +257,11 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
       for (JaxRsChangeListener changeListener : changeListeners) {
         if (changeListener != null) {
           changeListener.jaxRsChanged();
+        }
+      }
+      for (JaxRsConsumer consumer : consumers) {
+        if (consumer != null) {
+          consumer.getConsumer().accept(Sets.union(jersey.getInstances(), jersey.getSingletons()));
         }
       }
     }

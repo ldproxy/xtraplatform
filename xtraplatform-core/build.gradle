@@ -31,19 +31,6 @@ dependencies {
     bundle subprojects
 }
 
-//TODO: would this be needed for all embedded libs?
-if (gradle.isIncluded) {
-  allprojects {
-    repositories {
-      mavenLocal()
-    }
-  }
-  dependencies {
-    bundle group: group, name: 'xtraplatform-runtime', version: version += version.endsWith('-SNAPSHOT') ? '' : '-SNAPSHOT'
-  }
-}
-
-
 apply from: '../immutables.gradle'
 
 apply from: '../formatting.gradle'
