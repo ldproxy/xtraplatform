@@ -22,6 +22,7 @@ rootDir.listFiles().each { file ->
             && (file.name.startsWith('xtraplatform-runtime')
             || file.name.startsWith('xtraplatform-web')
             || file.name.startsWith('xtraplatform-openapi')
+            || file.name.startsWith('xtraplatform-streams')
             || file.name.startsWith('xtraplatform-base'))) {
         include file.name
     }

@@ -7,25 +7,23 @@
  */
 package de.ii.xtraplatform.streams.domain;
 
-import akka.NotUsed;
-import akka.stream.OverflowStrategy;
-import akka.stream.QueueOfferResult;
-import akka.stream.javadsl.Source;
-import akka.stream.javadsl.SourceQueueWithComplete;
 import de.ii.xtraplatform.streams.domain.Reactive.Sink;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+//TODO
 public class EventStream<T extends Event> {
-
+/*
   private final Reactive.Runner streamRunner;
   private final CompletableFuture<SourceQueueWithComplete<T>> eventQueue;
   private final Source<T, NotUsed> eventStream;
   private CompletableFuture<SourceQueueWithComplete<T>> eventQueueChain;
+
+ */
   private final String eventType;
 
   public EventStream(Reactive.Runner streamRunner, String eventType) {
-    this.eventQueue = new CompletableFuture<>();
+   /*this.eventQueue = new CompletableFuture<>();
     this.eventStream =
         Source.<T>queue(1024, OverflowStrategy.backpressure())
             .mapMaterializedValue(
@@ -34,18 +32,17 @@ public class EventStream<T extends Event> {
                   return NotUsed.getInstance();
                 });
     this.streamRunner = streamRunner;
-    this.eventQueueChain = eventQueue;
+    this.eventQueueChain = eventQueue;*/
     this.eventType = eventType;
   }
 
   public void foreach(Consumer<T> eventConsumer) {
-    Reactive.RunnableStream<Void> reactiveStream =
+    /*Reactive.RunnableStream<Void> reactiveStream =
         Reactive.Source.akka(eventStream).to(Sink.foreach(eventConsumer)).on(streamRunner);
-    reactiveStream.run();
-    // streamRunner.runForeach(eventStream, (Procedure<T>) eventConsumer::accept);
+    reactiveStream.run();*/
   }
 
-  public synchronized CompletableFuture<QueueOfferResult> queue(T event) {
+  /*public synchronized CompletableFuture<QueueOfferResult> queue(T event) {
     // eventQueue = eventQueue.thenComposeAsync(queue ->
     // queue.offer(event).handleAsync((queueOfferResult, throwable) -> queue));
     // TODO: to apply backpressure join queue as well as offer; but then we block indefinitely if
@@ -59,7 +56,7 @@ public class EventStream<T extends Event> {
             });
 
     return cmp;
-  }
+  }*/
 
   public String getEventType() {
     return eventType;
