@@ -14,8 +14,9 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import de.ii.xtraplatform.base.domain.Jackson;
+import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,7 +65,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityDataDefaultsStoreImpl.class);
 
-  private final EntityFactory entityFactory;
+  private final EntityFactories entityFactories;
   private final ValueEncodingJackson<Map<String, Object>> valueEncoding;
   private final ValueEncodingJackson<EntityDataBuilder<EntityData>> valueEncodingBuilder;
   private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
@@ -76,8 +78,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       AppContext appContext,
       EventStore eventStore,
       Jackson jackson,
-      EntityFactory entityFactory) {
-    this.entityFactory = entityFactory;
+      Lazy<Set<EntityFactory>> entityFactories) {
+    this.entityFactories = new EntityFactories(entityFactories);
     this.eventStore = eventStore;
     this.valueEncoding =
         new ValueEncodingJackson<>(
@@ -152,7 +154,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   }
 
   // TODO: it seems this is needed for correct order (defaults < entities)
-  //@Validate
+  // @Validate
   private void onVal() {
     // LOGGER.debug("VALID");
   }
@@ -179,7 +181,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     EntityDataDefaultsPath defaultsPath = EntityDataDefaultsPath.from(event.identifier());
 
     List<String> subTypes =
-        entityFactory.getSubTypes(defaultsPath.getEntityType(), defaultsPath.getEntitySubtype());
+        entityFactories.getSubTypes(defaultsPath.getEntityType(), defaultsPath.getEntitySubtype());
 
     // LOGGER.debug("Applying to subtypes as well: {}", subTypes);
 
@@ -195,8 +197,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               if (!defaultsPath.getKeyPath().isEmpty()
                   && !Objects.equals(defaultsPath.getKeyPath().get(0), EVENT_TYPE)) {
                 Optional<KeyPathAlias> keyPathAlias =
-                    entityFactory.getKeyPathAlias(
-                        defaultsPath.getKeyPath().get(defaultsPath.getKeyPath().size() - 1));
+                    entityFactories
+                        .get(cacheKey.path().get(0), cacheKey.path().get(1))
+                        .getKeyPathAlias(
+                            defaultsPath.getKeyPath().get(defaultsPath.getKeyPath().size() - 1));
                 try {
                   byte[] nestedPayload =
                       valueEncoding.nestPayload(
@@ -352,9 +356,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     EntityDataDefaultsPath defaultsPath = EntityDataDefaultsPath.from(identifier);
 
-    Optional<String> subtype = entityFactory.getTypeAsString(defaultsPath.getEntitySubtype());
+    Optional<String> subtype = entityFactories.getTypeAsString(defaultsPath.getEntitySubtype());
 
-    return entityFactory.getDataBuilder(defaultsPath.getEntityType(), subtype);
+    return (EntityDataBuilder<EntityData>)
+        entityFactories.get(defaultsPath.getEntityType(), subtype).dataBuilder();
   }
 
   @Override

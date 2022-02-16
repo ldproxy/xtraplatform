@@ -17,6 +17,10 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
     implements Service {
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractService.class);
 
+  public AbstractService(T data) {
+    super(data);
+  }
+
   @Override
   protected final boolean shouldRegister() {
     return getData() != null && getData().getEnabled();

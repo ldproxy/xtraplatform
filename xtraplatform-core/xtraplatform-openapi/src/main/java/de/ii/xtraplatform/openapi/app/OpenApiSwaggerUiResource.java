@@ -36,7 +36,7 @@ public class OpenApiSwaggerUiResource implements OpenApiViewerResource {
   @Override
   public Response getFile(String file) {
     try {
-      URL url = Resources.getResource(getClass(), file);
+      URL url = Resources.getResource(getClass(), "/" + file);
 
       if (Objects.isNull(url)) {
         throw new NotFoundException();

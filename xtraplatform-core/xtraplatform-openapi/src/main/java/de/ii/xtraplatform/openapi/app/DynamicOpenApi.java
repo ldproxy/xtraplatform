@@ -10,6 +10,7 @@ package de.ii.xtraplatform.openapi.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.web.domain.JaxRsConsumer;
+import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.swagger.v3.core.filter.OpenAPISpecFilter;
 import io.swagger.v3.core.filter.SpecFilter;
 import io.swagger.v3.core.util.Json;
@@ -28,6 +29,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.ServletConfig;
@@ -39,6 +41,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.internal.inject.InstanceBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +73,17 @@ public class DynamicOpenApi extends BaseOpenApiResource implements DynamicOpenAp
   }
 
   private synchronized void scan(Set<Object> resources) {
-    Set<Class<?>> resourceClasses = resources.stream().map(Object::getClass).collect(Collectors.toSet());
+    Set<Class<?>> resourceClasses = resources.stream()
+        .flatMap(resource -> {
+          if (resource instanceof DropwizardResourceConfig.SpecificBinder) {
+            return ((DropwizardResourceConfig.SpecificBinder)resource).getBindings()
+                .stream()
+                .filter(binding -> binding instanceof InstanceBinding)
+                .map(binding -> ((InstanceBinding<?>)binding).getService().getClass());
+          }
+          return Stream.of(resource.getClass());
+        })
+        .collect(Collectors.toSet());
     Reader reader = new Reader(new OpenAPI());
     this.openApiSpec = reader.read(resourceClasses);
     openApiSpec.addServersItem(new Server().url("/rest"));

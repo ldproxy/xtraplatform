@@ -8,21 +8,24 @@
 package de.ii.xtraplatform.auth.app;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.store.domain.entities.AbstractPersistentEntity;
-import de.ii.xtraplatform.store.domain.entities.EntityComponent;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
-import de.ii.xtraplatform.store.domain.entities.handler.Entity;
 import java.util.OptionalLong;
 import org.immutables.value.Value;
 
 /** @author zahnen */
-@EntityComponent
-@Entity(type = User.ENTITY_TYPE, dataClass = User.UserData.class)
 public class User extends AbstractPersistentEntity<User.UserData> {
 
   public static final String ENTITY_TYPE = "users";
+
+  @AssistedInject
+  public User(@Assisted UserData data) {
+    super(data);
+  }
 
   @Override
   public String getType() {

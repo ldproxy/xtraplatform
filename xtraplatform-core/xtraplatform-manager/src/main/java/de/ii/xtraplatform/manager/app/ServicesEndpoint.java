@@ -14,9 +14,9 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ObjectArrays;
+import dagger.Lazy;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.services.domain.ImmutableServiceStatus;
 import de.ii.xtraplatform.services.domain.Service;
@@ -24,6 +24,7 @@ import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceStatus;
 import de.ii.xtraplatform.services.domain.TaskStatus;
+import de.ii.xtraplatform.store.app.entities.EntityFactories;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
@@ -35,6 +36,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
 import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
 import de.ii.xtraplatform.streams.domain.EventStream;
 import de.ii.xtraplatform.streams.domain.Reactive;
+import de.ii.xtraplatform.web.domain.Endpoint;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -48,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
@@ -86,7 +89,7 @@ public class ServicesEndpoint implements Endpoint {
   private final EntityDataStore<EntityData> entityRepository;
   private final EntityDataStore<ServiceData> serviceRepository;
   private final EntityRegistry entityRegistry;
-  private final EntityFactory entityFactory;
+  private final EntityFactories entityFactories;
   private final EntityDataDefaultsStore defaultsStore;
   private final ServiceBackgroundTasks serviceBackgroundTasks;
   private final ObjectMapper objectMapper;
@@ -97,21 +100,22 @@ public class ServicesEndpoint implements Endpoint {
   ServicesEndpoint(
       EntityDataStore<?> entityRepository,
       EntityRegistry entityRegistry,
-      EntityFactory entityFactory,
+      Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore,
       ServiceBackgroundTasks serviceBackgroundTasks,
       Reactive reactive) {
     this.entityRepository = (EntityDataStore<EntityData>)entityRepository;
     this.serviceRepository = getServiceRepository(this.entityRepository);
     this.entityRegistry = entityRegistry;
-    this.entityFactory = entityFactory;
+    this.entityFactories = new EntityFactories(entityFactories);
     this.defaultsStore = defaultsStore;
     this.serviceBackgroundTasks = serviceBackgroundTasks;
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);
     this.entityStateSubscriber = new ArrayList<>();
     this.eventStream = new EventStream<>(reactive.runner("sse", 1, 1024), "state");
 
-    eventStream.foreach(
+    //TODO: sse, see /_events below
+    /*eventStream.foreach(
         event -> {
           if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("BROADCASTING {}", entityStateSubscriber.size());
@@ -119,7 +123,7 @@ public class ServicesEndpoint implements Endpoint {
           entityStateSubscriber.forEach(subscriber -> subscriber.accept(event));
         });
     entityRegistry.addEntityStateListener(
-        event -> eventStream.queue(ImmutableEntityStateEvent.builder().from(event).build()));
+        event -> eventStream.queue(ImmutableEntityStateEvent.builder().from(event).build()));*/
   }
 
   EntityDataStore<ServiceData> getServiceRepository(EntityDataStore<EntityData> entityRepository) {
@@ -227,7 +231,7 @@ public class ServicesEndpoint implements Endpoint {
       // EntityData service = null;
 
       // TODO: background task, while running return status on GET
-      EntityData provider2 = entityFactory.hydrateData(identifier, "providers", provider);
+      EntityData provider2 = entityFactories.get("providers", provider.getEntitySubType()).hydrateData(provider);
 
       EntityData provider3 = entityRepository.put(identifier, provider2).join();
 
@@ -243,7 +247,7 @@ public class ServicesEndpoint implements Endpoint {
 
       // TODO: background task, while running return status on GET
       ServiceData service2 =
-          (ServiceData) entityFactory.hydrateData(identifier2, "services", serviceData);
+          (ServiceData) entityFactories.get("services", serviceData.getEntitySubType()).hydrateData(serviceData);
 
       ServiceData added = serviceRepository.put(id, service2).join();
 

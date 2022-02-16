@@ -10,12 +10,9 @@ package de.ii.xtraplatform.store.app.entities;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xtraplatform.store.app.EventSourcing;
-import de.ii.xtraplatform.store.app.ValueDecoderWithBuilder;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ValueDecoderMiddleware;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
-import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
-import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -26,15 +23,15 @@ import java.util.function.BiConsumer;
 public class ValueDecoderEntityDataMigration implements ValueDecoderMiddleware<EntityData> {
 
   private final EventSourcing<EntityData> eventSourcing;
-  private final EntityFactory entityFactory;
+  //private final EntityFactory3 entityFactory;
   private final BiConsumer<Identifier, EntityData> addAdditionalEvent;
 
   public ValueDecoderEntityDataMigration(
       EventSourcing<EntityData> eventSourcing,
-      EntityFactory entityFactory,
+      //EntityFactory3 entityFactory,
       BiConsumer<Identifier, EntityData> addAdditionalEvent) {
     this.eventSourcing = eventSourcing;
-    this.entityFactory = entityFactory;
+    //this.entityFactory = entityFactory;
     this.addAdditionalEvent = addAdditionalEvent;
   }
 
@@ -94,7 +91,7 @@ public class ValueDecoderEntityDataMigration implements ValueDecoderMiddleware<E
       Optional<String> entitySubType,
       OptionalLong targetVersion)
       throws IOException {
-    EntityDataBuilder<EntityData> builderOld =
+    /*EntityDataBuilder<EntityData> builderOld =
         entityFactory.getDataBuilders(identifier.path().get(0), storageVersion, entitySubType);
     ValueDecoderWithBuilder<EntityData> valueDecoderWithBuilder =
         new ValueDecoderWithBuilder<>(identifier1 -> builderOld, eventSourcing);
@@ -107,6 +104,6 @@ public class ValueDecoderEntityDataMigration implements ValueDecoderMiddleware<E
         entityFactory.migrateSchema(
             identifier, entityType, entityDataOld, entitySubType, targetVersion);
 
-    entityDataNew.forEach(addAdditionalEvent);
+    entityDataNew.forEach(addAdditionalEvent);*/
   }
 }

@@ -1,50 +1,58 @@
-/*
- * Copyright 2019-2020 interactive instruments GmbH
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
 package de.ii.xtraplatform.store.domain.entities;
 
-import de.ii.xtraplatform.store.domain.Identifier;
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
+@AutoMultiBind
 public interface EntityFactory {
 
-  EntityDataBuilder<EntityData> getDataBuilder(String entityType, Optional<String> entitySubType);
+  String type();
 
-  Optional<KeyPathAlias> getKeyPathAlias(String keyPath);
+  default Optional<String> subType() {
+    return Optional.empty();
+  }
 
-  List<String> getSubTypes(String entityType, List<String> entitySubType);
+  default String fullType() {
+    if (subType().isPresent()) {
+      return String.format("%s/%s", type(), subType().get());
+    }
 
-  EntityDataBuilder<EntityData> getDataBuilders(
-      String entityType, long entitySchemaVersion, Optional<String> entitySubType);
+    return type();
+  }
 
-  Optional<String> getTypeAsString(List<String> entitySubtype);
+  Class<? extends PersistentEntity> entityClass();
 
-  Map<Identifier, EntityData> migrateSchema(
-      Identifier identifier,
-      String entityType,
-      EntityData entityData,
-      Optional<String> entitySubType,
-      OptionalLong targetVersion);
+  EntityDataBuilder<? extends EntityData> dataBuilder();
 
-  EntityData hydrateData(Identifier identifier, String entityType, EntityData entityData);
+  default EntityDataBuilder<? extends EntityData> superDataBuilder() {
+    return dataBuilder();
+  }
 
-  String getDataTypeName(Class<? extends EntityData> entityDataClass);
+  Class<? extends EntityData> dataClass();
 
-  CompletableFuture<PersistentEntity> createInstance(
-      String entityType, String id, EntityData entityData);
+  Optional<? extends PersistentEntity> instance(String id);
 
-  CompletableFuture<Void> updateInstance(String entityType, String id, EntityData entityData);
+  Set<? extends PersistentEntity> instances();
 
-  void deleteInstance(String entityType, String id);
+  CompletableFuture<PersistentEntity> createInstance(EntityData entityData);
 
-  List<String> getTypeAsList(String entitySubtype);
+  CompletableFuture<PersistentEntity> updateInstance(EntityData entityData);
+
+  void deleteInstance(String id);
+
+  default EntityData hydrateData(EntityData entityData) {
+    return entityData;
+  }
+
+  default Optional<KeyPathAlias> getKeyPathAlias(String keyPath) {
+    return Optional.empty();
+  }
+
+  void addEntityListener(Consumer<PersistentEntity> listener, boolean existing);
+
+  void addEntityGoneListener(Consumer<PersistentEntity> listener);
 }

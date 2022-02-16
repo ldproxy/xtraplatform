@@ -9,10 +9,13 @@ package de.ii.xtraplatform.store.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
+import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.domain.Dropwizard;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.ImmutableEventFilter;
+import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import io.dropwizard.servlets.tasks.Task;
+import io.dropwizard.setup.Environment;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
@@ -27,20 +30,24 @@ import org.slf4j.LoggerFactory;
 /** @author zahnen */
 @Singleton
 @AutoBind
-public class StoreReloadTask extends Task {
+public class StoreReloadTask extends Task implements DropwizardPlugin {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StoreReloadTask.class);
   private static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
 
   private final EventStore eventStore;
 
-  //TODO: DropwizardEnvironmentPlugin, AdminTaskRegistry
+  //TODO:  AdminTaskRegistry (OpsPlugin)
   @Inject
-  protected StoreReloadTask(Dropwizard dropwizard, EventStore eventStore) {
+  protected StoreReloadTask(EventStore eventStore) {
     super("reload-entities");
     this.eventStore = eventStore;
+  }
 
-    dropwizard.getEnvironment().admin().addTask(this);
+  @Override
+  public void init(AppConfiguration configuration,
+      Environment environment) {
+    environment.admin().addTask(this);
   }
 
   @Override

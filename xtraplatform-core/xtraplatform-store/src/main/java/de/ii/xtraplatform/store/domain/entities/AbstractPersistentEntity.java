@@ -47,7 +47,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   private Future<?> startup;
   private EntityState.STATE state;
 
-  public AbstractPersistentEntity() {
+  public AbstractPersistentEntity(T data) {
     this.executorService =
         MoreExecutors.getExitingExecutorService(
             (ThreadPoolExecutor)
@@ -55,9 +55,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
                     1, new ThreadFactoryBuilder().setNameFormat("entity.lifecycle-%d").build()));
     this.reloadListeners = new CopyOnWriteArrayList<>();
     this.stateChangeListeners = new CopyOnWriteArrayList<>();
-    this.data = null;
+    this.data = data;
     this.startup = null;
-    // this.state = STATE.LOADING;
+    this.state = STATE.UNKNOWN;
     setState(STATE.LOADING);
   }
 
