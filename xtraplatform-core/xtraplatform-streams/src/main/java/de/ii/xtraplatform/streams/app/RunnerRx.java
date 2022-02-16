@@ -111,13 +111,13 @@ public class RunnerRx implements Runner {
                       runNext();
                     })
                 .doOnComplete(
-                    (Action)
+                    () ->
                         LogContext.withMdc(
                             () -> {
                               context.onComplete(result);
 
                               runNext();
-                            }))
+                            }).run())
                 .subscribe(subscriber.onError(throwable -> context.onError(result, throwable)));
           };
       run(task);

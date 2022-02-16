@@ -7,7 +7,11 @@
  */
 package de.ii.xtraplatform.services.domain;
 
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
+
 /** @author zahnen */
+@AutoMultiBind
 public interface ServiceEndpoint {
-  String SERVICE_TYPE_KEY = "serviceType";
+
+  String getServiceType();
 }

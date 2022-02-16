@@ -15,17 +15,8 @@ pluginManagement {
 includeBuild '../../xtraplatform-build'
 includeBuild '../../../ws-dagger/dagger-auto'
 
-gradle.ext.isIncluded = gradle.parent != null
-
 rootDir.listFiles().each { file ->
-    if (file.isDirectory() && file.name.startsWith('xtraplatform-')
-            && (file.name.startsWith('xtraplatform-runtime')
-            || file.name.startsWith('xtraplatform-web')
-            || file.name.startsWith('xtraplatform-openapi')
-            || file.name.startsWith('xtraplatform-streams')
-            || file.name.startsWith('xtraplatform-store')
-            || file.name.startsWith('xtraplatform-auth')
-            || file.name.startsWith('xtraplatform-base'))) {
+    if (file.isDirectory() && file.name.startsWith('xtraplatform-')) {
         include file.name
     }
 }

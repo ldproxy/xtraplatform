@@ -5,6 +5,8 @@
  * of the MPL was not distributed with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 @Value.Style(deepImmutablesDetection = true, attributeBuilderDetection = true, builder = "new")
+@AutoModule(single = true, encapsulate = true)
 package de.ii.xtraplatform.services.domain;
 
+import com.github.azahnen.dagger.annotations.AutoModule;
 import org.immutables.value.Value;

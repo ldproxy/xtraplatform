@@ -7,9 +7,9 @@
  */
 package de.ii.xtraplatform.services.app;
 
-import de.ii.xtraplatform.di.domain.Registry;
-import de.ii.xtraplatform.di.domain.RegistryState;
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
+import com.github.azahnen.dagger.annotations.AutoBind;
+import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.services.domain.Scheduler;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceBackgroundTask;
@@ -23,52 +23,38 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.osgi.framework.BundleContext;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
-@Wbp(
-    filter =
-        Registry.FILTER_PREFIX
-            + ServiceBackgroundTasksImpl.SERVICE_BACKGROUND_TASK
-            + Registry.FILTER_SUFFIX,
-    onArrival = Registry.ON_ARRIVAL_METHOD,
-    onDeparture = Registry.ON_DEPARTURE_METHOD)
-public class ServiceBackgroundTasksImpl
-    implements ServiceBackgroundTasks, Registry<ServiceBackgroundTask<? extends Service>> {
+@Singleton
+@AutoBind
+public class ServiceBackgroundTasksImpl implements ServiceBackgroundTasks {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServiceBackgroundTasksImpl.class);
-  static final String SERVICE_BACKGROUND_TASK =
-      "de.ii.xtraplatform.services.domain.ServiceBackgroundTask";
 
-  private final Registry.State<ServiceBackgroundTask<? extends Service>> tasks;
+  private final Lazy<Set<ServiceBackgroundTask<?>>> tasks;
   private final Scheduler scheduler;
   private final TaskQueue commonQueue;
   private final Map<String, TaskQueue> taskQueues;
   private final Map<String, List<String>> cronJobs;
 
+  @Inject
   ServiceBackgroundTasksImpl(
-      @Context BundleContext context,
-      @Requires XtraPlatform xtraPlatform,
-      @Requires Scheduler scheduler,
-      @Requires EntityRegistry entityRegistry) {
-    this.tasks = new RegistryState<>(SERVICE_BACKGROUND_TASK, context);
+      AppContext appContext,
+      Scheduler scheduler,
+      EntityRegistry entityRegistry,
+      Lazy<Set<ServiceBackgroundTask<?>>> tasks) {
+    this.tasks = tasks;
     this.scheduler = scheduler;
     this.commonQueue =
         scheduler.createQueue(
             ServiceBackgroundTasks.COMMON_QUEUE,
-            xtraPlatform.getConfiguration().backgroundTasks.maxThreads);
+            appContext.getConfiguration().backgroundTasks.maxThreads);
     this.taskQueues = new ConcurrentHashMap<>();
     this.cronJobs = new ConcurrentHashMap<>();
     taskQueues.put(COMMON_QUEUE, commonQueue);
@@ -164,10 +150,5 @@ public class ServiceBackgroundTasksImpl
   @Override
   public Optional<TaskStatus> getCurrentTaskForService(String id) {
     return getCurrentTask().filter(taskStatus -> Objects.equals(taskStatus.getId(), id));
-  }
-
-  @Override
-  public State<ServiceBackgroundTask<?>> getRegistryState() {
-    return tasks;
   }
 }

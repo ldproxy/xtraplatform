@@ -9,14 +9,15 @@ package de.ii.xtraplatform.manager.app;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ObjectArrays;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.dropwizard.domain.Endpoint;
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.web.domain.Endpoint;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.services.domain.ImmutableServiceStatus;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
@@ -32,7 +33,6 @@ import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
 import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
-import de.ii.xtraplatform.streams.domain.ActorSystemProvider;
 import de.ii.xtraplatform.streams.domain.EventStream;
 import de.ii.xtraplatform.streams.domain.Reactive;
 import io.dropwizard.auth.Auth;
@@ -51,6 +51,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -69,17 +71,11 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 @RolesAllowed({Role.Minimum.EDITOR})
 @Path("/admin/services")
 @Produces(MediaType.APPLICATION_JSON)
@@ -97,17 +93,16 @@ public class ServicesEndpoint implements Endpoint {
   private final List<Consumer<EntityStateEvent>> entityStateSubscriber;
   private final EventStream<EntityStateEvent> eventStream;
 
+  @Inject
   ServicesEndpoint(
-      @org.apache.felix.ipojo.annotations.Context BundleContext bundleContext,
-      @Requires ActorSystemProvider actorSystemProvider,
-      @Requires EntityDataStore<EntityData> entityRepository,
-      @Requires EntityRegistry entityRegistry,
-      @Requires EntityFactory entityFactory,
-      @Requires EntityDataDefaultsStore defaultsStore,
-      @Requires ServiceBackgroundTasks serviceBackgroundTasks,
-      @Requires Reactive reactive) {
-    this.entityRepository = entityRepository;
-    this.serviceRepository = getServiceRepository(entityRepository);
+      EntityDataStore<?> entityRepository,
+      EntityRegistry entityRegistry,
+      EntityFactory entityFactory,
+      EntityDataDefaultsStore defaultsStore,
+      ServiceBackgroundTasks serviceBackgroundTasks,
+      Reactive reactive) {
+    this.entityRepository = (EntityDataStore<EntityData>)entityRepository;
+    this.serviceRepository = getServiceRepository(this.entityRepository);
     this.entityRegistry = entityRegistry;
     this.entityFactory = entityFactory;
     this.defaultsStore = defaultsStore;

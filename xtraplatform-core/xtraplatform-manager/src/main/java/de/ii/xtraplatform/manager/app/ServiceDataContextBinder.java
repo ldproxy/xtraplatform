@@ -7,27 +7,29 @@
  */
 package de.ii.xtraplatform.manager.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import java.util.function.Supplier;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.ext.Provider;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.internal.inject.Binder;
 import org.glassfish.jersey.process.internal.RequestScoped;
 
 /** @author zahnen */
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 @Provider
 public class ServiceDataContextBinder extends AbstractBinder
     implements Binder, ServiceDataInjectableContext {
 
   public static final String SERVICE_DATA_CONTEXT_KEY = "XP_SERVICE_DATA";
+
+  @Inject
+  ServiceDataContextBinder() {
+  }
 
   // TODO: bind every subtype
   @Override

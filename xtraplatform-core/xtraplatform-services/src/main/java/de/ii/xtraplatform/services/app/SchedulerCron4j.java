@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.services.app;
 
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.Lifecycle;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.services.domain.Scheduler;
 import de.ii.xtraplatform.services.domain.Task;
 import de.ii.xtraplatform.services.domain.TaskQueue;
@@ -26,33 +28,25 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Invalidate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Validate;
-import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.threeten.extra.AmountFormats;
 
 /** @author zahnen */
-@Component
-@Provides
-@Instantiate
-public class SchedulerCron4j implements Scheduler {
+@Singleton
+@AutoBind
+public class SchedulerCron4j implements Scheduler, Lifecycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerCron4j.class);
 
-  private final BundleContext context;
-
   private final it.sauronsoftware.cron4j.Scheduler scheduler;
 
-  public SchedulerCron4j(@Context BundleContext context) {
-    this.context = context;
+  @Inject
+  public SchedulerCron4j() {
     this.scheduler = new it.sauronsoftware.cron4j.Scheduler();
     scheduler.setDaemon(true);
     // needed to suppress exception printing to stdout
@@ -69,13 +63,13 @@ public class SchedulerCron4j implements Scheduler {
         });
   }
 
-  @Validate
-  public void start() {
+  @Override
+  public void onStart() {
     scheduler.start();
   }
 
-  @Invalidate
-  public void stop() {
+  @Override
+  public void onStop() {
     scheduler.stop();
   }
 
