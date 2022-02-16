@@ -9,7 +9,7 @@ package de.ii.xtraplatform.store.legacy.file;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.store.legacy.Transaction;
 import java.io.BufferedReader;
 import java.io.File;

@@ -7,15 +7,16 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
-import static de.ii.xtraplatform.runtime.domain.LogContext.withMdc;
+import static de.ii.xtraplatform.base.domain.LogContext.withMdc;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import de.ii.xtraplatform.runtime.domain.LogContext;
-import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
+import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
@@ -42,31 +43,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import org.apache.felix.ipojo.ComponentFactory;
-import org.apache.felix.ipojo.ComponentInstance;
-import org.apache.felix.ipojo.Factory;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.architecture.PropertyDescription;
-import org.apache.felix.ipojo.extender.ConfigurationBuilder;
-import org.apache.felix.ipojo.extender.DeclarationBuilderService;
-import org.apache.felix.ipojo.extender.DeclarationHandle;
-import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.apache.felix.ipojo.whiteboard.Whiteboards;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 /** @author zahnen */
-@Component(publicFactory = false)
-@Provides
-@Instantiate
-@Whiteboards(
+
+/*@Whiteboards(
     whiteboards = {
       @Wbp(
           filter =
@@ -85,19 +70,19 @@ import org.slf4j.MDC;
           filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityDataDefaults)",
           onArrival = "onDefaultsArrival",
           onDeparture = "onDefaultsDeparture")
-    })
+    })*/
 // TODO: use generic registry implementation
+@Singleton
+@AutoBind
 public class EntityFactoryImpl implements EntityFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityFactoryImpl.class);
 
-  private final BundleContext context;
-  private final DeclarationBuilderService declarationBuilderService;
-  private final Map<String, DeclarationHandle> instanceHandles;
-  private final Map<String, CompletableFuture<PersistentEntity>> instanceRegistration;
-  private final Map<String, Integer> instanceConfigurationHashes;
-  private final Map<String, CompletableFuture<Void>> instanceReloadListeners;
-  private final Map<String, ComponentFactory> componentFactories;
+  //private final Map<String, DeclarationHandle> instanceHandles;
+  //private final Map<String, CompletableFuture<PersistentEntity>> instanceRegistration;
+  //private final Map<String, Integer> instanceConfigurationHashes;
+  //private final Map<String, CompletableFuture<Void>> instanceReloadListeners;
+  //private final Map<String, ComponentFactory> componentFactories;
   private final Map<String, String> entityClasses;
   private final Map<Class<?>, String> entityDataTypes;
   private final Map<String, Class<EntityDataBuilder<EntityData>>> entityDataBuilders;
@@ -107,17 +92,13 @@ public class EntityFactoryImpl implements EntityFactory {
   private final ScheduledExecutorService executorService;
   private final EntityRegistry entityRegistry;
 
-  public EntityFactoryImpl(
-      @Context BundleContext context,
-      @Requires DeclarationBuilderService declarationBuilderService,
-      @Requires EntityRegistry entityRegistry) {
-    this.context = context;
-    this.declarationBuilderService = declarationBuilderService;
-    this.instanceHandles = new ConcurrentHashMap<>();
-    this.instanceRegistration = new ConcurrentHashMap<>();
-    this.instanceConfigurationHashes = new ConcurrentHashMap<>();
-    this.instanceReloadListeners = new ConcurrentHashMap<>();
-    this.componentFactories = new ConcurrentHashMap<>();
+  @Inject
+  public EntityFactoryImpl(EntityRegistry entityRegistry) {
+    //this.instanceHandles = new ConcurrentHashMap<>();
+    //this.instanceRegistration = new ConcurrentHashMap<>();
+    //this.instanceConfigurationHashes = new ConcurrentHashMap<>();
+    //this.instanceReloadListeners = new ConcurrentHashMap<>();
+    //this.componentFactories = new ConcurrentHashMap<>();
     this.entityClasses = new ConcurrentHashMap<>();
     this.entityDataTypes = new ConcurrentHashMap<>();
     this.entityDataBuilders = new ConcurrentHashMap<>();
@@ -127,7 +108,7 @@ public class EntityFactoryImpl implements EntityFactory {
     this.executorService = new ScheduledThreadPoolExecutor(1);
     this.entityRegistry = entityRegistry;
 
-    entityRegistry.addEntityListener(
+    /*entityRegistry.addEntityListener(
         (instanceId, entity) -> {
           if (instanceRegistration.containsKey(instanceId)) {
             instanceRegistration.get(instanceId).complete(entity);
@@ -143,9 +124,9 @@ public class EntityFactoryImpl implements EntityFactory {
               instanceReloadListeners.get(instanceId).complete(null);
             }
           }
-        });
+        });*/
   }
-
+/*
   private synchronized void onFactoryArrival(ServiceReference<ComponentFactory> ref) {
     Optional<String> entityClassName = getComponentClass(ref);
     Optional<String> entityType = getComponentProperty(ref, Entity.TYPE_KEY);
@@ -371,7 +352,7 @@ public class EntityFactoryImpl implements EntityFactory {
     } catch (Throwable w) {
       // ignore
     }
-  }
+  }*/
 
   @Override
   public EntityDataBuilder<EntityData> getDataBuilder(
@@ -572,11 +553,11 @@ public class EntityFactoryImpl implements EntityFactory {
   @Override
   public CompletableFuture<PersistentEntity> createInstance(
       String entityType, String id, EntityData entityData) {
-    if (declarationBuilderService == null) {
+    /*if (declarationBuilderService == null) {
       return CompletableFuture.completedFuture(null);
     }
     if (LOGGER.isTraceEnabled()) {
-      LOGGER.trace("CREATING ENTITY {} {} {}", entityType, id /*, entityData*/);
+      LOGGER.trace("CREATING ENTITY {} {} {}", entityType, id);
     }
     String instanceId = entityType + "/" + id;
     String specificEntityType = getSpecificEntityType(entityType, entityData.getEntitySubType());
@@ -588,9 +569,9 @@ public class EntityFactoryImpl implements EntityFactory {
             .name(instanceId)
             .configure()
             .property(Entity.DATA_KEY, entityData);
-
+*/
     CompletableFuture<PersistentEntity> registration = new CompletableFuture<>();
-    this.instanceRegistration.put(instanceId, registration);
+    /*this.instanceRegistration.put(instanceId, registration);
 
     // check every 2 secs for started but unregistered entity, then proceed with null
     ComponentFactory componentFactory = componentFactories.get(specificEntityType);
@@ -610,14 +591,14 @@ public class EntityFactoryImpl implements EntityFactory {
     handle.publish();
     this.instanceHandles.put(instanceId, handle);
     this.instanceConfigurationHashes.put(instanceId, entityData.hashCode());
-
-    return registration.whenComplete((entity, throwable) -> scheduledFuture.cancel(true));
+*/
+    return registration;//.whenComplete((entity, throwable) -> scheduledFuture.cancel(true));
   }
 
   @Override
   public CompletableFuture<Void> updateInstance(
       String entityType, String id, EntityData entityData) {
-    if (declarationBuilderService == null) {
+    /*if (declarationBuilderService == null) {
       return CompletableFuture.completedFuture(null);
     }
     try (MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
@@ -631,9 +612,9 @@ public class EntityFactoryImpl implements EntityFactory {
             "Not reloading configuration for {} with id '{}', no effective changes detected",
             entityTypeSingular,
             id);
-
+*/
         return CompletableFuture.completedFuture(null);
-      }
+  /*    }
 
       LOGGER.info("Reloading configuration for {} with id '{}'", entityTypeSingular, id);
 
@@ -659,7 +640,7 @@ public class EntityFactoryImpl implements EntityFactory {
       }
 
       return reloaded;
-    }
+    }*/
   }
 
   @Override
@@ -670,11 +651,11 @@ public class EntityFactoryImpl implements EntityFactory {
 
     String instanceId = entityType + "/" + id;
 
-    if (instanceHandles.containsKey(instanceId)) {
+    /*if (instanceHandles.containsKey(instanceId)) {
       instanceHandles.get(instanceId).retract();
       instanceHandles.remove(instanceId);
       instanceConfigurationHashes.remove(instanceId);
-    }
+    }*/
   }
 
   private String getSpecificEntityType(String entityType, Optional<String> entitySubType) {

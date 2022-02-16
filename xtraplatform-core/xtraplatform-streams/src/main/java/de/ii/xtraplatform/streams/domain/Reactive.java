@@ -27,7 +27,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import scala.concurrent.ExecutionContextExecutor;
+import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
 
 public interface Reactive {
 
@@ -65,8 +66,12 @@ public interface Reactive {
       return new SourceDefault<>(iterable);
     }
 
-    static <T> Source<T> publisher(Flow.Publisher<T> publisher) {
+    static <T> Source<T> publisher(Publisher<T> publisher) {
       return new SourceDefault<>(publisher);
+    }
+
+    static <T> Source<T> publisher(Flow.Publisher<T> publisher) {
+      return new SourceDefault<>(FlowAdapters.toPublisher(publisher));
     }
 
     static <T> Source<T> single(T item) {
@@ -308,8 +313,8 @@ public interface Reactive {
 
     <X> CompletionStage<X> run(Stream<X> stream);
 
-    @Deprecated
-    ExecutionContextExecutor getDispatcher();
+    //@Deprecated
+    //ExecutionContextExecutor getDispatcher();
 
     int getCapacity();
   }

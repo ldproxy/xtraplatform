@@ -12,6 +12,7 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import com.codahale.metrics.servlets.PingServlet;
 import com.codahale.metrics.servlets.ThreadDumpServlet;
 import com.github.azahnen.dagger.annotations.AutoBind;
+import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.web.domain.AdminSubEndpoint;
 import java.io.IOException;
@@ -64,10 +65,10 @@ public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
   private final PingServlet pingServlet;
   private final ThreadDumpServlet threadDumpServlet;
   private final String serviceName;
-  private final Set<AdminSubEndpoint> subEndpoints;
+  private final Lazy<Set<AdminSubEndpoint>> subEndpoints;
 
   @Inject
-  public AdminEndpoint(AppContext appContext, Set<AdminSubEndpoint> subEndpoints) {
+  public AdminEndpoint(AppContext appContext, Lazy<Set<AdminSubEndpoint>> subEndpoints) {
     this.serviceName = appContext.getName();
     this.healthCheckServlet = new HealthCheckServlet();
     this.metricsServlet = new MetricsServlet();
@@ -85,7 +86,7 @@ public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
     pingServlet.init(config);
     threadDumpServlet.init(config);
 
-    for (AdminSubEndpoint adminSubEndpoint : subEndpoints) {
+    for (AdminSubEndpoint adminSubEndpoint : subEndpoints.get()) {
       adminSubEndpoint.getServlet().init(config);
     }
   }
@@ -96,7 +97,7 @@ public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
     final String path = req.getContextPath() + req.getServletPath();
 
     String subEndpointLinks = "";
-    for (AdminSubEndpoint adminSubEndpoint : subEndpoints) {
+    for (AdminSubEndpoint adminSubEndpoint : subEndpoints.get()) {
       if (adminSubEndpoint.getLabel().isPresent()) {
         subEndpointLinks +=
             String.format(
@@ -142,7 +143,7 @@ public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {
       threadDumpServlet.service(req, resp);
     } else {
       Optional<AdminSubEndpoint> subEndpoint =
-          subEndpoints.stream()
+          subEndpoints.get().stream()
               .filter(endpoint -> Objects.equals(endpoint.getPath(), uri))
               .findFirst();
       if (subEndpoint.isPresent()) {

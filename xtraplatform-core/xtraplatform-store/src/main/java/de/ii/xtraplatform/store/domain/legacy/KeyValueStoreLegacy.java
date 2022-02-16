@@ -13,13 +13,13 @@ import java.io.Reader;
 import java.util.List;
 
 /** @author zahnen */
-public interface KeyValueStore extends TransactionSupport<String> {
+public interface KeyValueStoreLegacy extends TransactionSupport<String> {
 
   /**
    * @param path the path of the child KeyValueStore. If the Store does not exist it will be created
    * @return
    */
-  public KeyValueStore getChildStore(String... path);
+  public KeyValueStoreLegacy getChildStore(String... path);
 
   /** @return the ids of the direct child stores */
   public List<String> getChildStoreIds();

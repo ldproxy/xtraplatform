@@ -7,9 +7,11 @@
  */
 package de.ii.xtraplatform.store.app;
 
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
-import de.ii.xtraplatform.runtime.domain.StoreConfiguration.StoreMode;
+import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.Lifecycle;
+import de.ii.xtraplatform.base.domain.StoreConfiguration;
+import de.ii.xtraplatform.base.domain.StoreConfiguration.StoreMode;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
@@ -28,18 +30,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.Validate;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
-public class EventStoreDefault implements EventStore {
+@Singleton
+@AutoBind
+public class EventStoreDefault implements EventStore, Lifecycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDefault.class);
 
@@ -48,13 +46,14 @@ public class EventStoreDefault implements EventStore {
   private final StoreConfiguration storeConfiguration;
   private final boolean isReadOnly;
 
+  @Inject
   EventStoreDefault(
-      @Requires XtraPlatform xtraPlatform,
-      @Requires EventStoreDriver eventStoreDriver,
-      @Requires Reactive reactive) {
+      AppContext appContext,
+      EventStoreDriver eventStoreDriver,
+      Reactive reactive) {
     this.driver = eventStoreDriver;
     this.subscriptions = new EventSubscriptionsImpl(reactive.runner("events"));
-    this.storeConfiguration = xtraPlatform.getConfiguration().store;
+    this.storeConfiguration = appContext.getConfiguration().store;
     this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
   }
 
@@ -68,8 +67,8 @@ public class EventStoreDefault implements EventStore {
     this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
   }
 
-  @Validate
-  private void onInit() {
+  @Override
+  public void onStart() {
     LOGGER.info("Store mode: {}", storeConfiguration.mode);
 
     driver.start();
@@ -187,7 +186,7 @@ public class EventStoreDefault implements EventStore {
 
     deleteEvents.forEach(
         event -> {
-          subscriptions.emitEvent(event).join();
+          subscriptions.emitEvent(event);
           try {
             Thread.sleep(50);
           } catch (InterruptedException e) {
@@ -196,7 +195,7 @@ public class EventStoreDefault implements EventStore {
         });
     eventStream.forEach(
         event -> {
-          subscriptions.emitEvent(event).join();
+          subscriptions.emitEvent(event);
           try {
             Thread.sleep(50);
           } catch (InterruptedException e) {
@@ -205,7 +204,6 @@ public class EventStoreDefault implements EventStore {
         });
     // TODO: type
     subscriptions
-        .emitEvent(ImmutableReloadEvent.builder().type("entities").filter(filter).build())
-        .join();
+        .emitEvent(ImmutableReloadEvent.builder().type("entities").filter(filter).build());
   }
 }

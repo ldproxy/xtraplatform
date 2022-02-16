@@ -11,7 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import java.util.Optional;
 import javax.servlet.http.HttpServlet;
 
-@AutoMultiBind
+@AutoMultiBind(lazy = true)
 public interface AdminSubEndpoint {
 
   default Optional<String> getLabel() {

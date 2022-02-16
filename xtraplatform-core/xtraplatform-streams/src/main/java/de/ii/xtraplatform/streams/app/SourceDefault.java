@@ -16,9 +16,8 @@ import java.io.InputStream;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Flow;
-import java.util.concurrent.Flow.Publisher;
 import java.util.function.Function;
+import org.reactivestreams.Publisher;
 
 public class SourceDefault<T> implements Source<T> {
 
@@ -31,7 +30,7 @@ public class SourceDefault<T> implements Source<T> {
 
   private final Type type;
   private final Iterable<T> iterable;
-  private final Flow.Publisher<T> publisher;
+  private final Publisher<T> publisher;
   private final T item;
   private final InputStream inputStream;
   private Optional<Function<Throwable, Throwable>> errorMapper;
@@ -43,7 +42,7 @@ public class SourceDefault<T> implements Source<T> {
     this(Type.ITERABLE, iterable, null, null, null);
   }
 
-  public SourceDefault(Flow.Publisher<T> publisher) {
+  public SourceDefault(Publisher<T> publisher) {
     this(Type.PUBLISHER, null, publisher, null, null);
   }
 
@@ -58,7 +57,7 @@ public class SourceDefault<T> implements Source<T> {
   SourceDefault(
       Type type,
       Iterable<T> iterable,
-      Flow.Publisher<T> publisher,
+      Publisher<T> publisher,
       T item,
       InputStream inputStream) {
     this.type = type;

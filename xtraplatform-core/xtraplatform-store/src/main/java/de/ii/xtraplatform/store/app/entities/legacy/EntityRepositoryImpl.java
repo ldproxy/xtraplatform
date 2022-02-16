@@ -8,54 +8,42 @@
 package de.ii.xtraplatform.store.app.entities.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ObjectArrays;
-import de.ii.xtraplatform.dropwizard.domain.Jackson;
+import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
-import de.ii.xtraplatform.store.domain.entities.handler.Entity;
 import de.ii.xtraplatform.store.domain.entities.legacy.EntityRepository;
 import de.ii.xtraplatform.store.domain.entities.legacy.EntityRepositoryChangeListener;
 import de.ii.xtraplatform.store.domain.entities.legacy.RemoveEntityData;
-import de.ii.xtraplatform.store.domain.legacy.KeyValueStore;
+import de.ii.xtraplatform.store.domain.legacy.KeyValueStoreLegacy;
 import de.ii.xtraplatform.store.legacy.rest.AbstractGenericResourceStore;
 import de.ii.xtraplatform.store.legacy.rest.ResourceSerializer;
 import de.ii.xtraplatform.store.legacy.rest.ResourceStore;
 import de.ii.xtraplatform.store.legacy.rest.ResourceTransaction;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.handlers.event.Publishes;
-import org.apache.felix.ipojo.handlers.event.publisher.Publisher;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 // TODO: why is this needed still? when deactivated entities do not work any more
 @Deprecated // needed for 1.3.x service migration
-@Component(publicFactory = false)
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class EntityRepositoryImpl implements EntityRepository {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityRepositoryImpl.class);
-
-  private final BundleContext context;
-
+/*
   @Publishes(name = "create", topics = "create", dataKey = Entity.DATA_KEY, synchronous = true)
   private Publisher createListeners;
 
@@ -64,19 +52,19 @@ public class EntityRepositoryImpl implements EntityRepository {
 
   @Publishes(name = "delete", topics = "delete", dataKey = Entity.DATA_KEY, synchronous = true)
   private Publisher deleteListeners;
-
+*/
   private final Map<String, String> entityTypes;
   private final Map<String, Object> entityDataGenerators;
 
   private EntityStore store;
-  private KeyValueStore kvStore;
+  private KeyValueStoreLegacy kvStore;
   private ObjectMapper mapper;
   private EntitySerializer entitySerializer;
 
+  @Inject
   public EntityRepositoryImpl(
-      @Requires KeyValueStore rootConfigStore,
-      @Requires Jackson jackson,
-      @Context BundleContext context) {
+      KeyValueStoreLegacy rootConfigStore,
+      Jackson jackson) {
     LOGGER.debug(
         "JACKSON DYNAMIC {}",
         jackson.getDefaultObjectMapper().getDeserializationConfig().getHandlerInstantiator());
@@ -92,7 +80,6 @@ public class EntityRepositoryImpl implements EntityRepository {
             entitySerializer);
     this.kvStore = rootConfigStore;
     this.mapper = jackson.getDefaultObjectMapper();
-    this.context = context;
   }
 
   @Override
@@ -127,7 +114,7 @@ public class EntityRepositoryImpl implements EntityRepository {
     LOGGER.debug("CREATE {} {}", data.getId(), path2);
     store.addResource(data, path2);
 
-    createListeners.sendData(data);
+    //createListeners.sendData(data);
 
     return data;
   }
@@ -161,7 +148,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     // TODO
     RemoveEntityData data4 = getEntityData(id, path);
-    createListeners.sendData(data4);
+    //createListeners.sendData(data4);
 
     return data4;
   }
@@ -176,7 +163,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     // TODO
     EntityData data2 = getEntityData(data.getId(), path);
-    updateListeners.sendData(data2);
+    //updateListeners.sendData(data2);
 
     return data;
   }
@@ -190,7 +177,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     // TODO
     RemoveEntityData data = getEntityData(partialData.getId(), path);
-    updateListeners.sendData(data);
+    //updateListeners.sendData(data);
 
     return data;
   }
@@ -204,7 +191,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     // TODO
     RemoveEntityData data = getEntityData(id, path);
-    updateListeners.sendData(data);
+    //updateListeners.sendData(data);
 
     return data;
   }
@@ -214,7 +201,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     store.deleteResource(id, path);
 
-    deleteListeners.sendData(id);
+    //deleteListeners.sendData(id);
   }
 
   @Override
@@ -260,12 +247,13 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     // TODO: maybe get bundle by name from type
     try {
-      Optional<Bundle> b2 =
+      /*Optional<Bundle> b2 =
           Arrays.stream(context.getBundles())
               .filter(bundle1 -> bundle1.getSymbolicName().endsWith(bundle))
               .findFirst();
       Bundle b = context.getBundle(bundle);
-      return b2.get().loadClass(type);
+      return b2.get().loadClass(type);*/
+      return Class.forName(type);
     } catch (ClassNotFoundException e) {
       LOGGER.error("NOT FOUND: {}", type);
       return null;
@@ -276,12 +264,12 @@ public class EntityRepositoryImpl implements EntityRepository {
       extends AbstractGenericResourceStore<RemoveEntityData, ResourceStore<RemoveEntityData>> {
 
     public EntityStore(
-        KeyValueStore rootConfigStore, String resourceType, ObjectMapper jsonMapper) {
+        KeyValueStoreLegacy rootConfigStore, String resourceType, ObjectMapper jsonMapper) {
       super(rootConfigStore, resourceType, jsonMapper);
     }
 
     public EntityStore(
-        KeyValueStore rootConfigStore,
+        KeyValueStoreLegacy rootConfigStore,
         String resourceType,
         ObjectMapper jsonMapper,
         boolean fullCache) {
@@ -289,7 +277,7 @@ public class EntityRepositoryImpl implements EntityRepository {
     }
     // TODO: DeepUpdater and Serializer with JsonMerge, see ...
     public EntityStore(
-        KeyValueStore rootConfigStore,
+        KeyValueStoreLegacy rootConfigStore,
         String resourceType,
         boolean fullCache, /*DeepUpdater<AbstractEntityData> deepUpdater,*/
         ResourceSerializer<RemoveEntityData> serializer) {

@@ -131,6 +131,7 @@ public class AppLauncher implements AppContext {
   public void start(App modules) {
     modules
         .lifecycle()
+        .get()
         .forEach(
             lifecycle -> {
               try {
@@ -146,7 +147,7 @@ public class AppLauncher implements AppContext {
     LOGGER.info("Shutting down {}", name);
 
     try {
-      modules.lifecycle().forEach(Lifecycle::onStop);
+      modules.lifecycle().get().forEach(Lifecycle::onStop);
     } catch (Exception ex) {
       // ignore
     }

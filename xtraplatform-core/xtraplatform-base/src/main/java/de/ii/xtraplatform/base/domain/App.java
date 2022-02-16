@@ -1,13 +1,14 @@
 package de.ii.xtraplatform.base.domain;
 
 import dagger.BindsInstance;
+import dagger.Lazy;
 import java.util.Set;
 
 public interface App {
 
   AppContext appContext();
 
-  Set<Lifecycle> lifecycle();
+  Lazy<Set<Lifecycle>> lifecycle();
 
   interface Builder {
     @BindsInstance

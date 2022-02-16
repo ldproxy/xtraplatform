@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.web.domain.AdminSubEndpoint;
-import de.ii.xtraplatform.web.domain.Jackson;
+import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LoggingFilter;
 import java.io.IOException;
 import java.io.PrintWriter;

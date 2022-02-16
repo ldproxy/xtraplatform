@@ -8,55 +8,35 @@
 package de.ii.xtraplatform.streams.domain;
 
 import de.ii.xtraplatform.streams.domain.Reactive.Sink;
-import java.util.concurrent.CompletableFuture;
+import de.ii.xtraplatform.streams.domain.Reactive.Source;
+import io.reactivex.rxjava3.core.BackpressureStrategy;
+import io.reactivex.rxjava3.core.Flowable;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
-//TODO
 public class EventStream<T extends Event> {
-/*
   private final Reactive.Runner streamRunner;
-  private final CompletableFuture<SourceQueueWithComplete<T>> eventQueue;
-  private final Source<T, NotUsed> eventStream;
-  private CompletableFuture<SourceQueueWithComplete<T>> eventQueueChain;
-
- */
   private final String eventType;
+  private final Queue<T> eventQueue;
+  private final Flowable<T> eventStream;
 
   public EventStream(Reactive.Runner streamRunner, String eventType) {
-   /*this.eventQueue = new CompletableFuture<>();
-    this.eventStream =
-        Source.<T>queue(1024, OverflowStrategy.backpressure())
-            .mapMaterializedValue(
-                queue -> {
-                  eventQueue.complete(queue);
-                  return NotUsed.getInstance();
-                });
     this.streamRunner = streamRunner;
-    this.eventQueueChain = eventQueue;*/
     this.eventType = eventType;
+    this.eventQueue = new ConcurrentLinkedQueue<>();
+    this.eventStream =
+        Flowable.create(
+            emitter -> eventQueue.forEach(emitter::onNext), BackpressureStrategy.BUFFER);
   }
 
   public void foreach(Consumer<T> eventConsumer) {
-    /*Reactive.RunnableStream<Void> reactiveStream =
-        Reactive.Source.akka(eventStream).to(Sink.foreach(eventConsumer)).on(streamRunner);
-    reactiveStream.run();*/
+    Source.publisher(eventStream).to(Sink.foreach(eventConsumer)).on(streamRunner).run();
   }
 
-  /*public synchronized CompletableFuture<QueueOfferResult> queue(T event) {
-    // eventQueue = eventQueue.thenComposeAsync(queue ->
-    // queue.offer(event).handleAsync((queueOfferResult, throwable) -> queue));
-    // TODO: to apply backpressure join queue as well as offer; but then we block indefinitely if
-    // there is no subscriber for a pathPrefix
-    CompletableFuture<QueueOfferResult> cmp = new CompletableFuture<>();
-    eventQueueChain =
-        eventQueueChain.thenApply(
-            queue -> {
-              queue.offer(event).thenAccept(cmp::complete);
-              return queue;
-            });
-
-    return cmp;
-  }*/
+  public synchronized void queue(T event) {
+    eventQueue.offer(event);
+  }
 
   public String getEventType() {
     return eventType;

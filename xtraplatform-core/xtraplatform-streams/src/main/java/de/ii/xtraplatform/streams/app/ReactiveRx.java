@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.streams.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.util.Triple;
 import de.ii.xtraplatform.streams.domain.Reactive;
 import hu.akarnokd.rxjava3.operators.Flowables;
@@ -21,11 +22,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Subscriber;
 
+@Singleton
+@AutoBind
 public class ReactiveRx implements Reactive {
 
+  @Inject
   public ReactiveRx() {}
 
   @Override
@@ -112,7 +118,7 @@ public class ReactiveRx implements Reactive {
       case ITERABLE:
         return Flowable.fromIterable(source.getIterable());
       case PUBLISHER:
-        return Flowable.fromPublisher(FlowAdapters.toPublisher(source.getPublisher()));
+        return Flowable.fromPublisher(source.getPublisher());
       case SINGLE:
         return Flowable.just(source.getItem());
       case INPUT_STREAM:

@@ -9,7 +9,7 @@ package de.ii.xtraplatform.store.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
-import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
+import de.ii.xtraplatform.web.domain.Dropwizard;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.ImmutableEventFilter;
 import io.dropwizard.servlets.tasks.Task;

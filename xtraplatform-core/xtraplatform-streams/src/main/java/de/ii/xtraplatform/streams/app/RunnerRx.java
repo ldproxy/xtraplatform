@@ -26,7 +26,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.concurrent.ExecutionContextExecutor;
 
 public class RunnerRx implements Runner {
 
@@ -152,10 +151,10 @@ public class RunnerRx implements Runner {
     }
   }
 
-  @Override
+  /*@Override
   public ExecutionContextExecutor getDispatcher() {
     return (ExecutionContextExecutor) executorService;
-  }
+  }*/
 
   @Override
   public int getCapacity() {

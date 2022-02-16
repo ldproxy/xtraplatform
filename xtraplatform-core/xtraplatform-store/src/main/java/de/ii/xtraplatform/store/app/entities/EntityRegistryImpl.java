@@ -7,9 +7,10 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
-import de.ii.xtraplatform.runtime.domain.LogContext;
-import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
+import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.EntityState;
 import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
@@ -23,22 +24,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.apache.felix.ipojo.whiteboard.Whiteboards;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
-@Component(publicFactory = false)
-@Provides
-@Instantiate
-@Whiteboards(
+/*@Whiteboards(
     whiteboards = {
       @Wbp(
           filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.PersistentEntity)",
@@ -48,27 +40,28 @@ import org.slf4j.LoggerFactory;
           filter = "(objectClass=de.ii.xtraplatform.store.domain.entities.EntityState)",
           onArrival = "onEntityStateArrival",
           onDeparture = "onEntityStateDeparture")
-    })
+    })*/
+@Singleton
+@AutoBind
 public class EntityRegistryImpl implements EntityRegistry {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityRegistryImpl.class);
 
-  private final BundleContext context;
   private final Set<PersistentEntity> entities;
   private final Map<String, EntityState> entityStates;
   private final List<BiConsumer<String, PersistentEntity>> entityListeners;
   private final List<Consumer<PersistentEntity>> entityGoneListeners;
   private final List<Consumer<EntityState>> entityStateListeners;
 
-  public EntityRegistryImpl(@Context BundleContext context) {
-    this.context = context;
+  @Inject
+  public EntityRegistryImpl() {
     this.entities = new HashSet<>();
     this.entityStates = new ConcurrentHashMap<>();
     this.entityListeners = new ArrayList<>();
     this.entityGoneListeners = new ArrayList<>();
     this.entityStateListeners = new ArrayList<>();
   }
-
+/*
   private synchronized void onEntityArrival(ServiceReference<PersistentEntity> ref) {
     try {
       final PersistentEntity entity = context.getService(ref);
@@ -135,7 +128,7 @@ public class EntityRegistryImpl implements EntityRegistry {
       this.entityStates.remove(entity.getEntityType() + entity.getId());
     }
   }
-
+*/
   @Override
   public <T extends PersistentEntity> List<T> getEntitiesForType(Class<T> type) {
     return entities.stream()

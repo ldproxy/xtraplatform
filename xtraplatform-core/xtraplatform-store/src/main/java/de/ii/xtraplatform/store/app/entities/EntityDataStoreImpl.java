@@ -7,13 +7,14 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
-import de.ii.xtraplatform.dropwizard.domain.Jackson;
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.base.domain.Jackson;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
 import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
@@ -52,19 +53,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.Validate;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 /** @author zahnen */
-@Component(publicFactory = false)
-@Provides
-@Instantiate
+@Singleton
+@AutoBind(interfaces = {EntityDataStore.class})
 public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityData>
     implements EntityDataStore<EntityData> {
 
@@ -79,21 +76,22 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private final EventSourcing<EntityData> eventSourcing;
   private final EntityDataDefaultsStore defaultsStore;
 
+  @Inject
   public EntityDataStoreImpl(
-      @Requires XtraPlatform xtraPlatform,
-      @Requires EventStore eventStore,
-      @Requires Jackson jackson,
-      @Requires EntityFactory entityFactory,
-      @Requires EntityDataDefaultsStore defaultsStore) {
+      AppContext appContext,
+      EventStore eventStore,
+      Jackson jackson,
+      EntityFactory entityFactory,
+      EntityDataDefaultsStore defaultsStore) {
     this.isEventStoreReadOnly = eventStore.isReadOnly();
     this.entityFactory = entityFactory;
     this.additionalEvents = new ConcurrentLinkedQueue<>();
     this.valueEncoding =
         new ValueEncodingJackson<>(
-            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+            jackson, appContext.getConfiguration().store.failOnUnknownProperties);
     this.valueEncodingMap =
         new ValueEncodingJackson<>(
-            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+            jackson, appContext.getConfiguration().store.failOnUnknownProperties);
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
@@ -132,7 +130,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   // TODO: it seems this is needed for correct order (defaults < entities)
-  @Validate
+  //@Validate
   private void onVal() {
     // LOGGER.debug("VALID");
   }
