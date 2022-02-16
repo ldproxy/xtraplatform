@@ -17,8 +17,8 @@ import com.google.common.collect.ImmutableSet;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
-import de.ii.xtraplatform.base.domain.Lifecycle;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.ApplicationProvider;
 import de.ii.xtraplatform.web.domain.Dropwizard;
@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 /** @author zahnen */
 @Singleton
 @AutoBind
-public class DropwizardProvider implements Dropwizard, Lifecycle {
+public class DropwizardProvider implements Dropwizard, AppLifeCycle {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
   static final String JERSEY_ENDPOINT = "/rest/*";
@@ -76,6 +76,12 @@ public class DropwizardProvider implements Dropwizard, Lifecycle {
     this.appContext = appContext;
     this.adminEndpoint = adminEndpoint;
     this.plugins = plugins;
+  }
+
+  @Override
+  public int getPriority() {
+    // start last
+    return 2000;
   }
 
   @Override

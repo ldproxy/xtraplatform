@@ -12,6 +12,7 @@ import static de.ii.xtraplatform.base.domain.Constants.TMP_DIR_PROP;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteSource;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -120,7 +122,8 @@ public class AppLauncher implements AppContext {
     }
 
     String externalUrl = getConfiguration().getServerFactory().getExternalUrl();
-    if (Strings.isNullOrEmpty(externalUrl) || Objects.equals(externalUrl, ConfigurationReader.DEFAULT_VALUE)) {
+    if (Strings.isNullOrEmpty(externalUrl)
+        || Objects.equals(externalUrl, ConfigurationReader.DEFAULT_VALUE)) {
       this.uri =
           URI.create(String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort()));
     } else {
@@ -132,13 +135,17 @@ public class AppLauncher implements AppContext {
     modules
         .lifecycle()
         .get()
+        .stream()
+        .sorted(Comparator.comparingInt(AppLifeCycle::getPriority))
         .forEach(
             lifecycle -> {
+              if (LOGGER.isDebugEnabled(MARKER.DI)) {
+                LOGGER.debug(MARKER.DI, "Starting {} ({})", lifecycle.getClass(), lifecycle.getPriority());
+              }
               try {
                 lifecycle.onStart();
-              } catch (Exception ex) {
-                // TODO: module name
-                LogContext.error(LOGGER, ex, "Module startup error");
+              } catch (Throwable e) {
+                LogContext.error(LOGGER, e, "Error starting {}", lifecycle.getClass());
               }
             });
   }
@@ -146,11 +153,22 @@ public class AppLauncher implements AppContext {
   public void stop(App modules) {
     LOGGER.info("Shutting down {}", name);
 
-    try {
-      modules.lifecycle().get().forEach(Lifecycle::onStop);
-    } catch (Exception ex) {
-      // ignore
-    }
+    modules
+        .lifecycle()
+        .get()
+        .stream()
+        .sorted(Comparator.comparingInt(AppLifeCycle::getPriority).reversed())
+        .forEach(
+            lifecycle -> {
+              if (LOGGER.isDebugEnabled(MARKER.DI)) {
+                LOGGER.debug(MARKER.DI, "Stopping {} ({})", lifecycle.getClass(), lifecycle.getPriority());
+              }
+              try {
+                lifecycle.onStop();
+              } catch (Throwable e) {
+                // ignore
+              }
+            });
 
     LOGGER.info("Stopped {}", name);
     LOGGER.info("--------------------------------------------------");

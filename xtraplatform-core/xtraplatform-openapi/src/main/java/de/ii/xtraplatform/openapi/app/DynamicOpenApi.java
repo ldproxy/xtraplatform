@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.openapi.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.base.domain.Lifecycle;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.web.domain.JaxRsConsumer;
 import io.swagger.v3.core.filter.OpenAPISpecFilter;
 import io.swagger.v3.core.filter.SpecFilter;
@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 @Singleton
 @AutoBind
 public class DynamicOpenApi extends BaseOpenApiResource implements DynamicOpenApiChangeListener,
-    Lifecycle, JaxRsConsumer {
+    AppLifeCycle, JaxRsConsumer {
 
   private static Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApi.class);
   public static final MediaType YAML_TYPE = new MediaType("application", "yaml");

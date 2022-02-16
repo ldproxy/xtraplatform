@@ -9,7 +9,7 @@ package de.ii.xtraplatform.store.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
-import de.ii.xtraplatform.base.domain.Lifecycle;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.StoreConfiguration;
 import de.ii.xtraplatform.base.domain.StoreConfiguration.StoreMode;
 import de.ii.xtraplatform.store.domain.EntityEvent;
@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class EventStoreDefault implements EventStore, Lifecycle {
+public class EventStoreDefault implements EventStore, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDefault.class);
 
@@ -65,6 +65,12 @@ public class EventStoreDefault implements EventStore, Lifecycle {
     this.subscriptions = subscriptions;
     this.storeConfiguration = storeConfiguration;
     this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
+  }
+
+  @Override
+  public int getPriority() {
+    // start first
+    return 1;
   }
 
   @Override

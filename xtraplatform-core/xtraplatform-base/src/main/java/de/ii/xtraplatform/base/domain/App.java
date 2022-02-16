@@ -8,7 +8,7 @@ public interface App {
 
   AppContext appContext();
 
-  Lazy<Set<Lifecycle>> lifecycle();
+  Lazy<Set<AppLifeCycle>> lifecycle();
 
   interface Builder {
     @BindsInstance

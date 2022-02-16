@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.services.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.base.domain.Lifecycle;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.services.domain.Scheduler;
 import de.ii.xtraplatform.services.domain.Task;
@@ -39,7 +39,7 @@ import org.threeten.extra.AmountFormats;
 /** @author zahnen */
 @Singleton
 @AutoBind
-public class SchedulerCron4j implements Scheduler, Lifecycle {
+public class SchedulerCron4j implements Scheduler, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerCron4j.class);
 
