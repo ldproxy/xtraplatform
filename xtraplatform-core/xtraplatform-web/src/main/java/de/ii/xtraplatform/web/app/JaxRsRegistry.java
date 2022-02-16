@@ -9,15 +9,21 @@ package de.ii.xtraplatform.web.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.Sets;
+import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.AppConfiguration;
+import de.ii.xtraplatform.base.domain.Lifecycle;
 import de.ii.xtraplatform.web.domain.AuthProvider;
 import de.ii.xtraplatform.web.domain.Dropwizard;
+import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.web.domain.JaxRsChangeListener;
 import de.ii.xtraplatform.web.domain.JaxRsConsumer;
 import de.ii.xtraplatform.web.domain.JaxRsReg;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
+import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.jetty.NonblockingServletHolder;
+import io.dropwizard.setup.Environment;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -36,7 +42,6 @@ import javax.ws.rs.ext.Provider;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlet.ServletMapping;
 import org.eclipse.jetty.util.component.LifeCycle;
-import org.glassfish.jersey.internal.inject.Binder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
@@ -47,48 +52,47 @@ import org.slf4j.LoggerFactory;
 //
 @Singleton
 @AutoBind
-public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
+public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JaxRsRegistry.class);
   public static final String PUBLISH = "de.ii.xsf.jaxrs.publish";
   public static final String ANY_SERVICE_FILTER = "(&(objectClass=*)(!(" + PUBLISH + "=false)))";
 
-  private final MutableServletContextHandler server;
-  private final SortedMap<Integer, Object> authProviders;
-  private final List<Object> resourceCache;
+  //private final MutableServletContextHandler server;
+  private final Lazy<Set<AuthProvider<?>>> authProviders;
+  private final Lazy<Set<Endpoint>> endpoints;
   private final List<Object> providerCache;
   private final List<Object> filterCache;
   private boolean isJerseyAvailable;
   private boolean isAuthProviderAvailable;
-  private final Dropwizard dw;
-  private ResourceConfig jersey;
+  //private final Dropwizard dw;
+  //private ResourceConfig jersey;
   private final List<JaxRsChangeListener> changeListeners;
-  private final List<JaxRsConsumer> consumers;
+  private final Lazy<Set<JaxRsConsumer>> consumers;
 
   // TODO: DropwizardEnvironmentPlugin
   // TODO: any other @Provider besides Binder?
   // TODO: use marker interface to register Providers
   @Inject
   JaxRsRegistry(
-      Dropwizard dw,
-      Set<Endpoint> endpoints,
-      Set<JaxRsConsumer> consumers,
-      //Set<Binder> binders,
-      Set<AuthProvider<?>> authProviders
-      //Set<ContainerRequestFilter> containerRequestFilters,
-      //Set<ContainerResponseFilter> containerResponseFilters,
-      //Set<DynamicFeature> dynamicFeatures
+      Lazy<Set<Endpoint>> endpoints,
+      Lazy<Set<JaxRsConsumer>> consumers,
+      //Lazy<Set<Binder>> binders,
+      Lazy<Set<AuthProvider<?>>> authProviders
+      //Lazy<Set<ContainerRequestFilter>> containerRequestFilters,
+      //Lazy<Set<ContainerResponseFilter>> containerResponseFilters,
+      //Lazy<Set<DynamicFeature>> dynamicFeatures
       ) {
     // super(context, context.createFilter(ANY_SERVICE_FILTER), null);
-    this.server = dw.getApplicationContext();
+    //this.server = dw.getApplicationContext();
 
-    this.authProviders = new TreeMap<>();
-    this.resourceCache = new ArrayList<>();
+    this.authProviders = authProviders;
+    this.endpoints = endpoints;
     this.providerCache = new ArrayList<>();
     this.filterCache = new ArrayList<>();
     this.changeListeners = new ArrayList<>();
-    this.consumers = new ArrayList<>(consumers);
-
+    this.consumers = consumers;
+/*
     if (server.isAvailable()) {
       isJerseyAvailable = true;
       clearConfig();
@@ -96,57 +100,65 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     server.addLifeCycleListener(this);
 
     this.dw = dw;
-
+*/
     // TODO
     this.isAuthProviderAvailable = false;
   }
 
-  public synchronized void addingService() {
-    Object service = null; // context.getService(reference);
+  @Override
+  public void init(AppConfiguration configuration,
+      Environment environment) {
+    jerseyChanged(environment);
+  }
 
-    if (isRegisterable(service)) {
-      if (isResource(service)) {
-        jerseyRegisterResource(service);
-      } else if (isFilter(service)) {
-        jerseyAddFilter(service);
-      } else if (isProvider(service)) {
-        String type = null;
-        int ranking = 0;
-        try {
-          // type = (String) reference.getProperty("provider.type");
-          // ranking = (Integer) reference.getProperty("service.ranking");
-        } catch (NullPointerException e) {
+
+  /*
+    public synchronized void addingService() {
+      Object service = null; // context.getService(reference);
+
+      if (isRegisterable(service)) {
+        if (isResource(service)) {
+          jerseyRegisterResource(service);
+        } else if (isFilter(service)) {
+          jerseyAddFilter(service);
+        } else if (isProvider(service)) {
+          String type = null;
+          int ranking = 0;
+          try {
+            // type = (String) reference.getProperty("provider.type");
+            // ranking = (Integer) reference.getProperty("service.ranking");
+          } catch (NullPointerException e) {
+          }
+          if (type != null && type.equals("auth")) {
+            registerAuthProvider(service, type, ranking);
+          } else {
+            jerseyRegisterProvider(service);
+          }
         }
-        if (type != null && type.equals("auth")) {
-          registerAuthProvider(service, type, ranking);
-        } else {
+        jerseyChanged();
+      }
+    }
+
+    @Override
+    public synchronized void addService(Object service) {
+
+      if (isRegisterable(service)) {
+        if (isResource(service)) {
+          jerseyRegisterResource(service);
+        } else if (isFilter(service)) {
+          jerseyAddFilter(service);
+        } else if (isProvider(service)) {
           jerseyRegisterProvider(service);
         }
+        jerseyChanged();
       }
-      jerseyChanged();
     }
-  }
-
-  @Override
-  public synchronized void addService(Object service) {
-
-    if (isRegisterable(service)) {
-      if (isResource(service)) {
-        jerseyRegisterResource(service);
-      } else if (isFilter(service)) {
-        jerseyAddFilter(service);
-      } else if (isProvider(service)) {
-        jerseyRegisterProvider(service);
-      }
-      jerseyChanged();
-    }
-  }
-
+  */
   @Override
   public synchronized Set<Object> getResources() {
-    if (isJerseyAvailable) {
+    /*if (isJerseyAvailable) {
       return Sets.union(jersey.getInstances(), jersey.getSingletons());
-    }
+    }*/
     return new HashSet<>();
   }
 
@@ -154,7 +166,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
   public void addChangeListener(JaxRsChangeListener changeListener) {
     changeListeners.add(changeListener);
   }
-
+/*
   public synchronized void removedService() {
     Object service = null; // context.getService(reference);
 
@@ -185,39 +197,38 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
 
     // context.ungetService(reference);
   }
-
+*/
   private boolean isJerseyAvailable() {
-    return isJerseyAvailable && server.isAvailable();
+    return true;//isJerseyAvailable && server.isAvailable();
   }
 
-  private synchronized void jerseyChanged() {
+  private synchronized void jerseyChanged(Environment environment) {
+    JerseyEnvironment jersey = environment.jersey();
     if (isJerseyAvailable()) {
       if (!providerCache.isEmpty()) {
         for (Object provider : providerCache) {
-          if (provider instanceof AuthProvider) {
-            AuthProvider provider1 = (AuthProvider) provider;
-            jersey.register(provider1.getAuthDynamicFeature());
-            jersey.register(provider1.getRolesAllowedDynamicFeature());
-            jersey.register(provider1.getAuthValueFactoryProvider());
-            this.isAuthProviderAvailable = true;
-            if (LOGGER.isDebugEnabled(MARKER.DI))
-              LOGGER.debug(MARKER.DI, "Registered JAX-RS Auth Provider {}", provider.getClass());
-          } else {
-            jersey.register(provider);
-            if (LOGGER.isDebugEnabled(MARKER.DI))
-              LOGGER.debug(MARKER.DI, "Registered JAX-RS Provider {}", provider.getClass());
-          }
+          jersey.register(provider);
+          if (LOGGER.isDebugEnabled(MARKER.DI))
+            LOGGER.debug(MARKER.DI, "Registered JAX-RS Provider {}", provider.getClass());
         }
         providerCache.clear();
       }
-      if (isAuthProviderAvailable && !resourceCache.isEmpty()) {
-        for (Object resource : resourceCache) {
+      for (AuthProvider<?> provider : authProviders.get()) {
+        jersey.register(provider.getAuthDynamicFeature());
+        jersey.register(provider.getRolesAllowedDynamicFeature());
+        jersey.register(provider.getAuthValueFactoryProvider());
+        this.isAuthProviderAvailable = true;
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(MARKER.DI, "Registered JAX-RS Auth Provider {}", provider.getClass());
+      }
+      if (isAuthProviderAvailable && !endpoints.get().isEmpty()) {
+        for (Object resource : endpoints.get()) {
           jersey.register(resource);
           if (LOGGER.isDebugEnabled(MARKER.DI))
             LOGGER.debug(MARKER.DI, "Registered JAX-RS Resource {}", resource.getClass());
         }
-        resourceCache.clear();
-      } else if (!isAuthProviderAvailable && !resourceCache.isEmpty()) {
+        //endpoints.clear();
+      } else if (!isAuthProviderAvailable && !endpoints.get().isEmpty()) {
         if (LOGGER.isDebugEnabled(MARKER.DI))
           LOGGER.debug(
               MARKER.DI, "No JAX-RS Auth Provider registered yet, cannot register Resources.");
@@ -250,23 +261,23 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
         filterCache.clear();
       }
 
-      updateDropwizard();
+      //updateDropwizard();
 
-      clearConfig();
+      //clearConfig();
 
       for (JaxRsChangeListener changeListener : changeListeners) {
         if (changeListener != null) {
           changeListener.jaxRsChanged();
         }
       }
-      for (JaxRsConsumer consumer : consumers) {
+      for (JaxRsConsumer consumer : consumers.get()) {
         if (consumer != null) {
-          consumer.getConsumer().accept(Sets.union(jersey.getInstances(), jersey.getSingletons()));
+          consumer.getConsumer().accept(Sets.union(jersey.getResourceConfig().getInstances(), jersey.getResourceConfig().getSingletons()));
         }
       }
     }
   }
-
+/*
   // TODO: can be moved to dw
   private void updateDropwizard() {
     Optional<ServletHolder> oldServletHolder =
@@ -355,9 +366,8 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
 
     return reload;
   }
-
   private void jerseyRegisterResource(Object object) {
-    resourceCache.add(object);
+    endpoints.add(object);
   }
 
   private void jerseyRegisterProvider(Object object) {
@@ -375,8 +385,8 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
       if (providerCache.contains(object)) {
         providerCache.remove(object);
       }
-      if (resourceCache.contains(object)) {
-        resourceCache.remove(object);
+      if (endpoints.contains(object)) {
+        endpoints.remove(object);
       }
     }
 
@@ -413,6 +423,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
     return false;
   }
 
+*/
   private boolean isRegisterable(Object service) {
     return isResource(service) || isProvider(service) || isFilter(service);
   }
@@ -448,7 +459,7 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
   private boolean isRegisterableAnnotationPresent(Class<?> type) {
     return type.isAnnotationPresent(Path.class);
   }
-
+/*
   @Override
   public void lifeCycleStarting(LifeCycle event) {}
 
@@ -469,4 +480,6 @@ public class JaxRsRegistry implements LifeCycle.Listener, JaxRsReg {
 
   @Override
   public void lifeCycleStopped(LifeCycle event) {}
+
+ */
 }

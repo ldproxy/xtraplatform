@@ -7,15 +7,10 @@
  */
 package de.ii.xtraplatform.auth.app.external;
 
-import akka.http.javadsl.model.ContentType;
-import akka.http.javadsl.model.ContentTypes;
-import akka.http.javadsl.model.HttpCharsets;
-import akka.http.javadsl.model.MediaTypes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import de.ii.xtraplatform.streams.domain.HttpClient;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.DefaultUnauthorizedHandler;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
@@ -32,23 +27,26 @@ import org.glassfish.jersey.message.internal.ReaderWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//TODO: HttpClient
 /** @author zahnen */
 public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<String, P> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDynamicAuthFilter.class);
-
+/*
   private static final ContentType.WithFixedCharset XACML =
       ContentTypes.create(MediaTypes.applicationWithFixedCharset("xacml+json", HttpCharsets.UTF_8));
   private static final ContentType.WithFixedCharset GEOJSON =
       ContentTypes.create(MediaTypes.applicationWithFixedCharset("geo+json", HttpCharsets.UTF_8));
+
+ */
   private static final ObjectMapper JSON = new ObjectMapper();
 
   private final String edaUrl;
   private final String ppUrl;
-  private final HttpClient httpClient;
+  //private final HttpClient httpClient;
   private final OAuthCredentialAuthFilter<P> delegate;
 
   ExternalDynamicAuthFilter(
-      String edaUrl, String ppUrl, HttpClient httpClient, OAuthCredentialAuthFilter<P> delegate) {
+      String edaUrl, String ppUrl, /*HttpClient httpClient,*/ OAuthCredentialAuthFilter<P> delegate) {
     super();
     this.realm = "ldproxy";
     this.prefix = "Bearer";
@@ -56,7 +54,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
 
     this.edaUrl = edaUrl;
     this.ppUrl = ppUrl;
-    this.httpClient = httpClient;
+    //this.httpClient = httpClient;
     this.delegate = delegate;
   }
 
@@ -104,7 +102,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     if (requestContext.getMethod().equals("POST") || requestContext.getMethod().equals("PUT")) {
       try {
 
-        InputStream processedBody = httpClient.postAsInputStream(ppUrl, body, GEOJSON);
+        InputStream processedBody = null;//TODO httpClient.postAsInputStream(ppUrl, body, GEOJSON);
 
         putEntityBody(requestContext, processedBody);
 
@@ -128,7 +126,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
       // LOGGER.debug("XACML {}", JSON.writerWithDefaultPrettyPrinter()
       //                             .writeValueAsString(xacmlRequest1));
 
-      InputStream response = httpClient.postAsInputStream(edaUrl, xacmlRequest, XACML);
+      InputStream response = null;//TODO httpClient.postAsInputStream(edaUrl, xacmlRequest, XACML);
 
       XacmlResponse xacmlResponse = JSON.readValue(response, XacmlResponse.class);
 

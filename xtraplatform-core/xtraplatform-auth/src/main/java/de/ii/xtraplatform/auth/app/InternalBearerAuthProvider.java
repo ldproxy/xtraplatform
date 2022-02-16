@@ -7,39 +7,33 @@
  */
 package de.ii.xtraplatform.auth.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import com.google.common.collect.Lists;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthorizer;
-import de.ii.xtraplatform.dropwizard.domain.AuthProvider;
-import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
+import de.ii.xtraplatform.web.domain.AuthProvider;
+import de.ii.xtraplatform.web.domain.Dropwizard;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.chained.ChainedAuthFilter;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.StaticServiceProperty;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** @author zahnen */
-@Component
-@Provides(
-    properties = {
-      @StaticServiceProperty(name = "type", type = "java.lang.String", value = "auth"),
-      @StaticServiceProperty(name = "ranking", type = "int", value = "11")
-    })
-@Instantiate
+@Singleton
+@AutoBind
 public class InternalBearerAuthProvider implements AuthProvider<User> {
 
   private final TokenHandler tokenHandler;
   private final Dropwizard dropwizard;
 
-  InternalBearerAuthProvider(@Requires TokenHandler tokenHandler, @Requires Dropwizard dropwizard) {
+  @Inject
+  InternalBearerAuthProvider(TokenHandler tokenHandler, Dropwizard dropwizard) {
     this.tokenHandler = tokenHandler;
     this.dropwizard = dropwizard;
   }

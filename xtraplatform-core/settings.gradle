@@ -24,6 +24,7 @@ rootDir.listFiles().each { file ->
             || file.name.startsWith('xtraplatform-openapi')
             || file.name.startsWith('xtraplatform-streams')
             || file.name.startsWith('xtraplatform-store')
+            || file.name.startsWith('xtraplatform-auth')
             || file.name.startsWith('xtraplatform-base'))) {
         include file.name
     }

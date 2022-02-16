@@ -12,8 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xtraplatform.auth.domain.ImmutableUser;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.runtime.domain.AuthConfig;
-import de.ii.xtraplatform.streams.domain.HttpClient;
+import de.ii.xtraplatform.base.domain.AuthConfig;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import io.jsonwebtoken.Claims;
@@ -24,6 +23,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//TODO: HttpClient
 /** @author zahnen */
 public class TokenAuthenticator implements Authenticator<String, User> {
 
@@ -33,11 +33,11 @@ public class TokenAuthenticator implements Authenticator<String, User> {
       new TypeReference<Map<String, String>>() {};
 
   private final AuthConfig authConfig;
-  private final HttpClient httpClient;
+  //private final HttpClient httpClient;
 
-  TokenAuthenticator(AuthConfig authConfig, HttpClient httpClient) {
+  TokenAuthenticator(AuthConfig authConfig/*, HttpClient httpClient*/) {
     this.authConfig = authConfig;
-    this.httpClient = httpClient;
+    //this.httpClient = httpClient;
   }
 
   @Override
@@ -63,7 +63,7 @@ public class TokenAuthenticator implements Authenticator<String, User> {
           // validate/exchange
           // parse
           String url = authConfig.getUserInfoEndpoint.replace("{{token}}", token);
-          InputStream response = httpClient.getAsInputStream(url);
+          InputStream response = null;//TODO httpClient.getAsInputStream(url);
 
           Map<String, String> userInfo = MAPPER.readValue(response, TYPE_REF);
 

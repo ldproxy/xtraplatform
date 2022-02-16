@@ -7,13 +7,14 @@
  */
 package de.ii.xtraplatform.auth.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Strings;
 import de.ii.xtraplatform.auth.domain.ImmutableUser;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.runtime.domain.AuthConfig;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AuthConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -27,24 +28,22 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 import javax.crypto.SecretKey;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class JwtTokenHandler implements TokenHandler {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenHandler.class);
 
   private final AuthConfig authConfig;
 
-  public JwtTokenHandler(@Requires XtraPlatform xtraPlatform) {
-    this.authConfig = xtraPlatform.getConfiguration().auth;
+  @Inject
+  public JwtTokenHandler(AppContext appContext) {
+    this.authConfig = appContext.getConfiguration().auth;
   }
 
   @Override

@@ -7,27 +7,25 @@
  */
 package de.ii.xtraplatform.auth.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.domain.ImmutableUser;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthenticator;
-import de.ii.xtraplatform.dropwizard.domain.ConfigurationProvider;
+import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class InternalUserAuthenticator implements UserAuthenticator {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(InternalUserAuthenticator.class);
@@ -42,14 +40,15 @@ public class InternalUserAuthenticator implements UserAuthenticator {
   private final boolean isAccessRestricted;
   private final EntityDataStore<de.ii.xtraplatform.auth.app.User.UserData> userRepository;
 
+  @Inject
   public InternalUserAuthenticator(
-      @Requires ConfigurationProvider configurationProvider,
-      @Requires EntityDataStore<EntityData> entityRepository) {
+      AppContext appContext,
+      EntityDataStore<?> entityRepository) {
     this.isAccessRestricted =
-        Optional.ofNullable(configurationProvider.getConfiguration().auth)
+        Optional.ofNullable(appContext.getConfiguration().auth)
             .map(authConfig -> !authConfig.allowAnonymousAccess)
             .orElse(true);
-    this.userRepository = entityRepository.forType(de.ii.xtraplatform.auth.app.User.UserData.class);
+    this.userRepository = ((EntityDataStore<EntityData>)entityRepository).forType(de.ii.xtraplatform.auth.app.User.UserData.class);
   }
 
   @Override

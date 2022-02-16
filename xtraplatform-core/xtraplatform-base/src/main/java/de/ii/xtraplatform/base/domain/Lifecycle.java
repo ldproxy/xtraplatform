@@ -2,7 +2,7 @@ package de.ii.xtraplatform.base.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 
-@AutoMultiBind(lazy = true)
+@AutoMultiBind
 public interface Lifecycle {
 
   default void onStart() {}

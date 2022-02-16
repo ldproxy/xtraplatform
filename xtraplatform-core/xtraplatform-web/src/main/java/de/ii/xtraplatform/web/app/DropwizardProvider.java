@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
@@ -21,6 +22,7 @@ import de.ii.xtraplatform.base.domain.Lifecycle;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.ApplicationProvider;
 import de.ii.xtraplatform.web.domain.Dropwizard;
+import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.MustacheResolverRegistry;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.MutableServletContextHandler;
@@ -32,6 +34,7 @@ import io.dropwizard.views.ViewBundle;
 import io.dropwizard.views.ViewRenderer;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.ServletContext;
@@ -53,6 +56,7 @@ public class DropwizardProvider implements Dropwizard, Lifecycle {
   private final MustacheResolverRegistry mustacheResolverRegistry;
   private final AdminEndpointServlet adminEndpoint;
   private final AppContext appContext;
+  private final Lazy<Set<DropwizardPlugin>> plugins;
 
   private AppConfiguration configuration;
   private Environment environment;
@@ -65,11 +69,13 @@ public class DropwizardProvider implements Dropwizard, Lifecycle {
       ApplicationProvider applicationProvider,
       MustacheResolverRegistry mustacheResolverRegistry,
       AppContext appContext,
-      AdminEndpointServlet adminEndpoint) {
+      AdminEndpointServlet adminEndpoint,
+      Lazy<Set<DropwizardPlugin>> plugins) {
     this.applicationProvider = applicationProvider;
     this.mustacheResolverRegistry = mustacheResolverRegistry;
     this.appContext = appContext;
     this.adminEndpoint = adminEndpoint;
+    this.plugins = plugins;
   }
 
   @Override
@@ -164,6 +170,10 @@ public class DropwizardProvider implements Dropwizard, Lifecycle {
                 return false;
               }
             });
+
+    for (DropwizardPlugin plugin: plugins.get()) {
+      plugin.init(configuration, environment);
+    }
   }
 
   private void initBootstrap(Bootstrap<AppConfiguration> bootstrap) {

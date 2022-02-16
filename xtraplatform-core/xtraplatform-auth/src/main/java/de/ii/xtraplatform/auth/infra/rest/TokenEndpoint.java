@@ -7,14 +7,15 @@
  */
 package de.ii.xtraplatform.auth.infra.rest;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.app.SplitCookie;
 import de.ii.xtraplatform.auth.domain.ImmutableTokenResponse;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthenticator;
-import de.ii.xtraplatform.dropwizard.domain.Endpoint;
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.runtime.domain.AuthConfig;
+import de.ii.xtraplatform.web.domain.Endpoint;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AuthConfig;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,6 +24,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -32,14 +35,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 @Path("/auth")
 public class TokenEndpoint implements Endpoint {
 
@@ -55,17 +53,18 @@ public class TokenEndpoint implements Endpoint {
 
   private final UserAuthenticator authenticator;
   private final TokenHandler tokenGenerator;
-  private final XtraPlatform xtraPlatform;
+  private final AppContext appContext;
   private final AuthConfig authConfig;
 
+  @Inject
   public TokenEndpoint(
-      @Requires UserAuthenticator authenticator,
-      @Requires TokenHandler tokenGenerator,
-      @Requires XtraPlatform xtraPlatform) {
+      UserAuthenticator authenticator,
+      TokenHandler tokenGenerator,
+      AppContext appContext) {
     this.authenticator = authenticator;
     this.tokenGenerator = tokenGenerator;
-    this.xtraPlatform = xtraPlatform;
-    this.authConfig = xtraPlatform.getConfiguration().auth;
+    this.appContext = appContext;
+    this.authConfig = appContext.getConfiguration().auth;
   }
 
   @RequestBody(
@@ -136,7 +135,8 @@ public class TokenEndpoint implements Endpoint {
     // return Objects.equals(getExternalUri().getScheme(), "https");
   }
 
+  //TODO: from ServicesContext
   private URI getExternalUri() {
-    return xtraPlatform.getServicesUri();
+    return appContext.getUri().resolve("rest/services");
   }
 }

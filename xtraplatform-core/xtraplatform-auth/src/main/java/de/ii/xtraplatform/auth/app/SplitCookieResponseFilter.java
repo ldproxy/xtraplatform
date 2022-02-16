@@ -7,10 +7,11 @@
  */
 package de.ii.xtraplatform.auth.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.app.User.UserData;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
+import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import java.io.IOException;
@@ -18,35 +19,33 @@ import java.net.URI;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.SecurityContext;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class SplitCookieResponseFilter implements ContainerResponseFilter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SplitCookieResponseFilter.class);
 
-  private final XtraPlatform xtraPlatform;
+  private final AppContext appContext;
   private final TokenHandler tokenHandler;
   private final EntityDataStore<UserData> userRepository;
 
+  @Inject
   public SplitCookieResponseFilter(
-      @Requires XtraPlatform xtraPlatform,
-      @Requires TokenHandler tokenHandler,
-      @Requires EntityDataStore<EntityData> entityRepository) {
-    this.xtraPlatform = xtraPlatform;
+      AppContext appContext,
+      TokenHandler tokenHandler,
+      EntityDataStore<?> entityRepository) {
+    this.appContext = appContext;
     this.tokenHandler = tokenHandler;
-    this.userRepository = entityRepository.forType(de.ii.xtraplatform.auth.app.User.UserData.class);
+    this.userRepository = ((EntityDataStore<EntityData>)entityRepository).forType(de.ii.xtraplatform.auth.app.User.UserData.class);
   }
 
   @Override
@@ -116,7 +115,8 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
     // return Objects.equals(getExternalUri().getScheme(), "https");
   }
 
+  //TODO: from ServicesContext
   private URI getExternalUri() {
-    return xtraPlatform.getServicesUri();
+    return appContext.getUri().resolve("rest/services");
   }
 }

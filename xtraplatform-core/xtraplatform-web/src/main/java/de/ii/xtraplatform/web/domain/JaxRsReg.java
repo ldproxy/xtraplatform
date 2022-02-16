@@ -11,7 +11,6 @@ import java.util.Set;
 
 /** @author zahnen */
 public interface JaxRsReg {
-  void addService(Object service);
 
   Set<Object> getResources();
 
