@@ -193,7 +193,7 @@ public class StaticResourceServlet extends HttpServlet {
     // Try to determine whether we're given a resource with an actual file, or that
     // it is pointing to an (internal) directory. In the latter case, use the default
     // pages to search instead...
-    //TODO: get resources from module
+    // TODO: get resources from module
     /*if (module.findEntries(absoluteRequestedResourcePath, "*", false) == null) {
       // Not a directory, may be a real file?
       requestedResourceURL = module.getResource(absoluteRequestedResourcePath);

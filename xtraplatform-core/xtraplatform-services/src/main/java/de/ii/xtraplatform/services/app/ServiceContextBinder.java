@@ -27,8 +27,7 @@ public class ServiceContextBinder extends AbstractBinder
     implements Binder, ServiceInjectableContext {
 
   @Inject
-  public ServiceContextBinder() {
-  }
+  public ServiceContextBinder() {}
 
   // TODO: bind every subtype
   @Override

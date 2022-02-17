@@ -7,9 +7,9 @@
  */
 package de.ii.xtraplatform.store.app;
 
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.base.domain.Registry;
 import de.ii.xtraplatform.base.domain.RegistryState;
-import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.store.domain.EventSourcedStore;
 import java.util.Optional;
 import org.slf4j.Logger;

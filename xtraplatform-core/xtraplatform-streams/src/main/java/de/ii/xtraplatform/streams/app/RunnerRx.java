@@ -15,7 +15,6 @@ import de.ii.xtraplatform.streams.domain.Reactive.Stream;
 import de.ii.xtraplatform.streams.domain.Reactive.StreamContext;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Scheduler;
-import io.reactivex.rxjava3.functions.Action;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -113,11 +112,12 @@ public class RunnerRx implements Runner {
                 .doOnComplete(
                     () ->
                         LogContext.withMdc(
-                            () -> {
-                              context.onComplete(result);
+                                () -> {
+                                  context.onComplete(result);
 
-                              runNext();
-                            }).run())
+                                  runNext();
+                                })
+                            .run())
                 .subscribe(subscriber.onError(throwable -> context.onError(result, throwable)));
           };
       run(task);

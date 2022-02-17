@@ -238,19 +238,19 @@ public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
         }
         filterCache.clear();
         for (ContainerRequestFilter filter : containerRequestFilters.get()) {
-            jersey.register(filter);
-            // jersey.getResourceConfig().register()
-            // .getContainerRequestFilters().add(filter.getClass());
-            if (LOGGER.isDebugEnabled(MARKER.DI))
-              LOGGER.debug(
-                  MARKER.DI, "Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
+          jersey.register(filter);
+          // jersey.getResourceConfig().register()
+          // .getContainerRequestFilters().add(filter.getClass());
+          if (LOGGER.isDebugEnabled(MARKER.DI))
+            LOGGER.debug(
+                MARKER.DI, "Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
         }
         for (ContainerResponseFilter filter : containerResponseFilters.get()) {
-            jersey.register(filter);
-            // jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
-            if (LOGGER.isDebugEnabled(MARKER.DI))
-              LOGGER.debug(
-                  MARKER.DI, "Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
+          jersey.register(filter);
+          // jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
+          if (LOGGER.isDebugEnabled(MARKER.DI))
+            LOGGER.debug(
+                MARKER.DI, "Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
         }
         for (Binder binder : binders.get()) {
           jersey.register(binder);

@@ -8,12 +8,7 @@
 package de.ii.xtraplatform.services.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import com.sun.source.doctree.SeeTree;
 import dagger.Lazy;
-import de.ii.xtraplatform.web.domain.Dropwizard;
-import de.ii.xtraplatform.web.domain.Endpoint;
-import de.ii.xtraplatform.web.domain.MediaTypeCharset;
-import de.ii.xtraplatform.web.domain.StaticResourceHandler;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.services.domain.Service;
@@ -22,12 +17,13 @@ import de.ii.xtraplatform.services.domain.ServiceEndpoint;
 import de.ii.xtraplatform.services.domain.ServiceInjectableContext;
 import de.ii.xtraplatform.services.domain.ServiceListingProvider;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
+import de.ii.xtraplatform.web.domain.Endpoint;
+import de.ii.xtraplatform.web.domain.MediaTypeCharset;
+import de.ii.xtraplatform.web.domain.StaticResourceHandler;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.net.URI;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -122,11 +118,12 @@ public class ServicesEndpoint implements Endpoint {
                             ? MediaType.TEXT_HTML_TYPE
                             : MediaType.APPLICATION_JSON_TYPE);
 
-    Optional<ServiceListingProvider> provider = serviceListingProviders.get()
-        .stream()
-        .filter(serviceListingProvider -> Objects.equals(mediaType,
-            serviceListingProvider.getMediaType()))
-        .findFirst();
+    Optional<ServiceListingProvider> provider =
+        serviceListingProviders.get().stream()
+            .filter(
+                serviceListingProvider ->
+                    Objects.equals(mediaType, serviceListingProvider.getMediaType()))
+            .findFirst();
 
     if (provider.isPresent()) {
       Response serviceListing = provider.get().getServiceListing(services, uriInfo.getRequestUri());
@@ -209,9 +206,9 @@ public class ServicesEndpoint implements Endpoint {
   // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory
   // TODO: cache resource object per service
   private ServiceEndpoint getServiceResource(Service s) {
-    return serviceResources.get()
-        .stream()
-        .filter(serviceEndpoint -> Objects.equals(s.getServiceType(), serviceEndpoint.getServiceType()))
+    return serviceResources.get().stream()
+        .filter(
+            serviceEndpoint -> Objects.equals(s.getServiceType(), serviceEndpoint.getServiceType()))
         .findFirst()
         .orElseThrow();
   }
@@ -226,7 +223,7 @@ public class ServicesEndpoint implements Endpoint {
     return s.get();
   }
 
-  //TODO: to ServicesContext
+  // TODO: to ServicesContext
   private Optional<URI> getExternalUri() {
     return Optional.of(appContext.getUri().resolve("rest/services"));
   }

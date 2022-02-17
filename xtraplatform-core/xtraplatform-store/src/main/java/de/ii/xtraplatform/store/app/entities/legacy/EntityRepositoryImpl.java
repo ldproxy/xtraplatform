@@ -43,16 +43,16 @@ import org.slf4j.LoggerFactory;
 public class EntityRepositoryImpl implements EntityRepository {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityRepositoryImpl.class);
-/*
-  @Publishes(name = "create", topics = "create", dataKey = Entity.DATA_KEY, synchronous = true)
-  private Publisher createListeners;
+  /*
+    @Publishes(name = "create", topics = "create", dataKey = Entity.DATA_KEY, synchronous = true)
+    private Publisher createListeners;
 
-  @Publishes(name = "update", topics = "update", dataKey = Entity.DATA_KEY, synchronous = true)
-  private Publisher updateListeners;
+    @Publishes(name = "update", topics = "update", dataKey = Entity.DATA_KEY, synchronous = true)
+    private Publisher updateListeners;
 
-  @Publishes(name = "delete", topics = "delete", dataKey = Entity.DATA_KEY, synchronous = true)
-  private Publisher deleteListeners;
-*/
+    @Publishes(name = "delete", topics = "delete", dataKey = Entity.DATA_KEY, synchronous = true)
+    private Publisher deleteListeners;
+  */
   private final Map<String, String> entityTypes;
   private final Map<String, Object> entityDataGenerators;
 
@@ -62,9 +62,7 @@ public class EntityRepositoryImpl implements EntityRepository {
   private EntitySerializer entitySerializer;
 
   @Inject
-  public EntityRepositoryImpl(
-      KeyValueStoreLegacy rootConfigStore,
-      Jackson jackson) {
+  public EntityRepositoryImpl(KeyValueStoreLegacy rootConfigStore, Jackson jackson) {
     LOGGER.debug(
         "JACKSON DYNAMIC {}",
         jackson.getDefaultObjectMapper().getDeserializationConfig().getHandlerInstantiator());
@@ -114,7 +112,7 @@ public class EntityRepositoryImpl implements EntityRepository {
     LOGGER.debug("CREATE {} {}", data.getId(), path2);
     store.addResource(data, path2);
 
-    //createListeners.sendData(data);
+    // createListeners.sendData(data);
 
     return data;
   }
@@ -148,7 +146,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     // TODO
     RemoveEntityData data4 = getEntityData(id, path);
-    //createListeners.sendData(data4);
+    // createListeners.sendData(data4);
 
     return data4;
   }
@@ -163,7 +161,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     // TODO
     EntityData data2 = getEntityData(data.getId(), path);
-    //updateListeners.sendData(data2);
+    // updateListeners.sendData(data2);
 
     return data;
   }
@@ -177,7 +175,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     // TODO
     RemoveEntityData data = getEntityData(partialData.getId(), path);
-    //updateListeners.sendData(data);
+    // updateListeners.sendData(data);
 
     return data;
   }
@@ -191,7 +189,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     // TODO
     RemoveEntityData data = getEntityData(id, path);
-    //updateListeners.sendData(data);
+    // updateListeners.sendData(data);
 
     return data;
   }
@@ -201,7 +199,7 @@ public class EntityRepositoryImpl implements EntityRepository {
 
     store.deleteResource(id, path);
 
-    //deleteListeners.sendData(id);
+    // deleteListeners.sendData(id);
   }
 
   @Override

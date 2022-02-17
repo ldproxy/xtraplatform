@@ -13,9 +13,9 @@ import de.ii.xtraplatform.auth.domain.ImmutableTokenResponse;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthenticator;
-import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AuthConfig;
+import de.ii.xtraplatform.web.domain.Endpoint;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -58,9 +58,7 @@ public class TokenEndpoint implements Endpoint {
 
   @Inject
   public TokenEndpoint(
-      UserAuthenticator authenticator,
-      TokenHandler tokenGenerator,
-      AppContext appContext) {
+      UserAuthenticator authenticator, TokenHandler tokenGenerator, AppContext appContext) {
     this.authenticator = authenticator;
     this.tokenGenerator = tokenGenerator;
     this.appContext = appContext;
@@ -135,7 +133,7 @@ public class TokenEndpoint implements Endpoint {
     // return Objects.equals(getExternalUri().getScheme(), "https");
   }
 
-  //TODO: from ServicesContext
+  // TODO: from ServicesContext
   private URI getExternalUri() {
     return appContext.getUri().resolve("rest/services");
   }

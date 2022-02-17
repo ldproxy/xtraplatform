@@ -11,33 +11,33 @@ import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthorizer;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AuthConfig;
 import de.ii.xtraplatform.web.domain.AuthProvider;
 import de.ii.xtraplatform.web.domain.Dropwizard;
-import de.ii.xtraplatform.base.domain.AuthConfig;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 
 /** @author zahnen */
-//TODO: HttpClient
-//TODO: ranking, which one to use
-//TODO: AutoBind
+// TODO: HttpClient
+// TODO: ranking, which one to use
+// TODO: AutoBind
 public class ExternalBearerAuthProvider implements AuthProvider<User> {
 
   private final Dropwizard dropwizard;
-  //private final HttpClient httpClient;
+  // private final HttpClient httpClient;
   private final AuthConfig authConfig;
 
-  public ExternalBearerAuthProvider(AppContext appContext, Dropwizard dropwizard/*, Http http*/) {
+  public ExternalBearerAuthProvider(AppContext appContext, Dropwizard dropwizard /*, Http http*/) {
     this.dropwizard = dropwizard;
-    //this.httpClient = http.getDefaultClient();
+    // this.httpClient = http.getDefaultClient();
     this.authConfig = appContext.getConfiguration().auth;
   }
 
   @Override
   public AuthDynamicFeature getAuthDynamicFeature() {
-    TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig/*, httpClient*/);
+    TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig /*, httpClient*/);
 
     CachingAuthenticator<String, User> cachingAuthenticator =
         new CachingAuthenticator<String, User>(

@@ -47,10 +47,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
   private final boolean isReadOnly;
 
   @Inject
-  EventStoreDefault(
-      AppContext appContext,
-      EventStoreDriver eventStoreDriver,
-      Reactive reactive) {
+  EventStoreDefault(AppContext appContext, EventStoreDriver eventStoreDriver, Reactive reactive) {
     this.driver = eventStoreDriver;
     this.subscriptions = new EventSubscriptionsImpl(reactive.runner("events"));
     this.storeConfiguration = appContext.getConfiguration().store;
@@ -209,7 +206,6 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
           }
         });
     // TODO: type
-    subscriptions
-        .emitEvent(ImmutableReloadEvent.builder().type("entities").filter(filter).build());
+    subscriptions.emitEvent(ImmutableReloadEvent.builder().type("entities").filter(filter).build());
   }
 }

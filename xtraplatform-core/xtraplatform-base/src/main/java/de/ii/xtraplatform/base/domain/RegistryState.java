@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//TODO
+// TODO
 public final class RegistryState<T> implements Registry.State<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RegistryState.class);
@@ -54,7 +54,7 @@ public final class RegistryState<T> implements Registry.State<T> {
   public synchronized Optional<T> onArrival(T ref) {
     if (Objects.nonNull(ref)) {
       Optional<String> identifier = getComponentIdentifier(ref, componentProperties);
-      T service = ref;//bundleContext.getService(ref);
+      T service = ref; // bundleContext.getService(ref);
 
       if (identifier.isPresent()) {
         this.items.put(identifier.get(), service);
@@ -87,8 +87,7 @@ public final class RegistryState<T> implements Registry.State<T> {
     return Optional.empty();
   }
 
-  private Optional<String> getComponentIdentifier(
-      T component, List<String> properties) {
+  private Optional<String> getComponentIdentifier(T component, List<String> properties) {
     final String identifier =
         properties.stream()
             .map(property -> getComponentProperty(component, property))

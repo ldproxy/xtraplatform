@@ -100,7 +100,7 @@ public class FileConfigStore implements KeyValueStoreLegacy {
       FileOutputStream out = new FileOutputStream(rootDir + "/" + INDEX_FILE_NAME);
       props.store(out, null);
     } catch (IOException ex) {
-      //Logger.getLogger(FileConfigStore.class.getName()).log(Level.SEVERE, null, ex);
+      // Logger.getLogger(FileConfigStore.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
 
@@ -116,7 +116,7 @@ public class FileConfigStore implements KeyValueStoreLegacy {
 
         in.close();
       } catch (IOException ex) {
-        //Logger.getLogger(FileConfigStore.class.getName()).log(Level.SEVERE, null, ex);
+        // Logger.getLogger(FileConfigStore.class.getName()).log(Level.SEVERE, null, ex);
       }
     }
 

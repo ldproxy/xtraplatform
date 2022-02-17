@@ -10,8 +10,8 @@ package de.ii.xtraplatform.web.app;
 import ch.qos.logback.classic.LoggerContext;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
-import de.ii.xtraplatform.web.domain.Dropwizard;
 import de.ii.xtraplatform.base.domain.LoggingFilter;
+import de.ii.xtraplatform.web.domain.Dropwizard;
 import io.dropwizard.servlets.tasks.Task;
 import java.io.PrintWriter;
 import java.util.Collection;
@@ -55,15 +55,13 @@ public class LogConfigurationTask extends Task {
 
     optionalThirdPartyLoggingFilter.ifPresent(
         loggingFilter -> {
-          getFiltersToEnable(parameters)
-              .forEach(filter -> setFilter(loggingFilter, filter, true));
+          getFiltersToEnable(parameters).forEach(filter -> setFilter(loggingFilter, filter, true));
           getFiltersToDisable(parameters)
               .forEach(filter -> setFilter(loggingFilter, filter, false));
         });
   }
 
-  private void setFilter(
-      LoggingFilter loggingFilter, String filter, boolean enable) {
+  private void setFilter(LoggingFilter loggingFilter, String filter, boolean enable) {
     switch (filter) {
       case "sqlQueries":
         loggingFilter.setSqlQueries(enable);

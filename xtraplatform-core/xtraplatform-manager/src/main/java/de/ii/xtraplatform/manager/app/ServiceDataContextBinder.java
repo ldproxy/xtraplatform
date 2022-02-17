@@ -28,8 +28,7 @@ public class ServiceDataContextBinder extends AbstractBinder
   public static final String SERVICE_DATA_CONTEXT_KEY = "XP_SERVICE_DATA";
 
   @Inject
-  ServiceDataContextBinder() {
-  }
+  ServiceDataContextBinder() {}
 
   // TODO: bind every subtype
   @Override

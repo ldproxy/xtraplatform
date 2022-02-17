@@ -55,11 +55,7 @@ public class SourceDefault<T> implements Source<T> {
   }
 
   SourceDefault(
-      Type type,
-      Iterable<T> iterable,
-      Publisher<T> publisher,
-      T item,
-      InputStream inputStream) {
+      Type type, Iterable<T> iterable, Publisher<T> publisher, T item, InputStream inputStream) {
     this.type = type;
     this.iterable = iterable;
     this.publisher = publisher;

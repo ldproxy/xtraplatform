@@ -313,8 +313,8 @@ public interface Reactive {
 
     <X> CompletionStage<X> run(Stream<X> stream);
 
-    //@Deprecated
-    //ExecutionContextExecutor getDispatcher();
+    // @Deprecated
+    // ExecutionContextExecutor getDispatcher();
 
     int getCapacity();
   }

@@ -9,8 +9,8 @@ package de.ii.xtraplatform.openapi.app;
 
 /** @author zahnen */
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
+import de.ii.xtraplatform.web.domain.Endpoint;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,8 +48,7 @@ public class DynamicOpenApiResource implements Endpoint {
 
   @Inject
   public DynamicOpenApiResource(
-      OpenApiViewerResource openApiViewerResource,
-      DynamicOpenApiChangeListener openApi) {
+      OpenApiViewerResource openApiViewerResource, DynamicOpenApiChangeListener openApi) {
     this.openApi = openApi;
     this.openApiViewerResource = openApiViewerResource;
   }

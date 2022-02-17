@@ -104,7 +104,7 @@ public class ServicesEndpoint implements Endpoint {
       EntityDataDefaultsStore defaultsStore,
       ServiceBackgroundTasks serviceBackgroundTasks,
       Reactive reactive) {
-    this.entityRepository = (EntityDataStore<EntityData>)entityRepository;
+    this.entityRepository = (EntityDataStore<EntityData>) entityRepository;
     this.serviceRepository = getServiceRepository(this.entityRepository);
     this.entityRegistry = entityRegistry;
     this.entityFactories = new EntityFactories(entityFactories);
@@ -114,7 +114,7 @@ public class ServicesEndpoint implements Endpoint {
     this.entityStateSubscriber = new ArrayList<>();
     this.eventStream = new EventStream<>(reactive.runner("sse", 1, 1024), "state");
 
-    //TODO: sse, see /_events below
+    // TODO: sse, see /_events below
     /*eventStream.foreach(
         event -> {
           if (LOGGER.isTraceEnabled()) {
@@ -231,7 +231,8 @@ public class ServicesEndpoint implements Endpoint {
       // EntityData service = null;
 
       // TODO: background task, while running return status on GET
-      EntityData provider2 = entityFactories.get("providers", provider.getEntitySubType()).hydrateData(provider);
+      EntityData provider2 =
+          entityFactories.get("providers", provider.getEntitySubType()).hydrateData(provider);
 
       EntityData provider3 = entityRepository.put(identifier, provider2).join();
 
@@ -247,7 +248,10 @@ public class ServicesEndpoint implements Endpoint {
 
       // TODO: background task, while running return status on GET
       ServiceData service2 =
-          (ServiceData) entityFactories.get("services", serviceData.getEntitySubType()).hydrateData(serviceData);
+          (ServiceData)
+              entityFactories
+                  .get("services", serviceData.getEntitySubType())
+                  .hydrateData(serviceData);
 
       ServiceData added = serviceRepository.put(id, service2).join();
 

@@ -8,13 +8,12 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
+import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.base.domain.Constants;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
-import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.app.MergingSourceProvider;
 import de.ii.xtraplatform.web.app.XtraplatformCommand;
 import io.dropwizard.Application;
@@ -36,11 +35,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//TODO: merge back into DropwizardProvider
+// TODO: merge back into DropwizardProvider
 @Singleton
 @AutoBind
-public class ApplicationProviderDefault
-    implements ApplicationProvider {
+public class ApplicationProviderDefault implements ApplicationProvider {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationProviderDefault.class);
   private static final String DW_CMD = "server";
@@ -61,7 +59,6 @@ public class ApplicationProviderDefault
         ENV.DEVELOPMENT; // TODO.valueOf(context.getProperty(Constants.ENV_KEY));
   }
 
-
   public Optional<ByteSource> getConfigurationFileTemplate(String environment) {
     return getConfigurationFileTemplateFromClassBundle(
         environment, ApplicationProviderDefault.class);
@@ -81,13 +78,16 @@ public class ApplicationProviderDefault
 
   @Override
   public Pair<AppConfiguration, Environment> startWithFile(
-      Path configurationFile, Constants.ENV env, Consumer<Bootstrap<AppConfiguration>> initializer) {
+      Path configurationFile,
+      Constants.ENV env,
+      Consumer<Bootstrap<AppConfiguration>> initializer) {
     Bootstrap<AppConfiguration> bootstrap = getBootstrap(initializer, env);
 
     return run(configurationFile.toString(), bootstrap);
   }
 
-  private Pair<AppConfiguration, Environment> run(String configurationFilePath, Bootstrap<AppConfiguration> bootstrap) {
+  private Pair<AppConfiguration, Environment> run(
+      String configurationFilePath, Bootstrap<AppConfiguration> bootstrap) {
     final Cli cli = new Cli(new JarLocation(getClass()), bootstrap, System.out, System.err);
     String[] arguments = {DW_CMD, configurationFilePath};
 
@@ -105,11 +105,13 @@ public class ApplicationProviderDefault
     throw new IllegalStateException();
   }
 
-  private Bootstrap<AppConfiguration> getBootstrap(Consumer<Bootstrap<AppConfiguration>> initializer, Constants.ENV env) {
+  private Bootstrap<AppConfiguration> getBootstrap(
+      Consumer<Bootstrap<AppConfiguration>> initializer, Constants.ENV env) {
     Application<AppConfiguration> application =
         new Application<AppConfiguration>() {
           @Override
-          public void run(AppConfiguration configuration, Environment environment) throws Exception {
+          public void run(AppConfiguration configuration, Environment environment)
+              throws Exception {
             ApplicationProviderDefault.this.configuration.complete(configuration);
             ApplicationProviderDefault.this.environment.complete(environment);
           }
@@ -120,7 +122,7 @@ public class ApplicationProviderDefault
 
     bootstrap.setConfigurationSourceProvider(
         new SubstitutingSourceProvider(
-            new MergingSourceProvider( //TODO: baseConfigs
+            new MergingSourceProvider( // TODO: baseConfigs
                 bootstrap.getConfigurationSourceProvider(), ImmutableMap.of(), env),
             new EnvironmentVariableSubstitutor(false)));
 

@@ -40,12 +40,12 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
 
   @Inject
   public SplitCookieResponseFilter(
-      AppContext appContext,
-      TokenHandler tokenHandler,
-      EntityDataStore<?> entityRepository) {
+      AppContext appContext, TokenHandler tokenHandler, EntityDataStore<?> entityRepository) {
     this.appContext = appContext;
     this.tokenHandler = tokenHandler;
-    this.userRepository = ((EntityDataStore<EntityData>)entityRepository).forType(de.ii.xtraplatform.auth.app.User.UserData.class);
+    this.userRepository =
+        ((EntityDataStore<EntityData>) entityRepository)
+            .forType(de.ii.xtraplatform.auth.app.User.UserData.class);
   }
 
   @Override
@@ -115,7 +115,7 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
     // return Objects.equals(getExternalUri().getScheme(), "https");
   }
 
-  //TODO: from ServicesContext
+  // TODO: from ServicesContext
   private URI getExternalUri() {
     return appContext.getUri().resolve("rest/services");
   }

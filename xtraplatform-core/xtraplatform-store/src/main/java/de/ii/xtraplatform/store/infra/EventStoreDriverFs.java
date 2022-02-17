@@ -363,8 +363,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
     return dataDir.resolve(storeLocation);
   }
 
-  private List<Path> getAdditionalDirectories(
-      Path dataDir, StoreConfiguration storeConfiguration) {
+  private List<Path> getAdditionalDirectories(Path dataDir, StoreConfiguration storeConfiguration) {
     ImmutableList.Builder<Path> additionalDirectories = new ImmutableList.Builder<>();
 
     for (String additionalLocation : storeConfiguration.additionalLocations) {

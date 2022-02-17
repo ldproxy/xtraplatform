@@ -132,15 +132,13 @@ public class AppLauncher implements AppContext {
   }
 
   public void start(App modules) {
-    modules
-        .lifecycle()
-        .get()
-        .stream()
+    modules.lifecycle().get().stream()
         .sorted(Comparator.comparingInt(AppLifeCycle::getPriority))
         .forEach(
             lifecycle -> {
               if (LOGGER.isDebugEnabled(MARKER.DI)) {
-                LOGGER.debug(MARKER.DI, "Starting {} ({})", lifecycle.getClass(), lifecycle.getPriority());
+                LOGGER.debug(
+                    MARKER.DI, "Starting {} ({})", lifecycle.getClass(), lifecycle.getPriority());
               }
               try {
                 lifecycle.onStart();
@@ -153,15 +151,13 @@ public class AppLauncher implements AppContext {
   public void stop(App modules) {
     LOGGER.info("Shutting down {}", name);
 
-    modules
-        .lifecycle()
-        .get()
-        .stream()
+    modules.lifecycle().get().stream()
         .sorted(Comparator.comparingInt(AppLifeCycle::getPriority).reversed())
         .forEach(
             lifecycle -> {
               if (LOGGER.isDebugEnabled(MARKER.DI)) {
-                LOGGER.debug(MARKER.DI, "Stopping {} ({})", lifecycle.getClass(), lifecycle.getPriority());
+                LOGGER.debug(
+                    MARKER.DI, "Stopping {} ({})", lifecycle.getClass(), lifecycle.getPriority());
               }
               try {
                 lifecycle.onStop();

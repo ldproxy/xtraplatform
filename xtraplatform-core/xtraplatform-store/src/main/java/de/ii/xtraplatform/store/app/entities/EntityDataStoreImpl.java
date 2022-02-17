@@ -200,7 +200,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         ImmutableReplayEvent.builder().from(event).identifier(cacheKey);
     if (!overridesPath.getKeyPath().isEmpty()) {
       Optional<KeyPathAlias> keyPathAlias =
-          entityFactories.get(overridesPath.getEntityType())
+          entityFactories
+              .get(overridesPath.getEntityType())
               .getKeyPathAlias(
                   overridesPath.getKeyPath().get(overridesPath.getKeyPath().size() - 1));
       try {
@@ -217,7 +218,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
-    return (EntityDataBuilder<EntityData>) entityFactories.get(identifier.path().get(0)).dataBuilder();
+    return (EntityDataBuilder<EntityData>)
+        entityFactories.get(identifier.path().get(0)).dataBuilder();
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, String entitySubtype) {
@@ -315,7 +317,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       try {
         EntityData hydratedData = hydrateData(identifier, entityData);
 
-        return entityFactories.get(identifier.path().get(0))
+        return entityFactories
+            .get(identifier.path().get(0))
             .createInstance(hydratedData)
             .whenComplete(
                 (entity, throwable) -> {
@@ -339,7 +342,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       if (LOGGER.isDebugEnabled()) LOGGER.debug("Reloading entity: {}", identifier);
       EntityData hydratedData = hydrateData(identifier, entityData);
 
-      return entityFactories.get(identifier.path().get(0))
+      return entityFactories
+          .get(identifier.path().get(0))
           .updateInstance(hydratedData)
           .thenAccept(ignore -> CompletableFuture.completedFuture(null));
     }
@@ -466,9 +470,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   private Map<String, Object> subtractResetted(
-      Map<String, Object> source,
-      Map<String, Object> potentialNulls,
-      EntityFactory entityFactory) {
+      Map<String, Object> source, Map<String, Object> potentialNulls, EntityFactory entityFactory) {
     Map<String, Object> result = new LinkedHashMap<>();
 
     source.forEach(

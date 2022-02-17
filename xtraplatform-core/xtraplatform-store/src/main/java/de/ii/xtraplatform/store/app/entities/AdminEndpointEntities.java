@@ -10,13 +10,13 @@ package de.ii.xtraplatform.store.app.entities;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
-import de.ii.xtraplatform.web.domain.AdminSubEndpoint;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.EntityState;
 import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
+import de.ii.xtraplatform.web.domain.AdminSubEndpoint;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Comparator;
@@ -47,9 +47,7 @@ public class AdminEndpointEntities implements AdminSubEndpoint {
 
   @Inject
   public AdminEndpointEntities(
-      EntityDataStore<?> entityDataStore,
-      EntityRegistry entityRegistry,
-      Jackson jackson) {
+      EntityDataStore<?> entityDataStore, EntityRegistry entityRegistry, Jackson jackson) {
     this.entityDataStore = entityDataStore;
     this.entityRegistry = entityRegistry;
     this.objectMapper = jackson.getDefaultObjectMapper();

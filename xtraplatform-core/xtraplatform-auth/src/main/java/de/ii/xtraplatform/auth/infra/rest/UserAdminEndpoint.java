@@ -13,11 +13,11 @@ import de.ii.xtraplatform.auth.app.PasswordHash;
 import de.ii.xtraplatform.auth.app.User;
 import de.ii.xtraplatform.auth.app.User.UserData;
 import de.ii.xtraplatform.auth.domain.Role;
-import de.ii.xtraplatform.web.domain.Endpoint;
-import de.ii.xtraplatform.web.domain.MediaTypeCharset;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
+import de.ii.xtraplatform.web.domain.Endpoint;
+import de.ii.xtraplatform.web.domain.MediaTypeCharset;
 import io.dropwizard.auth.Auth;
 import java.io.IOException;
 import java.util.List;
@@ -58,7 +58,8 @@ public class UserAdminEndpoint implements Endpoint {
 
   @Inject
   UserAdminEndpoint(EntityDataStore<?> entityRepository) {
-    this.userRepository = ((EntityDataStore<EntityData>)entityRepository).forType(User.UserData.class);
+    this.userRepository =
+        ((EntityDataStore<EntityData>) entityRepository).forType(User.UserData.class);
   }
 
   @GET

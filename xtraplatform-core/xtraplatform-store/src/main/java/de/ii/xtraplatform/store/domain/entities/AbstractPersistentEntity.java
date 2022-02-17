@@ -10,7 +10,6 @@ package de.ii.xtraplatform.store.domain.entities;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.base.domain.LogContext;
-import de.ii.xtraplatform.store.domain.entities.handler.Entity;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,12 +34,12 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   private final List<Consumer<EntityState>> stateChangeListeners;
 
   /*@ServiceController(
-      value = true,
-      specification = EntityState.class) // is ignored here, but added by @Entity handler
-   */
+     value = true,
+     specification = EntityState.class) // is ignored here, but added by @Entity handler
+  */
   private boolean registerState;
 
-  //@ServiceController(value = false) // is ignored here, but added by @Entity handler
+  // @ServiceController(value = false) // is ignored here, but added by @Entity handler
   public volatile boolean register;
 
   private T data;
@@ -66,7 +65,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     return data;
   }
 
-  //@Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler
+  // @Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler
   public final void setData(T data) {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("GOT DATA {}" /*, data*/);
@@ -82,7 +81,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
-  //@Validate // is ignored here, but added by @EntityComponent stereotype
+  // @Validate // is ignored here, but added by @EntityComponent stereotype
   public final void onValidate() {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
@@ -101,7 +100,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
-  //@Invalidate // is ignored here, but added by @EntityComponent stereotype
+  // @Invalidate // is ignored here, but added by @EntityComponent stereotype
   public final void onInvalidate() {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
@@ -115,7 +114,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
-  //@PostRegistration // is ignored here, but added by @EntityComponent stereotype
+  // @PostRegistration // is ignored here, but added by @EntityComponent stereotype
   public final void onPostRegistration() {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
@@ -129,7 +128,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
-  //@PostUnregistration // is ignored here, but added by @EntityComponent stereotype
+  // @PostUnregistration // is ignored here, but added by @EntityComponent stereotype
   public final void onPostUnregistration() {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {

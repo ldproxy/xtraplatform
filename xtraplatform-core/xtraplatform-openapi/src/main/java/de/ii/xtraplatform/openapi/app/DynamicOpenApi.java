@@ -47,24 +47,24 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class DynamicOpenApi extends BaseOpenApiResource implements DynamicOpenApiChangeListener,
-    AppLifeCycle, JaxRsConsumer {
+public class DynamicOpenApi extends BaseOpenApiResource
+    implements DynamicOpenApiChangeListener, AppLifeCycle, JaxRsConsumer {
 
   private static Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApi.class);
   public static final MediaType YAML_TYPE = new MediaType("application", "yaml");
   public static final String YAML = "application/yaml";
-  //private final JaxRsReg registry;
+  // private final JaxRsReg registry;
 
   private OpenAPI openApiSpec;
 
   @Inject
   public DynamicOpenApi() {
-    //this.registry = registry;
+    // this.registry = registry;
   }
 
   @Override
   public void onStart() {
-    //scan();
+    // scan();
   }
 
   @Override
@@ -73,17 +73,19 @@ public class DynamicOpenApi extends BaseOpenApiResource implements DynamicOpenAp
   }
 
   private synchronized void scan(Set<Object> resources) {
-    Set<Class<?>> resourceClasses = resources.stream()
-        .flatMap(resource -> {
-          if (resource instanceof DropwizardResourceConfig.SpecificBinder) {
-            return ((DropwizardResourceConfig.SpecificBinder)resource).getBindings()
-                .stream()
-                .filter(binding -> binding instanceof InstanceBinding)
-                .map(binding -> ((InstanceBinding<?>)binding).getService().getClass());
-          }
-          return Stream.of(resource.getClass());
-        })
-        .collect(Collectors.toSet());
+    Set<Class<?>> resourceClasses =
+        resources.stream()
+            .flatMap(
+                resource -> {
+                  if (resource instanceof DropwizardResourceConfig.SpecificBinder) {
+                    return ((DropwizardResourceConfig.SpecificBinder) resource)
+                        .getBindings().stream()
+                            .filter(binding -> binding instanceof InstanceBinding)
+                            .map(binding -> ((InstanceBinding<?>) binding).getService().getClass());
+                  }
+                  return Stream.of(resource.getClass());
+                })
+            .collect(Collectors.toSet());
     Reader reader = new Reader(new OpenAPI());
     this.openApiSpec = reader.read(resourceClasses);
     openApiSpec.addServersItem(new Server().url("/rest"));
@@ -101,8 +103,8 @@ public class DynamicOpenApi extends BaseOpenApiResource implements DynamicOpenAp
   }
 
   private synchronized Set<Class<?>> getResourceClasses() {
-    //TODO
-    return new HashSet<>(); //registry.getResources().stream().map(Object::getClass).collect(Collectors.toSet());
+    // TODO
+    return new HashSet<>(); // registry.getResources().stream().map(Object::getClass).collect(Collectors.toSet());
   }
 
   @Override

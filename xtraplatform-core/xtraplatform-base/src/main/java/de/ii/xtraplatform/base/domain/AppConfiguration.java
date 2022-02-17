@@ -13,7 +13,6 @@ import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.logging.LoggingFactory;
 import io.dropwizard.server.ServerFactory;
-import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 

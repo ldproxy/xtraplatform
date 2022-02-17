@@ -29,9 +29,7 @@ public class OpenApiSwaggerUiResource implements OpenApiViewerResource {
   private static Logger LOGGER = LoggerFactory.getLogger(OpenApiSwaggerUiResource.class);
 
   @Inject
-  public OpenApiSwaggerUiResource() {
-
-  }
+  public OpenApiSwaggerUiResource() {}
 
   @Override
   public Response getFile(String file) {

@@ -15,15 +15,17 @@ import org.slf4j.MDC;
 
 public class LogContextStream {
 
-  //TODO: apply to first flowable
+  // TODO: apply to first flowable
   public static <T, U> Source<T> withMdc(Source<T> source) {
     Map<String, String> mdc = MDC.getCopyOfContextMap();
 
     if (Objects.nonNull(mdc)) {
-      return source.via(Transformer.map(t -> {
-        MDC.setContextMap(mdc);
-        return t;
-      }));
+      return source.via(
+          Transformer.map(
+              t -> {
+                MDC.setContextMap(mdc);
+                return t;
+              }));
     }
     return source;
   }

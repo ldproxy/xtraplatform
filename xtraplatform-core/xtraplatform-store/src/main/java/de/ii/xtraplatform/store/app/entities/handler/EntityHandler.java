@@ -7,31 +7,14 @@
  */
 package de.ii.xtraplatform.store.app.entities.handler;
 
-import com.google.common.base.Strings;
-import de.ii.xtraplatform.store.domain.entities.EntityData;
-import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
-import de.ii.xtraplatform.store.domain.entities.handler.Entity;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Dictionary;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Created by zahnen on 27.11.15.
  *
  * <p>level has to be smaller than the ones of ConfigurationHandler and ProvidedServiceHandler
  */
-//@Handler(name = "Entity", namespace = EntityHandler.NAMESPACE, level = 0)
+// @Handler(name = "Entity", namespace = EntityHandler.NAMESPACE, level = 0)
 public class EntityHandler /*extends LifecycleCallbackHandler implements ConfigurationListener*/ {
-/*
+  /*
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityHandler.class);
 
   static final String NAMESPACE = "de.ii.xtraplatform.store.domain.entities.handler";

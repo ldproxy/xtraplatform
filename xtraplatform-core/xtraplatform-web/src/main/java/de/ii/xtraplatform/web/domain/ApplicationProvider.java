@@ -7,15 +7,15 @@
  */
 package de.ii.xtraplatform.web.domain;
 
-import de.ii.xtraplatform.base.domain.Constants;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
+import de.ii.xtraplatform.base.domain.Constants;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.tuple.Pair;
 
-//@AutoMultiBind
+// @AutoMultiBind
 public interface ApplicationProvider {
 
   Pair<AppConfiguration, Environment> startWithFile(

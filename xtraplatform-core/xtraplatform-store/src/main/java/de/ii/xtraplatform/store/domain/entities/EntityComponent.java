@@ -11,12 +11,12 @@ import static java.lang.annotation.ElementType.TYPE;
 
 import java.lang.annotation.Target;
 
-//@Component(propagation = false)
-//@Provides
+// @Component(propagation = false)
+// @Provides
 // customization in HandlerDeclarationVisitor needed for multiple callbacks
 // @HandlerDeclaration("<callbacks><callback transition=\"validate\"
 // method=\"onValidate\"></callback><callback transition=\"invalidate\"
 // method=\"onInvalidate\"></callback></callbacks>")
-//@Stereotype
+// @Stereotype
 @Target(TYPE)
 public @interface EntityComponent {}

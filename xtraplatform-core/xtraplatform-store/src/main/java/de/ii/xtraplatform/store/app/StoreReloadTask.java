@@ -10,7 +10,6 @@ package de.ii.xtraplatform.store.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
-import de.ii.xtraplatform.web.domain.Dropwizard;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.ImmutableEventFilter;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
@@ -37,7 +36,7 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
 
   private final EventStore eventStore;
 
-  //TODO:  AdminTaskRegistry (OpsPlugin)
+  // TODO:  AdminTaskRegistry (OpsPlugin)
   @Inject
   protected StoreReloadTask(EventStore eventStore) {
     super("reload-entities");
@@ -45,8 +44,7 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
   }
 
   @Override
-  public void init(AppConfiguration configuration,
-      Environment environment) {
+  public void init(AppConfiguration configuration, Environment environment) {
     environment.admin().addTask(this);
   }
 

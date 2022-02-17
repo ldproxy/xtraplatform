@@ -29,14 +29,14 @@ public class FileSystemMustacheResolver extends FileSystemResolver
 
   private final Path templateDir;
 
-  //TODO: via Xtraplatform?
+  // TODO: via Xtraplatform?
   @Inject
   public FileSystemMustacheResolver() {
     super(Path.of("").toAbsolutePath().toFile());
-    //super(Paths.get(bundleContext.getProperty(DATA_DIR_KEY)).toAbsolutePath().toFile());
+    // super(Paths.get(bundleContext.getProperty(DATA_DIR_KEY)).toAbsolutePath().toFile());
     this.templateDir = Path.of("");
-        //Paths.get(bundleContext.getProperty(DATA_DIR_KEY), TEMPLATE_DIR_NAME, HTML_DIR_NAME)
-          //  .toAbsolutePath();
+    // Paths.get(bundleContext.getProperty(DATA_DIR_KEY), TEMPLATE_DIR_NAME, HTML_DIR_NAME)
+    //  .toAbsolutePath();
   }
 
   @Override

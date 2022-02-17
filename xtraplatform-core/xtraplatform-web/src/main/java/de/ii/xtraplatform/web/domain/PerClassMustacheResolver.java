@@ -23,8 +23,7 @@ import javax.inject.Singleton;
 public class PerClassMustacheResolver implements PartialMustacheResolver {
 
   @Inject
-  public PerClassMustacheResolver() {
-  }
+  public PerClassMustacheResolver() {}
 
   @Override
   public int getSortPriority() {

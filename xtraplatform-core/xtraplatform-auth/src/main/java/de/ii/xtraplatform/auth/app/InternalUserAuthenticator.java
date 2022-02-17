@@ -41,14 +41,14 @@ public class InternalUserAuthenticator implements UserAuthenticator {
   private final EntityDataStore<de.ii.xtraplatform.auth.app.User.UserData> userRepository;
 
   @Inject
-  public InternalUserAuthenticator(
-      AppContext appContext,
-      EntityDataStore<?> entityRepository) {
+  public InternalUserAuthenticator(AppContext appContext, EntityDataStore<?> entityRepository) {
     this.isAccessRestricted =
         Optional.ofNullable(appContext.getConfiguration().auth)
             .map(authConfig -> !authConfig.allowAnonymousAccess)
             .orElse(true);
-    this.userRepository = ((EntityDataStore<EntityData>)entityRepository).forType(de.ii.xtraplatform.auth.app.User.UserData.class);
+    this.userRepository =
+        ((EntityDataStore<EntityData>) entityRepository)
+            .forType(de.ii.xtraplatform.auth.app.User.UserData.class);
   }
 
   @Override

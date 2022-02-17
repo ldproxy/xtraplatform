@@ -177,7 +177,7 @@ public class DropwizardProvider implements Dropwizard, AppLifeCycle {
               }
             });
 
-    for (DropwizardPlugin plugin: plugins.get()) {
+    for (DropwizardPlugin plugin : plugins.get()) {
       plugin.init(configuration, environment);
     }
   }

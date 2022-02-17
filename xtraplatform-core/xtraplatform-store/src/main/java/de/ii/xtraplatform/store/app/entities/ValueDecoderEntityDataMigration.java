@@ -23,15 +23,15 @@ import java.util.function.BiConsumer;
 public class ValueDecoderEntityDataMigration implements ValueDecoderMiddleware<EntityData> {
 
   private final EventSourcing<EntityData> eventSourcing;
-  //private final EntityFactory3 entityFactory;
+  // private final EntityFactory3 entityFactory;
   private final BiConsumer<Identifier, EntityData> addAdditionalEvent;
 
   public ValueDecoderEntityDataMigration(
       EventSourcing<EntityData> eventSourcing,
-      //EntityFactory3 entityFactory,
+      // EntityFactory3 entityFactory,
       BiConsumer<Identifier, EntityData> addAdditionalEvent) {
     this.eventSourcing = eventSourcing;
-    //this.entityFactory = entityFactory;
+    // this.entityFactory = entityFactory;
     this.addAdditionalEvent = addAdditionalEvent;
   }
 

@@ -7,8 +7,6 @@
  */
 package de.ii.xtraplatform.web.domain;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.core.Appender;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.jetty.setup.ServletEnvironment;
@@ -18,7 +16,7 @@ import javax.servlet.ServletContext;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 /** @author zahnen */
-//TODO: cleanup
+// TODO: cleanup
 public interface Dropwizard {
 
   ServletEnvironment getServlets();

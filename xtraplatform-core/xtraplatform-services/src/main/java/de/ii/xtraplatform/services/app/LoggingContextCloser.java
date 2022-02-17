@@ -29,8 +29,7 @@ public class LoggingContextCloser implements ContainerResponseFilter {
   private static final String REQUEST_ID = "X-Request-Id";
 
   @Inject
-  public LoggingContextCloser() {
-  }
+  public LoggingContextCloser() {}
 
   @Override
   public void filter(
