@@ -33,6 +33,7 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import dagger.Lazy;
 import io.dropwizard.jackson.CaffeineModule;
 import io.dropwizard.jackson.FuzzyEnumModule;
 import java.util.HashMap;
@@ -54,14 +55,15 @@ public class JacksonProvider implements Jackson {
 
   private final DynamicHandlerInstantiator dynamicHandlerInstantiator;
   private final ObjectMapper jsonMapper;
+  private final Lazy<Set<JacksonSubTypeIds>> subTypeIds;
   private final BiMap<Class<?>, String> mapping;
 
   @Inject
-  public JacksonProvider(Set<JacksonSubTypeIds> subTypeIds) {
+  public JacksonProvider(Lazy<Set<JacksonSubTypeIds>> subTypeIds) {
     this.dynamicHandlerInstantiator = new DynamicHandlerInstantiator();
     this.jsonMapper = configureMapper(new ObjectMapper());
+    this.subTypeIds = subTypeIds;
     this.mapping = HashBiMap.create();
-    subTypeIds.forEach(ids -> mapping.putAll(ids.getMapping()));
   }
 
   private ObjectMapper configureMapper(ObjectMapper mapper) {
@@ -90,6 +92,13 @@ public class JacksonProvider implements Jackson {
   @Override
   public ObjectMapper getNewObjectMapper(JsonFactory jsonFactory) {
     return configureMapper(new ObjectMapper(jsonFactory));
+  }
+
+  private BiMap<Class<?>, String> getMapping() {
+    if (mapping.isEmpty()) {
+      subTypeIds.get().forEach(ids -> mapping.putAll(ids.getMapping()));
+    }
+    return mapping;
   }
 
   // TODO: needs to be in domain to access this
@@ -123,13 +132,13 @@ public class JacksonProvider implements Jackson {
 
     @Override
     public String idFromValueAndType(Object value, Class<?> suggestedType) {
-      if (mapping.containsKey(suggestedType)) {
-        return mapping.get(suggestedType);
+      if (getMapping().containsKey(suggestedType)) {
+        return getMapping().get(suggestedType);
       }
       Class<?> aClass = value.getClass();
       while (aClass != null) {
-        if (mapping.containsKey(aClass)) {
-          return mapping.get(aClass);
+        if (getMapping().containsKey(aClass)) {
+          return getMapping().get(aClass);
         }
         aClass = aClass.getSuperclass();
       }
@@ -139,8 +148,8 @@ public class JacksonProvider implements Jackson {
 
     @Override
     public JavaType typeFromId(DatabindContext context, String id) {
-      if (mapping.inverse().containsKey(id)) {
-        Class<?> clazz = mapping.inverse().get(id);
+      if (getMapping().inverse().containsKey(id)) {
+        Class<?> clazz = getMapping().inverse().get(id);
         JavaType javaType =
             TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
         return javaType;
