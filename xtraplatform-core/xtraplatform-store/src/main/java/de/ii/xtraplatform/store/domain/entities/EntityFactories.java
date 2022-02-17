@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.store.app.entities;
+package de.ii.xtraplatform.store.domain.entities;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -97,7 +97,7 @@ public class EntityFactories {
         : entityType;
   }
 
-  Optional<String> getTypeAsString(List<String> entitySubtype) {
+  public Optional<String> getTypeAsString(List<String> entitySubtype) {
     if (entitySubtype.isEmpty()) {
       return Optional.empty();
     }

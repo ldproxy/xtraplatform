@@ -41,6 +41,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsPath;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
+import de.ii.xtraplatform.store.domain.entities.EntityFactories;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import java.io.IOException;
 import java.nio.file.Path;
