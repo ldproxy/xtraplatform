@@ -13,13 +13,3 @@ dependencies {
     embeddedFlat group: 'io.jsonwebtoken', name: 'jjwt-impl', version: jjwtVersion
     embeddedFlat group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: jjwtVersion
 }
-/*TODO
-jar {
-    manifest {
-        instructionFirst 'Import-Package', 'com.fasterxml.jackson.core'
-        instructionFirst 'Import-Package', 'com.fasterxml.jackson.databind'
-        instructionFirst 'Import-Package', 'javax.crypto'
-        instructionFirst 'Import-Package', 'javax.crypto.spec'
-    }
-}
-*/

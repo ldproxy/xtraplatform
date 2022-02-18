@@ -9,9 +9,10 @@ package de.ii.xtraplatform.auth.app
 
 import com.google.common.collect.ImmutableList
 import de.ii.xtraplatform.auth.domain.Role
-import de.ii.xtraplatform.dropwizard.domain.ConfigurationProvider
+import de.ii.xtraplatform.base.domain.AppContext
 import de.ii.xtraplatform.auth.domain.User
-import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration
+import de.ii.xtraplatform.base.domain.AppConfiguration
+import de.ii.xtraplatform.base.domain.Constants
 import de.ii.xtraplatform.store.domain.Identifier
 import de.ii.xtraplatform.store.domain.ValueEncoding
 import de.ii.xtraplatform.store.domain.entities.EntityData
@@ -19,6 +20,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityDataStore
 import spock.lang.Shared
 import spock.lang.Specification
 
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 
 class InternalUserAuthenticatorSpec extends Specification {
@@ -75,13 +77,48 @@ class InternalUserAuthenticatorSpec extends Specification {
     }
 
     InternalUserAuthenticator getinternalUserAuthenticatorMock() {
-        ConfigurationProvider configurationProvider = new ConfigurationProvider() {
+        AppContext configurationProvider = new AppContext() {
             @Override
-            XtraPlatformConfiguration getConfiguration() {
-                return new XtraPlatformConfiguration()
+            String getName() {
+                return null
+            }
+
+            @Override
+            String getVersion() {
+                return null
+            }
+
+            @Override
+            Constants.ENV getEnvironment() {
+                return null
+            }
+
+            @Override
+            Path getDataDir() {
+                return null
+            }
+
+            @Override
+            Path getTmpDir() {
+                return null
+            }
+
+            @Override
+            Path getConfigurationFile() {
+                return null
+            }
+
+            @Override
+            AppConfiguration getConfiguration() {
+                return new AppConfiguration()
+            }
+
+            @Override
+            URI getUri() {
+                return null
             }
         }
-        EntityDataStore<EntityData> entityDataStore = new EntityDataStoreTest()
+        EntityDataStore<?> entityDataStore = new EntityDataStoreTest()
         return new InternalUserAuthenticator(configurationProvider, entityDataStore)
     }
 
