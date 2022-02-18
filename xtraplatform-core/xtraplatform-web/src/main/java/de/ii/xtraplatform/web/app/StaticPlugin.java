@@ -17,7 +17,6 @@ import io.dropwizard.setup.Environment;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import com.github.azahnen.dagger.annotations.AutoBind;
 
 @Singleton
 @AutoBind

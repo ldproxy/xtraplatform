@@ -32,7 +32,8 @@ public class EventStream<T extends Event> {
             emitter -> {
               eventQueue.forEach(emitter::onNext);
               this.emitter = emitter;
-            }, BackpressureStrategy.BUFFER);
+            },
+            BackpressureStrategy.BUFFER);
   }
 
   public void foreach(Consumer<T> eventConsumer) {

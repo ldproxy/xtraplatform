@@ -16,7 +16,6 @@ import io.dropwizard.jersey.caching.CacheControl;
 import java.util.Collection;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import com.github.azahnen.dagger.annotations.AutoBind;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
