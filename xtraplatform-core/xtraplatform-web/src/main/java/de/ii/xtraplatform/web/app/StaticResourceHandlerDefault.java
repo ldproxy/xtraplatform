@@ -11,6 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.web.domain.StaticResourceHandler;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 

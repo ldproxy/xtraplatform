@@ -10,9 +10,11 @@ package de.ii.xtraplatform.web.app;
 import ch.qos.logback.classic.LoggerContext;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
+import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.base.domain.LoggingFilter;
-import de.ii.xtraplatform.web.domain.Dropwizard;
+import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import io.dropwizard.servlets.tasks.Task;
+import io.dropwizard.setup.Environment;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
@@ -27,20 +29,22 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class LogConfigurationTask extends Task {
+public class LogConfigurationTask extends Task implements DropwizardPlugin {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LogConfigurationTask.class);
   private static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
 
   private final LoggerContext loggerContext;
 
-  // TODO: DropwizardEnvironmentPlugin, AdminTaskRegistry
   @Inject
-  protected LogConfigurationTask(Dropwizard dropwizard) {
+  protected LogConfigurationTask() {
     super("log-filter");
     this.loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+  }
 
-    dropwizard.getEnvironment().admin().addTask(this);
+  @Override
+  public void init(AppConfiguration configuration, Environment environment) {
+    environment.admin().addTask(this);
   }
 
   @Override

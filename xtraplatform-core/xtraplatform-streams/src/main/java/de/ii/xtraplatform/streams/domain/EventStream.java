@@ -11,6 +11,7 @@ import de.ii.xtraplatform.streams.domain.Reactive.Sink;
 import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.FlowableEmitter;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
@@ -20,6 +21,7 @@ public class EventStream<T extends Event> {
   private final String eventType;
   private final Queue<T> eventQueue;
   private final Flowable<T> eventStream;
+  private FlowableEmitter<T> emitter;
 
   public EventStream(Reactive.Runner streamRunner, String eventType) {
     this.streamRunner = streamRunner;
@@ -27,7 +29,10 @@ public class EventStream<T extends Event> {
     this.eventQueue = new ConcurrentLinkedQueue<>();
     this.eventStream =
         Flowable.create(
-            emitter -> eventQueue.forEach(emitter::onNext), BackpressureStrategy.BUFFER);
+            emitter -> {
+              eventQueue.forEach(emitter::onNext);
+              this.emitter = emitter;
+            }, BackpressureStrategy.BUFFER);
   }
 
   public void foreach(Consumer<T> eventConsumer) {
@@ -35,6 +40,7 @@ public class EventStream<T extends Event> {
   }
 
   public synchronized void queue(T event) {
+    emitter.onNext(event);
     eventQueue.offer(event);
   }
 

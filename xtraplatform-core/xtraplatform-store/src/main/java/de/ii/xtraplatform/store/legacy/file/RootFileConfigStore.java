@@ -12,6 +12,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.store.domain.legacy.KeyValueStoreLegacy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import com.github.azahnen.dagger.annotations.AutoBind;
 
 /** @author zahnen */
 @Singleton

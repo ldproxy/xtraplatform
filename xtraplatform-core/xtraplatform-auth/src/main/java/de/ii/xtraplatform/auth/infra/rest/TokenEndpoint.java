@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;

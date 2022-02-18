@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;

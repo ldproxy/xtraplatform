@@ -16,6 +16,7 @@ import java.net.URL;
 import java.util.Objects;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;

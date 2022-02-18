@@ -14,6 +14,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityFactories;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.EntityState;
+import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
 import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,7 @@ public class EntityRegistryImpl implements EntityRegistry {
   public <T extends PersistentEntity> List<T> getEntitiesForType(Class<T> type) {
     return entityFactories.getAll(type).stream()
         .flatMap(entityFactory -> entityFactory.instances().stream())
+        .filter(persistentEntity -> ((EntityState)persistentEntity).getState() == STATE.ACTIVE)
         .map(type::cast)
         .collect(ImmutableList.toImmutableList());
   }
@@ -51,6 +53,7 @@ public class EntityRegistryImpl implements EntityRegistry {
         .map(entityFactory -> entityFactory.instance(id))
         .filter(Optional::isPresent)
         .map(Optional::get)
+        .filter(persistentEntity -> ((EntityState)persistentEntity).getState() == STATE.ACTIVE)
         .map(type::cast)
         .findFirst();
   }

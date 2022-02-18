@@ -12,7 +12,7 @@ pluginManagement {
 
 //TODO
 //includeBuild '../../xtraplatform-build'
-includeBuild '../../../ws-dagger/dagger-auto'
+//includeBuild '../../../ws-dagger/dagger-auto'
 
 rootDir.listFiles().each { file ->
     if (file.isDirectory() && file.name.startsWith('xtraplatform-')) {
