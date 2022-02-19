@@ -23,9 +23,6 @@ moduleInfo {
     exports = [
             '!io.dropwizard.logback.shaded*'
     ]
-    /*requires = [
-            'java.sql'
-    ]*/
     uses = [
             'ch.qos.logback.classic.spi.Configurator',
             'javax.validation.valueextraction.ValueExtractor',

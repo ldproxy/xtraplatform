@@ -28,8 +28,6 @@ dependencies {
     bundle subprojects
 }
 
-apply from: '../immutables.gradle'
-
 apply from: '../formatting.gradle'
 
 /*
