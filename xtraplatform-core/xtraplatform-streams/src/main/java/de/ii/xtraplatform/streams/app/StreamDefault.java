@@ -37,7 +37,14 @@ public class StreamDefault<V, W>
   private Optional<BiFunction<W, V, W>> itemHandler;
 
   public StreamDefault(Source<V> source, SinkReduced<V, W> sink) {
-    this(source, sink, null);
+    this(
+        source,
+        sink,
+        sink instanceof SinkDefault
+            ? ((SinkDefault<V, W>) sink).getItem().get()
+            : sink instanceof SinkTransformedImpl
+                ? ((SinkTransformedImpl<?, ?, W>) sink).getItem().get()
+                : null);
   }
 
   StreamDefault(Source<V> source, SinkReduced<V, W> sink, W initialResult) {

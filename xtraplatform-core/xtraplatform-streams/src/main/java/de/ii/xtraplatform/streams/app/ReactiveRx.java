@@ -16,6 +16,7 @@ import io.reactivex.rxjava3.processors.UnicastProcessor;
 import io.reactivex.rxjava3.subscribers.DefaultSubscriber;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -125,7 +126,10 @@ public class ReactiveRx implements Reactive {
         return (Flowable<U>)
             Flowable.fromPublisher(
                     FlowAdapters.toPublisher(BodyPublishers.ofInputStream(source::getInputStream)))
-                .map(byteBuffer -> byteBuffer.array());
+                .map(
+                    byteBuffer ->
+                        Arrays.copyOfRange(
+                            byteBuffer.array(), byteBuffer.position(), byteBuffer.limit()));
     }
 
     throw new IllegalStateException();
