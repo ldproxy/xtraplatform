@@ -2,7 +2,7 @@ dependencies {
     provided project(':xtraplatform-web')
 
     embeddedExport group: 'org.reactivestreams', name: 'reactive-streams', version: '1.0.3'
-    embeddedFlat group: 'io.reactivex.rxjava3', name: 'rxjava', version: '3.1.3'
+    embeddedFlatExport group: 'io.reactivex.rxjava3', name: 'rxjava', version: '3.1.3'
     embeddedFlat group: 'com.github.akarnokd', name: 'rxjava3-extensions', version: '3.1.1'
 }
 
