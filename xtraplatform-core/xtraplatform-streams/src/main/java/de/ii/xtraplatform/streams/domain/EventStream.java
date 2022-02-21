@@ -12,6 +12,7 @@ import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import io.reactivex.rxjava3.core.BackpressureStrategy;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.FlowableEmitter;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
@@ -41,7 +42,9 @@ public class EventStream<T extends Event> {
   }
 
   public synchronized void queue(T event) {
-    emitter.onNext(event);
+    if (Objects.nonNull(emitter)) {
+      emitter.onNext(event);
+    }
     eventQueue.offer(event);
   }
 

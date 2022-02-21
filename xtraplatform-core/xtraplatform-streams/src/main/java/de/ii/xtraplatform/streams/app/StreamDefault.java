@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.streams.app;
 
+import de.ii.xtraplatform.streams.app.SinkDefault.Type;
 import de.ii.xtraplatform.streams.domain.Reactive.BasicStream;
 import de.ii.xtraplatform.streams.domain.Reactive.RunnableStream;
 import de.ii.xtraplatform.streams.domain.Reactive.Runner;
@@ -117,7 +118,11 @@ public class StreamDefault<V, W>
 
   @Override
   public void onComplete(CompletableFuture<W> resultFuture) {
-    resultFuture.complete(result.get());
+    if (sink instanceof SinkDefault && ((SinkDefault<V, W>) sink).getType() == Type.HEAD) {
+      resultFuture.complete((W) ((SinkDefault<V, W>) sink).getHead().get());
+    } else {
+      resultFuture.complete(result.get());
+    }
   }
 
   @Override
@@ -126,6 +131,11 @@ public class StreamDefault<V, W>
         throwable instanceof CompletionException && Objects.nonNull(throwable.getCause())
             ? throwable.getCause()
             : throwable;
+
+    for (Function<Throwable, Throwable> mapper : errorMappers) {
+      actualThrowable = mapper.apply(actualThrowable);
+    }
+
     if (errorHandler.isPresent()) {
       try {
         resultFuture.complete(errorHandler.get().apply(result.get(), actualThrowable));

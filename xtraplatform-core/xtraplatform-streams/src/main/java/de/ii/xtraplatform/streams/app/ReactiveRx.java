@@ -238,7 +238,7 @@ public class ReactiveRx implements Reactive {
           public void onNext(U u) {
             if (first) {
               first = false;
-              stream.getResult().getAndUpdate(v -> (V) u);
+              sink.getHead().getAndUpdate(old -> u);
             }
           }
         };

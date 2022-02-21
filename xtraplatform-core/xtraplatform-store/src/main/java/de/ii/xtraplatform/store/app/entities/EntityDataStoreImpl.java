@@ -115,6 +115,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     new ValueDecoderEntityDataMigration(
         eventSourcing, entityFactories, this::addAdditionalEvent));*/
     valueEncoding.addDecoderMiddleware(new ValueDecoderIdValidator());
+    eventSourcing.start();
 
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
@@ -130,12 +131,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 return null;
               }
             }));
-  }
-
-  // TODO: it seems this is needed for correct order (defaults < entities)
-  // @Validate
-  private void onVal() {
-    // LOGGER.debug("VALID");
   }
 
   @Override

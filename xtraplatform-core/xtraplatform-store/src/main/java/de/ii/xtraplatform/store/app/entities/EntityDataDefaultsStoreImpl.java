@@ -98,6 +98,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
     valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getDefaults, eventSourcing));
+    eventSourcing.start();
 
     this.valueEncodingBuilder =
         new ValueEncodingJackson<>(
@@ -152,12 +153,6 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                 return null;
               }
             }));
-  }
-
-  // TODO: it seems this is needed for correct order (defaults < entities)
-  // @Validate
-  private void onVal() {
-    // LOGGER.debug("VALID");
   }
 
   private List<ReplayEvent> processReplayEvent(ReplayEvent event) {

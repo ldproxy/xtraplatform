@@ -107,7 +107,9 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
             (ThreadPoolExecutor)
                 Executors.newFixedThreadPool(
                     2, new ThreadFactoryBuilder().setNameFormat("stream.events-%d").build()));
+  }
 
+  public void start() {
     eventStore.subscribe(this);
   }
 

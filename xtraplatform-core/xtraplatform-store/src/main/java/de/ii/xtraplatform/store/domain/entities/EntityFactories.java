@@ -27,7 +27,7 @@ public class EntityFactories {
 
   public EntityFactory get(String entityType) {
     return entityFactories.get().stream()
-        .filter(entityFactory -> Objects.equals(entityType, entityFactory.type()))
+        .filter(entityFactory -> entityFactory.type().equalsIgnoreCase(entityType))
         .findFirst()
         .orElseThrow(
             () ->
@@ -39,8 +39,12 @@ public class EntityFactories {
     return entityFactories.get().stream()
         .filter(
             entityFactory ->
-                Objects.equals(entityType, entityFactory.type())
-                    && entityFactory.subType().filter(s -> Objects.equals(subType, s)).isPresent())
+                entityFactory.type().equalsIgnoreCase(entityType)
+                    && entityFactory
+                        .subType()
+                        .filter(
+                            entityFactorySubType -> entityFactorySubType.equalsIgnoreCase(subType))
+                        .isPresent())
         .findFirst()
         .orElseThrow(
             () ->
