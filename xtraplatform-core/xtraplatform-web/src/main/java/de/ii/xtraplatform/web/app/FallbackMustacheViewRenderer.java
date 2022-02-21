@@ -14,6 +14,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.MustacheRenderer;
 import de.ii.xtraplatform.web.domain.MustacheResolverRegistry;
 import io.dropwizard.views.View;
@@ -27,9 +28,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
 public class FallbackMustacheViewRenderer extends MustacheViewRenderer implements MustacheRenderer {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(FallbackMustacheViewRenderer.class);
 
   private final LoadingCache<Class<? extends View>, MustacheFactory> factories;
   private final MustacheResolverRegistry mustacheResolverRegistry;
@@ -60,8 +65,9 @@ public class FallbackMustacheViewRenderer extends MustacheViewRenderer implement
       try (OutputStreamWriter writer = new OutputStreamWriter(output, charset)) {
         render(view, writer);
       }
-    } catch (Throwable e) {
-      throw new ViewRenderException("Mustache template error: " + view.getTemplateName(), e);
+    } catch (ViewRenderException e) {
+      LogContext.error(LOGGER, e.getCause(), "Mustache error");
+      throw e;
     }
   }
 

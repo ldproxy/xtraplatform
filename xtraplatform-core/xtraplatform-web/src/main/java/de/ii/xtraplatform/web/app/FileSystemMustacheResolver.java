@@ -9,6 +9,7 @@ package de.ii.xtraplatform.web.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.github.mustachejava.resolver.FileSystemResolver;
+import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.web.domain.PartialMustacheResolver;
 import java.io.Reader;
 import java.nio.file.Files;
@@ -29,14 +30,11 @@ public class FileSystemMustacheResolver extends FileSystemResolver
 
   private final Path templateDir;
 
-  // TODO: via Xtraplatform?
   @Inject
-  public FileSystemMustacheResolver() {
-    super(Path.of("").toAbsolutePath().toFile());
-    // super(Paths.get(bundleContext.getProperty(DATA_DIR_KEY)).toAbsolutePath().toFile());
-    this.templateDir = Path.of("");
-    // Paths.get(bundleContext.getProperty(DATA_DIR_KEY), TEMPLATE_DIR_NAME, HTML_DIR_NAME)
-    //  .toAbsolutePath();
+  public FileSystemMustacheResolver(AppContext appContext) {
+    super(appContext.getDataDir().toFile());
+    this.templateDir = appContext.getDataDir().resolve(TEMPLATE_DIR_NAME).resolve(HTML_DIR_NAME)
+      .toAbsolutePath();
   }
 
   @Override
