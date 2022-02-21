@@ -52,13 +52,14 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
                       null,
                       staticResources1.getClass());
 
-              Dynamic registration = environment.servlets()
-                  .addServlet(staticResources1.getUrlPath(), servlet);
-              String urlPattern = staticResources1.getUrlPath().endsWith("/*")
-                  ? staticResources1.getUrlPath()
-                  : staticResources1.getUrlPath().endsWith("/")
-                      ? staticResources1.getUrlPath() + "*"
-                      : staticResources1.getUrlPath() + "/*";
+              Dynamic registration =
+                  environment.servlets().addServlet(staticResources1.getUrlPath(), servlet);
+              String urlPattern =
+                  staticResources1.getUrlPath().endsWith("/*")
+                      ? staticResources1.getUrlPath()
+                      : staticResources1.getUrlPath().endsWith("/")
+                          ? staticResources1.getUrlPath() + "*"
+                          : staticResources1.getUrlPath() + "/*";
               registration.addMapping(urlPattern);
 
               servlets.put(staticResources1.getUrlPath(), servlet);

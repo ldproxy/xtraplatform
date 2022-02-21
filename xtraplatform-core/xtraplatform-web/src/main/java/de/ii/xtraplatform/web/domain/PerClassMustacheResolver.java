@@ -49,7 +49,10 @@ public class PerClassMustacheResolver implements PartialMustacheResolver {
   public Reader getReader(String templateName, Class<?> viewClass) {
     final InputStream is;
     try {
-      is = Resources.asByteSource(Resources.getResource(viewClass, getQualifiedName(templateName, viewClass))).openStream();
+      is =
+          Resources.asByteSource(
+                  Resources.getResource(viewClass, getQualifiedName(templateName, viewClass)))
+              .openStream();
     } catch (IOException e) {
       return null;
     }
