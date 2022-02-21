@@ -30,6 +30,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.DynamicFeature;
+import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.internal.inject.Binder;
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
   private final Lazy<Set<Endpoint>> endpoints;
   private final Lazy<Set<ContainerRequestFilter>> containerRequestFilters;
   private final Lazy<Set<ContainerResponseFilter>> containerResponseFilters;
+  private final Lazy<Set<ExceptionMapper<?>>> exceptionMappers;
   private final Lazy<Set<Binder>> binders;
   private final List<Object> providerCache;
   private final List<Object> filterCache;
@@ -72,6 +74,7 @@ public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
       Lazy<Set<AuthProvider<?>>> authProviders,
       Lazy<Set<ContainerRequestFilter>> containerRequestFilters,
       Lazy<Set<ContainerResponseFilter>> containerResponseFilters,
+      Lazy<Set<ExceptionMapper<?>>> exceptionMappers,
       Lazy<Set<Binder>> binders
       // Lazy<Set<DynamicFeature>> dynamicFeatures
       ) {
@@ -82,6 +85,7 @@ public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
     this.endpoints = endpoints;
     this.containerRequestFilters = containerRequestFilters;
     this.containerResponseFilters = containerResponseFilters;
+    this.exceptionMappers = exceptionMappers;
     this.binders = binders;
     this.providerCache = new ArrayList<>();
     this.filterCache = new ArrayList<>();
@@ -226,7 +230,7 @@ public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
           LOGGER.debug(
               MARKER.DI, "No JAX-RS Auth Provider registered yet, cannot register Resources.");
       }
-      if (!filterCache.isEmpty()) {
+      //if (!filterCache.isEmpty()) {
         for (Object filter : filterCache) {
           if (filter instanceof DynamicFeature) {
             // TODO: verify
@@ -236,7 +240,7 @@ public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
               LOGGER.debug(MARKER.DI, "Registered JAX-RS DynamicFeature {})", filter.getClass());
           }
         }
-        filterCache.clear();
+        //filterCache.clear();
         for (ContainerRequestFilter filter : containerRequestFilters.get()) {
           jersey.register(filter);
           // jersey.getResourceConfig().register()
@@ -257,7 +261,12 @@ public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
           if (LOGGER.isDebugEnabled(MARKER.DI))
             LOGGER.debug(MARKER.DI, "Registered JAX-RS Binder {}", binder.getClass());
         }
+      for (ExceptionMapper<?> exceptionMapper : exceptionMappers.get()) {
+        jersey.register(exceptionMapper);
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(MARKER.DI, "Registered JAX-RS ExceptionMapper {}", exceptionMapper.getClass());
       }
+      //}
 
       // updateDropwizard();
 

@@ -21,7 +21,7 @@ import org.glassfish.jersey.process.internal.RequestScoped;
 
 /** @author zahnen */
 @Singleton
-@AutoBind
+@AutoBind(interfaces = {Binder.class, ServiceInjectableContext.class})
 @Provider
 public class ServiceContextBinder extends AbstractBinder
     implements Binder, ServiceInjectableContext {
