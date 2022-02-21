@@ -21,6 +21,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.servlet.Servlet;
+import javax.servlet.ServletRegistration.Dynamic;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -50,7 +51,16 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
                       staticResources1.getUrlPath(),
                       null,
                       staticResources1.getClass());
-              environment.servlets().addServlet(staticResources1.getUrlPath(), servlet);
+
+              Dynamic registration = environment.servlets()
+                  .addServlet(staticResources1.getUrlPath(), servlet);
+              String urlPattern = staticResources1.getUrlPath().endsWith("/*")
+                  ? staticResources1.getUrlPath()
+                  : staticResources1.getUrlPath().endsWith("/")
+                      ? staticResources1.getUrlPath() + "*"
+                      : staticResources1.getUrlPath() + "/*";
+              registration.addMapping(urlPattern);
+
               servlets.put(staticResources1.getUrlPath(), servlet);
             });
   }

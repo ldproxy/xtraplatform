@@ -20,6 +20,12 @@ dependencies {
 }
 
 moduleInfo {
+    requires = [
+        'java.management',
+        'java.sql',
+        'jdk.unsupported',
+        'java.xml',
+    ]
     exports = [
             '!io.dropwizard.logback.shaded*'
     ]

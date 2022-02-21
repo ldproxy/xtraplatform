@@ -198,6 +198,9 @@ public class StaticResourceServlet extends HttpServlet {
     try {
       requestedResourceURL = Resources.getResource(module, absoluteRequestedResourcePath);
       requestedResourceBytes = Resources.toByteArray(requestedResourceURL);
+      if (requestedResourceBytes.length == 0) {
+        throw new IllegalStateException();
+      }
     } catch (Throwable e) {
       // Given resource was a directory, stop looking for the actual resource
       // and check whether we can display a default page instead...

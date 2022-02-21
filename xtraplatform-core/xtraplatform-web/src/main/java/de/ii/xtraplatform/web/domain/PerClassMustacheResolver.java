@@ -8,7 +8,9 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
+import com.google.common.io.Resources;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -33,7 +35,7 @@ public class PerClassMustacheResolver implements PartialMustacheResolver {
   @Override
   public boolean canResolve(String templateName, Class<?> viewClass) {
     try {
-      URL resource = viewClass.getResource(templateName);
+      URL resource = Resources.getResource(viewClass, getQualifiedName(templateName, viewClass));
 
       return Objects.nonNull(resource);
 
@@ -45,10 +47,19 @@ public class PerClassMustacheResolver implements PartialMustacheResolver {
 
   @Override
   public Reader getReader(String templateName, Class<?> viewClass) {
-    final InputStream is = viewClass.getResourceAsStream(templateName);
-    if (is == null) {
+    final InputStream is;
+    try {
+      is = Resources.asByteSource(Resources.getResource(viewClass, getQualifiedName(templateName, viewClass))).openStream();
+    } catch (IOException e) {
       return null;
     }
     return new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+  }
+
+  private String getQualifiedName(String templateName, Class<?> viewClass) {
+    Module module = viewClass.getModule();
+    String pkg = module.getName().replaceAll("\\.", "/");
+    String tmpl = String.format("/%s%s", pkg, templateName);
+    return tmpl;
   }
 }

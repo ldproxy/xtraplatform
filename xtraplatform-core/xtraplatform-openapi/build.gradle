@@ -22,4 +22,8 @@ moduleInfo {
             'java.logging',
             'java.xml',
     ]
+    uses = [
+        'io.swagger.v3.jaxrs2.ext.OpenAPIExtension',
+        'io.swagger.v3.core.converter.ModelConverter',
+    ]
 }
