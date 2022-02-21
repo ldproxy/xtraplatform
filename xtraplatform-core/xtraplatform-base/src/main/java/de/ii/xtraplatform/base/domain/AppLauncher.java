@@ -138,7 +138,7 @@ public class AppLauncher implements AppContext {
             lifecycle -> {
               if (LOGGER.isDebugEnabled(MARKER.DI)) {
                 LOGGER.debug(
-                    MARKER.DI, "Starting {} ({})", lifecycle.getClass(), lifecycle.getPriority());
+                    MARKER.DI, "Starting {} ({})", lifecycle.getClass().getSimpleName(), lifecycle.getPriority());
               }
               try {
                 lifecycle.onStart();
