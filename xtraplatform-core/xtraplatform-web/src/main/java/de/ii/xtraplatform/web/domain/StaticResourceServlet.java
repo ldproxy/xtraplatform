@@ -64,7 +64,7 @@ public class StaticResourceServlet extends HttpServlet {
   private final String resourcePath;
   private final String uriPath;
   private final Charset defaultCharset;
-  private final Module module;
+  private final Class<?> module;
   private final DefaultPages defaultPages;
   private final Optional<String> rootRedirect;
 
@@ -89,7 +89,7 @@ public class StaticResourceServlet extends HttpServlet {
       String resourcePath,
       String uriPath,
       Charset defaultCharset,
-      Module module,
+      Class<?> module,
       DefaultPages defaultPages,
       Optional<String> rootRedirect) {
     final String trimmedPath = SLASHES.trimFrom(resourcePath);
@@ -103,7 +103,7 @@ public class StaticResourceServlet extends HttpServlet {
   }
 
   public StaticResourceServlet(
-      String resourcePath, String uriPath, Charset defaultCharset, Module module) {
+      String resourcePath, String uriPath, Charset defaultCharset, Class<?> module) {
     this(resourcePath, uriPath, defaultCharset, module, new DefaultPages(), Optional.of("/"));
   }
 
@@ -186,26 +186,31 @@ public class StaticResourceServlet extends HttpServlet {
             : key;
     checkArgument(cleanKey.startsWith(uriPath));
     final String requestedResourcePath = SLASHES.trimFrom(cleanKey.substring(uriPath.length()));
-    final String absoluteRequestedResourcePath =
+    final String absoluteRequestedResourcePath = "/" +
         SLASHES.trimFrom(this.resourcePath + requestedResourcePath);
 
     URL requestedResourceURL = null;
+    byte[] requestedResourceBytes = null;
     // Try to determine whether we're given a resource with an actual file, or that
     // it is pointing to an (internal) directory. In the latter case, use the default
     // pages to search instead...
     // TODO: get resources from module
-    /*if (module.findEntries(absoluteRequestedResourcePath, "*", false) == null) {
-      // Not a directory, may be a real file?
-      requestedResourceURL = module.getResource(absoluteRequestedResourcePath);
-    } else {
+    try {
+      requestedResourceURL = Resources.getResource(module, absoluteRequestedResourcePath);
+      requestedResourceBytes = Resources.toByteArray(requestedResourceURL);
+    } catch (Throwable e) {
       // Given resource was a directory, stop looking for the actual resource
       // and check whether we can display a default page instead...
       String defaultPage = this.defaultPages.getDefaultPageFor(requestedResourcePath);
       if (!defaultPage.isEmpty()) {
-        requestedResourceURL =
-            module.getResource(absoluteRequestedResourcePath + '/' + defaultPage);
+        try {
+          requestedResourceURL = Resources.getResource(module, absoluteRequestedResourcePath + '/' + defaultPage);
+          requestedResourceBytes = Resources.toByteArray(requestedResourceURL);
+        } catch (Throwable e1) {
+          // ignore
+        }
       }
-    }*/
+    }
 
     if (requestedResourceURL == null) {
       return null;
@@ -220,7 +225,7 @@ public class StaticResourceServlet extends HttpServlet {
 
     // zero out the millis since the date we get back from If-Modified-Since will not have them
     lastModified = (lastModified / 1000) * 1000;
-    return new CachedAsset(Resources.toByteArray(requestedResourceURL), lastModified);
+    return new CachedAsset(requestedResourceBytes, lastModified);
   }
 
   private boolean isCachedClientSide(HttpServletRequest req, CachedAsset cachedAsset) {
