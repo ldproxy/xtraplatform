@@ -230,43 +230,44 @@ public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
           LOGGER.debug(
               MARKER.DI, "No JAX-RS Auth Provider registered yet, cannot register Resources.");
       }
-      //if (!filterCache.isEmpty()) {
-        for (Object filter : filterCache) {
-          if (filter instanceof DynamicFeature) {
-            // TODO: verify
-            jersey.register(filter);
-            // jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
-            if (LOGGER.isDebugEnabled(MARKER.DI))
-              LOGGER.debug(MARKER.DI, "Registered JAX-RS DynamicFeature {})", filter.getClass());
-          }
-        }
-        //filterCache.clear();
-        for (ContainerRequestFilter filter : containerRequestFilters.get()) {
-          jersey.register(filter);
-          // jersey.getResourceConfig().register()
-          // .getContainerRequestFilters().add(filter.getClass());
-          if (LOGGER.isDebugEnabled(MARKER.DI))
-            LOGGER.debug(
-                MARKER.DI, "Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
-        }
-        for (ContainerResponseFilter filter : containerResponseFilters.get()) {
+      // if (!filterCache.isEmpty()) {
+      for (Object filter : filterCache) {
+        if (filter instanceof DynamicFeature) {
+          // TODO: verify
           jersey.register(filter);
           // jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
           if (LOGGER.isDebugEnabled(MARKER.DI))
-            LOGGER.debug(
-                MARKER.DI, "Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
+            LOGGER.debug(MARKER.DI, "Registered JAX-RS DynamicFeature {})", filter.getClass());
         }
-        for (Binder binder : binders.get()) {
-          jersey.register(binder);
-          if (LOGGER.isDebugEnabled(MARKER.DI))
-            LOGGER.debug(MARKER.DI, "Registered JAX-RS Binder {}", binder.getClass());
-        }
+      }
+      // filterCache.clear();
+      for (ContainerRequestFilter filter : containerRequestFilters.get()) {
+        jersey.register(filter);
+        // jersey.getResourceConfig().register()
+        // .getContainerRequestFilters().add(filter.getClass());
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(
+              MARKER.DI, "Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
+      }
+      for (ContainerResponseFilter filter : containerResponseFilters.get()) {
+        jersey.register(filter);
+        // jersey.getResourceConfig().getContainerResponseFilters().add(filter.getClass());
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(
+              MARKER.DI, "Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
+      }
+      for (Binder binder : binders.get()) {
+        jersey.register(binder);
+        if (LOGGER.isDebugEnabled(MARKER.DI))
+          LOGGER.debug(MARKER.DI, "Registered JAX-RS Binder {}", binder.getClass());
+      }
       for (ExceptionMapper<?> exceptionMapper : exceptionMappers.get()) {
         jersey.register(exceptionMapper);
         if (LOGGER.isDebugEnabled(MARKER.DI))
-          LOGGER.debug(MARKER.DI, "Registered JAX-RS ExceptionMapper {}", exceptionMapper.getClass());
+          LOGGER.debug(
+              MARKER.DI, "Registered JAX-RS ExceptionMapper {}", exceptionMapper.getClass());
       }
-      //}
+      // }
 
       // updateDropwizard();
 

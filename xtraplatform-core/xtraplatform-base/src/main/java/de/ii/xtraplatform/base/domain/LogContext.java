@@ -130,7 +130,12 @@ public class LogContext {
     Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
     args[messagePrefixArgs.length] = getMessage(throwable);
 
-    logThrowable(logger, Level.ERROR, throwable, messagePrefix.isEmpty() ? "{}" : messagePrefix + ": {}", args);
+    logThrowable(
+        logger,
+        Level.ERROR,
+        throwable,
+        messagePrefix.isEmpty() ? "{}" : messagePrefix + ": {}",
+        args);
   }
 
   /**

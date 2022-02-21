@@ -33,8 +33,8 @@ public class FileSystemMustacheResolver extends FileSystemResolver
   @Inject
   public FileSystemMustacheResolver(AppContext appContext) {
     super(appContext.getDataDir().toFile());
-    this.templateDir = appContext.getDataDir().resolve(TEMPLATE_DIR_NAME).resolve(HTML_DIR_NAME)
-      .toAbsolutePath();
+    this.templateDir =
+        appContext.getDataDir().resolve(TEMPLATE_DIR_NAME).resolve(HTML_DIR_NAME).toAbsolutePath();
   }
 
   @Override

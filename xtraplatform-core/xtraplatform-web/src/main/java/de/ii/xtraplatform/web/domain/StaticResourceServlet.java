@@ -186,8 +186,8 @@ public class StaticResourceServlet extends HttpServlet {
             : key;
     checkArgument(cleanKey.startsWith(uriPath));
     final String requestedResourcePath = SLASHES.trimFrom(cleanKey.substring(uriPath.length()));
-    final String absoluteRequestedResourcePath = "/" +
-        SLASHES.trimFrom(this.resourcePath + requestedResourcePath);
+    final String absoluteRequestedResourcePath =
+        "/" + SLASHES.trimFrom(this.resourcePath + requestedResourcePath);
 
     URL requestedResourceURL = null;
     byte[] requestedResourceBytes = null;
@@ -204,7 +204,8 @@ public class StaticResourceServlet extends HttpServlet {
       String defaultPage = this.defaultPages.getDefaultPageFor(requestedResourcePath);
       if (!defaultPage.isEmpty()) {
         try {
-          requestedResourceURL = Resources.getResource(module, absoluteRequestedResourcePath + '/' + defaultPage);
+          requestedResourceURL =
+              Resources.getResource(module, absoluteRequestedResourcePath + '/' + defaultPage);
           requestedResourceBytes = Resources.toByteArray(requestedResourceURL);
         } catch (Throwable e1) {
           // ignore
