@@ -35,7 +35,9 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
   private final Map<String, Servlet> servlets;
 
   @Inject
-  public StaticPlugin(Lazy<Set<StaticResources>> staticResources, Lazy<Set<ServletRegistration>> servletRegistrations) {
+  public StaticPlugin(
+      Lazy<Set<StaticResources>> staticResources,
+      Lazy<Set<ServletRegistration>> servletRegistrations) {
     this.staticResources = staticResources;
     this.servletRegistrations = servletRegistrations;
     this.servlets = new HashMap<>();
@@ -62,11 +64,16 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
               servlets.put(staticResources1.getUrlPath(), servlet);
             });
 
-    servletRegistrations.get().forEach(servletRegistration -> {
-      Dynamic registration =
-          environment.servlets().addServlet(servletRegistration.getUrlPath(), servletRegistration);
-      registration.addMapping(getUrlPattern(servletRegistration.getUrlPath()));
-    });
+    servletRegistrations
+        .get()
+        .forEach(
+            servletRegistration -> {
+              Dynamic registration =
+                  environment
+                      .servlets()
+                      .addServlet(servletRegistration.getUrlPath(), servletRegistration);
+              registration.addMapping(getUrlPattern(servletRegistration.getUrlPath()));
+            });
   }
 
   @Override
@@ -86,10 +93,6 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
   }
 
   private String getUrlPattern(String path) {
-    return path.endsWith("/*")
-        ? path
-        : path.endsWith("/")
-            ? path + "*"
-            : path + "/*";
+    return path.endsWith("/*") ? path : path.endsWith("/") ? path + "*" : path + "/*";
   }
 }
