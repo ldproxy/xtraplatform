@@ -11,6 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
+import de.ii.xtraplatform.web.domain.ServletRegistration;
 import de.ii.xtraplatform.web.domain.StaticResourceHandler;
 import de.ii.xtraplatform.web.domain.StaticResourceServlet;
 import de.ii.xtraplatform.web.domain.StaticResources;
@@ -30,11 +31,13 @@ import javax.servlet.http.HttpServletResponse;
 public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
 
   private final Lazy<Set<StaticResources>> staticResources;
+  private final Lazy<Set<ServletRegistration>> servletRegistrations;
   private final Map<String, Servlet> servlets;
 
   @Inject
-  public StaticPlugin(Lazy<Set<StaticResources>> staticResources) {
+  public StaticPlugin(Lazy<Set<StaticResources>> staticResources, Lazy<Set<ServletRegistration>> servletRegistrations) {
     this.staticResources = staticResources;
+    this.servletRegistrations = servletRegistrations;
     this.servlets = new HashMap<>();
   }
 
@@ -54,16 +57,16 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
 
               Dynamic registration =
                   environment.servlets().addServlet(staticResources1.getUrlPath(), servlet);
-              String urlPattern =
-                  staticResources1.getUrlPath().endsWith("/*")
-                      ? staticResources1.getUrlPath()
-                      : staticResources1.getUrlPath().endsWith("/")
-                          ? staticResources1.getUrlPath() + "*"
-                          : staticResources1.getUrlPath() + "/*";
-              registration.addMapping(urlPattern);
+              registration.addMapping(getUrlPattern(staticResources1.getUrlPath()));
 
               servlets.put(staticResources1.getUrlPath(), servlet);
             });
+
+    servletRegistrations.get().forEach(servletRegistration -> {
+      Dynamic registration =
+          environment.servlets().addServlet(servletRegistration.getUrlPath(), servletRegistration);
+      registration.addMapping(getUrlPattern(servletRegistration.getUrlPath()));
+    });
   }
 
   @Override
@@ -80,5 +83,13 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
     }
 
     return false;
+  }
+
+  private String getUrlPattern(String path) {
+    return path.endsWith("/*")
+        ? path
+        : path.endsWith("/")
+            ? path + "*"
+            : path + "/*";
   }
 }
