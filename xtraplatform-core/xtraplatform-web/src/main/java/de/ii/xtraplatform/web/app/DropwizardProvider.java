@@ -9,6 +9,7 @@ package de.ii.xtraplatform.web.app;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.health.HealthCheck;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.github.azahnen.dagger.annotations.AutoBind;
@@ -157,9 +158,14 @@ public class DropwizardProvider implements Dropwizard, AppLifeCycle {
     this.environment = configurationEnvironmentPair.getRight();
     this.jerseyContainer = (ServletContainer) environment.getJerseyServletContainer();
 
-    // this.environment.healthChecks().register("ModulesHealthCheck", new ModulesHealthCheck());
-
     this.environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+
+    this.environment.healthChecks().register("store", new HealthCheck() {
+      @Override
+      protected Result check() throws Exception {
+        return Result.healthy();
+      }
+    });
 
     // TODO: per parameter
     environment.getObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);

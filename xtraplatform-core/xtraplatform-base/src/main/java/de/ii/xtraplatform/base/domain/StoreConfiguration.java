@@ -22,7 +22,7 @@ public class StoreConfiguration {
     DISTRIBUTED,
   }
 
-  @Valid @NotNull @JsonProperty public StoreMode mode = StoreMode.READ_WRITE;
+  @Valid @JsonProperty public StoreMode mode = StoreMode.READ_WRITE;
 
   @Valid @NotNull @JsonProperty public String location = "store";
 

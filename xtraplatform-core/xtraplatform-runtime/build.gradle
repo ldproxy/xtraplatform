@@ -17,10 +17,18 @@ dependencies {
     embeddedExport group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.3.3'
     embeddedExport group: 'org.glassfish.jersey.media', name: 'jersey-media-jaxb', version: '2.33'
 
+    embeddedExport (group: 'com.google.dagger', name: 'dagger', version: '2.+') {
+        transitive = false
+    }
+    embeddedExport group: 'io.github.azahnen', name: 'dagger-auto', version: '1.0.0-SNAPSHOT'
+    embeddedExport group: 'org.immutables', name: 'value', version: '2.8.8', classifier: 'annotations'
+    embeddedExport group: 'org.immutables', name: 'encode', version: '2.8.8'
+
 }
 
 moduleInfo {
     requires = [
+        'java.compiler',
         'java.management',
         'java.sql',
         'jdk.unsupported',
