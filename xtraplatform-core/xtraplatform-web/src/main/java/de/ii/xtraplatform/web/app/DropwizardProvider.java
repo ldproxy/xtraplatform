@@ -160,12 +160,16 @@ public class DropwizardProvider implements Dropwizard, AppLifeCycle {
 
     this.environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
-    this.environment.healthChecks().register("store", new HealthCheck() {
-      @Override
-      protected Result check() throws Exception {
-        return Result.healthy();
-      }
-    });
+    this.environment
+        .healthChecks()
+        .register(
+            "store",
+            new HealthCheck() {
+              @Override
+              protected Result check() throws Exception {
+                return Result.healthy();
+              }
+            });
 
     // TODO: per parameter
     environment.getObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
