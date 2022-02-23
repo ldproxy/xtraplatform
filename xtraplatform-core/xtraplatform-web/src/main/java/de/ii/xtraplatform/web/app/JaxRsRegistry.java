@@ -104,6 +104,12 @@ public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
     this.isAuthProviderAvailable = false;
   }
 
+  //should be last
+  @Override
+  public int getPriority() {
+    return 10000;
+  }
+
   @Override
   public void init(AppConfiguration configuration, Environment environment) {
     jerseyChanged(environment);

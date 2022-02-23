@@ -14,5 +14,9 @@ import io.dropwizard.setup.Environment;
 @AutoMultiBind
 public interface DropwizardPlugin {
 
+  default int getPriority() {
+    return 1000;
+  }
+
   void init(AppConfiguration configuration, Environment environment);
 }

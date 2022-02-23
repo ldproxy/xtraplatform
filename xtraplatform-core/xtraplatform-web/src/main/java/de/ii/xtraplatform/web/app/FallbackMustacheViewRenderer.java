@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.web.app;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
@@ -28,10 +29,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
+@Singleton
+@AutoBind
 public class FallbackMustacheViewRenderer extends MustacheViewRenderer implements MustacheRenderer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(FallbackMustacheViewRenderer.class);
@@ -40,7 +45,8 @@ public class FallbackMustacheViewRenderer extends MustacheViewRenderer implement
   private final MustacheResolverRegistry mustacheResolverRegistry;
   private boolean useCache = true;
 
-  public FallbackMustacheViewRenderer(MustacheResolverRegistry mustacheResolverRegistry) {
+  @Inject
+  FallbackMustacheViewRenderer(MustacheResolverRegistry mustacheResolverRegistry) {
     this.mustacheResolverRegistry = mustacheResolverRegistry;
     this.factories =
         CacheBuilder.newBuilder()

@@ -7,35 +7,43 @@
  */
 package de.ii.xtraplatform.auth.app;
 
+import com.codahale.metrics.MetricRegistry;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import com.google.common.collect.Lists;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthorizer;
+import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.domain.AuthProvider;
-import de.ii.xtraplatform.web.domain.Dropwizard;
+import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.chained.ChainedAuthFilter;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
+import io.dropwizard.setup.Environment;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /** @author zahnen */
 @Singleton
 @AutoBind
-public class InternalBearerAuthProvider implements AuthProvider<User> {
+public class InternalBearerAuthProvider implements AuthProvider<User>, DropwizardPlugin {
 
   private final TokenHandler tokenHandler;
-  private final Dropwizard dropwizard;
+  private MetricRegistry metricRegistry;
 
   @Inject
-  InternalBearerAuthProvider(TokenHandler tokenHandler, Dropwizard dropwizard) {
+  InternalBearerAuthProvider(TokenHandler tokenHandler) {
     this.tokenHandler = tokenHandler;
-    this.dropwizard = dropwizard;
+  }
+
+  @Override
+  public void init(AppConfiguration configuration,
+      Environment environment) {
+    this.metricRegistry = environment.metrics();
   }
 
   @Override
@@ -44,7 +52,7 @@ public class InternalBearerAuthProvider implements AuthProvider<User> {
 
     CachingAuthenticator<String, User> cachingAuthenticator =
         new CachingAuthenticator<String, User>(
-            dropwizard.getEnvironment().metrics(),
+            metricRegistry,
             tokenAuthenticator,
             CaffeineSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
 

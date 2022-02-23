@@ -7,32 +7,40 @@
  */
 package de.ii.xtraplatform.auth.app.external;
 
+import com.codahale.metrics.MetricRegistry;
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthorizer;
+import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AuthConfig;
 import de.ii.xtraplatform.web.domain.AuthProvider;
-import de.ii.xtraplatform.web.domain.Dropwizard;
+import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
+import io.dropwizard.setup.Environment;
 
 /** @author zahnen */
 // TODO: HttpClient
 // TODO: ranking, which one to use
 // TODO: AutoBind
-public class ExternalBearerAuthProvider implements AuthProvider<User> {
+public class ExternalBearerAuthProvider implements AuthProvider<User>, DropwizardPlugin {
 
-  private final Dropwizard dropwizard;
   // private final HttpClient httpClient;
   private final AuthConfig authConfig;
+  private MetricRegistry metricRegistry;
 
-  public ExternalBearerAuthProvider(AppContext appContext, Dropwizard dropwizard /*, Http http*/) {
-    this.dropwizard = dropwizard;
+  public ExternalBearerAuthProvider(AppContext appContext/*, Http http*/) {
     // this.httpClient = http.getDefaultClient();
     this.authConfig = appContext.getConfiguration().auth;
+  }
+
+  @Override
+  public void init(AppConfiguration configuration,
+      Environment environment) {
+    this.metricRegistry = environment.metrics();
   }
 
   @Override
@@ -41,7 +49,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User> {
 
     CachingAuthenticator<String, User> cachingAuthenticator =
         new CachingAuthenticator<String, User>(
-            dropwizard.getEnvironment().metrics(),
+            metricRegistry,
             tokenAuthenticator,
             CaffeineSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
 

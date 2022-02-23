@@ -22,23 +22,18 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.ApplicationProvider;
-import de.ii.xtraplatform.web.domain.Dropwizard;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
-import de.ii.xtraplatform.web.domain.MustacheResolverRegistry;
-import io.dropwizard.jersey.setup.JerseyEnvironment;
-import io.dropwizard.jetty.MutableServletContextHandler;
+import de.ii.xtraplatform.web.domain.MustacheRenderer;
 import io.dropwizard.jetty.NonblockingServletHolder;
-import io.dropwizard.jetty.setup.ServletEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
-import io.dropwizard.views.ViewRenderer;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.servlet.ServletContext;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -48,32 +43,31 @@ import org.slf4j.LoggerFactory;
 /** @author zahnen */
 @Singleton
 @AutoBind
-public class DropwizardProvider implements Dropwizard, AppLifeCycle {
+public class DropwizardProvider implements AppLifeCycle {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
   static final String JERSEY_ENDPOINT = "/rest/*";
 
   private final ApplicationProvider applicationProvider;
-  private final MustacheResolverRegistry mustacheResolverRegistry;
   private final AdminEndpointServlet adminEndpoint;
   private final AppContext appContext;
+  private final MustacheRenderer mustacheRenderer;
   private final Lazy<Set<DropwizardPlugin>> plugins;
 
   private AppConfiguration configuration;
   private Environment environment;
   private ServletContainer jerseyContainer;
-  private ViewRenderer mustacheRenderer;
   private Server server;
 
   @Inject
   public DropwizardProvider(
       ApplicationProvider applicationProvider,
-      MustacheResolverRegistry mustacheResolverRegistry,
+      MustacheRenderer mustacheRenderer,
       AppContext appContext,
       AdminEndpointServlet adminEndpoint,
       Lazy<Set<DropwizardPlugin>> plugins) {
     this.applicationProvider = applicationProvider;
-    this.mustacheResolverRegistry = mustacheResolverRegistry;
+    this.mustacheRenderer = mustacheRenderer;
     this.appContext = appContext;
     this.adminEndpoint = adminEndpoint;
     this.plugins = plugins;
@@ -187,14 +181,13 @@ public class DropwizardProvider implements Dropwizard, AppLifeCycle {
               }
             });
 
-    for (DropwizardPlugin plugin : plugins.get()) {
-      plugin.init(configuration, environment);
-    }
+    plugins.get()
+        .stream()
+        .sorted(Comparator.comparingInt(DropwizardPlugin::getPriority))
+        .forEach(plugin -> plugin.init(configuration, environment));
   }
 
   private void initBootstrap(Bootstrap<AppConfiguration> bootstrap) {
-    this.mustacheRenderer = new FallbackMustacheViewRenderer(mustacheResolverRegistry);
-
     boolean cacheTemplates = !appContext.isDevEnv();
 
     bootstrap.addBundle(
@@ -209,38 +202,4 @@ public class DropwizardProvider implements Dropwizard, AppLifeCycle {
         });
   }
 
-  @Override
-  public Environment getEnvironment() {
-    return environment;
-  }
-
-  @Override
-  public ServletEnvironment getServlets() {
-    return getEnvironment().servlets();
-  }
-
-  @Override
-  public ServletContext getServletContext() {
-    return getEnvironment().getApplicationContext().getServletContext();
-  }
-
-  @Override
-  public MutableServletContextHandler getApplicationContext() {
-    return getEnvironment().getApplicationContext();
-  }
-
-  @Override
-  public JerseyEnvironment getJersey() {
-    return getEnvironment().jersey();
-  }
-
-  @Override
-  public ServletContainer getJerseyContainer() {
-    return jerseyContainer;
-  }
-
-  @Override
-  public ViewRenderer getMustacheRenderer() {
-    return mustacheRenderer;
-  }
 }
