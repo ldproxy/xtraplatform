@@ -41,8 +41,7 @@ public class InternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
   }
 
   @Override
-  public void init(AppConfiguration configuration,
-      Environment environment) {
+  public void init(AppConfiguration configuration, Environment environment) {
     this.metricRegistry = environment.metrics();
   }
 

@@ -104,7 +104,7 @@ public class JaxRsRegistry implements JaxRsReg, DropwizardPlugin {
     this.isAuthProviderAvailable = false;
   }
 
-  //should be last
+  // should be last
   @Override
   public int getPriority() {
     return 10000;

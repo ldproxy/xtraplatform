@@ -32,14 +32,13 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
   private final AuthConfig authConfig;
   private MetricRegistry metricRegistry;
 
-  public ExternalBearerAuthProvider(AppContext appContext/*, Http http*/) {
+  public ExternalBearerAuthProvider(AppContext appContext /*, Http http*/) {
     // this.httpClient = http.getDefaultClient();
     this.authConfig = appContext.getConfiguration().auth;
   }
 
   @Override
-  public void init(AppConfiguration configuration,
-      Environment environment) {
+  public void init(AppConfiguration configuration, Environment environment) {
     this.metricRegistry = environment.metrics();
   }
 

@@ -181,8 +181,7 @@ public class DropwizardProvider implements AppLifeCycle {
               }
             });
 
-    plugins.get()
-        .stream()
+    plugins.get().stream()
         .sorted(Comparator.comparingInt(DropwizardPlugin::getPriority))
         .forEach(plugin -> plugin.init(configuration, environment));
   }
@@ -201,5 +200,4 @@ public class DropwizardProvider implements AppLifeCycle {
           }
         });
   }
-
 }
