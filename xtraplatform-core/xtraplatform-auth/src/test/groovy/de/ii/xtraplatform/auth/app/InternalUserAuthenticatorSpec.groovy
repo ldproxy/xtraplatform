@@ -130,6 +130,11 @@ class InternalUserAuthenticatorSpec extends Specification {
         }
 
         @Override
+        CompletableFuture<EntityData> patch(String id, Map<String, Object> partialData, boolean skipLastModified, String... path) {
+            return null
+        }
+
+        @Override
         ValueEncoding<EntityData> getValueEncoding() {
             return null
         }
