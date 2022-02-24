@@ -22,6 +22,9 @@ httpClient:
   timeout: 30s
   connectionTimeout: 10s
   maxConnectionsPerRoute: 16
+  tls:
+    verifyHostname: false
+    trustSelfSignedCertificates: true
 
 logging:
   level: 'INFO'

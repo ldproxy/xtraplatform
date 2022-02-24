@@ -63,14 +63,7 @@ public class AppConfiguration extends Configuration {
 
   @Deprecated @JsonProperty public boolean allowServiceReAdding;
 
-  /*
-  @JsonProperty
-  public String externalURL;
-
-  @JsonProperty
-  public int maxDebugLogDurationMinutes = 60;
-  */
-  @Valid @NotNull private HttpClientConfiguration httpClient;
+  @Valid @NotNull private HttpClientConfiguration httpClient = new HttpClientConfiguration();
 
   @JsonProperty("httpClient")
   public HttpClientConfiguration getHttpClient() {

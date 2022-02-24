@@ -16,6 +16,8 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AuthConfig;
 import de.ii.xtraplatform.web.domain.AuthProvider;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
+import de.ii.xtraplatform.web.domain.Http;
+import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
@@ -23,17 +25,16 @@ import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.setup.Environment;
 
 /** @author zahnen */
-// TODO: HttpClient
 // TODO: ranking, which one to use
 // TODO: AutoBind
 public class ExternalBearerAuthProvider implements AuthProvider<User>, DropwizardPlugin {
 
-  // private final HttpClient httpClient;
+  private final HttpClient httpClient;
   private final AuthConfig authConfig;
   private MetricRegistry metricRegistry;
 
-  public ExternalBearerAuthProvider(AppContext appContext /*, Http http*/) {
-    // this.httpClient = http.getDefaultClient();
+  public ExternalBearerAuthProvider(AppContext appContext , Http http) {
+    this.httpClient = http.getDefaultClient();
     this.authConfig = appContext.getConfiguration().auth;
   }
 
@@ -44,7 +45,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
 
   @Override
   public AuthDynamicFeature getAuthDynamicFeature() {
-    TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig /*, httpClient*/);
+    TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig , httpClient);
 
     CachingAuthenticator<String, User> cachingAuthenticator =
         new CachingAuthenticator<String, User>(
@@ -67,7 +68,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
           new ExternalDynamicAuthFilter<>(
               authConfig.getExternalDynamicAuthorizationEndpoint,
               authConfig.getPostProcessingEndpoint,
-              /*httpClient,*/
+              httpClient,
               authFilter));
     }
 

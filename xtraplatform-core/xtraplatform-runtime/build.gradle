@@ -1,5 +1,5 @@
 ext {
-    dropwizardVersion = '2.0.26'
+    dropwizardVersion = '2.0.28'
     jacksonVersion = '2.10.5'
 }
 

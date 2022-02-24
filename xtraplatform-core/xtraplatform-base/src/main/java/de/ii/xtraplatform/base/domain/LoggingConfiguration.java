@@ -56,42 +56,52 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
     this.showThirdPartyLoggers = showThirdPartyLoggers;
   }
 
+  @JsonProperty
   public boolean isSqlQueries() {
     return sqlQueries;
   }
 
+  @JsonProperty
   public void setSqlQueries(boolean sqlQueries) {
     this.sqlQueries = sqlQueries;
   }
 
+  @JsonProperty
   public boolean isSqlResults() {
     return sqlResults;
   }
 
+  @JsonProperty
   public void setSqlResults(boolean sqlResults) {
     this.sqlResults = sqlResults;
   }
 
+  @JsonProperty
   public boolean isConfigDumps() {
     return configDumps;
   }
 
+  @JsonProperty
   public void setConfigDumps(boolean configDumps) {
     this.configDumps = configDumps;
   }
 
+  @JsonProperty
   public boolean isStackTraces() {
     return stackTraces;
   }
 
+  @JsonProperty
   public void setStackTraces(boolean stackTraces) {
     this.stackTraces = stackTraces;
   }
 
+  @JsonProperty
   public boolean isWiring() {
     return wiring;
   }
 
+  @JsonProperty
   public void setWiring(boolean wiring) {
     this.wiring = wiring;
   }

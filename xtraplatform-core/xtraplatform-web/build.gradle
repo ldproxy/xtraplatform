@@ -1,4 +1,4 @@
 
 dependencies {
-    //compileOnly project(":xtraplatform-runtime")
+    provided project(':xtraplatform-streams')
 }
