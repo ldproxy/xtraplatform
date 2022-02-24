@@ -28,7 +28,8 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
 
   CompletableFuture<T> patch(String id, Map<String, Object> partialData, String... path);
 
-  CompletableFuture<T> patch(String id, Map<String, Object> partialData, boolean skipLastModified, String... path);
+  CompletableFuture<T> patch(
+      String id, Map<String, Object> partialData, boolean skipLastModified, String... path);
 
   ValueEncoding<EntityData> getValueEncoding();
 

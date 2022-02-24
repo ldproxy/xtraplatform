@@ -204,7 +204,8 @@ public class StaticResourceServlet extends HttpServlet {
       if (!defaultPage.isEmpty()) {
         try {
           requestedResourceURL =
-              Resources.getResource(contextClass, absoluteRequestedResourcePath + '/' + defaultPage);
+              Resources.getResource(
+                  contextClass, absoluteRequestedResourcePath + '/' + defaultPage);
           requestedResourceBytes = Resources.toByteArray(requestedResourceURL);
         } catch (Throwable e1) {
           // ignore

@@ -59,7 +59,10 @@ public class TokenEndpoint implements Endpoint {
 
   @Inject
   public TokenEndpoint(
-      UserAuthenticator authenticator, TokenHandler tokenGenerator, AppContext appContext, ServicesContext servicesContext) {
+      UserAuthenticator authenticator,
+      TokenHandler tokenGenerator,
+      AppContext appContext,
+      ServicesContext servicesContext) {
     this.authenticator = authenticator;
     this.tokenGenerator = tokenGenerator;
     this.servicesUri = servicesContext.getUri();

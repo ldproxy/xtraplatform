@@ -266,11 +266,14 @@ public class ConfigurationReader {
   }
 
   private static void applyForcedDefaults(AppConfiguration cfg, Constants.ENV env) {
-    cfg.getServerFactory().getApplicationConnectors().forEach(connectorFactory -> {
-      if (connectorFactory instanceof HttpConnectorFactory) {
-        ((HttpConnectorFactory) connectorFactory).setUseForwardedHeaders(true);
-      }
-    });
+    cfg.getServerFactory()
+        .getApplicationConnectors()
+        .forEach(
+            connectorFactory -> {
+              if (connectorFactory instanceof HttpConnectorFactory) {
+                ((HttpConnectorFactory) connectorFactory).setUseForwardedHeaders(true);
+              }
+            });
   }
 
   private static ObjectMapper getMergeMapper(ObjectMapper baseMapper) {

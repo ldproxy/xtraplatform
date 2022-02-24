@@ -40,7 +40,9 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
 
   @Inject
   public SplitCookieResponseFilter(
-      ServicesContext servicesContext, TokenHandler tokenHandler, EntityDataStore<?> entityRepository) {
+      ServicesContext servicesContext,
+      TokenHandler tokenHandler,
+      EntityDataStore<?> entityRepository) {
     this.servicesUri = servicesContext.getUri();
     this.tokenHandler = tokenHandler;
     this.userRepository =

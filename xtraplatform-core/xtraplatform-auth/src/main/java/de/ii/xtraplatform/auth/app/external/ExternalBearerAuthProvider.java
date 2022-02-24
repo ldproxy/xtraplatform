@@ -33,7 +33,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
   private final AuthConfig authConfig;
   private MetricRegistry metricRegistry;
 
-  public ExternalBearerAuthProvider(AppContext appContext , Http http) {
+  public ExternalBearerAuthProvider(AppContext appContext, Http http) {
     this.httpClient = http.getDefaultClient();
     this.authConfig = appContext.getConfiguration().auth;
   }
@@ -45,7 +45,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
 
   @Override
   public AuthDynamicFeature getAuthDynamicFeature() {
-    TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig , httpClient);
+    TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig, httpClient);
 
     CachingAuthenticator<String, User> cachingAuthenticator =
         new CachingAuthenticator<String, User>(

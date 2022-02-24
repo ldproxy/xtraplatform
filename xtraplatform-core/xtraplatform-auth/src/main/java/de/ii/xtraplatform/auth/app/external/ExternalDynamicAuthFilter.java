@@ -43,9 +43,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
   private final OAuthCredentialAuthFilter<P> delegate;
 
   ExternalDynamicAuthFilter(
-      String edaUrl,
-      String ppUrl, HttpClient httpClient,
-      OAuthCredentialAuthFilter<P> delegate) {
+      String edaUrl, String ppUrl, HttpClient httpClient, OAuthCredentialAuthFilter<P> delegate) {
     super();
     this.realm = "ldproxy";
     this.prefix = "Bearer";
@@ -101,8 +99,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     if (requestContext.getMethod().equals("POST") || requestContext.getMethod().equals("PUT")) {
       try {
 
-        InputStream processedBody =
-            httpClient.postAsInputStream(ppUrl, body, GEOJSON);
+        InputStream processedBody = httpClient.postAsInputStream(ppUrl, body, GEOJSON);
 
         putEntityBody(requestContext, processedBody);
 
@@ -126,8 +123,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
       // LOGGER.debug("XACML {}", JSON.writerWithDefaultPrettyPrinter()
       //                             .writeValueAsString(xacmlRequest1));
 
-      InputStream response =
-          httpClient.postAsInputStream(edaUrl, xacmlRequest, XACML);
+      InputStream response = httpClient.postAsInputStream(edaUrl, xacmlRequest, XACML);
 
       XacmlResponse xacmlResponse = JSON.readValue(response, XacmlResponse.class);
 

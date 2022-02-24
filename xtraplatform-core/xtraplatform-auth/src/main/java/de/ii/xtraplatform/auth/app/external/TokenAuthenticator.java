@@ -35,7 +35,7 @@ public class TokenAuthenticator implements Authenticator<String, User> {
   private final AuthConfig authConfig;
   private final HttpClient httpClient;
 
-  TokenAuthenticator(AuthConfig authConfig , HttpClient httpClient) {
+  TokenAuthenticator(AuthConfig authConfig, HttpClient httpClient) {
     this.authConfig = authConfig;
     this.httpClient = httpClient;
   }

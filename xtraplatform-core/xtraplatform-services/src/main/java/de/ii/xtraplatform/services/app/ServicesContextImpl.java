@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.services.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
@@ -15,18 +22,21 @@ import javax.inject.Singleton;
 public class ServicesContextImpl implements ServicesContext {
 
   private final URI uri;
+
   @Inject
   ServicesContextImpl(AppContext appContext) {
     String externalUrl = appContext.getConfiguration().getServerFactory().getExternalUrl();
 
-    if (Strings.isNullOrEmpty(externalUrl) || Objects.equals(externalUrl, ConfigurationReader.DEFAULT_VALUE)) {
+    if (Strings.isNullOrEmpty(externalUrl)
+        || Objects.equals(externalUrl, ConfigurationReader.DEFAULT_VALUE)) {
       this.uri = appContext.getUri().resolve("rest/services");
       return;
     }
 
-    String uri = externalUrl.endsWith("/")
-        ? externalUrl.substring(0, externalUrl.length() - 1)
-        : externalUrl;
+    String uri =
+        externalUrl.endsWith("/")
+            ? externalUrl.substring(0, externalUrl.length() - 1)
+            : externalUrl;
 
     this.uri = URI.create(uri);
   }

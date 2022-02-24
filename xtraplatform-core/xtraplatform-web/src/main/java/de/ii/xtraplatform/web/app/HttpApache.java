@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.web.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
@@ -18,15 +25,15 @@ public class HttpApache implements Http, DropwizardPlugin {
   private HttpClient defaultClient;
 
   @Inject
-  HttpApache() {
-  }
+  HttpApache() {}
 
   @Override
-  public void init(AppConfiguration appConfiguration,
-      Environment environment) {
-    this.defaultClient = new HttpClientApache(new HttpClientBuilder(environment)
-        .using(appConfiguration.getHttpClient())
-        .build("foo"));
+  public void init(AppConfiguration appConfiguration, Environment environment) {
+    this.defaultClient =
+        new HttpClientApache(
+            new HttpClientBuilder(environment)
+                .using(appConfiguration.getHttpClient())
+                .build("foo"));
   }
 
   @Override

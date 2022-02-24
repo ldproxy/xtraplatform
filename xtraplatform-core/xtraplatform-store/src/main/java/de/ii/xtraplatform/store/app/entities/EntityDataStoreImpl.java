@@ -419,8 +419,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   @Override
-  public CompletableFuture<EntityData> patch(String id,
-      Map<String, Object> partialData, String... path) {
+  public CompletableFuture<EntityData> patch(
+      String id, Map<String, Object> partialData, String... path) {
     return patch(id, partialData, false, path);
   }
 
@@ -429,9 +429,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       String id, Map<String, Object> partialData, boolean skipLastModified, String... path) {
     final Identifier identifier = Identifier.from(id, path);
 
-    Map<String, Object> patch = skipLastModified
-        ? partialData :
-        modifyPatch(partialData);
+    Map<String, Object> patch = skipLastModified ? partialData : modifyPatch(partialData);
 
     byte[] payload = getValueEncoding().serialize(patch);
 
