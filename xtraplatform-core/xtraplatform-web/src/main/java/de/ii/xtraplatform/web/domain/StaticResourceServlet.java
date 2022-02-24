@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.Optional;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -78,11 +79,11 @@ public class StaticResourceServlet extends HttpServlet {
    * file with that name in that directory. If a directory is requested and {@code indexFile} is
    * null, it will serve a 404.
    *
-   * @param indexFile the filename to use when directories are requested, or null to serve no
-   *     indexes
    * @param resourcePath the base URL from which assets are loaded
    * @param uriPath the URI path fragment in which all requests are rooted
    * @param defaultCharset the default character set
+   * @param module
+   * @param defaultPages
    * @param rootRedirect
    */
   public StaticResourceServlet(
@@ -233,7 +234,21 @@ public class StaticResourceServlet extends HttpServlet {
   }
 
   private boolean isCachedClientSide(HttpServletRequest req, CachedAsset cachedAsset) {
-    return cachedAsset.getETag().equals(req.getHeader(HttpHeaders.IF_NONE_MATCH))
-        && (req.getDateHeader(HttpHeaders.IF_MODIFIED_SINCE) >= cachedAsset.getLastModifiedTime());
+    // HTTP: A recipient MUST ignore If-Modified-Since if the request contains an If-None-Match header field
+    String ifNoneMatch = req.getHeader(HttpHeaders.IF_NONE_MATCH);
+    String eTag = cachedAsset.getETag();
+    if (Objects.nonNull(ifNoneMatch) && Objects.nonNull(eTag))
+      return eTag.equals(ifNoneMatch);
+    // HTTP: A recipient MUST ignore the If-Modified-Since header field if the request method is neither GET nor HEAD.
+    String method = req.getMethod().toUpperCase();
+    if (method.equals("GET") || method.equals("HEAD")) {
+      try {
+        long ifModifiedSince = req.getDateHeader(HttpHeaders.IF_MODIFIED_SINCE);
+        return ifModifiedSince >= cachedAsset.getLastModifiedTime();
+      } catch (IllegalArgumentException e) {
+        // HTTP: A recipient MUST ignore the If-Modified-Since header field if the received field-value is not a valid HTTP-date
+      }
+    }
+    return false;
   }
 }
