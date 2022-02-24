@@ -15,7 +15,6 @@ import com.google.common.io.Resources;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import de.ii.xtraplatform.web.app.ResourceURL;
-import de.ii.xtraplatform.web.app.amdatu.DefaultPages;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -34,6 +33,7 @@ public class StaticResourceServlet extends HttpServlet {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StaticResourceServlet.class);
   private static final CharMatcher SLASHES = CharMatcher.is('/');
+  private static final String DEFAULT_PAGE = "index.html";
 
   private static class CachedAsset {
 
@@ -65,8 +65,7 @@ public class StaticResourceServlet extends HttpServlet {
   private final String resourcePath;
   private final String uriPath;
   private final Charset defaultCharset;
-  private final Class<?> module;
-  private final DefaultPages defaultPages;
+  private final Class<?> contextClass;
   private final Optional<String> rootRedirect;
 
   /**
@@ -82,30 +81,27 @@ public class StaticResourceServlet extends HttpServlet {
    * @param resourcePath the base URL from which assets are loaded
    * @param uriPath the URI path fragment in which all requests are rooted
    * @param defaultCharset the default character set
-   * @param module
-   * @param defaultPages
+   * @param contextClass
    * @param rootRedirect
    */
   public StaticResourceServlet(
       String resourcePath,
       String uriPath,
       Charset defaultCharset,
-      Class<?> module,
-      DefaultPages defaultPages,
+      Class<?> contextClass,
       Optional<String> rootRedirect) {
     final String trimmedPath = SLASHES.trimFrom(resourcePath);
     this.resourcePath = trimmedPath.isEmpty() ? trimmedPath : trimmedPath + '/';
     final String trimmedUri = SLASHES.trimTrailingFrom(uriPath);
     this.uriPath = trimmedUri.isEmpty() ? "/" : trimmedUri;
     this.defaultCharset = defaultCharset;
-    this.module = module;
-    this.defaultPages = defaultPages;
+    this.contextClass = contextClass;
     this.rootRedirect = rootRedirect;
   }
 
   public StaticResourceServlet(
-      String resourcePath, String uriPath, Charset defaultCharset, Class<?> module) {
-    this(resourcePath, uriPath, defaultCharset, module, new DefaultPages(), Optional.of("/"));
+      String resourcePath, String uriPath, Charset defaultCharset, Class<?> contextClass) {
+    this(resourcePath, uriPath, defaultCharset, contextClass, Optional.of("/"));
   }
 
   /*public URL getResourceURL() {
@@ -195,9 +191,8 @@ public class StaticResourceServlet extends HttpServlet {
     // Try to determine whether we're given a resource with an actual file, or that
     // it is pointing to an (internal) directory. In the latter case, use the default
     // pages to search instead...
-    // TODO: get resources from module
     try {
-      requestedResourceURL = Resources.getResource(module, absoluteRequestedResourcePath);
+      requestedResourceURL = Resources.getResource(contextClass, absoluteRequestedResourcePath);
       requestedResourceBytes = Resources.toByteArray(requestedResourceURL);
       if (requestedResourceBytes.length == 0) {
         throw new IllegalStateException();
@@ -205,11 +200,11 @@ public class StaticResourceServlet extends HttpServlet {
     } catch (Throwable e) {
       // Given resource was a directory, stop looking for the actual resource
       // and check whether we can display a default page instead...
-      String defaultPage = this.defaultPages.getDefaultPageFor(requestedResourcePath);
+      String defaultPage = DEFAULT_PAGE;
       if (!defaultPage.isEmpty()) {
         try {
           requestedResourceURL =
-              Resources.getResource(module, absoluteRequestedResourcePath + '/' + defaultPage);
+              Resources.getResource(contextClass, absoluteRequestedResourcePath + '/' + defaultPage);
           requestedResourceBytes = Resources.toByteArray(requestedResourceURL);
         } catch (Throwable e1) {
           // ignore
