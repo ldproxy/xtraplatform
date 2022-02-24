@@ -9,13 +9,13 @@ package de.ii.xtraplatform.services.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
-import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceEndpoint;
 import de.ii.xtraplatform.services.domain.ServiceInjectableContext;
 import de.ii.xtraplatform.services.domain.ServiceListingProvider;
+import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.web.domain.MediaTypeCharset;
@@ -59,7 +59,7 @@ public class ServicesEndpoint implements Endpoint {
 
   private final EntityRegistry entityRegistry;
   private final ServiceInjectableContext serviceContext;
-  private final AppContext appContext;
+  private final URI servicesUri;
   private final StaticResourceHandler staticResourceHandler;
 
   private Lazy<Set<ServiceEndpoint>> serviceResources;
@@ -68,13 +68,13 @@ public class ServicesEndpoint implements Endpoint {
   @Inject
   public ServicesEndpoint(
       EntityRegistry entityRegistry,
-      AppContext appContext,
+      ServicesContext servicesContext,
       ServiceInjectableContext serviceContext,
       StaticResourceHandler staticResourceHandler,
       Lazy<Set<ServiceEndpoint>> serviceResources,
       Lazy<Set<ServiceListingProvider>> serviceListingProviders) {
     this.entityRegistry = entityRegistry;
-    this.appContext = appContext;
+    this.servicesUri = servicesContext.getUri();
     this.serviceContext = serviceContext;
     this.staticResourceHandler = staticResourceHandler;
     this.serviceResources = serviceResources;
@@ -223,9 +223,8 @@ public class ServicesEndpoint implements Endpoint {
     return s.get();
   }
 
-  // TODO: to ServicesContext
   private Optional<URI> getExternalUri() {
-    return Optional.of(appContext.getUri().resolve("rest/services"));
+    return Optional.of(servicesUri);
   }
 
   private void openLoggingContext(ContainerRequestContext containerRequestContext) {

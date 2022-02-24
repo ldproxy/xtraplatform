@@ -8,6 +8,7 @@ dependencies {
     provided project(':xtraplatform-streams')
     provided project(':xtraplatform-store')
     provided project(':xtraplatform-openapi')
+    provided project(':xtraplatform-services')
 
     embeddedFlat group: 'io.jsonwebtoken', name: 'jjwt-api', version: jjwtVersion
     embeddedFlat group: 'io.jsonwebtoken', name: 'jjwt-impl', version: jjwtVersion

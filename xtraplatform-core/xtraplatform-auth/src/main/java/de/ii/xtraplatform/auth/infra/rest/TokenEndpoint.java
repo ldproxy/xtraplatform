@@ -15,6 +15,7 @@ import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthenticator;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AuthConfig;
+import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -53,15 +54,15 @@ public class TokenEndpoint implements Endpoint {
 
   private final UserAuthenticator authenticator;
   private final TokenHandler tokenGenerator;
-  private final AppContext appContext;
+  private final URI servicesUri;
   private final AuthConfig authConfig;
 
   @Inject
   public TokenEndpoint(
-      UserAuthenticator authenticator, TokenHandler tokenGenerator, AppContext appContext) {
+      UserAuthenticator authenticator, TokenHandler tokenGenerator, AppContext appContext, ServicesContext servicesContext) {
     this.authenticator = authenticator;
     this.tokenGenerator = tokenGenerator;
-    this.appContext = appContext;
+    this.servicesUri = servicesContext.getUri();
     this.authConfig = appContext.getConfiguration().auth;
   }
 
@@ -135,6 +136,6 @@ public class TokenEndpoint implements Endpoint {
 
   // TODO: from ServicesContext
   private URI getExternalUri() {
-    return appContext.getUri().resolve("rest/services");
+    return servicesUri;
   }
 }

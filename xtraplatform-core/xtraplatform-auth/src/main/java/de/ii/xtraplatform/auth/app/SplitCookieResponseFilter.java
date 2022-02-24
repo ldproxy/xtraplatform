@@ -11,7 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.app.User.UserData;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import java.io.IOException;
@@ -34,14 +34,14 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SplitCookieResponseFilter.class);
 
-  private final AppContext appContext;
+  private final URI servicesUri;
   private final TokenHandler tokenHandler;
   private final EntityDataStore<UserData> userRepository;
 
   @Inject
   public SplitCookieResponseFilter(
-      AppContext appContext, TokenHandler tokenHandler, EntityDataStore<?> entityRepository) {
-    this.appContext = appContext;
+      ServicesContext servicesContext, TokenHandler tokenHandler, EntityDataStore<?> entityRepository) {
+    this.servicesUri = servicesContext.getUri();
     this.tokenHandler = tokenHandler;
     this.userRepository =
         ((EntityDataStore<EntityData>) entityRepository)
@@ -115,8 +115,7 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
     // return Objects.equals(getExternalUri().getScheme(), "https");
   }
 
-  // TODO: from ServicesContext
   private URI getExternalUri() {
-    return appContext.getUri().resolve("rest/services");
+    return servicesUri;
   }
 }
