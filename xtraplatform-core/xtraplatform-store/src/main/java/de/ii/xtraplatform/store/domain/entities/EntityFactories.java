@@ -85,7 +85,7 @@ public class EntityFactories {
             entityFactory ->
                 entityFactory.fullType().startsWith(specificEntityType)
                     && !Objects.equals(entityFactory.fullType(), specificEntityType))
-        .map(entityFactory -> entityFactory.subType())
+        .map(entityFactory -> entityFactory.subType().map(String::toLowerCase))
         .filter(Optional::isPresent)
         .map(Optional::get)
         // .map(subType -> Splitter.on('/').splitToList(subType))
