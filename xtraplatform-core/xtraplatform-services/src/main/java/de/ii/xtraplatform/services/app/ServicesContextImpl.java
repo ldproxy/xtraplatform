@@ -20,7 +20,7 @@ public class ServicesContextImpl implements ServicesContext {
     String externalUrl = appContext.getConfiguration().getServerFactory().getExternalUrl();
 
     if (Strings.isNullOrEmpty(externalUrl) || Objects.equals(externalUrl, ConfigurationReader.DEFAULT_VALUE)) {
-      this.uri = appContext.getUri();
+      this.uri = appContext.getUri().resolve("rest/services");
       return;
     }
 
