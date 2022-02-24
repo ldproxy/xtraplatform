@@ -234,19 +234,21 @@ public class StaticResourceServlet extends HttpServlet {
   }
 
   private boolean isCachedClientSide(HttpServletRequest req, CachedAsset cachedAsset) {
-    // HTTP: A recipient MUST ignore If-Modified-Since if the request contains an If-None-Match header field
+    // HTTP: A recipient MUST ignore If-Modified-Since if the request contains an If-None-Match
+    // header field
     String ifNoneMatch = req.getHeader(HttpHeaders.IF_NONE_MATCH);
     String eTag = cachedAsset.getETag();
-    if (Objects.nonNull(ifNoneMatch) && Objects.nonNull(eTag))
-      return eTag.equals(ifNoneMatch);
-    // HTTP: A recipient MUST ignore the If-Modified-Since header field if the request method is neither GET nor HEAD.
+    if (Objects.nonNull(ifNoneMatch) && Objects.nonNull(eTag)) return eTag.equals(ifNoneMatch);
+    // HTTP: A recipient MUST ignore the If-Modified-Since header field if the request method is
+    // neither GET nor HEAD.
     String method = req.getMethod().toUpperCase();
     if (method.equals("GET") || method.equals("HEAD")) {
       try {
         long ifModifiedSince = req.getDateHeader(HttpHeaders.IF_MODIFIED_SINCE);
         return ifModifiedSince >= cachedAsset.getLastModifiedTime();
       } catch (IllegalArgumentException e) {
-        // HTTP: A recipient MUST ignore the If-Modified-Since header field if the received field-value is not a valid HTTP-date
+        // HTTP: A recipient MUST ignore the If-Modified-Since header field if the received
+        // field-value is not a valid HTTP-date
       }
     }
     return false;
