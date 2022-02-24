@@ -19,6 +19,7 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.jackson.Jackson;
+import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.logging.AbstractAppenderFactory;
 import io.dropwizard.logging.ConsoleAppenderFactory;
 import io.dropwizard.logging.DefaultLoggingFactory;
@@ -127,6 +128,8 @@ public class ConfigurationReader {
     }
 
     applyLogFormat(base.getLoggingConfiguration(), env);
+
+    applyForcedDefaults(base, env);
 
     return new ByteArrayInputStream(mapper.writeValueAsBytes(base));
   }
@@ -255,6 +258,14 @@ public class ConfigurationReader {
                 }
               }
             });
+  }
+
+  private static void applyForcedDefaults(AppConfiguration cfg, Constants.ENV env) {
+    cfg.getServerFactory().getApplicationConnectors().forEach(connectorFactory -> {
+      if (connectorFactory instanceof HttpConnectorFactory) {
+        ((HttpConnectorFactory) connectorFactory).setUseForwardedHeaders(true);
+      }
+    });
   }
 
   private static ObjectMapper getMergeMapper(ObjectMapper baseMapper) {
