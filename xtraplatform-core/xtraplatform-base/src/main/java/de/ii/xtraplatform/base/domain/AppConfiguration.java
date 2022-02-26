@@ -18,10 +18,32 @@ import javax.validation.constraints.NotNull;
 
 public class AppConfiguration extends Configuration {
 
-  public AppConfiguration() {}
+  @Valid @NotNull private ServerConfiguration server;
+  @Valid @NotNull private LoggingConfiguration logging;
+  // TODO: not used anymore, but removing breaks backwards compatibility
+  @Deprecated @JsonProperty public boolean useFormattedJsonOutput;
+  @Deprecated @JsonProperty public boolean allowServiceReAdding;
+  @Valid @NotNull private HttpClientConfiguration httpClient;
+  @Valid @NotNull @JsonProperty public StoreConfiguration store;
+  @Valid @NotNull @JsonProperty public AuthConfig auth;
+  @Valid @NotNull @JsonProperty public ManagerConfiguration manager;
+  @Valid @NotNull @JsonProperty public BackgroundTasksConfiguration backgroundTasks;
+  @Valid @NotNull @JsonProperty public ProjConfiguration proj;
+  @Valid @JsonProperty public ClusterConfiguration cluster;
 
-  @Valid @NotNull private ServerConfiguration server = new ServerConfiguration();
-  @Valid @NotNull private LoggingConfiguration logging = new LoggingConfiguration();
+  public AppConfiguration() {
+    this.logging = new LoggingConfiguration();
+    this.server = new ServerConfiguration();
+    this.httpClient = new HttpClientConfiguration();
+    this.store = new StoreConfiguration();
+    this.auth = new AuthConfig();
+    this.manager = new ManagerConfiguration();
+    this.backgroundTasks = new BackgroundTasksConfiguration();
+    this.proj = new ProjConfiguration();
+  }
+
+  public AppConfiguration(boolean noInit) {
+  }
 
   @Override
   @JsonProperty("server")
@@ -58,13 +80,6 @@ public class AppConfiguration extends Configuration {
     this.logging = factory;
   }
 
-  // TODO: not used anymore, but removing breaks backwards compatibility
-  @Deprecated @JsonProperty public boolean useFormattedJsonOutput;
-
-  @Deprecated @JsonProperty public boolean allowServiceReAdding;
-
-  @Valid @NotNull private HttpClientConfiguration httpClient = new HttpClientConfiguration();
-
   @JsonProperty("httpClient")
   public HttpClientConfiguration getHttpClient() {
     return httpClient;
@@ -74,17 +89,4 @@ public class AppConfiguration extends Configuration {
   public void setHttpClient(HttpClientConfiguration httpClient) {
     this.httpClient = httpClient;
   }
-
-  @Valid @NotNull @JsonProperty public StoreConfiguration store = new StoreConfiguration();
-
-  @Valid @NotNull @JsonProperty public AuthConfig auth = new AuthConfig();
-
-  @Valid @NotNull @JsonProperty public ManagerConfiguration manager = new ManagerConfiguration();
-
-  @Valid @NotNull @JsonProperty
-  public BackgroundTasksConfiguration backgroundTasks = new BackgroundTasksConfiguration();
-
-  @Valid @NotNull @JsonProperty public ProjConfiguration proj = new ProjConfiguration();
-
-  @Valid @JsonProperty public ClusterConfiguration cluster;
 }
