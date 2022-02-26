@@ -42,8 +42,7 @@ public class AppConfiguration extends Configuration {
     this.proj = new ProjConfiguration();
   }
 
-  public AppConfiguration(boolean noInit) {
-  }
+  public AppConfiguration(boolean noInit) {}
 
   @Override
   @JsonProperty("server")
