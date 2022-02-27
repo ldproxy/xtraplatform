@@ -146,7 +146,8 @@ public class AppLauncher implements AppContext {
               try {
                 lifecycle.onStart();
               } catch (Throwable e) {
-                LogContext.error(LOGGER, e, "Error starting {}", lifecycle.getClass().getSimpleName());
+                LogContext.error(
+                    LOGGER, e, "Error starting {}", lifecycle.getClass().getSimpleName());
               }
             });
   }
@@ -160,7 +161,10 @@ public class AppLauncher implements AppContext {
             lifecycle -> {
               if (LOGGER.isDebugEnabled(MARKER.DI)) {
                 LOGGER.debug(
-                    MARKER.DI, "Stopping {} ({})", lifecycle.getClass().getSimpleName(), lifecycle.getPriority());
+                    MARKER.DI,
+                    "Stopping {} ({})",
+                    lifecycle.getClass().getSimpleName(),
+                    lifecycle.getPriority());
               }
               try {
                 lifecycle.onStop();

@@ -9,13 +9,10 @@ package de.ii.xtraplatform.web.app;
 
 import com.codahale.metrics.MetricRegistry;
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.base.domain.AppContext;
-import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.Http;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.client.HttpClientBuilder;
-import io.dropwizard.setup.Environment;
 import java.net.URI;
 import javax.inject.Inject;
 import javax.inject.Singleton;
