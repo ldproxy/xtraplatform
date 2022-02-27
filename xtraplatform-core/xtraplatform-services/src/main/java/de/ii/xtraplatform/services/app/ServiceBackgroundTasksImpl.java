@@ -10,6 +10,7 @@ package de.ii.xtraplatform.services.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.services.domain.Scheduler;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceBackgroundTask;
@@ -33,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class ServiceBackgroundTasksImpl implements ServiceBackgroundTasks {
+public class ServiceBackgroundTasksImpl implements ServiceBackgroundTasks, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServiceBackgroundTasksImpl.class);
 
@@ -60,6 +61,18 @@ public class ServiceBackgroundTasksImpl implements ServiceBackgroundTasks {
     taskQueues.put(COMMON_QUEUE, commonQueue);
     entityRegistry.addEntityListener(Service.class, this::onServiceStart, true);
     entityRegistry.addEntityGoneListener(Service.class, this::onServiceStop);
+  }
+
+  @Override
+  public int getPriority() {
+    // stop first
+    return 3000;
+  }
+
+  @Override
+  public void onStop() {
+    commonQueue.getFutureTasks().forEach(commonQueue::remove);
+    commonQueue.getCurrentTask().ifPresent(TaskStatus::stop);
   }
 
   private <T extends Service> void onServiceStart(T service) {
