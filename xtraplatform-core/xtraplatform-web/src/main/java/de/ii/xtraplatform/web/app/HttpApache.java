@@ -7,8 +7,10 @@
  */
 package de.ii.xtraplatform.web.app;
 
+import com.codahale.metrics.MetricRegistry;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
+import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.Http;
 import de.ii.xtraplatform.web.domain.HttpClient;
@@ -20,20 +22,17 @@ import javax.inject.Singleton;
 
 @Singleton
 @AutoBind
-public class HttpApache implements Http, DropwizardPlugin {
+public class HttpApache implements Http {
 
-  private HttpClient defaultClient;
+  private final HttpClient defaultClient;
 
   @Inject
-  HttpApache() {}
-
-  @Override
-  public void init(AppConfiguration appConfiguration, Environment environment) {
+  HttpApache(AppContext appContext) {
     this.defaultClient =
         new HttpClientApache(
-            new HttpClientBuilder(environment)
-                .using(appConfiguration.getHttpClient())
-                .build("foo"));
+            new HttpClientBuilder(new MetricRegistry())
+                .using(appContext.getConfiguration().getHttpClient())
+                .build("default"));
   }
 
   @Override
