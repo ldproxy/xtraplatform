@@ -122,8 +122,12 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
         LOGGER.trace("STARTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
       if (state == STATE.LOADING) {
-        onStarted();
-        setState(STATE.ACTIVE);
+        if (shouldRegister() && !register) {
+          setState(STATE.DEFECTIVE);
+        } else {
+          onStarted();
+          setState(STATE.ACTIVE);
+        }
       }
     }
   }
