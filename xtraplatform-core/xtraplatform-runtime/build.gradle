@@ -28,11 +28,10 @@ dependencies {
 
 moduleInfo {
     requires = [
-        'java.compiler',
-        'java.management',
         'java.sql',
-        'jdk.unsupported',
         'java.xml',
+        'jdk.unsupported',
+        'static jdk.management',
     ]
     exports = [
             '!io.dropwizard.logback.shaded*'
