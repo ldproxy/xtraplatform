@@ -71,7 +71,8 @@ public class StreamDefault<V, W>
   @Override
   public <W1> StreamWithResult<V, W1> withResult(W1 initial) {
     if (sink instanceof SinkTransformedImpl) {
-      boolean br = true;
+      return new StreamDefault<>(
+          source, ((SinkTransformedImpl<V, ?, W>) sink).withResult(initial), initial);
     }
     return new StreamDefault<>(source, ((SinkDefault<V, W>) sink).withResult(initial), initial);
   }

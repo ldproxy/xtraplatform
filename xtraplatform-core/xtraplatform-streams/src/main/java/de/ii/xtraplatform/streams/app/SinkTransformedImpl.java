@@ -41,9 +41,10 @@ public class SinkTransformedImpl<T, U, V> implements SinkReducedTransformed<T, U
   }
 
   <V1> SinkReducedTransformed<T, U, V1> withResult(V1 initial) {
-    /*if (sink instanceof SinkTransformed) {
-      return new SinkTransformed<>(transformer, ((SinkTransformed<U, ?, V>) sink).withResult(initial));
-    }*/
+    if (sink instanceof SinkTransformedImpl) {
+      return new SinkTransformedImpl<>(
+          transformer, ((SinkTransformedImpl<U, ?, V>) sink).withResult(initial));
+    }
     return new SinkTransformedImpl<>(transformer, ((SinkDefault<U, V>) sink).withResult(initial));
   }
 }
