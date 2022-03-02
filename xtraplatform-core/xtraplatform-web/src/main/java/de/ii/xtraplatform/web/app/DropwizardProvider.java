@@ -12,6 +12,7 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.health.HealthCheck;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -118,6 +119,8 @@ public class DropwizardProvider implements AppLifeCycle {
 
   private void run() throws Exception {
     environment.jersey().setUrlPattern(JERSEY_ENDPOINT);
+
+    environment.jersey().register(new JacksonJaxbXMLProvider());
 
     this.server = configuration.getServerFactory().build(environment);
 

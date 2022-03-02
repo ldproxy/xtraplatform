@@ -10,12 +10,8 @@ dependencies {
     embeddedExport (group: 'io.dropwizard', name: 'dropwizard-auth', version: dropwizardVersion)
     embeddedExport (group: 'io.dropwizard', name: 'dropwizard-json-logging', version: dropwizardVersion)
     embeddedExport group: 'org.threeten', name: 'threeten-extra', version: '1.5.0'
-
-    embeddedExport group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'
-    embeddedExport group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
-    embeddedExport group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.3.0.1'
-    embeddedExport group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.3.3'
-    embeddedExport group: 'org.glassfish.jersey.media', name: 'jersey-media-jaxb', version: '2.33'
+    embeddedExport group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '2.3.3'
+    embeddedExport group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-xml-provider', version: jacksonVersion
 
     embeddedExport (group: 'com.google.dagger', name: 'dagger', version: '2.+') {
         transitive = false
@@ -30,8 +26,8 @@ moduleInfo {
     requires = [
         'java.sql',
         'java.xml',
-        'jdk.unsupported',
-        'static jdk.management',
+        'jdk.unsupported', //caffeine
+        'static jdk.management', //metrics
     ]
     exports = [
             '!io.dropwizard.logback.shaded*'
@@ -39,10 +35,12 @@ moduleInfo {
     uses = [
             'ch.qos.logback.classic.spi.Configurator',
             'javax.validation.valueextraction.ValueExtractor',
-            'javax.validation.ConstraintValidator'
+            'javax.validation.ConstraintValidator',
+            '!org.codehaus.stax2.validation*',
     ]
     provides = [
             '!io.dropwizard.jackson.Discoverable': [],
-            '!javax.xml.bind.JAXBContext': []
+            '!javax.xml.bind.JAXBContext': [],
+            '!org.codehaus.stax2.validation*': [],
     ]
 }
