@@ -21,8 +21,12 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HttpClientApache implements HttpClient {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientApache.class);
 
   private final CloseableHttpClient httpClient;
 
@@ -53,6 +57,10 @@ public class HttpClientApache implements HttpClient {
   }
 
   private static InputStream getAsInputStream(CloseableHttpClient client, HttpUriRequest request) {
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("HTTP {} request: {}", request.getMethod(), request.getURI());
+    }
+
     try {
       return client.execute(request).getEntity().getContent();
     } catch (IOException e) {
