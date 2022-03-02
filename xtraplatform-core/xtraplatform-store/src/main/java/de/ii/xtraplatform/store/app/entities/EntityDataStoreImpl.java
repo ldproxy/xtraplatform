@@ -195,6 +195,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     ImmutableReplayEvent.Builder builder =
         ImmutableReplayEvent.builder().from(event).identifier(cacheKey);
     if (!overridesPath.getKeyPath().isEmpty()) {
+      //TODO: multiple subtypes
       Optional<KeyPathAlias> keyPathAlias =
           entityFactories
               .get(overridesPath.getEntityType())
@@ -215,7 +216,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
     return (EntityDataBuilder<EntityData>)
-        entityFactories.get(identifier.path().get(0)).dataBuilder();
+        entityFactories.get(identifier.path().get(0)).superDataBuilder();
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, String entitySubtype) {
@@ -314,7 +315,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         EntityData hydratedData = hydrateData(identifier, entityData);
 
         return entityFactories
-            .get(identifier.path().get(0))
+            .get(identifier.path().get(0), entityData.getEntitySubType())
             .createInstance(hydratedData)
             .whenComplete(
                 (entity, throwable) -> {
@@ -339,7 +340,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       EntityData hydratedData = hydrateData(identifier, entityData);
 
       return entityFactories
-          .get(identifier.path().get(0))
+          .get(identifier.path().get(0), entityData.getEntitySubType())
           .updateInstance(hydratedData)
           .thenAccept(ignore -> CompletableFuture.completedFuture(null));
     }
@@ -347,7 +348,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected void onDelete(Identifier identifier) {
-    entityFactories.get(identifier.path().get(0)).deleteInstance(identifier.id());
+    entityFactories.getAll(identifier.path().get(0))
+        .forEach(factory -> factory.deleteInstance(identifier.id()));
   }
 
   @Override
