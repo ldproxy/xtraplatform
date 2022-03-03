@@ -195,7 +195,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     ImmutableReplayEvent.Builder builder =
         ImmutableReplayEvent.builder().from(event).identifier(cacheKey);
     if (!overridesPath.getKeyPath().isEmpty()) {
-      //TODO: multiple subtypes
+      // TODO: multiple subtypes
       Optional<KeyPathAlias> keyPathAlias =
           entityFactories
               .get(overridesPath.getEntityType())
@@ -348,7 +348,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected void onDelete(Identifier identifier) {
-    entityFactories.getAll(identifier.path().get(0))
+    entityFactories
+        .getAll(identifier.path().get(0))
         .forEach(factory -> factory.deleteInstance(identifier.id()));
   }
 
