@@ -586,6 +586,14 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private EntityData hydrateData(Identifier identifier, EntityData entityData) {
     EntityData hydratedData = entityData;
 
+    if (LOGGER.isDebugEnabled(MARKER.DUMP)) {
+      try{
+        LOGGER.debug(MARKER.DUMP, "Entity data for {}:\n{}", identifier.asPath(), new String(valueEncoding.serialize(entityData), StandardCharsets.UTF_8));
+      } catch (Throwable e) {
+        // ignore
+      }
+    }
+
     if (entityData instanceof AutoEntity) {
       AutoEntity autoEntity = (AutoEntity) entityData;
       if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {

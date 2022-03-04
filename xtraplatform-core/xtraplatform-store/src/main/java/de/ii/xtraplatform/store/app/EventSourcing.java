@@ -287,14 +287,6 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     if (Objects.isNull(value)) {
       cache.remove(key);
     } else {
-      if (LOGGER.isDebugEnabled(MARKER.DUMP)) {
-        try{
-          LOGGER.debug(MARKER.DUMP, "Entity data for {}:\n{}", event.identifier().asPath(), new String(valueEncoding.serialize(value), StandardCharsets.UTF_8));
-        } catch (Throwable e) {
-          // ignore
-        }
-      }
-
       cache.put(key, value);
     }
 
