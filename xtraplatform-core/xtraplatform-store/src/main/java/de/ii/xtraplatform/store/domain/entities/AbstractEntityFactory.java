@@ -100,6 +100,8 @@ public abstract class AbstractEntityFactory<
           LogContext.error(LOGGER, e, "Could not reload configuration");
           reloaded.complete(null);
         }
+      } else {
+        return createInstance(entityData);
       }
 
       return reloaded;
