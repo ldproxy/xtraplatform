@@ -122,7 +122,7 @@ public class ApplicationProviderDefault implements ApplicationProvider {
 
     bootstrap.setConfigurationSourceProvider(
         new SubstitutingSourceProvider(
-            new MergingSourceProvider( // TODO: baseConfigs
+            new MergingSourceProvider(
                 bootstrap.getConfigurationSourceProvider(), ImmutableMap.of(), env),
             new EnvironmentVariableSubstitutor(false)));
 

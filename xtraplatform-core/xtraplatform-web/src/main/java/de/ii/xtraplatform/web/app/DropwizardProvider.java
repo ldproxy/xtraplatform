@@ -12,7 +12,6 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.health.HealthCheck;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -25,7 +24,6 @@ import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.ApplicationProvider;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.MustacheRenderer;
-import io.dropwizard.jetty.NonblockingServletHolder;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
@@ -36,11 +34,9 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.apache.commons.lang3.tuple.Pair;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.LoggerFactory;
 
+//TODO: merge into AppLauncher
 /** @author zahnen */
 @Singleton
 @AutoBind
@@ -50,34 +46,29 @@ public class DropwizardProvider implements AppLifeCycle {
   static final String JERSEY_ENDPOINT = "/rest/*";
 
   private final ApplicationProvider applicationProvider;
-  private final AdminEndpointServlet adminEndpoint;
   private final AppContext appContext;
   private final MustacheRenderer mustacheRenderer;
   private final Lazy<Set<DropwizardPlugin>> plugins;
 
   private AppConfiguration configuration;
   private Environment environment;
-  private ServletContainer jerseyContainer;
-  private Server server;
 
   @Inject
   public DropwizardProvider(
       ApplicationProvider applicationProvider,
       MustacheRenderer mustacheRenderer,
       AppContext appContext,
-      AdminEndpointServlet adminEndpoint,
       Lazy<Set<DropwizardPlugin>> plugins) {
     this.applicationProvider = applicationProvider;
     this.mustacheRenderer = mustacheRenderer;
     this.appContext = appContext;
-    this.adminEndpoint = adminEndpoint;
     this.plugins = plugins;
   }
 
   @Override
   public int getPriority() {
-    // start last
-    return 2000;
+    // start first
+    return 0;
   }
 
   @Override
@@ -97,54 +88,10 @@ public class DropwizardProvider implements AppLifeCycle {
           cfgFile);
       System.exit(1);
     }
-
-    try {
-      run();
-      LOGGER.info("Started web server at {}", appContext.getUri());
-    } catch (Throwable ex) {
-      LogContext.error(LOGGER, ex, "Error starting {}", appContext.getName());
-      System.exit(1);
-    }
   }
 
   @Override
   public void onStop() {
-    try {
-      server.stop();
-      server.join();
-    } catch (Exception e) {
-      LogContext.error(LOGGER, e, "Error when stopping web server");
-    }
-  }
-
-  private void run() throws Exception {
-    environment.jersey().setUrlPattern(JERSEY_ENDPOINT);
-
-    environment.jersey().register(new JacksonJaxbXMLProvider());
-
-    this.server = configuration.getServerFactory().build(environment);
-
-    addAdminEndpoint();
-
-    server.start();
-  }
-
-  private void addAdminEndpoint() {
-    ServletHolder[] admin = environment.getAdminContext().getServletHandler().getServlets();
-
-    int ai = -1;
-    for (int i = 0; i < admin.length; i++) {
-      if (admin[i].getName().contains("Admin")) {
-        ai = i;
-      }
-    }
-    if (ai >= 0) {
-      String name = admin[ai].getName();
-      admin[ai] = new NonblockingServletHolder(adminEndpoint);
-      admin[ai].setName(name);
-
-      environment.getAdminContext().getServletHandler().setServlets(admin);
-    }
   }
 
   private void init(Path cfgFilePath, ENV env) {
@@ -153,7 +100,6 @@ public class DropwizardProvider implements AppLifeCycle {
 
     this.configuration = configurationEnvironmentPair.getLeft();
     this.environment = configurationEnvironmentPair.getRight();
-    this.jerseyContainer = (ServletContainer) environment.getJerseyServletContainer();
 
     this.environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
@@ -189,6 +135,7 @@ public class DropwizardProvider implements AppLifeCycle {
         .forEach(plugin -> plugin.init(configuration, environment));
   }
 
+  //TODO: to plugin
   private void initBootstrap(Bootstrap<AppConfiguration> bootstrap) {
     boolean cacheTemplates = !appContext.isDevEnv();
 

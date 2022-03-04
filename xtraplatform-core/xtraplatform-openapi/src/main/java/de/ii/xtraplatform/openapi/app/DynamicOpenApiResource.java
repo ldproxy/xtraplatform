@@ -43,12 +43,12 @@ public class DynamicOpenApiResource implements Endpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApiResource.class);
 
-  private final DynamicOpenApiChangeListener openApi;
+  private final DynamicOpenApi openApi;
   private final OpenApiViewerResource openApiViewerResource;
 
   @Inject
   public DynamicOpenApiResource(
-      OpenApiViewerResource openApiViewerResource, DynamicOpenApiChangeListener openApi) {
+      OpenApiViewerResource openApiViewerResource, DynamicOpenApi openApi) {
     this.openApi = openApi;
     this.openApiViewerResource = openApiViewerResource;
   }
@@ -104,7 +104,7 @@ public class DynamicOpenApiResource implements Endpoint {
   }
 
   @GET
-  @Produces({DynamicOpenApi.YAML})
+  @Produces({DynamicOpenApiImpl.YAML})
   // @Operation(summary = "the API description - this document", tags = {"Capabilities"}, parameters
   // = {@Parameter(name = "f")})
   public Response getApiDescriptionYaml(
