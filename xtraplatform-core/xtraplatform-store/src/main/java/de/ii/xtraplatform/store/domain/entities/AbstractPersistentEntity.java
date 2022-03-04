@@ -45,6 +45,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   private T data;
   private Future<?> startup;
   private EntityState.STATE state;
+  private EntityState.STATE previousState;
 
   public AbstractPersistentEntity(T data) {
     this.executorService =
@@ -57,6 +58,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     this.data = data;
     this.startup = null;
     this.state = STATE.UNKNOWN;
+    this.previousState = STATE.UNKNOWN;
     setState(STATE.LOADING);
   }
 
@@ -293,11 +295,17 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     return state;
   }
 
+  @Override
+  public STATE getPreviousState() {
+    return previousState;
+  }
+
   public void setState(STATE state) {
     if (this.state != state) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("{}: {} -> {}", getId(), this.state, state);
       }
+      this.previousState = this.state;
       this.state = state;
       stateChangeListeners.forEach(listener -> listener.accept(this));
     }
