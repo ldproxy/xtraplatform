@@ -16,6 +16,7 @@ import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
 import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
@@ -41,6 +42,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityFactories;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -621,6 +623,14 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     }
 
     hydratedData = hydrate(identifier, hydratedData);
+
+    if (LOGGER.isDebugEnabled(MARKER.DUMP) && entityData instanceof AutoEntity && ((AutoEntity) entityData).isAuto()) {
+      try{
+        LOGGER.debug(MARKER.DUMP, "Generated entity data for {}:\n{}", identifier.asPath(), new String(valueEncoding.serialize(hydratedData), StandardCharsets.UTF_8));
+      } catch (Throwable e) {
+        // ignore
+      }
+    }
 
     return hydratedData;
   }
