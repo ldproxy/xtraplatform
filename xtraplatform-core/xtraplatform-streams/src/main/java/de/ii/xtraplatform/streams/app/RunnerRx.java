@@ -16,7 +16,9 @@ import de.ii.xtraplatform.streams.domain.Reactive.StreamContext;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+import java.util.LinkedList;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -26,16 +28,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//TODO: the queue was introduced as a mean to protect the connection pool and prevent deadlocks
+// because of a bug (running.get() < queueSize instead of running.get() < capacity) it was never used
+// despite that there were no problems with deadlocks and enabling it slightly decreases performance
+// so I guess the options are to either remove it or enable it and use DYNAMIC_CAPACITY for FeatureStreams
 public class RunnerRx implements Runner {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RunnerRx.class);
 
   private final Scheduler scheduler;
-  private final ExecutorService executorService;
   private final String name;
   private final int capacity;
   private final int queueSize;
-  private final ConcurrentLinkedQueue<Runnable> queue;
+  private final Queue<Runnable> queue;
   private final AtomicInteger running;
 
   public RunnerRx(String name) {
@@ -48,37 +53,19 @@ public class RunnerRx implements Runner {
 
   RunnerRx(ExecutorService executorService, String name, int capacity, int queueSize) {
     if (capacity != 0) {
-      // TODO
+      //TODO: thread names
       getDispatcherName(name);
-      this.executorService = executorService;
       this.scheduler = Schedulers.from(executorService);
       scheduler.start();
     } else {
-      this.executorService = null;
       this.scheduler = null;
     }
     this.name = name;
     this.capacity = capacity;
     this.queueSize = queueSize;
-    this.queue = new ConcurrentLinkedQueue<>();
+    this.queue = new LinkedList<>();
     this.running = new AtomicInteger(0);
   }
-
-  // 2x
-  /*@Override
-  @Deprecated
-  public <T, U, V> CompletionStage<V> run(Source<T, U> source, Sink<T, CompletionStage<V>> sink) {
-    //return run(LogContextStream.graphWithMdc(source, sink, Keep.right()));
-    throw new UnsupportedOperationException();
-  }
-
-  // 5x
-  @Override
-  @Deprecated
-  public <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph) {
-    //return runGraph(graph.getGraph());
-    throw new UnsupportedOperationException();
-  }*/
 
   @Override
   public <X> CompletionStage<X> run(Stream<X> stream) {
@@ -128,10 +115,13 @@ public class RunnerRx implements Runner {
 
   private void run(Runnable task) {
     synchronized (running) {
-      if (running.get() < queueSize) {
+      if (running.get() < queueSize) { //correct would be running.get() < capacity, see above
         running.incrementAndGet();
         task.run();
       } else {
+        /*if (queue.size() > queueSize) {
+          queue.poll();
+        }*/
         queue.offer(task);
       }
     }
@@ -140,7 +130,7 @@ public class RunnerRx implements Runner {
   private void runNext() {
     synchronized (running) {
       int current = running.get() - 1;
-      if (current < queueSize) {
+      if (current < queueSize) { //correct would be current < capacity, see above
         Runnable task = queue.poll();
         if (Objects.nonNull(task)) {
           task.run();
@@ -150,11 +140,6 @@ public class RunnerRx implements Runner {
       }
     }
   }
-
-  /*@Override
-  public ExecutionContextExecutor getDispatcher() {
-    return (ExecutionContextExecutor) executorService;
-  }*/
 
   @Override
   public int getCapacity() {
@@ -173,32 +158,8 @@ public class RunnerRx implements Runner {
 
   // TODO
   private static ExecutorService getConfig(String name, int parallelismMin, int parallelismMax) {
-    return Executors.newWorkStealingPool(parallelismMax);
-    /*return ConfigFactory.parseMap(
-    new ImmutableMap.Builder<String, Object>()
-        .put("akka.stdout-loglevel", "OFF")
-        .put("akka.loglevel", "INFO")
-        .put("akka.loggers", ImmutableList.of("akka.event.slf4j.Slf4jLogger"))
-        .put("akka.logging-filter", "akka.event.slf4j.Slf4jLoggingFilter")
-        // .put("akka.log-config-on-start", true)
-        .put(String.format("%s.type", getDispatcherName(name)), "Dispatcher")
-        // .put(String.format("%s.executor", getDispatcherName(name)), "fork-join-executor")
-        .put(
-            String.format("%s.executor", getDispatcherName(name)),
-            "de.ii.xtraplatform.streams.app.StreamExecutorServiceConfigurator")
-        .put(
-            String.format("%s.fork-join-executor.parallelism-min", getDispatcherName(name)),
-            parallelismMin)
-        .put(
-            String.format("%s.fork-join-executor.parallelism-factor", getDispatcherName(name)),
-            1.0)
-        .put(
-            String.format("%s.fork-join-executor.parallelism-max", getDispatcherName(name)),
-            parallelismMax)
-        .put(
-            String.format("%s.fork-join-executor.task-peeking-mode", getDispatcherName(name)),
-            "FIFO")
-        .build());*/
+
+    return Executors.newWorkStealingPool(Math.max(1, parallelismMax));
   }
 
   private static String getDispatcherName(String name) {
