@@ -21,17 +21,18 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//TODO: the queue was introduced as a mean to protect the connection pool and prevent deadlocks
-// because of a bug (running.get() < queueSize instead of running.get() < capacity) it was never used
+// TODO: the queue was introduced as a mean to protect the connection pool and prevent deadlocks
+// because of a bug (running.get() < queueSize instead of running.get() < capacity) it was never
+// used
 // despite that there were no problems with deadlocks and enabling it slightly decreases performance
-// so I guess the options are to either remove it or enable it and use DYNAMIC_CAPACITY for FeatureStreams
+// so I guess the options are to either remove it or enable it and use DYNAMIC_CAPACITY for
+// FeatureStreams
 public class RunnerRx implements Runner {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RunnerRx.class);
@@ -53,7 +54,7 @@ public class RunnerRx implements Runner {
 
   RunnerRx(ExecutorService executorService, String name, int capacity, int queueSize) {
     if (capacity != 0) {
-      //TODO: thread names
+      // TODO: thread names
       getDispatcherName(name);
       this.scheduler = Schedulers.from(executorService);
       scheduler.start();
@@ -115,7 +116,7 @@ public class RunnerRx implements Runner {
 
   private void run(Runnable task) {
     synchronized (running) {
-      if (running.get() < queueSize) { //correct would be running.get() < capacity, see above
+      if (running.get() < queueSize) { // correct would be running.get() < capacity, see above
         running.incrementAndGet();
         task.run();
       } else {
@@ -130,7 +131,7 @@ public class RunnerRx implements Runner {
   private void runNext() {
     synchronized (running) {
       int current = running.get() - 1;
-      if (current < queueSize) { //correct would be current < capacity, see above
+      if (current < queueSize) { // correct would be current < capacity, see above
         Runnable task = queue.poll();
         if (Objects.nonNull(task)) {
           task.run();

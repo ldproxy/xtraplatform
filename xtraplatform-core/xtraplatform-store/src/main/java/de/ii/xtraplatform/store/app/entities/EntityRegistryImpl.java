@@ -14,7 +14,6 @@ import de.ii.xtraplatform.store.domain.entities.EntityFactories;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.EntityState;
-import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
 import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
 import java.util.List;
 import java.util.Optional;

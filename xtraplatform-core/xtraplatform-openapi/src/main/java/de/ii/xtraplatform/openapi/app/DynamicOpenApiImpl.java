@@ -55,8 +55,7 @@ public class DynamicOpenApiImpl extends BaseOpenApiResource
   private OpenAPI openApiSpec;
 
   @Inject
-  public DynamicOpenApiImpl() {
-  }
+  public DynamicOpenApiImpl() {}
 
   @Override
   public Consumer<Set<Object>> getConsumer() {

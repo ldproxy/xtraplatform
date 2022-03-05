@@ -38,7 +38,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.server.Server;
 import org.slf4j.LoggerFactory;
 
-//TODO: merge into AppLauncher
+// TODO: merge into AppLauncher
 /** @author zahnen */
 @Singleton
 @AutoBind
@@ -93,8 +93,7 @@ public class DropwizardProvider implements AppLifeCycle {
   }
 
   @Override
-  public void onStop() {
-  }
+  public void onStop() {}
 
   private void init(Path cfgFilePath, ENV env) {
     Pair<AppConfiguration, Environment> configurationEnvironmentPair =
@@ -143,7 +142,7 @@ public class DropwizardProvider implements AppLifeCycle {
         .forEach(plugin -> plugin.init(configuration, environment));
   }
 
-  //TODO: to plugin
+  // TODO: to plugin
   private void initBootstrap(Bootstrap<AppConfiguration> bootstrap) {
     boolean cacheTemplates = !appContext.isDevEnv();
 

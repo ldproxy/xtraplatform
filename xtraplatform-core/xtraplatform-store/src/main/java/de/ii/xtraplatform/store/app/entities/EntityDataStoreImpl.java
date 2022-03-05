@@ -587,8 +587,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     EntityData hydratedData = entityData;
 
     if (LOGGER.isDebugEnabled(MARKER.DUMP)) {
-      try{
-        LOGGER.debug(MARKER.DUMP, "Entity data for {}:\n{}", identifier.asPath(), new String(valueEncoding.serialize(entityData), StandardCharsets.UTF_8));
+      try {
+        LOGGER.debug(
+            MARKER.DUMP,
+            "Entity data for {}:\n{}",
+            identifier.asPath(),
+            new String(valueEncoding.serialize(entityData), StandardCharsets.UTF_8));
       } catch (Throwable e) {
         // ignore
       }
@@ -632,9 +636,15 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
     hydratedData = hydrate(identifier, hydratedData);
 
-    if (LOGGER.isDebugEnabled(MARKER.DUMP) && entityData instanceof AutoEntity && ((AutoEntity) entityData).isAuto()) {
-      try{
-        LOGGER.debug(MARKER.DUMP, "Generated entity data for {}:\n{}", identifier.asPath(), new String(valueEncoding.serialize(hydratedData), StandardCharsets.UTF_8));
+    if (LOGGER.isDebugEnabled(MARKER.DUMP)
+        && entityData instanceof AutoEntity
+        && ((AutoEntity) entityData).isAuto()) {
+      try {
+        LOGGER.debug(
+            MARKER.DUMP,
+            "Generated entity data for {}:\n{}",
+            identifier.asPath(),
+            new String(valueEncoding.serialize(hydratedData), StandardCharsets.UTF_8));
       } catch (Throwable e) {
         // ignore
       }
