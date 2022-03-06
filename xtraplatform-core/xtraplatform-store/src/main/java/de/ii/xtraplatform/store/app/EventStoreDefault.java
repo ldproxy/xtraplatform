@@ -138,7 +138,9 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                   boolean matches = filter.matches(event);
 
                   if (matches) {
-                    // LOGGER.debug("ALLOW {}", event.asPath());
+                    if (LOGGER.isTraceEnabled()) {
+                      LOGGER.trace("ALLOW {}", event.asPath());
+                    }
                     if (Objects.equals(event.type(), "entities")
                         || Objects.equals(event.type(), "overrides")) {
                       String id =
@@ -153,11 +155,9 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                                   .identifier(Identifier.from(id, event.identifier().path().get(0)))
                                   .payload(ValueEncodingJackson.YAML_NULL)
                                   .build());
-                      /*if (deleted) {
-                        LOGGER.debug("DELETING {} {}", event.identifier()
-                                                            .path()
-                                                            .get(0), id);
-                      }*/
+                      if (deleted && LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("DELETING {} {}", event.identifier().path().get(0), id);
+                      }
                     } else {
                       String id = EntityDataDefaultsStore.EVENT_TYPE;
                       boolean deleted =
@@ -172,14 +172,15 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                                           .build())
                                   .payload(ValueEncodingJackson.YAML_NULL)
                                   .build());
-                      /*if (deleted) {
-                        LOGGER.debug("DELETING {} {}", event.identifier()
-                                                            .path(), id);
-                      }*/
+                      if (deleted && LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("DELETING {} {}", event.identifier().path(), id);
+                      }
                     }
                     return true;
                   }
-                  // LOGGER.debug("SKIP {}", event.asPath());
+                  if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("SKIP {}", event.asPath());
+                  }
                   return false;
                 })
             // TODO: set priority per event type (for now alphabetic works:

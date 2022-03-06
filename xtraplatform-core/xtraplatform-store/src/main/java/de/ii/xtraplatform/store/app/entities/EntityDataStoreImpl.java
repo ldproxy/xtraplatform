@@ -338,13 +338,20 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   protected CompletableFuture<Void> onUpdate(Identifier identifier, EntityData entityData) {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
-      if (LOGGER.isDebugEnabled()) LOGGER.debug("Reloading entity: {}", identifier);
-      EntityData hydratedData = hydrateData(identifier, entityData);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Reloading entity: {}", identifier);
+      }
 
-      return entityFactories
-          .get(identifier.path().get(0), entityData.getEntitySubType())
-          .updateInstance(hydratedData)
-          .thenAccept(ignore -> CompletableFuture.completedFuture(null));
+      try {
+        EntityData hydratedData = hydrateData(identifier, entityData);
+
+        return entityFactories
+            .get(identifier.path().get(0), entityData.getEntitySubType())
+            .updateInstance(hydratedData)
+            .thenAccept(ignore -> CompletableFuture.completedFuture(null));
+      } catch (Throwable e) {
+        return CompletableFuture.completedFuture(null);
+      }
     }
   }
 
