@@ -10,6 +10,7 @@ package de.ii.xtraplatform.web.app;
 import ch.qos.logback.classic.LoggerContext;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.base.domain.LoggingFilter;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
@@ -89,11 +90,11 @@ public class LogConfigurationTask extends Task implements DropwizardPlugin {
   }
 
   private List<String> getFiltersToEnable(Map<String, List<String>> parameters) {
-    return getValueList(parameters.get("enable"));
+    return getValueList(parameters.getOrDefault("enable", ImmutableList.of()));
   }
 
   private List<String> getFiltersToDisable(Map<String, List<String>> parameters) {
-    return getValueList(parameters.get("disable"));
+    return getValueList(parameters.getOrDefault("disable", ImmutableList.of()));
   }
 
   private List<String> getValueList(Collection<String> values) {
