@@ -7,12 +7,14 @@
  */
 package de.ii.xtraplatform.streams.app;
 
+import de.ii.xtraplatform.streams.app.SinkDefault.Type;
 import de.ii.xtraplatform.streams.domain.Reactive.BasicStream;
 import de.ii.xtraplatform.streams.domain.Reactive.RunnableStream;
 import de.ii.xtraplatform.streams.domain.Reactive.Runner;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
 import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import de.ii.xtraplatform.streams.domain.Reactive.Stream;
+import de.ii.xtraplatform.streams.domain.Reactive.StreamContext;
 import de.ii.xtraplatform.streams.domain.Reactive.StreamWithResult;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,26 +23,35 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<V, W> {
+public class StreamDefault<V, W>
+    implements BasicStream<V, W>, StreamWithResult<V, W>, StreamContext<W> {
 
   private final Source<V> source;
   private final SinkReduced<V, W> sink;
-  private final W result;
+  private final AtomicReference<W> result;
   private final List<Function<Throwable, Throwable>> errorMappers;
   private Optional<BiFunction<W, Throwable, W>> errorHandler;
   private Optional<BiFunction<W, V, W>> itemHandler;
 
   public StreamDefault(Source<V> source, SinkReduced<V, W> sink) {
-    this(source, sink, null);
+    this(
+        source,
+        sink,
+        sink instanceof SinkDefault
+            ? ((SinkDefault<V, W>) sink).getItem().get()
+            : sink instanceof SinkTransformedImpl
+                ? ((SinkTransformedImpl<?, ?, W>) sink).getItem().get()
+                : null);
   }
 
   StreamDefault(Source<V> source, SinkReduced<V, W> sink, W initialResult) {
     this.source = source;
     this.sink = sink;
-    this.result = initialResult;
+    this.result = new AtomicReference<>(initialResult);
     this.errorMappers = new ArrayList<>();
     this.errorHandler = Optional.empty();
     this.itemHandler = Optional.empty();
@@ -60,7 +71,8 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
   @Override
   public <W1> StreamWithResult<V, W1> withResult(W1 initial) {
     if (sink instanceof SinkTransformedImpl) {
-      boolean br = true;
+      return new StreamDefault<>(
+          source, ((SinkTransformedImpl<V, ?, W>) sink).withResult(initial), initial);
     }
     return new StreamDefault<>(source, ((SinkDefault<V, W>) sink).withResult(initial), initial);
   }
@@ -92,7 +104,8 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
     return sink;
   }
 
-  public W getResult() {
+  @Override
+  public AtomicReference<W> getResult() {
     return result;
   }
 
@@ -104,29 +117,29 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
     return itemHandler;
   }
 
-  CompletionStage<W> onComplete(CompletionStage<W> resultStage) {
-    CompletableFuture<W> completableFuture = new CompletableFuture<>();
-
-    resultStage.whenComplete(
-        (result, throwable) -> {
-          if (Objects.isNull(throwable)) {
-            completableFuture.complete(result);
-          } else {
-            onError(throwable, completableFuture);
-          }
-        });
-
-    return completableFuture;
+  @Override
+  public void onComplete(CompletableFuture<W> resultFuture) {
+    if (sink instanceof SinkDefault && ((SinkDefault<V, W>) sink).getType() == Type.HEAD) {
+      resultFuture.complete((W) ((SinkDefault<V, W>) sink).getHead().get());
+    } else {
+      resultFuture.complete(result.get());
+    }
   }
 
-  void onError(Throwable throwable, CompletableFuture<W> resultFuture) {
+  @Override
+  public void onError(CompletableFuture<W> resultFuture, Throwable throwable) {
     Throwable actualThrowable =
         throwable instanceof CompletionException && Objects.nonNull(throwable.getCause())
             ? throwable.getCause()
             : throwable;
+
+    for (Function<Throwable, Throwable> mapper : errorMappers) {
+      actualThrowable = mapper.apply(actualThrowable);
+    }
+
     if (errorHandler.isPresent()) {
       try {
-        resultFuture.complete(errorHandler.get().apply(result, actualThrowable));
+        resultFuture.complete(errorHandler.get().apply(result.get(), actualThrowable));
       } catch (Throwable handlerThrowable) {
         resultFuture.completeExceptionally(handlerThrowable);
       }
@@ -135,7 +148,7 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
     }
   }
 
-  class WithFinalizer<X> implements Stream<X> {
+  class WithFinalizer<X> implements Stream<X>, StreamContext<X> {
     private final Function<W, X> finalizer;
 
     WithFinalizer(Function<W, X> finalizer) {
@@ -151,8 +164,38 @@ public class StreamDefault<V, W> implements BasicStream<V, W>, StreamWithResult<
       return StreamDefault.this;
     }
 
-    public Function<W, X> getFinalizer() {
-      return finalizer;
+    @Override
+    public AtomicReference<X> getResult() {
+      return null;
+    }
+
+    @Override
+    public void onComplete(CompletableFuture<X> resultFuture) {
+      try {
+        X finalized = finalizer.apply(StreamDefault.this.result.get());
+        resultFuture.complete(finalized);
+      } catch (Throwable throwable) {
+        resultFuture.completeExceptionally(throwable);
+      }
+    }
+
+    @Override
+    public void onError(CompletableFuture<X> result, Throwable throwable) {
+      CompletableFuture<W> resultFuture = new CompletableFuture<>();
+      StreamDefault.this.onError(resultFuture, throwable);
+      resultFuture.whenComplete(
+          (w, throwable1) -> {
+            if (Objects.nonNull(throwable1)) {
+              result.completeExceptionally(throwable1);
+            } else {
+              try {
+                X finalized = finalizer.apply(w);
+                result.complete(finalized);
+              } catch (Throwable throwable2) {
+                result.completeExceptionally(throwable2);
+              }
+            }
+          });
     }
   }
 

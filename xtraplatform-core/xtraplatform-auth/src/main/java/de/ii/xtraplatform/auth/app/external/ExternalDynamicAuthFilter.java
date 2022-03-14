@@ -7,15 +7,11 @@
  */
 package de.ii.xtraplatform.auth.app.external;
 
-import akka.http.javadsl.model.ContentType;
-import akka.http.javadsl.model.ContentTypes;
-import akka.http.javadsl.model.HttpCharsets;
-import akka.http.javadsl.model.MediaTypes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import de.ii.xtraplatform.streams.domain.HttpClient;
+import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.DefaultUnauthorizedHandler;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
@@ -27,6 +23,7 @@ import java.security.Principal;
 import java.util.List;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 import org.glassfish.jersey.message.internal.ReaderWriter;
 import org.slf4j.Logger;
@@ -36,10 +33,8 @@ import org.slf4j.LoggerFactory;
 public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<String, P> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDynamicAuthFilter.class);
 
-  private static final ContentType.WithFixedCharset XACML =
-      ContentTypes.create(MediaTypes.applicationWithFixedCharset("xacml+json", HttpCharsets.UTF_8));
-  private static final ContentType.WithFixedCharset GEOJSON =
-      ContentTypes.create(MediaTypes.applicationWithFixedCharset("geo+json", HttpCharsets.UTF_8));
+  private static final MediaType XACML = new MediaType("application", "xacml+json", "utf-8");
+  private static final MediaType GEOJSON = new MediaType("application", "geo+json", "utf-8");
   private static final ObjectMapper JSON = new ObjectMapper();
 
   private final String edaUrl;

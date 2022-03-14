@@ -12,7 +12,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import de.ii.xtraplatform.store.domain.legacy.KeyNotFoundException;
-import de.ii.xtraplatform.store.domain.legacy.KeyValueStore;
+import de.ii.xtraplatform.store.domain.legacy.KeyValueStoreLegacy;
 import de.ii.xtraplatform.store.legacy.Transaction;
 import de.ii.xtraplatform.store.legacy.rest.ResourceTransaction.OPERATION;
 import java.io.IOException;
@@ -60,7 +60,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
 
   protected static final String OVERRIDES_STORE_NAME = "#overrides#";
 
-  private final KeyValueStore rootConfigStore;
+  private final KeyValueStoreLegacy rootConfigStore;
   protected final String resourceType;
   private final Map<String, ResourceCache<T>> resourceCache;
   private final Lock resourceCacheLock;
@@ -73,7 +73,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
   private final ResourceSerializer<T> serializer;
 
   public AbstractGenericResourceStore(
-      KeyValueStore rootConfigStore, String resourceType, ObjectMapper jsonMapper) {
+      KeyValueStoreLegacy rootConfigStore, String resourceType, ObjectMapper jsonMapper) {
     this(
         rootConfigStore,
         resourceType,
@@ -82,7 +82,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
   }
 
   public AbstractGenericResourceStore(
-      KeyValueStore rootConfigStore,
+      KeyValueStoreLegacy rootConfigStore,
       String resourceType,
       ObjectMapper jsonMapper,
       boolean fullCache) {
@@ -94,7 +94,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
   }
 
   public AbstractGenericResourceStore(
-      KeyValueStore rootConfigStore,
+      KeyValueStoreLegacy rootConfigStore,
       String resourceType,
       boolean fullCache, /*DeepUpdater<T> deepUpdater,*/
       ResourceSerializer<T> serializer) {
@@ -143,13 +143,13 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     return resourceLocks.get(pid);
   }
 
-  protected KeyValueStore getResourceStore(String[] path) {
+  protected KeyValueStoreLegacy getResourceStore(String[] path) {
     if (path.length == 0) {
       // TODO: throw
       return null;
     }
 
-    KeyValueStore resourceStore = rootConfigStore.getChildStore(path);
+    KeyValueStoreLegacy resourceStore = rootConfigStore.getChildStore(path);
 
     resourceCacheLock.lock();
     try {
@@ -493,7 +493,7 @@ public abstract class AbstractGenericResourceStore<T extends Resource, U extends
     return paths;
   }
 
-  private List<String> getAllChildPaths(KeyValueStore store, String parent) {
+  private List<String> getAllChildPaths(KeyValueStoreLegacy store, String parent) {
     List<String> paths = new ArrayList<>();
 
     for (String child : store.getChildStoreIds()) {

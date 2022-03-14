@@ -7,9 +7,11 @@
  */
 package de.ii.xtraplatform.store.app;
 
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
-import de.ii.xtraplatform.runtime.domain.StoreConfiguration.StoreMode;
+import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
+import de.ii.xtraplatform.base.domain.StoreConfiguration;
+import de.ii.xtraplatform.base.domain.StoreConfiguration.StoreMode;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
@@ -28,18 +30,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.Validate;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
-public class EventStoreDefault implements EventStore {
+@Singleton
+@AutoBind
+public class EventStoreDefault implements EventStore, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDefault.class);
 
@@ -48,13 +46,11 @@ public class EventStoreDefault implements EventStore {
   private final StoreConfiguration storeConfiguration;
   private final boolean isReadOnly;
 
-  EventStoreDefault(
-      @Requires XtraPlatform xtraPlatform,
-      @Requires EventStoreDriver eventStoreDriver,
-      @Requires Reactive reactive) {
+  @Inject
+  EventStoreDefault(AppContext appContext, EventStoreDriver eventStoreDriver, Reactive reactive) {
     this.driver = eventStoreDriver;
     this.subscriptions = new EventSubscriptionsImpl(reactive.runner("events"));
-    this.storeConfiguration = xtraPlatform.getConfiguration().store;
+    this.storeConfiguration = appContext.getConfiguration().store;
     this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
   }
 
@@ -68,8 +64,14 @@ public class EventStoreDefault implements EventStore {
     this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
   }
 
-  @Validate
-  private void onInit() {
+  @Override
+  public int getPriority() {
+    // start first
+    return 1;
+  }
+
+  @Override
+  public void onStart() {
     LOGGER.info("Store mode: {}", storeConfiguration.mode);
 
     driver.start();
@@ -136,7 +138,9 @@ public class EventStoreDefault implements EventStore {
                   boolean matches = filter.matches(event);
 
                   if (matches) {
-                    // LOGGER.debug("ALLOW {}", event.asPath());
+                    if (LOGGER.isTraceEnabled()) {
+                      LOGGER.trace("ALLOW {}", event.asPath());
+                    }
                     if (Objects.equals(event.type(), "entities")
                         || Objects.equals(event.type(), "overrides")) {
                       String id =
@@ -151,11 +155,9 @@ public class EventStoreDefault implements EventStore {
                                   .identifier(Identifier.from(id, event.identifier().path().get(0)))
                                   .payload(ValueEncodingJackson.YAML_NULL)
                                   .build());
-                      /*if (deleted) {
-                        LOGGER.debug("DELETING {} {}", event.identifier()
-                                                            .path()
-                                                            .get(0), id);
-                      }*/
+                      if (deleted && LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("DELETING {} {}", event.identifier().path().get(0), id);
+                      }
                     } else {
                       String id = EntityDataDefaultsStore.EVENT_TYPE;
                       boolean deleted =
@@ -170,14 +172,15 @@ public class EventStoreDefault implements EventStore {
                                           .build())
                                   .payload(ValueEncodingJackson.YAML_NULL)
                                   .build());
-                      /*if (deleted) {
-                        LOGGER.debug("DELETING {} {}", event.identifier()
-                                                            .path(), id);
-                      }*/
+                      if (deleted && LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("DELETING {} {}", event.identifier().path(), id);
+                      }
                     }
                     return true;
                   }
-                  // LOGGER.debug("SKIP {}", event.asPath());
+                  if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("SKIP {}", event.asPath());
+                  }
                   return false;
                 })
             // TODO: set priority per event type (for now alphabetic works:
@@ -187,7 +190,7 @@ public class EventStoreDefault implements EventStore {
 
     deleteEvents.forEach(
         event -> {
-          subscriptions.emitEvent(event).join();
+          subscriptions.emitEvent(event);
           try {
             Thread.sleep(50);
           } catch (InterruptedException e) {
@@ -196,7 +199,7 @@ public class EventStoreDefault implements EventStore {
         });
     eventStream.forEach(
         event -> {
-          subscriptions.emitEvent(event).join();
+          subscriptions.emitEvent(event);
           try {
             Thread.sleep(50);
           } catch (InterruptedException e) {
@@ -204,8 +207,6 @@ public class EventStoreDefault implements EventStore {
           }
         });
     // TODO: type
-    subscriptions
-        .emitEvent(ImmutableReloadEvent.builder().type("entities").filter(filter).build())
-        .join();
+    subscriptions.emitEvent(ImmutableReloadEvent.builder().type("entities").filter(filter).build());
   }
 }

@@ -1,6 +1,11 @@
-
 dependencies {
     provided project(':xtraplatform-streams')
-    provided project(':xtraplatform-di')
+    provided project(':xtraplatform-web')
 
+}
+
+moduleInfo {
+    requires = [
+            'jdk.unsupported',
+    ]
 }

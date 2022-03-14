@@ -7,15 +7,17 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
-import static de.ii.xtraplatform.dropwizard.domain.LambdaWithException.biConsumerMayThrow;
+import static de.ii.xtraplatform.base.domain.util.LambdaWithException.biConsumerMayThrow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import de.ii.xtraplatform.dropwizard.domain.Jackson;
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.Jackson;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
 import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
@@ -39,6 +41,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsPath;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
+import de.ii.xtraplatform.store.domain.entities.EntityFactories;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -47,26 +50,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.Validate;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component(publicFactory = false)
-@Provides
-@Instantiate
+@Singleton
+@AutoBind(interfaces = {EntityDataDefaultsStore.class})
 public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<Map<String, Object>>
     implements EntityDataDefaultsStore {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityDataDefaultsStoreImpl.class);
 
-  private final EntityFactory entityFactory;
+  private final EntityFactories entityFactories;
   private final ValueEncodingJackson<Map<String, Object>> valueEncoding;
   private final ValueEncodingJackson<EntityDataBuilder<EntityData>> valueEncodingBuilder;
   private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
@@ -74,16 +74,17 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   private final EventSourcing<Map<String, Object>> eventSourcing;
   private final EventStore eventStore;
 
+  @Inject
   public EntityDataDefaultsStoreImpl(
-      @Requires XtraPlatform xtraPlatform,
-      @Requires EventStore eventStore,
-      @Requires Jackson jackson,
-      @Requires EntityFactory entityFactory) {
-    this.entityFactory = entityFactory;
+      AppContext appContext,
+      EventStore eventStore,
+      Jackson jackson,
+      Lazy<Set<EntityFactory>> entityFactories) {
+    this.entityFactories = new EntityFactories(entityFactories);
     this.eventStore = eventStore;
     this.valueEncoding =
         new ValueEncodingJackson<>(
-            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+            jackson, appContext.getConfiguration().store.failOnUnknownProperties);
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
@@ -97,10 +98,11 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
     valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getDefaults, eventSourcing));
+    eventSourcing.start();
 
     this.valueEncodingBuilder =
         new ValueEncodingJackson<>(
-            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+            jackson, appContext.getConfiguration().store.failOnUnknownProperties);
     valueEncodingBuilder.addDecoderMiddleware(
         new ValueDecoderBase<>(
             this::getNewBuilder,
@@ -118,7 +120,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     this.valueEncodingMap =
         new ValueEncodingJackson<>(
-            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+            jackson, appContext.getConfiguration().store.failOnUnknownProperties);
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
             identifier -> new LinkedHashMap<>(),
@@ -136,7 +138,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     this.valueEncodingEntity =
         new ValueEncodingJackson<>(
-            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+            jackson, appContext.getConfiguration().store.failOnUnknownProperties);
     valueEncodingEntity.addDecoderMiddleware(
         new ValueDecoderWithBuilder<>(
             this::getBuilder,
@@ -151,12 +153,6 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                 return null;
               }
             }));
-  }
-
-  // TODO: it seems this is needed for correct order (defaults < entities)
-  @Validate
-  private void onVal() {
-    // LOGGER.debug("VALID");
   }
 
   private List<ReplayEvent> processReplayEvent(ReplayEvent event) {
@@ -181,7 +177,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     EntityDataDefaultsPath defaultsPath = EntityDataDefaultsPath.from(event.identifier());
 
     List<String> subTypes =
-        entityFactory.getSubTypes(defaultsPath.getEntityType(), defaultsPath.getEntitySubtype());
+        entityFactories.getSubTypes(defaultsPath.getEntityType(), defaultsPath.getEntitySubtype());
 
     // LOGGER.debug("Applying to subtypes as well: {}", subTypes);
 
@@ -197,8 +193,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               if (!defaultsPath.getKeyPath().isEmpty()
                   && !Objects.equals(defaultsPath.getKeyPath().get(0), EVENT_TYPE)) {
                 Optional<KeyPathAlias> keyPathAlias =
-                    entityFactory.getKeyPathAlias(
-                        defaultsPath.getKeyPath().get(defaultsPath.getKeyPath().size() - 1));
+                    entityFactories
+                        .get(cacheKey.path().get(0), cacheKey.path().get(1))
+                        .getKeyPathAlias(
+                            defaultsPath.getKeyPath().get(defaultsPath.getKeyPath().size() - 1));
                 try {
                   byte[] nestedPayload =
                       valueEncoding.nestPayload(
@@ -354,9 +352,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     EntityDataDefaultsPath defaultsPath = EntityDataDefaultsPath.from(identifier);
 
-    Optional<String> subtype = entityFactory.getTypeAsString(defaultsPath.getEntitySubtype());
+    Optional<String> subtype = entityFactories.getTypeAsString(defaultsPath.getEntitySubtype());
 
-    return entityFactory.getDataBuilder(defaultsPath.getEntityType(), subtype);
+    return (EntityDataBuilder<EntityData>)
+        entityFactories.get(defaultsPath.getEntityType(), subtype).dataBuilder();
   }
 
   @Override

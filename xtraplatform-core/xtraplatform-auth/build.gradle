@@ -4,20 +4,13 @@ ext {
 }
 
 dependencies {
+    provided project(':xtraplatform-web')
     provided project(':xtraplatform-streams')
     provided project(':xtraplatform-store')
     provided project(':xtraplatform-openapi')
+    provided project(':xtraplatform-services')
 
     embeddedFlat group: 'io.jsonwebtoken', name: 'jjwt-api', version: jjwtVersion
     embeddedFlat group: 'io.jsonwebtoken', name: 'jjwt-impl', version: jjwtVersion
     embeddedFlat group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: jjwtVersion
-}
-
-jar {
-    manifest {
-        instructionFirst 'Import-Package', 'com.fasterxml.jackson.core'
-        instructionFirst 'Import-Package', 'com.fasterxml.jackson.databind'
-        instructionFirst 'Import-Package', 'javax.crypto'
-        instructionFirst 'Import-Package', 'javax.crypto.spec'
-    }
 }

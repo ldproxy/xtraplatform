@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.store.domain.entities.AbstractPersistentEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +16,10 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractService<T extends ServiceData> extends AbstractPersistentEntity<T>
     implements Service {
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractService.class);
+
+  public AbstractService(T data) {
+    super(data);
+  }
 
   @Override
   protected final boolean shouldRegister() {

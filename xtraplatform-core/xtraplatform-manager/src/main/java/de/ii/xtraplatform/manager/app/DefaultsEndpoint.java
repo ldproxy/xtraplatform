@@ -9,9 +9,9 @@ package de.ii.xtraplatform.manager.app;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
@@ -19,6 +19,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
+import de.ii.xtraplatform.web.domain.Endpoint;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,6 +29,8 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -38,16 +41,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 @RolesAllowed({Role.Minimum.EDITOR})
 @Path("/admin/defaults")
 @Produces(MediaType.APPLICATION_JSON)
@@ -61,12 +59,13 @@ public class DefaultsEndpoint implements Endpoint {
   private final ServiceBackgroundTasks serviceBackgroundTasks;
   private final ObjectMapper objectMapper;
 
+  @Inject
   DefaultsEndpoint(
-      @Requires EntityDataStore<EntityData> entityRepository,
-      @Requires EntityRegistry entityRegistry,
-      @Requires EntityDataDefaultsStore defaultsStore
+      EntityDataStore<?> entityRepository,
+      EntityRegistry entityRegistry,
+      EntityDataDefaultsStore defaultsStore
       /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/ ) {
-    this.serviceRepository = entityRepository;
+    this.serviceRepository = (EntityDataStore<EntityData>) entityRepository;
     this.entityRegistry = entityRegistry;
     this.defaultsStore = defaultsStore;
     this.serviceBackgroundTasks = null; // serviceBackgroundTasks;

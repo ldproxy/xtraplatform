@@ -9,15 +9,16 @@ package de.ii.xtraplatform.manager.app;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.dropwizard.domain.Endpoint;
 import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
+import de.ii.xtraplatform.web.domain.Endpoint;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,6 +28,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
@@ -35,16 +38,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 @RolesAllowed({Role.Minimum.EDITOR})
 @Path("/admin/entities")
 @Produces(MediaType.APPLICATION_JSON)
@@ -57,11 +55,10 @@ public class EntitiesEndpoint implements Endpoint {
   private final ServiceBackgroundTasks serviceBackgroundTasks;
   private final ObjectMapper objectMapper;
 
-  EntitiesEndpoint(
-      @Requires EntityDataStore<EntityData> entityRepository,
-      @Requires EntityRegistry entityRegistry
+  @Inject
+  EntitiesEndpoint(EntityDataStore<?> entityRepository, EntityRegistry entityRegistry
       /*@Requires ServiceBackgroundTasks serviceBackgroundTasks,*/ ) {
-    this.serviceRepository = entityRepository;
+    this.serviceRepository = (EntityDataStore<EntityData>) entityRepository;
     this.entityRegistry = entityRegistry;
     this.serviceBackgroundTasks = null; // serviceBackgroundTasks;
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);

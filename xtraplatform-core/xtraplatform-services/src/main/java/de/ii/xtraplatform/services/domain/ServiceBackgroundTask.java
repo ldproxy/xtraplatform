@@ -7,10 +7,12 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
+import de.ii.xtraplatform.base.domain.LogContext;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
+@AutoMultiBind
 public interface ServiceBackgroundTask<T extends Service> {
 
   Class<T> getServiceType();

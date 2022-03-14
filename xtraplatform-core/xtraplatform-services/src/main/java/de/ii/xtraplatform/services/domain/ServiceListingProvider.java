@@ -7,12 +7,14 @@
  */
 package de.ii.xtraplatform.services.domain;
 
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import java.net.URI;
 import java.util.List;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /** @author zahnen */
+@AutoMultiBind
 public interface ServiceListingProvider {
   // TODO: one provider per mime type
   MediaType getMediaType();

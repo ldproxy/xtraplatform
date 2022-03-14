@@ -16,9 +16,8 @@ import java.io.InputStream;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Flow;
-import java.util.concurrent.Flow.Publisher;
 import java.util.function.Function;
+import org.reactivestreams.Publisher;
 
 public class SourceDefault<T> implements Source<T> {
 
@@ -27,55 +26,41 @@ public class SourceDefault<T> implements Source<T> {
     PUBLISHER,
     SINGLE,
     INPUT_STREAM,
-    AKKA
   }
 
   private final Type type;
   private final Iterable<T> iterable;
-  private final Flow.Publisher<T> publisher;
+  private final Publisher<T> publisher;
   private final T item;
   private final InputStream inputStream;
-  private final akka.stream.javadsl.Source<T, ?> akkaSource;
   private Optional<Function<Throwable, Throwable>> errorMapper;
   private Source<T> prepend;
   private Source<T> mergeSorted;
   private Comparator<T> mergeSortedComparator;
 
   public SourceDefault(Iterable<T> iterable) {
-    this(Type.ITERABLE, iterable, null, null, null, null);
+    this(Type.ITERABLE, iterable, null, null, null);
   }
 
-  public SourceDefault(Flow.Publisher<T> publisher) {
-    this(Type.PUBLISHER, null, publisher, null, null, null);
+  public SourceDefault(Publisher<T> publisher) {
+    this(Type.PUBLISHER, null, publisher, null, null);
   }
 
   public SourceDefault(T item) {
-    this(Type.SINGLE, null, null, item, null, null);
+    this(Type.SINGLE, null, null, item, null);
   }
 
   public SourceDefault(InputStream inputStream) {
-    this(Type.INPUT_STREAM, null, null, null, inputStream, null);
-  }
-
-  // TODO: remove
-  @Deprecated
-  public SourceDefault(akka.stream.javadsl.Source<T, ?> akkaSource) {
-    this(Type.AKKA, null, null, null, null, akkaSource);
+    this(Type.INPUT_STREAM, null, null, null, inputStream);
   }
 
   SourceDefault(
-      Type type,
-      Iterable<T> iterable,
-      Flow.Publisher<T> publisher,
-      T item,
-      InputStream inputStream,
-      akka.stream.javadsl.Source<T, ?> akkaSource) {
+      Type type, Iterable<T> iterable, Publisher<T> publisher, T item, InputStream inputStream) {
     this.type = type;
     this.iterable = iterable;
     this.publisher = publisher;
     this.item = item;
     this.inputStream = inputStream;
-    this.akkaSource = akkaSource;
     this.errorMapper = Optional.empty();
   }
 
@@ -146,10 +131,6 @@ public class SourceDefault<T> implements Source<T> {
 
   public InputStream getInputStream() {
     return inputStream;
-  }
-
-  public akka.stream.javadsl.Source<T, ?> getAkkaSource() {
-    return akkaSource;
   }
 
   public Optional<Function<Throwable, Throwable>> getErrorMapper() {

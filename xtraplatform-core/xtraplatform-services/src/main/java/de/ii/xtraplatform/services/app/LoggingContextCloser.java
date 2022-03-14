@@ -7,27 +7,29 @@
  */
 package de.ii.xtraplatform.services.app;
 
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.LogContext;
 import java.io.IOException;
 import java.io.OutputStream;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.StreamingOutput;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class LoggingContextCloser implements ContainerResponseFilter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LoggingContextCloser.class);
   private static final String REQUEST_ID = "X-Request-Id";
+
+  @Inject
+  public LoggingContextCloser() {}
 
   @Override
   public void filter(

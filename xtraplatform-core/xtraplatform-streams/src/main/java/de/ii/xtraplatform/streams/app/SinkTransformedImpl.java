@@ -10,6 +10,7 @@ package de.ii.xtraplatform.streams.app;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced;
 import de.ii.xtraplatform.streams.domain.Reactive.SinkReducedTransformed;
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SinkTransformedImpl<T, U, V> implements SinkReducedTransformed<T, U, V> {
 
@@ -29,10 +30,21 @@ public class SinkTransformedImpl<T, U, V> implements SinkReducedTransformed<T, U
     return sink;
   }
 
+  public AtomicReference<V> getItem() {
+    if (sink instanceof SinkDefault) {
+      return ((SinkDefault<U, V>) sink).getItem();
+    }
+    if (sink instanceof SinkTransformedImpl) {
+      return ((SinkTransformedImpl<?, ?, V>) sink).getItem();
+    }
+    return new AtomicReference<>();
+  }
+
   <V1> SinkReducedTransformed<T, U, V1> withResult(V1 initial) {
-    /*if (sink instanceof SinkTransformed) {
-      return new SinkTransformed<>(transformer, ((SinkTransformed<U, ?, V>) sink).withResult(initial));
-    }*/
+    if (sink instanceof SinkTransformedImpl) {
+      return new SinkTransformedImpl<>(
+          transformer, ((SinkTransformedImpl<U, ?, V>) sink).withResult(initial));
+    }
     return new SinkTransformedImpl<>(transformer, ((SinkDefault<U, V>) sink).withResult(initial));
   }
 }

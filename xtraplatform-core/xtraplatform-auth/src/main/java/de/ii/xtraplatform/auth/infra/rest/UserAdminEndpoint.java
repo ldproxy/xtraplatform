@@ -7,16 +7,17 @@
  */
 package de.ii.xtraplatform.auth.infra.rest;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.app.ImmutableUserData;
 import de.ii.xtraplatform.auth.app.PasswordHash;
 import de.ii.xtraplatform.auth.app.User;
 import de.ii.xtraplatform.auth.app.User.UserData;
 import de.ii.xtraplatform.auth.domain.Role;
-import de.ii.xtraplatform.dropwizard.domain.Endpoint;
-import de.ii.xtraplatform.dropwizard.domain.MediaTypeCharset;
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
+import de.ii.xtraplatform.web.domain.Endpoint;
+import de.ii.xtraplatform.web.domain.MediaTypeCharset;
 import io.dropwizard.auth.Auth;
 import java.io.IOException;
 import java.util.List;
@@ -26,6 +27,8 @@ import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.security.RolesAllowed;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -38,17 +41,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 @RolesAllowed({Role.Minimum.ADMIN})
 @Path("/admin/users")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
@@ -58,8 +56,10 @@ public class UserAdminEndpoint implements Endpoint {
 
   private final EntityDataStore<UserData> userRepository;
 
-  UserAdminEndpoint(@Requires EntityDataStore<EntityData> entityRepository) {
-    this.userRepository = entityRepository.forType(User.UserData.class);
+  @Inject
+  UserAdminEndpoint(EntityDataStore<?> entityRepository) {
+    this.userRepository =
+        ((EntityDataStore<EntityData>) entityRepository).forType(User.UserData.class);
   }
 
   @GET

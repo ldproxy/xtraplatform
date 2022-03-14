@@ -7,8 +7,7 @@
  */
 package de.ii.xtraplatform.store.app;
 
-import akka.stream.QueueOfferResult;
-import de.ii.xtraplatform.runtime.domain.LogContext.MARKER;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.ImmutableStateChangeEvent;
@@ -23,11 +22,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO
 public class EventSubscriptionsImpl implements EventSubscriptions {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventSubscriptionsImpl.class);
@@ -45,8 +42,7 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
 
   @Override
   public void addSubscriber(EventStoreSubscriber subscriber) {
-    // TODO: we need the 10 second delay to wait for all JacksonSubTypeIds, find a better solution
-    executorService.schedule(
+    executorService.submit(
         () -> {
           Thread.currentThread().setName("startup");
 
@@ -93,19 +89,17 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
             cmp.join();
             // LOGGER.debug("NEXT");
           }
-        },
-        10,
-        TimeUnit.SECONDS);
+        });
   }
 
   @Override
-  public synchronized CompletableFuture<QueueOfferResult> emitEvent(TypedEvent event) {
+  public synchronized void emitEvent(TypedEvent event) {
     if (LOGGER.isTraceEnabled() && event instanceof EntityEvent) {
       LOGGER.trace("Emitting event: {} {}", event.type(), ((EntityEvent) event).identifier());
     }
     final EventStream<Event> eventStream = getEventStream(event.type());
 
-    return eventStream.queue(event);
+    eventStream.queue(event);
   }
 
   @Override

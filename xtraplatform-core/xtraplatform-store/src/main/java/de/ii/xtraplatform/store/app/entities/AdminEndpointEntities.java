@@ -8,14 +8,15 @@
 package de.ii.xtraplatform.store.app.entities;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
-import de.ii.xtraplatform.dropwizard.domain.AdminSubEndpoint;
-import de.ii.xtraplatform.dropwizard.domain.Jackson;
+import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.EntityState;
 import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
+import de.ii.xtraplatform.web.domain.AdminSubEndpoint;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Comparator;
@@ -24,20 +25,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class AdminEndpointEntities implements AdminSubEndpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AdminEndpointEntities.class);
@@ -47,10 +45,9 @@ public class AdminEndpointEntities implements AdminSubEndpoint {
   private final EntityRegistry entityRegistry;
   private final ObjectMapper objectMapper;
 
+  @Inject
   public AdminEndpointEntities(
-      @Requires EntityDataStore<?> entityDataStore,
-      @Requires EntityRegistry entityRegistry,
-      @Requires Jackson jackson) {
+      EntityDataStore<?> entityDataStore, EntityRegistry entityRegistry, Jackson jackson) {
     this.entityDataStore = entityDataStore;
     this.entityRegistry = entityRegistry;
     this.objectMapper = jackson.getDefaultObjectMapper();

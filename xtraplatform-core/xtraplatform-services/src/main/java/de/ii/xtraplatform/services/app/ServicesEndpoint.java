@@ -7,27 +7,29 @@
  */
 package de.ii.xtraplatform.services.app;
 
-import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
-import de.ii.xtraplatform.dropwizard.domain.Endpoint;
-import de.ii.xtraplatform.dropwizard.domain.MediaTypeCharset;
-import de.ii.xtraplatform.dropwizard.domain.StaticResourceHandler;
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import com.github.azahnen.dagger.annotations.AutoBind;
+import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceEndpoint;
 import de.ii.xtraplatform.services.domain.ServiceInjectableContext;
 import de.ii.xtraplatform.services.domain.ServiceListingProvider;
+import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
+import de.ii.xtraplatform.web.domain.Endpoint;
+import de.ii.xtraplatform.web.domain.MediaTypeCharset;
+import de.ii.xtraplatform.web.domain.StaticResourceHandler;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.net.URI;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -42,32 +44,12 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.whiteboard.Wbp;
-import org.apache.felix.ipojo.whiteboard.Whiteboards;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** @author zahnen */
-@Component
-@Provides
-@Instantiate
-@Whiteboards(
-    whiteboards = {
-      @Wbp(
-          filter = "(objectClass=de.ii.xtraplatform.services.domain.ServiceEndpoint)",
-          onArrival = "onServiceResourceArrival",
-          onDeparture = "onServiceResourceDeparture"),
-      @Wbp(
-          filter = "(objectClass=de.ii.xtraplatform.services.domain.ServiceListingProvider)",
-          onArrival = "onServiceListingProviderArrival",
-          onDeparture = "onServiceListingProviderDeparture")
-    })
+@Singleton
+@AutoBind
 @Hidden
 @Path("/services/")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
@@ -75,67 +57,28 @@ public class ServicesEndpoint implements Endpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServicesEndpoint.class);
 
-  private final BundleContext bundleContext;
   private final EntityRegistry entityRegistry;
   private final ServiceInjectableContext serviceContext;
-  private final Dropwizard dropwizard;
-  private final XtraPlatform xtraPlatform;
+  private final URI servicesUri;
   private final StaticResourceHandler staticResourceHandler;
 
-  private Map<String, ServiceEndpoint> serviceResources;
-  private Map<MediaType, ServiceListingProvider> serviceListingProviders;
+  private Lazy<Set<ServiceEndpoint>> serviceResources;
+  private Lazy<Set<ServiceListingProvider>> serviceListingProviders;
 
+  @Inject
   public ServicesEndpoint(
-      @org.apache.felix.ipojo.annotations.Context BundleContext bundleContext,
-      @Requires EntityRegistry entityRegistry,
-      @Requires Dropwizard dropwizard,
-      @Requires XtraPlatform xtraPlatform,
-      @Requires ServiceInjectableContext serviceContext,
-      @Requires StaticResourceHandler staticResourceHandler) {
-    this.serviceResources = new LinkedHashMap<>();
-    this.serviceListingProviders = new LinkedHashMap<>();
-    this.bundleContext = bundleContext;
+      EntityRegistry entityRegistry,
+      ServicesContext servicesContext,
+      ServiceInjectableContext serviceContext,
+      StaticResourceHandler staticResourceHandler,
+      Lazy<Set<ServiceEndpoint>> serviceResources,
+      Lazy<Set<ServiceListingProvider>> serviceListingProviders) {
     this.entityRegistry = entityRegistry;
-    this.xtraPlatform = xtraPlatform;
-    this.dropwizard = dropwizard;
+    this.servicesUri = servicesContext.getUri();
     this.serviceContext = serviceContext;
     this.staticResourceHandler = staticResourceHandler;
-  }
-
-  public synchronized void onServiceResourceArrival(ServiceReference<ServiceEndpoint> ref) {
-    ServiceEndpoint sr = bundleContext.getService(ref);
-    String type = (String) ref.getProperty(ServiceEndpoint.SERVICE_TYPE_KEY);
-    if (sr != null && type != null) {
-      serviceResources.put(type, sr);
-    }
-  }
-
-  public synchronized void onServiceResourceDeparture(ServiceReference<ServiceEndpoint> ref) {
-    ServiceEndpoint sr = bundleContext.getService(ref);
-    String type = (String) ref.getProperty(ServiceEndpoint.SERVICE_TYPE_KEY);
-    if (sr != null && type != null) {
-      serviceResources.remove(type);
-    }
-  }
-
-  public synchronized void onServiceListingProviderArrival(
-      ServiceReference<ServiceListingProvider> ref) {
-    ServiceListingProvider serviceListingProvider = bundleContext.getService(ref);
-    MediaType type = serviceListingProvider.getMediaType();
-    if (serviceListingProvider != null && type != null) {
-      serviceListingProviders.put(type, serviceListingProvider);
-    }
-  }
-
-  public synchronized void onServiceListingProviderDeparture(
-      ServiceReference<ServiceListingProvider> ref) {
-    ServiceListingProvider serviceListingProvider = bundleContext.getService(ref);
-    if (serviceListingProvider != null) {
-      MediaType type = serviceListingProvider.getMediaType();
-      if (type != null) {
-        serviceListingProviders.remove(type);
-      }
-    }
+    this.serviceResources = serviceResources;
+    this.serviceListingProviders = serviceListingProviders;
   }
 
   // TODO
@@ -175,11 +118,15 @@ public class ServicesEndpoint implements Endpoint {
                             ? MediaType.TEXT_HTML_TYPE
                             : MediaType.APPLICATION_JSON_TYPE);
 
-    if (serviceListingProviders.containsKey(mediaType)) {
-      Response serviceListing =
-          serviceListingProviders
-              .get(mediaType)
-              .getServiceListing(services, uriInfo.getRequestUri());
+    Optional<ServiceListingProvider> provider =
+        serviceListingProviders.get().stream()
+            .filter(
+                serviceListingProvider ->
+                    Objects.equals(mediaType, serviceListingProvider.getMediaType()))
+            .findFirst();
+
+    if (provider.isPresent()) {
+      Response serviceListing = provider.get().getServiceListing(services, uriInfo.getRequestUri());
       return Response.ok().entity(serviceListing.getEntity()).type(mediaType).build();
     }
 
@@ -259,7 +206,11 @@ public class ServicesEndpoint implements Endpoint {
   // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory
   // TODO: cache resource object per service
   private ServiceEndpoint getServiceResource(Service s) {
-    return serviceResources.get(s.getServiceType());
+    return serviceResources.get().stream()
+        .filter(
+            serviceEndpoint -> Objects.equals(s.getServiceType(), serviceEndpoint.getServiceType()))
+        .findFirst()
+        .orElseThrow();
   }
 
   private Service getService(String id, String callback) {
@@ -273,7 +224,7 @@ public class ServicesEndpoint implements Endpoint {
   }
 
   private Optional<URI> getExternalUri() {
-    return Optional.ofNullable(xtraPlatform.getServicesUri());
+    return Optional.of(servicesUri);
   }
 
   private void openLoggingContext(ContainerRequestContext containerRequestContext) {

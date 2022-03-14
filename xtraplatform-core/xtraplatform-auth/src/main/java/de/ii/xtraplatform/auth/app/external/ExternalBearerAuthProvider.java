@@ -7,41 +7,40 @@
  */
 package de.ii.xtraplatform.auth.app.external;
 
+import com.codahale.metrics.MetricRegistry;
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthorizer;
-import de.ii.xtraplatform.dropwizard.domain.AuthProvider;
-import de.ii.xtraplatform.dropwizard.domain.Dropwizard;
-import de.ii.xtraplatform.runtime.domain.AuthConfig;
-import de.ii.xtraplatform.streams.domain.Http;
-import de.ii.xtraplatform.streams.domain.HttpClient;
+import de.ii.xtraplatform.base.domain.AppConfiguration;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AuthConfig;
+import de.ii.xtraplatform.web.domain.AuthProvider;
+import de.ii.xtraplatform.web.domain.DropwizardPlugin;
+import de.ii.xtraplatform.web.domain.Http;
+import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.StaticServiceProperty;
+import io.dropwizard.setup.Environment;
 
 /** @author zahnen */
-@Component
-@Provides(
-    properties = {
-      @StaticServiceProperty(name = "type", type = "java.lang.String", value = "auth"),
-      @StaticServiceProperty(name = "ranking", type = "int", value = "1")
-    })
-// TODO@Instantiate
-public class ExternalBearerAuthProvider implements AuthProvider<User> {
+// TODO: ranking, which one to use
+// TODO: AutoBind
+public class ExternalBearerAuthProvider implements AuthProvider<User>, DropwizardPlugin {
 
-  private final Dropwizard dropwizard;
   private final HttpClient httpClient;
   private final AuthConfig authConfig;
+  private MetricRegistry metricRegistry;
 
-  public ExternalBearerAuthProvider(@Requires Dropwizard dropwizard, @Requires Http http) {
-    this.dropwizard = dropwizard;
+  public ExternalBearerAuthProvider(AppContext appContext, Http http) {
     this.httpClient = http.getDefaultClient();
-    this.authConfig = dropwizard.getConfiguration().auth;
+    this.authConfig = appContext.getConfiguration().auth;
+  }
+
+  @Override
+  public void init(AppConfiguration configuration, Environment environment) {
+    this.metricRegistry = environment.metrics();
   }
 
   @Override
@@ -50,7 +49,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User> {
 
     CachingAuthenticator<String, User> cachingAuthenticator =
         new CachingAuthenticator<String, User>(
-            dropwizard.getEnvironment().metrics(),
+            metricRegistry,
             tokenAuthenticator,
             CaffeineSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
 

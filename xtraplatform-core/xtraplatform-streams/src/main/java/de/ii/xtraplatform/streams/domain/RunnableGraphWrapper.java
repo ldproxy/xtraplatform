@@ -7,13 +7,15 @@
  */
 package de.ii.xtraplatform.streams.domain;
 
-import akka.stream.javadsl.RunnableGraph;
-import java.util.concurrent.CompletionStage;
+import de.ii.xtraplatform.base.domain.util.Triple;
+import de.ii.xtraplatform.streams.domain.Reactive.StreamContext;
+import io.reactivex.rxjava3.core.Flowable;
 import java.util.function.Function;
+import org.reactivestreams.Subscriber;
 
-public interface RunnableGraphWrapper<T> {
+public interface RunnableGraphWrapper<T, U> {
 
-  RunnableGraph<CompletionStage<T>> getGraph();
+  Triple<Flowable<T>, Subscriber<T>, StreamContext<U>> getGraph();
 
   default Function<Throwable, T> getExceptionHandler() {
     return throwable -> null;

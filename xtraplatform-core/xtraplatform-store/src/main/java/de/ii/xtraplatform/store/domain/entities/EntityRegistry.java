@@ -9,7 +9,6 @@ package de.ii.xtraplatform.store.domain.entities;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /** @author zahnen */
@@ -21,10 +20,6 @@ public interface EntityRegistry {
   Optional<PersistentEntity> getEntity(String type, String id);
 
   Optional<EntityState.STATE> getEntityState(String type, String id);
-
-  void addEntityStateListener(Consumer<EntityState> listener);
-
-  void addEntityListener(BiConsumer<String, PersistentEntity> listener);
 
   <T extends PersistentEntity> void addEntityListener(
       Class<T> type, Consumer<T> listener, boolean existing);

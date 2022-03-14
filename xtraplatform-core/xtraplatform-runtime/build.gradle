@@ -1,35 +1,46 @@
-
 ext {
-    dropwizardVersion = '2.0.21'
+    dropwizardVersion = '2.0.28'
     jacksonVersion = '2.10.5'
 }
 
 dependencies {
-    systemBundle group: 'org.apache.felix', name: 'org.apache.felix.main', version: '6.0.3'
-    systemBundle(group: 'io.dropwizard', name: 'dropwizard-core', version: dropwizardVersion)
-    systemBundle group: 'io.dropwizard', name: 'dropwizard-views-mustache', version: dropwizardVersion
-    systemBundle (group: 'io.dropwizard', name: 'dropwizard-client', version: dropwizardVersion)
-    systemBundle (group: 'io.dropwizard', name: 'dropwizard-auth', version: dropwizardVersion)
-    systemBundle (group: 'io.dropwizard', name: 'dropwizard-json-logging', version: dropwizardVersion)
-    systemBundle group: 'org.threeten', name: 'threeten-extra', version: '1.5.0'
+    embeddedExport(group: 'io.dropwizard', name: 'dropwizard-core', version: dropwizardVersion)
+    embeddedExport group: 'io.dropwizard', name: 'dropwizard-views-mustache', version: dropwizardVersion
+    embeddedExport (group: 'io.dropwizard', name: 'dropwizard-client', version: dropwizardVersion)
+    embeddedExport (group: 'io.dropwizard', name: 'dropwizard-auth', version: dropwizardVersion)
+    embeddedExport (group: 'io.dropwizard', name: 'dropwizard-json-logging', version: dropwizardVersion)
+    embeddedExport group: 'org.threeten', name: 'threeten-extra', version: '1.5.0'
+    embeddedExport group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '2.3.3'
+    embeddedExport group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-xml-provider', version: jacksonVersion
 
-    systemBundle group: 'com.sun.activation', name: 'javax.activation', version: '1.2.0'
-    systemBundle group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
-    systemBundle group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.3.0.1'
-    systemBundle group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.3.3'
-    systemBundle group: 'org.glassfish.jersey.media', name: 'jersey-media-jaxb', version: '2.33'
+    embeddedExport (group: 'com.google.dagger', name: 'dagger', version: '2.+') {
+        transitive = false
+    }
+    embeddedExport group: 'io.github.azahnen', name: 'dagger-auto', version: '1.0.0-SNAPSHOT'
+    embeddedExport group: 'org.immutables', name: 'value', version: '2.8.8', classifier: 'annotations'
+    embeddedExport group: 'org.immutables', name: 'encode', version: '2.8.8'
 
 }
 
-systemBundle {
-    exports  = [
-            'javax.management': '0.0',
-            'javax.naming': '0.0',
-            'javax.net.ssl': '0.0',
-            'javax.net': '0.0',
-            'sun.misc': '0.0',
-            'sun.reflect': '0.0',
-            'sun.security.util': '0.0',
-            'sun.security.x509': '0.0',
+moduleInfo {
+    requires = [
+        'java.sql',
+        'java.xml',
+        'jdk.unsupported', //caffeine
+        'static jdk.management', //metrics
+    ]
+    exports = [
+            '!io.dropwizard.logback.shaded*'
+    ]
+    uses = [
+            'ch.qos.logback.classic.spi.Configurator',
+            'javax.validation.valueextraction.ValueExtractor',
+            'javax.validation.ConstraintValidator',
+            '!org.codehaus.stax2.validation*',
+    ]
+    provides = [
+            '!io.dropwizard.jackson.Discoverable': [],
+            '!javax.xml.bind.JAXBContext': [],
+            '!org.codehaus.stax2.validation*': [],
     ]
 }

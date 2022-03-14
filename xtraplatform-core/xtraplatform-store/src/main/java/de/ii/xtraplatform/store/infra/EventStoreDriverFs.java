@@ -8,17 +8,17 @@
 package de.ii.xtraplatform.store.infra;
 
 import static com.google.common.io.Files.getFileExtension;
-import static de.ii.xtraplatform.dropwizard.domain.LambdaWithException.consumerMayThrow;
+import static de.ii.xtraplatform.base.domain.util.LambdaWithException.consumerMayThrow;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
 import com.sun.nio.file.SensitivityWatchEventModifier;
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.runtime.domain.Constants;
-import de.ii.xtraplatform.runtime.domain.LogContext;
-import de.ii.xtraplatform.runtime.domain.StoreConfiguration;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.StoreConfiguration;
 import de.ii.xtraplatform.store.app.EventPaths;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
@@ -44,26 +44,17 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.Validate;
-import org.osgi.framework.BundleContext;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 public class EventStoreDriverFs implements EventStoreDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverFs.class);
   private static final String STORE_DIR_LEGACY = "config-store";
-
-  // @ServiceController(value = false)
-  private boolean publish;
 
   private final Path storeDirectory;
   private final List<Path> additionalDirectories;
@@ -72,11 +63,12 @@ public class EventStoreDriverFs implements EventStoreDriver {
   private final boolean isEnabled;
   private final boolean isReadOnly;
 
-  EventStoreDriverFs(@Context BundleContext bundleContext, @Requires XtraPlatform xtraPlatform) {
-    this(bundleContext.getProperty(Constants.DATA_DIR_KEY), xtraPlatform.getConfiguration().store);
+  @Inject
+  EventStoreDriverFs(AppContext appContext) {
+    this(appContext.getDataDir(), appContext.getConfiguration().store);
   }
 
-  public EventStoreDriverFs(String dataDirectory, StoreConfiguration storeConfiguration) {
+  public EventStoreDriverFs(Path dataDirectory, StoreConfiguration storeConfiguration) {
     this.storeDirectory = getStoreDirectory(dataDirectory, storeConfiguration);
     this.eventPaths =
         new EventPaths(
@@ -84,7 +76,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
             storeConfiguration.instancePathPattern,
             storeConfiguration.overridesPathPatterns,
             this::adjustPathPattern);
-    this.isEnabled = true; // TODO: xtraPlatform.getConfiguration().store.driver = StoreDriver.FS
+    this.isEnabled = true; // TODO: storeConfiguration.driver = StoreDriver.FS
     this.isReadOnly = storeConfiguration.mode == StoreConfiguration.StoreMode.READ_ONLY;
 
     this.additionalDirectories = getAdditionalDirectories(dataDirectory, storeConfiguration);
@@ -104,19 +96,15 @@ public class EventStoreDriverFs implements EventStoreDriver {
     return pattern.replaceAll("\\/", "\\" + FileSystems.getDefault().getSeparator());
   }
 
-  @Validate
-  private void onInit() {
+  @Override
+  public void start() {
+    if (!isEnabled) return;
+
     if (!Files.exists(storeDirectory) && isReadOnly) {
       throw new IllegalArgumentException(
           "Store path does not exist and cannot be created because store is read-only");
     }
-    if (isEnabled) {
-      this.publish = true;
-    }
-  }
 
-  @Override
-  public void start() {
     LOGGER.info("Store location: {}", storeDirectory.toAbsolutePath());
 
     if (!additionalEventPaths.isEmpty()) {
@@ -156,6 +144,8 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
   @Override
   public Stream<EntityEvent> loadEventStream() {
+    if (!isEnabled) return Stream.<EntityEvent>empty();
+
     try {
       return Stream.concat(
           eventPaths
@@ -200,6 +190,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
   // TODO: stopWatching, move watchService to class, watch new directories, file extension filter
   @Override
   public void startWatching(Consumer<List<Path>> watchEventConsumer) {
+    if (!isEnabled) return;
 
     try {
       WatchService watchService = FileSystems.getDefault().newWatchService();
@@ -355,9 +346,9 @@ public class EventStoreDriverFs implements EventStoreDriver {
                 }));
   }
 
-  private Path getStoreDirectory(String dataDir, StoreConfiguration storeConfiguration) {
-    String storeLocation = storeConfiguration.location;
-    if (Paths.get(storeLocation).isAbsolute()) {
+  private Path getStoreDirectory(Path dataDir, StoreConfiguration storeConfiguration) {
+    Path storeLocation = Paths.get(storeConfiguration.location);
+    if (storeLocation.isAbsolute()) {
       if (storeConfiguration.mode == StoreConfiguration.StoreMode.READ_WRITE
           && !storeLocation.startsWith(dataDir)) {
         // not allowed?
@@ -366,18 +357,18 @@ public class EventStoreDriverFs implements EventStoreDriver {
                 "Invalid store location (%s). READ_WRITE stores must reside inside the data directory (%s).",
                 storeLocation, dataDir));
       }
-      return Paths.get(storeLocation);
+      return storeLocation;
     }
 
-    return Paths.get(dataDir, storeLocation);
+    return dataDir.resolve(storeLocation);
   }
 
-  private List<Path> getAdditionalDirectories(
-      String dataDir, StoreConfiguration storeConfiguration) {
+  private List<Path> getAdditionalDirectories(Path dataDir, StoreConfiguration storeConfiguration) {
     ImmutableList.Builder<Path> additionalDirectories = new ImmutableList.Builder<>();
 
-    for (String storeLocation : storeConfiguration.additionalLocations) {
-      if (Paths.get(storeLocation).isAbsolute()) {
+    for (String additionalLocation : storeConfiguration.additionalLocations) {
+      Path storeLocation = Paths.get(additionalLocation);
+      if (storeLocation.isAbsolute()) {
         if (storeConfiguration.mode == StoreConfiguration.StoreMode.READ_WRITE
             && !storeLocation.startsWith(dataDir)) {
           // not allowed?
@@ -386,9 +377,9 @@ public class EventStoreDriverFs implements EventStoreDriver {
                   "Invalid store location (%s). READ_WRITE stores must reside inside the data directory (%s).",
                   storeLocation, dataDir));
         }
-        additionalDirectories.add(Paths.get(storeLocation));
+        additionalDirectories.add(storeLocation);
       } else {
-        additionalDirectories.add(Paths.get(dataDir, storeLocation));
+        additionalDirectories.add(dataDir.resolve(storeLocation));
       }
     }
 

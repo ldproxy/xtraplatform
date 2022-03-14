@@ -52,6 +52,13 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
   }
 
   @Override
+  default CompletableFuture<U> patch(
+      String id, Map<String, Object> partialData, boolean skipLastModified, String... path) {
+    return (CompletableFuture<U>)
+        getDecorated().patch(id, partialData, skipLastModified, transformPath(path));
+  }
+
+  @Override
   default List<Identifier> identifiers(String... path) {
     return getDecorated().identifiers(transformPath(path));
   }

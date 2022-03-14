@@ -7,26 +7,22 @@
  */
 package de.ii.xtraplatform.store.legacy.file;
 
-import static de.ii.xtraplatform.runtime.domain.Constants.DATA_DIR_KEY;
-
-import de.ii.xtraplatform.store.domain.legacy.KeyValueStore;
-import java.io.File;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Context;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.osgi.framework.BundleContext;
+import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.store.domain.legacy.KeyValueStoreLegacy;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** @author zahnen */
-@Component
-@Provides
-@Instantiate
-public class RootFileConfigStore extends FileConfigStore implements KeyValueStore {
+@Singleton
+@AutoBind
+public class RootFileConfigStore extends FileConfigStore implements KeyValueStoreLegacy {
 
   private static final String ROOT_DIR_NAME = "store";
 
-  public RootFileConfigStore(@Context BundleContext bc) {
-    super(new File(new File(bc.getProperty(DATA_DIR_KEY)), ROOT_DIR_NAME));
+  @Inject
+  public RootFileConfigStore(AppContext appContext) {
+    super(appContext.getDataDir().resolve(ROOT_DIR_NAME).toFile());
 
     if (!rootDir.exists()) {
       // rootDir.mkdirs();

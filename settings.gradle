@@ -1,4 +1,4 @@
 rootProject.name = 'xtraplatform'
 
 includeBuild './xtraplatform-core'
-includeBuild './xtraplatform-dev'
+//includeBuild './xtraplatform-dev'

@@ -9,8 +9,7 @@ package de.ii.xtraplatform.store.domain.entities;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import de.ii.xtraplatform.runtime.domain.LogContext;
-import de.ii.xtraplatform.store.domain.entities.handler.Entity;
+import de.ii.xtraplatform.base.domain.LogContext;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -20,13 +19,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
-import org.apache.felix.ipojo.annotations.Invalidate;
-import org.apache.felix.ipojo.annotations.PostRegistration;
-import org.apache.felix.ipojo.annotations.PostUnregistration;
-import org.apache.felix.ipojo.annotations.Property;
-import org.apache.felix.ipojo.annotations.ServiceController;
-import org.apache.felix.ipojo.annotations.Validate;
-import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -41,19 +33,21 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   private final List<Consumer<PersistentEntity>> reloadListeners;
   private final List<Consumer<EntityState>> stateChangeListeners;
 
-  @ServiceController(
-      value = true,
-      specification = EntityState.class) // is ignored here, but added by @Entity handler
+  /*@ServiceController(
+     value = true,
+     specification = EntityState.class) // is ignored here, but added by @Entity handler
+  */
   private boolean registerState;
 
-  @ServiceController(value = false) // is ignored here, but added by @Entity handler
+  // @ServiceController(value = false) // is ignored here, but added by @Entity handler
   public volatile boolean register;
 
   private T data;
   private Future<?> startup;
   private EntityState.STATE state;
+  private EntityState.STATE previousState;
 
-  public AbstractPersistentEntity() {
+  public AbstractPersistentEntity(T data) {
     this.executorService =
         MoreExecutors.getExitingExecutorService(
             (ThreadPoolExecutor)
@@ -61,9 +55,10 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
                     1, new ThreadFactoryBuilder().setNameFormat("entity.lifecycle-%d").build()));
     this.reloadListeners = new CopyOnWriteArrayList<>();
     this.stateChangeListeners = new CopyOnWriteArrayList<>();
-    this.data = null;
+    this.data = data;
     this.startup = null;
-    // this.state = STATE.LOADING;
+    this.state = STATE.UNKNOWN;
+    this.previousState = STATE.UNKNOWN;
     setState(STATE.LOADING);
   }
 
@@ -72,7 +67,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     return data;
   }
 
-  @Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler
+  // @Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler
   public final void setData(T data) {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("GOT DATA {}" /*, data*/);
@@ -88,7 +83,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
-  @Validate // is ignored here, but added by @EntityComponent stereotype
+  // @Validate // is ignored here, but added by @EntityComponent stereotype
   public final void onValidate() {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
@@ -107,7 +102,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
-  @Invalidate // is ignored here, but added by @EntityComponent stereotype
+  // @Invalidate // is ignored here, but added by @EntityComponent stereotype
   public final void onInvalidate() {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
@@ -121,22 +116,26 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
-  @PostRegistration // is ignored here, but added by @EntityComponent stereotype
-  public final void onPostRegistration(ServiceReference<?> serviceReference) {
+  // @PostRegistration // is ignored here, but added by @EntityComponent stereotype
+  public final void onPostRegistration() {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STARTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
       if (state == STATE.LOADING) {
-        onStarted();
-        setState(STATE.ACTIVE);
+        if (shouldRegister() && !register) {
+          setState(STATE.DEFECTIVE);
+        } else {
+          onStarted();
+          setState(STATE.ACTIVE);
+        }
       }
     }
   }
 
-  @PostUnregistration // is ignored here, but added by @EntityComponent stereotype
-  public final void onPostUnregistration(ServiceReference<?> serviceReference) {
+  // @PostUnregistration // is ignored here, but added by @EntityComponent stereotype
+  public final void onPostUnregistration() {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (LOGGER.isTraceEnabled()) {
@@ -296,11 +295,17 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     return state;
   }
 
+  @Override
+  public STATE getPreviousState() {
+    return previousState;
+  }
+
   public void setState(STATE state) {
     if (this.state != state) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("{}: {} -> {}", getId(), this.state, state);
       }
+      this.previousState = this.state;
       this.state = state;
       stateChangeListeners.forEach(listener -> listener.accept(this));
     }

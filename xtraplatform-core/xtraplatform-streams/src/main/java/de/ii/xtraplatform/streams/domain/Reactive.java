@@ -19,13 +19,16 @@ import java.io.Closeable;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Comparator;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import scala.concurrent.ExecutionContextExecutor;
+import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
 
 public interface Reactive {
 
@@ -63,8 +66,12 @@ public interface Reactive {
       return new SourceDefault<>(iterable);
     }
 
-    static <T> Source<T> publisher(Flow.Publisher<T> publisher) {
+    static <T> Source<T> publisher(Publisher<T> publisher) {
       return new SourceDefault<>(publisher);
+    }
+
+    static <T> Source<T> publisher(Flow.Publisher<T> publisher) {
+      return new SourceDefault<>(FlowAdapters.toPublisher(publisher));
     }
 
     static <T> Source<T> single(T item) {
@@ -73,12 +80,6 @@ public interface Reactive {
 
     static Source<byte[]> inputStream(InputStream inputStream) {
       return new SourceDefault<>(inputStream);
-    }
-
-    // TODO: remove
-    @Deprecated
-    static <T> Source<T> akka(akka.stream.javadsl.Source<T, ?> akkaSource) {
-      return new SourceDefault<>(akkaSource);
     }
   }
 
@@ -255,12 +256,6 @@ public interface Reactive {
 
       return reduce.via(map).to(Sink.head());
     }
-
-    // TODO: remove
-    @Deprecated
-    static <T, U> SinkReduced<T, U> akka(akka.stream.javadsl.Sink<T, CompletionStage<U>> akkaSink) {
-      return new SinkDefault<>(akkaSink);
-    }
   }
 
   interface SinkReduced<U, V> extends Sink<U> {}
@@ -293,24 +288,33 @@ public interface Reactive {
     CompletionStage<X> run();
   }
 
+  interface StreamContext<W> {
+
+    AtomicReference<W> getResult();
+
+    void onComplete(CompletableFuture<W> result);
+
+    void onError(CompletableFuture<W> result, Throwable throwable);
+  }
+
   interface Runner extends Closeable {
 
     int DYNAMIC_CAPACITY = -1;
 
     // 2x
-    @Deprecated
+    /*@Deprecated
     <T, U, V> CompletionStage<V> run(
         akka.stream.javadsl.Source<T, U> source,
-        akka.stream.javadsl.Sink<T, CompletionStage<V>> sink);
+        akka.stream.javadsl.Sink<T, CompletionStage<V>> sink);*/
 
     // 5x
-    @Deprecated
-    <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph);
+    /*@Deprecated
+    <U> CompletionStage<U> run(RunnableGraphWrapper<U> graph);*/
 
     <X> CompletionStage<X> run(Stream<X> stream);
 
-    @Deprecated
-    ExecutionContextExecutor getDispatcher();
+    // @Deprecated
+    // ExecutionContextExecutor getDispatcher();
 
     int getCapacity();
   }

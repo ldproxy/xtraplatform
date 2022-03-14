@@ -8,8 +8,9 @@
 package de.ii.xtraplatform.openapi.app;
 
 /** @author zahnen */
-import de.ii.xtraplatform.dropwizard.domain.Endpoint;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
+import de.ii.xtraplatform.web.domain.Endpoint;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +18,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -29,28 +32,23 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
-@Provides
-@Instantiate
+@Singleton
+@AutoBind
 @Hidden
 @Path("/api")
 public class DynamicOpenApiResource implements Endpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApiResource.class);
 
-  private final DynamicOpenApiChangeListener openApi;
+  private final DynamicOpenApi openApi;
   private final OpenApiViewerResource openApiViewerResource;
 
+  @Inject
   public DynamicOpenApiResource(
-      @Requires OpenApiViewerResource openApiViewerResource,
-      @Requires DynamicOpenApiChangeListener openApi) {
+      OpenApiViewerResource openApiViewerResource, DynamicOpenApi openApi) {
     this.openApi = openApi;
     this.openApiViewerResource = openApiViewerResource;
   }
@@ -106,7 +104,7 @@ public class DynamicOpenApiResource implements Endpoint {
   }
 
   @GET
-  @Produces({DynamicOpenApi.YAML})
+  @Produces({DynamicOpenApiImpl.YAML})
   // @Operation(summary = "the API description - this document", tags = {"Capabilities"}, parameters
   // = {@Parameter(name = "f")})
   public Response getApiDescriptionYaml(

@@ -7,13 +7,16 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
-import de.ii.xtraplatform.dropwizard.domain.Jackson;
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform;
-import de.ii.xtraplatform.runtime.domain.LogContext;
+import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.Jackson;
+import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.store.app.EventSourcing;
 import de.ii.xtraplatform.store.app.ValueDecoderBase;
 import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
@@ -35,9 +38,11 @@ import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.store.domain.entities.EntityDataOverridesPath;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
+import de.ii.xtraplatform.store.domain.entities.EntityFactories;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -48,23 +53,20 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.felix.ipojo.annotations.Component;
-import org.apache.felix.ipojo.annotations.Instantiate;
-import org.apache.felix.ipojo.annotations.Provides;
-import org.apache.felix.ipojo.annotations.Requires;
-import org.apache.felix.ipojo.annotations.Validate;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 /** @author zahnen */
-@Component(publicFactory = false)
-@Provides
-@Instantiate
+@Singleton
+@AutoBind(interfaces = {EntityDataStore.class})
 public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityData>
     implements EntityDataStore<EntityData> {
 
@@ -72,28 +74,29 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private static final List<String> EVENT_TYPES = ImmutableList.of("entities", "overrides");
 
   private final boolean isEventStoreReadOnly;
-  private final EntityFactory entityFactory;
+  private final EntityFactories entityFactories;
   private final Queue<Map.Entry<Identifier, EntityData>> additionalEvents;
   private final ValueEncodingJackson<EntityData> valueEncoding;
   private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
   private final EventSourcing<EntityData> eventSourcing;
   private final EntityDataDefaultsStore defaultsStore;
 
+  @Inject
   public EntityDataStoreImpl(
-      @Requires XtraPlatform xtraPlatform,
-      @Requires EventStore eventStore,
-      @Requires Jackson jackson,
-      @Requires EntityFactory entityFactory,
-      @Requires EntityDataDefaultsStore defaultsStore) {
+      AppContext appContext,
+      EventStore eventStore,
+      Jackson jackson,
+      Lazy<Set<EntityFactory>> entityFactories,
+      EntityDataDefaultsStore defaultsStore) {
     this.isEventStoreReadOnly = eventStore.isReadOnly();
-    this.entityFactory = entityFactory;
+    this.entityFactories = new EntityFactories(entityFactories);
     this.additionalEvents = new ConcurrentLinkedQueue<>();
     this.valueEncoding =
         new ValueEncodingJackson<>(
-            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+            jackson, appContext.getConfiguration().store.failOnUnknownProperties);
     this.valueEncodingMap =
         new ValueEncodingJackson<>(
-            jackson, xtraPlatform.getConfiguration().store.failOnUnknownProperties);
+            jackson, appContext.getConfiguration().store.failOnUnknownProperties);
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
@@ -110,10 +113,11 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         new ValueDecoderWithBuilder<>(this::getBuilder, eventSourcing));
     valueEncoding.addDecoderMiddleware(
         new ValueDecoderEntitySubtype(this::getBuilder, eventSourcing));
-    valueEncoding.addDecoderMiddleware(
-        new ValueDecoderEntityDataMigration(
-            eventSourcing, entityFactory, this::addAdditionalEvent));
+    /*TODO valueEncoding.addDecoderMiddleware(
+    new ValueDecoderEntityDataMigration(
+        eventSourcing, entityFactories, this::addAdditionalEvent));*/
     valueEncoding.addDecoderMiddleware(new ValueDecoderIdValidator());
+    eventSourcing.start();
 
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
@@ -129,12 +133,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 return null;
               }
             }));
-  }
-
-  // TODO: it seems this is needed for correct order (defaults < entities)
-  @Validate
-  private void onVal() {
-    // LOGGER.debug("VALID");
   }
 
   @Override
@@ -199,9 +197,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     ImmutableReplayEvent.Builder builder =
         ImmutableReplayEvent.builder().from(event).identifier(cacheKey);
     if (!overridesPath.getKeyPath().isEmpty()) {
+      // TODO: multiple subtypes
       Optional<KeyPathAlias> keyPathAlias =
-          entityFactory.getKeyPathAlias(
-              overridesPath.getKeyPath().get(overridesPath.getKeyPath().size() - 1));
+          entityFactories
+              .get(overridesPath.getEntityType())
+              .getKeyPathAlias(
+                  overridesPath.getKeyPath().get(overridesPath.getKeyPath().size() - 1));
       try {
         byte[] nestedPayload =
             valueEncoding.nestPayload(
@@ -216,7 +217,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
-    return entityFactory.getDataBuilder(identifier.path().get(0), Optional.empty());
+    return (EntityDataBuilder<EntityData>)
+        entityFactories.get(identifier.path().get(0)).superDataBuilder();
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, String entitySubtype) {
@@ -232,12 +234,13 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       return defaultsStore.getBuilder(defaultsIdentifier);
     }
 
-    return entityFactory.getDataBuilder(identifier.path().get(0), Optional.of(entitySubtype));
+    return (EntityDataBuilder<EntityData>)
+        entityFactories.get(identifier.path().get(0), entitySubtype).dataBuilder();
   }
 
   protected EntityData hydrate(Identifier identifier, EntityData entityData) {
     String entityType = identifier.path().get(0);
-    return entityFactory.hydrateData(identifier, entityType, entityData);
+    return entityFactories.get(entityType, entityData.getEntitySubType()).hydrateData(entityData);
   }
 
   protected void addAdditionalEvent(Identifier identifier, EntityData entityData) {
@@ -313,8 +316,9 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       try {
         EntityData hydratedData = hydrateData(identifier, entityData);
 
-        return entityFactory
-            .createInstance(identifier.path().get(0), identifier.id(), hydratedData)
+        return entityFactories
+            .get(identifier.path().get(0), entityData.getEntitySubType())
+            .createInstance(hydratedData)
             .whenComplete(
                 (entity, throwable) -> {
                   if (Objects.nonNull(entity)) {
@@ -334,18 +338,28 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   protected CompletableFuture<Void> onUpdate(Identifier identifier, EntityData entityData) {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
-      if (LOGGER.isDebugEnabled()) LOGGER.debug("Reloading entity: {}", identifier);
-      EntityData hydratedData = hydrateData(identifier, entityData);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Reloading entity: {}", identifier);
+      }
 
-      return entityFactory
-          .updateInstance(identifier.path().get(0), identifier.id(), hydratedData)
-          .thenAccept(ignore -> CompletableFuture.completedFuture(null));
+      try {
+        EntityData hydratedData = hydrateData(identifier, entityData);
+
+        return entityFactories
+            .get(identifier.path().get(0), entityData.getEntitySubType())
+            .updateInstance(hydratedData)
+            .thenAccept(ignore -> CompletableFuture.completedFuture(null));
+      } catch (Throwable e) {
+        return CompletableFuture.completedFuture(null);
+      }
     }
   }
 
   @Override
   protected void onDelete(Identifier identifier) {
-    entityFactory.deleteInstance(identifier.path().get(0), identifier.id());
+    entityFactories
+        .getAll(identifier.path().get(0))
+        .forEach(factory -> factory.deleteInstance(identifier.id()));
   }
 
   @Override
@@ -355,8 +369,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   public <U extends EntityData> EntityDataStore<U> forType(Class<U> type) {
-    final String typeCollectionName =
-        entityFactory.getDataTypeName(type); // type.getSimpleName() + "s";
+    final String entityType = entityFactories.get(type).type();
     return new EntityStoreDecorator<EntityData, U>() {
       @Override
       public EntityDataStore<EntityData> getDecorated() {
@@ -365,7 +378,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
       @Override
       public String[] transformPath(String... path) {
-        return ObjectArrays.concat(typeCollectionName, path);
+        return ObjectArrays.concat(entityType, path);
       }
     };
   }
@@ -420,9 +433,15 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   @Override
   public CompletableFuture<EntityData> patch(
       String id, Map<String, Object> partialData, String... path) {
+    return patch(id, partialData, false, path);
+  }
+
+  @Override
+  public CompletableFuture<EntityData> patch(
+      String id, Map<String, Object> partialData, boolean skipLastModified, String... path) {
     final Identifier identifier = Identifier.from(id, path);
 
-    Map<String, Object> patch = modifyPatch(partialData);
+    Map<String, Object> patch = skipLastModified ? partialData : modifyPatch(partialData);
 
     byte[] payload = getValueEncoding().serialize(patch);
 
@@ -442,7 +461,11 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
           defaultsStore.subtractDefaults(
               identifier, merged.getEntitySubType(), map, ImmutableList.of("enabled"));
 
-      Map<String, Object> withoutResetted = subtractResetted(withoutDefaults, partialData);
+      Map<String, Object> withoutResetted =
+          subtractResetted(
+              withoutDefaults,
+              partialData,
+              entityFactories.get(identifier.path().get(0), merged.getEntitySubType()));
 
       return getEventSourcing()
           .pushPartialMutationEvent(identifier, withoutResetted)
@@ -461,7 +484,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   private Map<String, Object> subtractResetted(
-      Map<String, Object> source, Map<String, Object> potentialNulls) {
+      Map<String, Object> source, Map<String, Object> potentialNulls, EntityFactory entityFactory) {
     Map<String, Object> result = new LinkedHashMap<>();
 
     source.forEach(
@@ -473,10 +496,15 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
           Object newValue =
               value instanceof Map && potentialNulls.get(key) instanceof Map
                   ? subtractResetted(
-                      (Map<String, Object>) value, (Map<String, Object>) potentialNulls.get(key))
+                      (Map<String, Object>) value,
+                      (Map<String, Object>) potentialNulls.get(key),
+                      entityFactory)
                   : value instanceof List && potentialNulls.get(key) instanceof List
                       ? subtractResetted(
-                          (List<Object>) value, (List<Object>) potentialNulls.get(key), key)
+                          (List<Object>) value,
+                          (List<Object>) potentialNulls.get(key),
+                          entityFactory,
+                          key)
                       : value instanceof List && potentialNulls.get(key) instanceof Map
                           ? subtractResetted(
                               (List<Object>) value, (Map<String, Object>) potentialNulls.get(key))
@@ -489,7 +517,10 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   private List<Object> subtractResetted(
-      List<Object> source, List<Object> potentialNulls, String parentKey) {
+      List<Object> source,
+      List<Object> potentialNulls,
+      EntityFactory entityFactory,
+      String parentKey) {
     if (!reverseAliases.containsKey(parentKey)) {
       return source;
     }
@@ -498,7 +529,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     KeyPathAliasUnwrap aliasUnwrap = reverseAliases.get(parentKey);
 
     Map<String, Object> resetted =
-        subtractResetted(aliasUnwrap.wrapMap(source), aliasUnwrap.wrapMap(potentialNulls));
+        subtractResetted(
+            aliasUnwrap.wrapMap(source), aliasUnwrap.wrapMap(potentialNulls), entityFactory);
     resetted.forEach(
         (s, o) -> {
           ((Map<String, Object>) o).remove("buildingBlock");
@@ -561,6 +593,18 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private EntityData hydrateData(Identifier identifier, EntityData entityData) {
     EntityData hydratedData = entityData;
 
+    if (LOGGER.isDebugEnabled(MARKER.DUMP)) {
+      try {
+        LOGGER.debug(
+            MARKER.DUMP,
+            "Entity data for {}:\n{}",
+            identifier.asPath(),
+            new String(valueEncoding.serialize(entityData), StandardCharsets.UTF_8));
+      } catch (Throwable e) {
+        // ignore
+      }
+    }
+
     if (entityData instanceof AutoEntity) {
       AutoEntity autoEntity = (AutoEntity) entityData;
       if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
@@ -598,6 +642,20 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     }
 
     hydratedData = hydrate(identifier, hydratedData);
+
+    if (LOGGER.isDebugEnabled(MARKER.DUMP)
+        && entityData instanceof AutoEntity
+        && ((AutoEntity) entityData).isAuto()) {
+      try {
+        LOGGER.debug(
+            MARKER.DUMP,
+            "Generated entity data for {}:\n{}",
+            identifier.asPath(),
+            new String(valueEncoding.serialize(hydratedData), StandardCharsets.UTF_8));
+      } catch (Throwable e) {
+        // ignore
+      }
+    }
 
     return hydratedData;
   }

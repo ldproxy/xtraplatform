@@ -10,7 +10,7 @@ package de.ii.xtraplatform.store.legacy.file;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import de.ii.xtraplatform.store.domain.legacy.KeyNotFoundException;
-import de.ii.xtraplatform.store.domain.legacy.KeyValueStore;
+import de.ii.xtraplatform.store.domain.legacy.KeyValueStoreLegacy;
 import de.ii.xtraplatform.store.legacy.Transaction;
 import de.ii.xtraplatform.store.legacy.WriteTransaction;
 import java.io.File;
@@ -23,11 +23,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /** @author zahnen */
-public class FileConfigStore implements KeyValueStore {
+public class FileConfigStore implements KeyValueStoreLegacy {
 
   private static final String INDEX_FILE_NAME = "index.properties";
   protected static final String ENCODING = "UTF-8";
@@ -102,7 +100,7 @@ public class FileConfigStore implements KeyValueStore {
       FileOutputStream out = new FileOutputStream(rootDir + "/" + INDEX_FILE_NAME);
       props.store(out, null);
     } catch (IOException ex) {
-      Logger.getLogger(FileConfigStore.class.getName()).log(Level.SEVERE, null, ex);
+      // Logger.getLogger(FileConfigStore.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
 
@@ -118,7 +116,7 @@ public class FileConfigStore implements KeyValueStore {
 
         in.close();
       } catch (IOException ex) {
-        Logger.getLogger(FileConfigStore.class.getName()).log(Level.SEVERE, null, ex);
+        // Logger.getLogger(FileConfigStore.class.getName()).log(Level.SEVERE, null, ex);
       }
     }
 
@@ -144,7 +142,7 @@ public class FileConfigStore implements KeyValueStore {
   }
 
   @Override
-  public KeyValueStore getChildStore(String... path) {
+  public KeyValueStoreLegacy getChildStore(String... path) {
     File configStore = new File(rootDir, path[0]);
 
     for (int i = 1; i < path.length; i++) {

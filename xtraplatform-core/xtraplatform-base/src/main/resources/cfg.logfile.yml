@@ -1,0 +1,9 @@
+---
+logging:
+  appenders:
+    - type: file
+      timeZone: Europe/Berlin
+      currentLogFilename: "./data/log/application.log"
+      archive: true
+      archivedLogFilenamePattern: "./data/log/application-%d.log.gz"
+      archivedFileCount: 7

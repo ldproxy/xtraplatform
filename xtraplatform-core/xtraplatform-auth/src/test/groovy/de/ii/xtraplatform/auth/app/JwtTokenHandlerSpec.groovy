@@ -3,15 +3,16 @@ package de.ii.xtraplatform.auth.app
 import de.ii.xtraplatform.auth.domain.ImmutableUser
 import de.ii.xtraplatform.auth.domain.Role
 import de.ii.xtraplatform.auth.domain.User
-import de.ii.xtraplatform.dropwizard.domain.XtraPlatform
-import de.ii.xtraplatform.runtime.domain.Constants
-import de.ii.xtraplatform.runtime.domain.XtraPlatformConfiguration
+import de.ii.xtraplatform.base.domain.AppContext
+import de.ii.xtraplatform.base.domain.Constants
+import de.ii.xtraplatform.base.domain.AppConfiguration
 import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Specification
 
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import java.nio.file.Path
 
 class JwtTokenHandlerSpec extends Specification {
 
@@ -108,36 +109,46 @@ class JwtTokenHandlerSpec extends Specification {
     }
 
     JwtTokenHandler getTokenHandlerMock() {
-        return new JwtTokenHandler(new XtraPlatform() {
+        return new JwtTokenHandler(new AppContext() {
             @Override
-            String getApplicationName() {
+            String getName() {
                 return null
             }
 
             @Override
-            String getApplicationVersion() {
+            String getVersion() {
                 return null
             }
 
             @Override
-            Constants.ENV getApplicationEnvironment() {
+            Constants.ENV getEnvironment() {
                 return null
             }
 
             @Override
-            XtraPlatformConfiguration getConfiguration() {
-                def config = new XtraPlatformConfiguration()
+            Path getDataDir() {
+                return null
+            }
+
+            @Override
+            Path getTmpDir() {
+                return null
+            }
+
+            @Override
+            Path getConfigurationFile() {
+                return null
+            }
+
+            @Override
+            AppConfiguration getConfiguration() {
+                def config = new AppConfiguration()
                 config.auth.jwtSigningKey = Base64.getEncoder().encodeToString(secretKey)
                 return config
             }
 
             @Override
             URI getUri() {
-                return null
-            }
-
-            @Override
-            URI getServicesUri() {
                 return null
             }
         })
