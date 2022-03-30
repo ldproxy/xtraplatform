@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.store.app.entities;
 
 import de.ii.xtraplatform.store.domain.entities.ChangingData;
@@ -54,8 +61,8 @@ public class ChangingDataImpl implements ChangingData {
     if (updated.isPresent()) {
       values.get(type).put(id, updated.get());
       updateAggregate(type);
-      //TODO: does not work for count
-      //updateAggregate(type, updated.get());
+      // TODO: does not work for count
+      // updateAggregate(type, updated.get());
 
       return true;
     }
