@@ -41,11 +41,13 @@ public class EventStream<T extends Event> {
     Source.publisher(eventStream).to(Sink.foreach(eventConsumer)).on(streamRunner).run();
   }
 
-  public synchronized void queue(T event) {
-    if (Objects.nonNull(emitter)) {
-      emitter.onNext(event);
+  public void queue(T event) {
+    synchronized (this) {
+      if (Objects.nonNull(emitter)) {
+        emitter.onNext(event);
+      }
+      eventQueue.offer(event);
     }
-    eventQueue.offer(event);
   }
 
   public String getEventType() {

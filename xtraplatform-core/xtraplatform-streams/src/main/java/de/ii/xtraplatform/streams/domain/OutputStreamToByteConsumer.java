@@ -18,10 +18,13 @@ public class OutputStreamToByteConsumer extends OutputStream {
   private Consumer<byte[]> byteConsumer;
 
   public OutputStreamToByteConsumer(Consumer<byte[]> byteConsumer) {
+    super();
     this.byteConsumer = byteConsumer;
   }
 
-  public OutputStreamToByteConsumer() {}
+  public OutputStreamToByteConsumer() {
+    super();
+  }
 
   public void setByteConsumer(Consumer<byte[]> byteConsumer) {
     this.byteConsumer = byteConsumer;

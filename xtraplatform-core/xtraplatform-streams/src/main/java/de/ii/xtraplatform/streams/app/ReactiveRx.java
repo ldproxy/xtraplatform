@@ -81,8 +81,8 @@ public class ReactiveRx implements Reactive {
     return Triple.of(source, sink, stream);
   }
 
-  static <U> io.reactivex.rxjava3.core.Flowable<U> assemble(Reactive.Source<U> source) {
-    io.reactivex.rxjava3.core.Flowable<U> assembled = null;
+  static <U> Flowable<U> assemble(Reactive.Source<U> source) {
+    Flowable<U> assembled = null;
     Optional<Source<U>> prepend = Optional.empty();
     Optional<Source<U>> mergeSorted = Optional.empty();
     Optional<Comparator<U>> mergeSortedComparator = Optional.empty();
@@ -228,17 +228,17 @@ public class ReactiveRx implements Reactive {
       case IGNORE:
         return new SubscriberRx<U>() {
           @Override
-          public void onNext(U u) {}
+          public void onNext(U next) {}
         };
       case HEAD:
         return new SubscriberRx<U>() {
           boolean first = true;
 
           @Override
-          public void onNext(U u) {
+          public void onNext(U next) {
             if (first) {
               first = false;
-              sink.getHead().getAndUpdate(old -> u);
+              sink.getHead().getAndUpdate(old -> next);
             }
           }
         };
@@ -330,6 +330,7 @@ public class ReactiveRx implements Reactive {
     private final Subscriber<T> delegate;
 
     private SubscriberRxWrapper(Subscriber<T> delegate) {
+      super();
       this.delegate = delegate;
     }
 

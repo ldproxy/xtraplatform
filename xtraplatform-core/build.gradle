@@ -18,6 +18,11 @@ dependencies {
     modules subprojects
 }
 
+layer {
+    minimumModuleMaturity = 'EXPERIMENTAL'
+    lowLevel = true
+}
+
 apply from: '../formatting.gradle'
 
 /*
