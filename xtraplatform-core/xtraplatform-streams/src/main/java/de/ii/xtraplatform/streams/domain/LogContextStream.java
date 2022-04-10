@@ -15,8 +15,7 @@ import org.slf4j.MDC;
 
 public final class LogContextStream {
 
-  private LogContextStream() {
-  }
+  private LogContextStream() {}
 
   // TODO: apply to first flowable
   public static <T, U> Source<T> withMdc(Source<T> source) {
