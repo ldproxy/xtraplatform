@@ -37,6 +37,7 @@ public class StreamDefault<V, W>
   private Optional<BiFunction<W, Throwable, W>> errorHandler;
   private Optional<BiFunction<W, V, W>> itemHandler;
 
+  @SuppressWarnings("PMD.NullAssignment") // null is a valid value in this case
   public StreamDefault(Source<V> source, SinkReduced<V, W> sink) {
     this(
         source,

@@ -98,7 +98,7 @@ public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut
         && ((SinkTransformedImpl<V, ?, X>) sink).getTransformer()
             instanceof TransformerCustomFuseableIn) {
       TransformerCustomFuseableIn<V, ?, W> x =
-          x(((SinkTransformedImpl<V, ?, X>) sink).getTransformer());
+          castToFuseableIn(((SinkTransformedImpl<V, ?, X>) sink).getTransformer());
       if (canFuse(x)) {
         fuse(x);
       }
@@ -126,7 +126,7 @@ public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut
     return this;
   }
 
-  private <X> TransformerCustomFuseableIn<V, X, W> x(Transformer<V, X> transformer) {
+  private <X> TransformerCustomFuseableIn<V, X, W> castToFuseableIn(Transformer<V, X> transformer) {
     return (TransformerCustomFuseableIn<V, X, W>) transformer;
   }
 }

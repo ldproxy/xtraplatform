@@ -1,4 +1,6 @@
 
+maturity = 'EXPERIMENTAL'
+
 ext {
     jjwtVersion = '0.10.6'
 }
