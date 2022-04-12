@@ -17,6 +17,10 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 /** @author zahnen */
+
+/**
+ * @title Authorization
+ */
 public class AuthConfig {
 
   @JsonIgnore
@@ -33,8 +37,23 @@ public class AuthConfig {
     }
   }
 
+  /**
+   * @en Allow anonymous access to secured resources?
+   * @de Anonymen Zugriff auf abgesicherte Ressourcen erlauben?
+   * @default `false`
+   */
   @Valid @NotNull @JsonProperty public boolean allowAnonymousAccess = false;
 
+  /**
+   * @en *HMAC SHA* key for signing the *JSON web tokens*. If not set a new key is generated
+   * at every start and all issued tokens become invalid. The generated key is shown in the
+   * log as a warning and can easily be copied from there into the configuration.
+   * @de *HMAC SHA* Schlüssel zu Signierung der *JSON Web Token*. Falls nicht gesetzt wird bei
+   * jedem Start ein neuer Schlüssel generiert und alle ausgegebenen Tokens werden ungültig. Der
+   * generierte Schlüssel wird im Log als Warnung ausgegeben und kann einfach von dort in die
+   * Konfiguration kopiert werden.
+   * @default Generated at startup
+   */
   @Valid
   // @NotNull
   @JsonProperty

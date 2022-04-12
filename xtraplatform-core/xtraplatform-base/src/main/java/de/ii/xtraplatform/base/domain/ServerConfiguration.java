@@ -11,11 +11,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.dropwizard.server.DefaultServerFactory;
 
+/**
+ * @title Webserver
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = ServerConfiguration.class)
 public class ServerConfiguration extends DefaultServerFactory {
 
   private String externalUrl;
 
+  /**
+   * @en The [external URL](#external-url) of the web server.
+   * @de Die [externe URL](#external-url) des Webservers
+   * @default
+   */
   @JsonProperty
   public String getExternalUrl() {
     return externalUrl;

@@ -11,7 +11,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+/**
+ * @title Manager
+ */
 public class ManagerConfiguration {
 
+  /**
+   * @en Should the Manager app be enabled to manage the configuration (see [Manager](README.md#manager))?
+   * @de Soll die Manager-App zur Verwaltung der Konfiguration aktiviert werden (siehe [Manager](README.md#manager))?
+   * @default `true`
+   */
   @Valid @NotNull @JsonProperty public boolean enabled = true;
 }

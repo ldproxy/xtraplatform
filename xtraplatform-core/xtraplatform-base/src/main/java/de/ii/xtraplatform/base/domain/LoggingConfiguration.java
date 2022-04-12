@@ -14,6 +14,10 @@ import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.logging.LoggingUtil;
 
 /** @author zahnen */
+
+/**
+ * @title Logging
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = LoggingConfiguration.class)
 public class LoggingConfiguration extends DefaultLoggingFactory {
 
