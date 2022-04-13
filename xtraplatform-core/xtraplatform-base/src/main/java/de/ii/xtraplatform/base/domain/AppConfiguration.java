@@ -28,7 +28,7 @@ import javax.validation.constraints.NotNull;
  * (see [configuration-object-types](README.md#configuration-object-types)). The path to the
  * corresponding configuration file then looks like this:
  *
- * ``text
+ * ```text
  * store/entities/{type}/{id}.yml
  * ```
  *
@@ -43,7 +43,7 @@ import javax.validation.constraints.NotNull;
  * make environment specific adjustments without having to change the main configuration files.
  * The path to the overrides looks like this:
  *
- * ``text
+ * ```text
  * store/overrides/{type}/{id}.yml
  * ```
  *
@@ -99,7 +99,7 @@ import javax.validation.constraints.NotNull;
  * directories can be configured with `additionalLocations`. The paths to be specified
  * can be either absolute or relative to the data directory, e.g.:
  *
- * ``yml
+ * ```yml
  * store:
  *   additionalLocations:
  *     - env/test
@@ -107,14 +107,14 @@ import javax.validation.constraints.NotNull;
  *
  * Such a directory can then again contain defaults and overrides, e.g.:
  *
- * ``text
+ * ```text
  * env/test/defaults/{type}.yml
  * env/test/overrides/{type}/{id}.yml
  * ```
  *
  * The merge order for all listed paths would then look like this:
  *
- * ``text
+ * ```text
  * store/defaults/{type}.yml
  * store/defaults/{type}.{sub-type}.yml
  * env/test/defaults/{type}.yml
@@ -157,7 +157,7 @@ import javax.validation.constraints.NotNull;
  * @en Defaults and overrides can be split into smaller files, e.g. to increase the clarity.
  * The splitting follows the object structure in the configuration objects.
  *
- * ``yml
+ * ```yml
  * key1:
  *   key2:
  *     key3: value1
@@ -165,27 +165,27 @@ import javax.validation.constraints.NotNull;
  *
  * To set a default or override for this value, the files described above could be used:
  *
- * ``text
+ * ```text
  * store/defaults/{type}.{sub-type}.yml
  * store/overrides/{type}/{id}.yml
  * ```
  *
  * However, separate files can be created for the object `key1` or the object `key2`, for example:
  *
- * ``text
+ * ```text
  * store/defaults/{type}/{sub-type}/key1.yml
  * ```
  *
- * ``yml
+ * ```yml
  * key2:
  *   key3: value2
  * ```
  *
- * ``text
+ * ```text
  * store/overrides/{type}/{id}/key1/key2.yml
  * ```
  *
- * ``yml
+ * ```yml
  * key3: value3
  * ```
  *
@@ -279,7 +279,7 @@ import javax.validation.constraints.NotNull;
  * In `cfg.yml` you can use this mechanism e.g. to define an additional directory depending on
  * an environment variable:
  *
- * ``yml
+ * ```yml
  * store:
  *   additionalLocations:
  *     - env/${DEPLOYMENT_ENV:-production}
@@ -319,7 +319,7 @@ import javax.validation.constraints.NotNull;
  * `https://example.org/ldproxy` to `http://ldproxy-host:7080/rest/services`. Then the
  * following would need to be configured:
  *
- * ``yaml
+ * ```yaml
  * server:
  *   externalUrl: https://example.org/ldproxy/
  * ```
@@ -364,7 +364,7 @@ import javax.validation.constraints.NotNull;
  * @en The default port of the web server is `7080`. This can be changed, e.g. if there is a
  * conflict with another application.
  *
- * ``yaml
+ * ```yaml
  * server:
  *   applicationConnectors:
  *     - type: http
