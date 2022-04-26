@@ -9,6 +9,7 @@ package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import de.ii.xtraplatform.docs.DocFile;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.logging.LoggingFactory;
@@ -17,14 +18,12 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 /**
- * @title Global configuration
- * @en The configuration file `cfg.yml` is located in the data directory.
- * @de Die Konfigurationsdatei `cfg.yml` befindet sich im Daten-Verzeichnis.
- */
-
-/**
- * @title # Store structure
- * @en Each configuration object has a type, an optional sub-type, and an id unique to the type
+ * # Global configuration
+ * @langEn The configuration file `cfg.yml` is located in the data directory.
+ * @langDe Die Konfigurationsdatei `cfg.yml` befindet sich im Daten-Verzeichnis.
+ *
+ * @langEn ## Store structure
+ * Each configuration object has a type, an optional sub-type, and an id unique to the type
  * (see [configuration-object-types](README.md#configuration-object-types)). The path to the
  * corresponding configuration file then looks like this:
  *
@@ -56,7 +55,8 @@ import javax.validation.constraints.NotNull;
  *
  * The merged configuration objects must contain then all obligation data,
  * otherwise it comes with the start to an error.
- * @de Jedes Konfigurationsobjekt hat einen Typ, einen optionalen Sub-Typ sowie eine für den Typ
+ * @langDe ### Struktur des Store
+ * Jedes Konfigurationsobjekt hat einen Typ, einen optionalen Sub-Typ sowie eine für den Typ
  * eindeutige Id (siehe [Konfigurationsobjekt-Typen](README.md#configuration-object-types)).
  * Der Pfad zur entsprechenden Konfigurationsdatei sieht dann so aus:
  *
@@ -90,11 +90,9 @@ import javax.validation.constraints.NotNull;
  *
  * Die zusammengeführten Konfigurationsobjekte müssen dann alle Pflichtangaben enthalten,
  * ansonsten kommt es beim Start zu einem Fehler.
- */
-
-/**
- * @title # Additional directories
- * @en For fixed predefined or standardized configuration objects it may make sense
+ *
+ * @langEn ### Additional directories
+ * For fixed predefined or standardized configuration objects it may make sense
  * to make environment specific adjustments in a separate directory. One or more such
  * directories can be configured with `additionalLocations`. The paths to be specified
  * can be either absolute or relative to the data directory, e.g.:
@@ -122,7 +120,8 @@ import javax.validation.constraints.NotNull;
  * store/overrides/{type}/{id}.yml
  * env/test/overrides/{type}/{id}.yml
  * ```
- * @de Bei fest vordefinierten oder standardisierten Konfigurationsobjekten kann es
+ * @langDe ### Zusätzliche Verzeichnisse
+ * Bei fest vordefinierten oder standardisierten Konfigurationsobjekten kann es
  * Sinn machen, umgebungsspezifische Anpassungen in einem separaten Verzeichnis vorzunehmen.
  * Ein oder mehrere solche Verzeichnisse können mit `additionalLocations` konfiguriert werden.
  * Die anzugebenden Pfade können entweder absolut oder relativ zum Daten-Verzeichnis sein, also z.B.:
@@ -150,11 +149,9 @@ import javax.validation.constraints.NotNull;
  * store/overrides/{typ}/{id}.yml
  * env/test/overrides/{typ}/{id}.yml
  * ``
- */
-
-/**
- * @title # Splitting of defaults and overrides
- * @en Defaults and overrides can be split into smaller files, e.g. to increase the clarity.
+ *
+ * @langEn ### Splitting of defaults and overrides
+ * Defaults and overrides can be split into smaller files, e.g. to increase the clarity.
  * The splitting follows the object structure in the configuration objects.
  *
  * ```yml
@@ -208,7 +205,8 @@ import javax.validation.constraints.NotNull;
  * but also e.g. for uniquely referenceable array elements. These special cases are discussed
  * in the description of [configuration-object-types](README.md#configuration-object-types) in
  * the ["special-cases"](README.md#special-cases) section.
- * @de Defaults und Overrides können in kleinere Dateien aufgesplittet werden, z.B. um die
+ * @langDe ### Aufsplitten von Defaults und Overrides
+ * Defaults und Overrides können in kleinere Dateien aufgesplittet werden, z.B. um die
  * Übersichtlichkeit zu erhöhen. Die Aufsplittung folgt dabei der Objektstruktur in den
  * Konfigurationsobjekten.
  *
@@ -265,11 +263,9 @@ import javax.validation.constraints.NotNull;
  * erlaubt ist, sondern z.B. auch für eindeutig referenzierbare Array-Element. Auf diese
  * Sonderfälle wird in der Beschreibung der [Konfigurationsobjekt-Typen](README.md#configuration-object-types)
  * im Abschnitt ["Besonderheiten"](README.md#special-cases) eingegangen.
- */
-
-/**
- * @title # Environment variables
- * @en Both in `cfg.yml` and in configuration objects, defaults and overrides, substitutions can be
+ *
+ * @langEn ### Environment variables
+ * Both in `cfg.yml` and in configuration objects, defaults and overrides, substitutions can be
  * made by environment variables.
  *
  * Such an expression `${NAME}` in one of these files is replaced by the value of the environment
@@ -288,7 +284,8 @@ import javax.validation.constraints.NotNull;
  * To load the files from the above example into `env/test`, you would then have to set the
  * environment variable `DEPLOYMENT_ENV=test`. If this is not set, the directory `env/production`
  * would be loaded.
- * @de Sowohl in der `cfg.yml` als auch in Konfigurationsobjekten, Defaults und Overrides können
+ * @langDe ### Umgebungsvariablen
+ * Sowohl in der `cfg.yml` als auch in Konfigurationsobjekten, Defaults und Overrides können
  * Ersetzungen durch Umgebungsvariablen vorgenommen werden.
  *
  * Ein solcher Ausdruck `${NAME}` in einer dieser Dateien wird durch den Wert der Umgebungsvariable
@@ -308,11 +305,9 @@ import javax.validation.constraints.NotNull;
  * Um die Dateien aus obigem Beispiel in `env/test` zu laden, müsste man dann die
  * Umgebunsvariable `DEPLOYMENT_ENV=test` setzen. Wenn diese nicht gesetzt ist würde das
  * Verzeichnis `env/production` geladen.
-*/
-
-/**
- * @title # External URL
- * @en If the application is run behind another web server, e.g. for HTTPS or to change the
+*
+ * @langEn ### External URL
+ * If the application is run behind another web server, e.g. for HTTPS or to change the
  * path where the services are accessible (`/rest/services`), the external URL must be configured.
  *
  * A common use case would be to use *Apache HTTP Server* to set up a *ProxyPass* from
@@ -323,7 +318,8 @@ import javax.validation.constraints.NotNull;
  * server:
  *   externalUrl: https://example.org/ldproxy/
  * ```
- * @de Wenn die Applikation hinter einem weiteren Webserver betrieben wird, z.B. für HTTPS
+ * @langDe ### Externe URL
+ * Wenn die Applikation hinter einem weiteren Webserver betrieben wird, z.B. für HTTPS
  * oder um den Pfad zu ändern, unter dem die Dienste erreichbar sind (`/rest/services`),
  * muss die externe URL konfiguriert werden.
  *
@@ -335,11 +331,9 @@ import javax.validation.constraints.NotNull;
  * server:
  *   externalUrl: https://example.org/ldproxy/
  * ```
- */
-
-/**
- * @title # Request-Logging
- * @en Request logging is disabled by default. This example would enable writing request logs to
+ *
+ * @langEn ### Request-Logging
+ * Request logging is disabled by default. This example would enable writing request logs to
  * `data/log/requests.log`. It also enables daily log rotation and keeps old logs zipped for a week.
  *
  * ```yaml
@@ -354,14 +348,13 @@ import javax.validation.constraints.NotNull;
  *         archivedLogFilenamePattern: data/log/requests-%d.zip
  *         archivedFileCount: 7
  * ```
- * @de Request-Logging ist standardmäßig deaktiviert. Dieses Beispiel würde das Schreiben von
+ * @langDe ### Request-Logging
+ * Request-Logging ist standardmäßig deaktiviert. Dieses Beispiel würde das Schreiben von
  * Request-Logs nach `data/log/requests.log` aktivieren. Es aktiviert auch die tägliche
  * Log-Rotation und verwahrt alte Logs gezippt für eine Woche.
- */
-
-/**
- * @title # Port
- * @en The default port of the web server is `7080`. This can be changed, e.g. if there is a
+ *
+ * @langEn ### Port
+ * The default port of the web server is `7080`. This can be changed, e.g. if there is a
  * conflict with another application.
  *
  * ```yaml
@@ -370,7 +363,8 @@ import javax.validation.constraints.NotNull;
  *     - type: http
  *       port: 8080
  * ```
- * @de Der Standard-Port des Webservers ist `7080`. Dieser kann geändert werden, z.B.
+ * @langDe ### Port
+ * Der Standard-Port des Webservers ist `7080`. Dieser kann geändert werden, z.B.
  * wenn es einen Konflikt mit einer anderen Anwendung gibt.
  *
  * ```yaml
@@ -379,11 +373,9 @@ import javax.validation.constraints.NotNull;
  *     - type: http
  *       port: 8080
  * ```
- */
-
-/**
- * @title # HTTP-Proxy
- * @en If the application needs to use an HTTP proxy to access external resources, it can be
+ *
+ * @langEn ### HTTP-Proxy
+ * If the application needs to use an HTTP proxy to access external resources, it can be
  * configured as follows.
  *
  * In this example, the HTTP proxy URL is `http://localhost:8888`. Connections to hosts listed
@@ -402,7 +394,8 @@ import javax.validation.constraints.NotNull;
  *       - '192.168.*'
  *       - '*.example.org'
  * ```
- * @de Falls die Applikation einen HTTP-Proxy verwenden muss, um auf externe Ressourcen zuzugreifen,
+ * @langDe ### HTTP-Proxy
+ * Falls die Applikation einen HTTP-Proxy verwenden muss, um auf externe Ressourcen zuzugreifen,
  * kann dieser wie folgt konfiguriert werden.
  *
  * In diesem Beispiel ist die HTTP-Proxy-URL `http://localhost:8888`. Verbindungen zu Hosts die
@@ -421,20 +414,17 @@ import javax.validation.constraints.NotNull;
  *       - '192.168.*'
  *       - '*.example.org'
  * ```
- */
-
-/**
- * @title # Idle-Timeout
- * @en This setting should only be adjusted if users report persistent problems with long-running
+ *
+ * @langEn ### Idle-Timeout
+ * This setting should only be adjusted if users report persistent problems with long-running
  * requests. In most cases, the default setting of 30 seconds is recommended.
- * @de Diese Einstellung sollte nur angepasst werden, falls Nutzer von anhaltenden Problemen mit
+ * @langDe ### Idle-Timeout
+ * Diese Einstellung sollte nur angepasst werden, falls Nutzer von anhaltenden Problemen mit
  * langlaufenden Requests berichten. In den meisten Fällen wird die Standard-Einstellung von
  * 30 Sekunden empfohlen.
- */
-
-/**
- * @title # Log-Level
- * @en The log level for the application is `INFO` by default.
+ *
+ * @langEn ### Log-Level
+ * The log level for the application is `INFO` by default.
  * Other possible values are `OFF`, `ERROR` and `WARN`.
  * For debugging it can be set to `DEBUG` for example:
  *
@@ -442,7 +432,8 @@ import javax.validation.constraints.NotNull;
  * logging:
  *   level: DEBUG
  * ```
- * @de Der Log-Level für die Applikation ist standardmäßig `INFO`.
+ * @langDe ### Log-Level
+ * Der Log-Level für die Applikation ist standardmäßig `INFO`.
  * Weitere mögliche Werte sind `OFF`, `ERROR` und `WARN`.
  * Für die Fehlersuche kann er zum Beispiel auf `DEBUG` gesetzt werden:
  *
@@ -450,11 +441,9 @@ import javax.validation.constraints.NotNull;
  * logging:
  *   level: DEBUG
  * ```
- */
-
-/**
- * @title # Log output
- * @en By default, application logs are written to `data/log/xtraplatform.log`.
+ *
+ * @langEn ### Log output
+ * By default, application logs are written to `data/log/xtraplatform.log`.
  * Daily log rotation is enabled and old logs are zipped and kept for a week.
  * The log file or rotation settings can be changed:
  *
@@ -468,7 +457,8 @@ import javax.validation.constraints.NotNull;
  *       archivedFileCount: 30
  *       timeZone: Europe/Berlin
  * ```
- * @de Standardmäßig werden Applikations-Logs nach `data/log/xtraplatform.log` geschrieben. Die tägliche Log-Rotation ist aktiviert und alte Logs werden gezippt und für eine Woche verwahrt. Die Log-Datei oder die Rotations-Einstellungen können geändert werden:
+ * @langDe ### Log-Ausgabe
+ * Standardmäßig werden Applikations-Logs nach `data/log/xtraplatform.log` geschrieben. Die tägliche Log-Rotation ist aktiviert und alte Logs werden gezippt und für eine Woche verwahrt. Die Log-Datei oder die Rotations-Einstellungen können geändert werden:
  *
  * ```yaml
  * logging:
@@ -480,19 +470,17 @@ import javax.validation.constraints.NotNull;
  *       archivedFileCount: 30
  *       timeZone: Europe/Berlin
  * ```
- */
-
- /**
+ *
   * @see StoreConfiguration
   * @see ServerConfiguration
   * @see LoggingConfiguration
-  * @see HttpClientConfiguration
+  * @see io.dropwizard.client.HttpClientConfiguration
   * @see ManagerConfiguration
   * @see ProjConfiguration
   * @see BackgroundTasksConfiguration
   * @see AuthConfig
  */
-
+@DocFile(path = "configuration/global.md")
 public class AppConfiguration extends Configuration {
 
   @Valid @NotNull private ServerConfiguration server;
