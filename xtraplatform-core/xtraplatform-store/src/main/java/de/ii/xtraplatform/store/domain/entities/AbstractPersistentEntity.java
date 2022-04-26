@@ -10,6 +10,7 @@ package de.ii.xtraplatform.store.domain.entities;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.store.app.entities.ChangingDataImpl;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -32,6 +33,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   private final ExecutorService executorService;
   private final List<Consumer<PersistentEntity>> reloadListeners;
   private final List<Consumer<EntityState>> stateChangeListeners;
+  private final ChangingData changingData;
 
   /*@ServiceController(
      value = true,
@@ -55,6 +57,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
                     1, new ThreadFactoryBuilder().setNameFormat("entity.lifecycle-%d").build()));
     this.reloadListeners = new CopyOnWriteArrayList<>();
     this.stateChangeListeners = new CopyOnWriteArrayList<>();
+    this.changingData = new ChangingDataImpl();
     this.data = data;
     this.startup = null;
     this.state = STATE.UNKNOWN;
@@ -65,6 +68,11 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   @Override
   public T getData() {
     return data;
+  }
+
+  @Override
+  public ChangingData getChangingData() {
+    return changingData;
   }
 
   // @Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler

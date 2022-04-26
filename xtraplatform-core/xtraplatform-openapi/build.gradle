@@ -1,3 +1,6 @@
+
+maturity = 'EXPERIMENTAL'
+
 ext {
     swaggerVersion = '2.1.13'
 }
