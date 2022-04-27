@@ -11,9 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.dropwizard.server.DefaultServerFactory;
 
-/**
- * @title Webserver
- */
+/** @title Webserver */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = ServerConfiguration.class)
 public class ServerConfiguration extends DefaultServerFactory {
 

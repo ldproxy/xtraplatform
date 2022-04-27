@@ -12,17 +12,15 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-/**
- * @title BackgroundTasks
- */
+/** @title BackgroundTasks */
 public class BackgroundTasksConfiguration {
 
   /**
-   * @en The maximum number of threads available for background processes. If requests are to
-   * be answered efficiently at all times, the value should not exceed half of the CPU cores.
-   * @de Die maximale Anzahl an Threads, die für Hintergrundprozesse zur Verfügung stehen.
-   * Falls zu jeder Zeit Requests performant beantwortet können werden sollen, sollte der
-   * Wert die Hälfte der CPU-Kerne nicht überschreiten.
+   * @en The maximum number of threads available for background processes. If requests are to be
+   *     answered efficiently at all times, the value should not exceed half of the CPU cores.
+   * @de Die maximale Anzahl an Threads, die für Hintergrundprozesse zur Verfügung stehen. Falls zu
+   *     jeder Zeit Requests performant beantwortet können werden sollen, sollte der Wert die Hälfte
+   *     der CPU-Kerne nicht überschreiten.
    * @default `1`
    */
   @Valid
