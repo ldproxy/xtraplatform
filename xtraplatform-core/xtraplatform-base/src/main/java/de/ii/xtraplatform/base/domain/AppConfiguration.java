@@ -481,7 +481,7 @@ import javax.validation.constraints.NotNull;
  * @see BackgroundTasksConfiguration
  * @see AuthConfig
  */
-@DocFile(path = "configuration", name="global.md")
+@DocFile(path = "configuration", name = "global.md")
 public class AppConfiguration extends Configuration {
 
   @Valid @NotNull private ServerConfiguration server;
