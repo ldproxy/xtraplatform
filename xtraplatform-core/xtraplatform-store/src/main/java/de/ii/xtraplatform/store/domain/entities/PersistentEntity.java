@@ -17,4 +17,6 @@ public interface PersistentEntity {
   String getType();
 
   EntityData getData();
+
+  ChangingData getChangingData();
 }

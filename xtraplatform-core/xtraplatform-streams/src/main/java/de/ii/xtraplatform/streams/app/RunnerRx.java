@@ -53,14 +53,15 @@ public class RunnerRx implements Runner {
   }
 
   RunnerRx(ExecutorService executorService, String name, int capacity, int queueSize) {
-    if (capacity != 0) {
-      // TODO: thread names
-      getDispatcherName(name);
-      this.scheduler = Schedulers.from(executorService);
-      scheduler.start();
-    } else {
-      this.scheduler = null;
+    if (capacity == 0) {
+      throw new IllegalArgumentException("invalid capacity: 0");
     }
+
+    // TODO: thread names
+    getDispatcherName(name);
+    this.scheduler = Schedulers.from(executorService);
+    scheduler.start();
+
     this.name = name;
     this.capacity = capacity;
     this.queueSize = queueSize;
