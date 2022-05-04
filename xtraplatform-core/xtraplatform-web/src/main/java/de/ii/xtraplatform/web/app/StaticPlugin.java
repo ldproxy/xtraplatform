@@ -50,6 +50,10 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
         .get()
         .forEach(
             staticResources1 -> {
+              if (!staticResources1.isEnabled()) {
+                return;
+              }
+
               StaticResourceServlet servlet =
                   new StaticResourceServlet(
                       staticResources1.getResourcePath(),
