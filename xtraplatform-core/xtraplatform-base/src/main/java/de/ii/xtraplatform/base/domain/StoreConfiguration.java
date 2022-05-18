@@ -21,23 +21,18 @@ import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * @langEn # Store
- * <p>
- * The store contains configuration objects.
- * <p>
- * ## Configuration
- * <p>
- * <code>
+ *     <p>The store contains configuration objects.
+ *     <p>## Configuration
+ *     <p><code>
  * |Option |Type |Default |Description
  * | --- | --- | --- | ---
  * |`mode` |enum |`READ_WRITE` |`READ_WRITE` or `READ_ONLY`. Dictates if the application may apply changes to the store.
  * |`additionalLocations` |array |`[]` | List of paths with [additional directories](#additional-locations).
  * </code>
- * <p>
- * ## Store structure
- * <p>
- * Each configuration object has a type, an optional sub-type, and an id
- *     unique to the type (see [configuration-object-types](README.md#configuration-object-types)).
- *     The path to the corresponding configuration file then looks like this:
+ *     <p>## Store structure
+ *     <p>Each configuration object has a type, an optional sub-type, and an id unique to the type
+ *     (see [configuration-object-types](README.md#configuration-object-types)). The path to the
+ *     corresponding configuration file then looks like this:
  *     <p><code>
  * ```text
  * store/entities/{type}/{id}.yml
@@ -68,13 +63,11 @@ import org.hibernate.validator.constraints.NotEmpty;
  *     wants to overwrite.
  *     <p>The merged configuration objects must contain then all obligation data, otherwise it comes
  *     with the start to an error.
- *     <p>
- * ## Additional directories
- * <p>
- * For fixed predefined or standardized configuration objects it
- *     may make sense to make environment specific adjustments in a separate directory. One or more
- *     such directories can be configured with `additionalLocations`. The paths to be specified can
- *     be either absolute or relative to the data directory, e.g.:
+ *     <p>## Additional directories
+ *     <p>For fixed predefined or standardized configuration objects it may make sense to make
+ *     environment specific adjustments in a separate directory. One or more such directories can be
+ *     configured with `additionalLocations`. The paths to be specified can be either absolute or
+ *     relative to the data directory, e.g.:
  *     <p><code>
  * ```yml
  * store:
@@ -100,12 +93,9 @@ import org.hibernate.validator.constraints.NotEmpty;
  * env/test/overrides/{type}/{id}.yml
  * ```
  * </code>
- *     <p>
- * ## Splitting of defaults and overrides
- * <p>
- * Defaults and overrides can be split into smaller
- *     files, e.g. to increase the clarity. The splitting follows the object structure in the
- *     configuration objects.
+ *     <p>## Splitting of defaults and overrides
+ *     <p>Defaults and overrides can be split into smaller files, e.g. to increase the clarity. The
+ *     splitting follows the object structure in the configuration objects.
  *     <p><code>
  * ```yml
  * key1:
@@ -164,24 +154,18 @@ import org.hibernate.validator.constraints.NotEmpty;
  *     the description of [configuration-object-types](README.md#configuration-object-types) in the
  *     ["special-cases"](README.md#special-cases) section.
  * @langDe # Store
- * <p>
- * Der Store enthält Konfigurationsobjekte.
- * <p>
- * ## Konfiguration
- * <p>
- * <code>
+ *     <p>Der Store enthält Konfigurationsobjekte.
+ *     <p>## Konfiguration
+ *     <p><code>
  * |Option |Typ |Default |Beschreibung
  * | --- | --- | --- | ---
  * |`mode` |enum |`READ_WRITE` |`READ_WRITE` oder `READ_ONLY`. Bestimmt ob die Applikation Änderungen am Store vornehmen darf.
  * |`additionalLocations` |array |`[]` | Liste von Pfaden mit [zusätzlichen Verzeichnissnen](#additional-locations).
  * </code>
- * <p>
- * ## Struktur des Store
- * <p>
- * Jedes Konfigurationsobjekt hat einen Typ, einen optionalen Sub-Typ
- *     sowie eine für den Typ eindeutige Id (siehe
- *     [Konfigurationsobjekt-Typen](README.md#configuration-object-types)). Der Pfad zur
- *     entsprechenden Konfigurationsdatei sieht dann so aus:
+ *     <p>## Struktur des Store
+ *     <p>Jedes Konfigurationsobjekt hat einen Typ, einen optionalen Sub-Typ sowie eine für den Typ
+ *     eindeutige Id (siehe [Konfigurationsobjekt-Typen](README.md#configuration-object-types)). Der
+ *     Pfad zur entsprechenden Konfigurationsdatei sieht dann so aus:
  *     <p><code>
  * ```text
  * store/entities/{typ}/{id}.yml
@@ -212,14 +196,11 @@ import org.hibernate.validator.constraints.NotEmpty;
  *     die Angaben setzen, die man überschreiben will.
  *     <p>Die zusammengeführten Konfigurationsobjekte müssen dann alle Pflichtangaben enthalten,
  *     ansonsten kommt es beim Start zu einem Fehler.
- *     <p>
- * ## Zusätzliche Verzeichnisse
- * <p>
- * Bei fest vordefinierten oder standardisierten
- *     Konfigurationsobjekten kann es Sinn machen, umgebungsspezifische Anpassungen in einem
- *     separaten Verzeichnis vorzunehmen. Ein oder mehrere solche Verzeichnisse können mit
- *     `additionalLocations` konfiguriert werden. Die anzugebenden Pfade können entweder absolut
- *     oder relativ zum Daten-Verzeichnis sein, also z.B.:
+ *     <p>## Zusätzliche Verzeichnisse
+ *     <p>Bei fest vordefinierten oder standardisierten Konfigurationsobjekten kann es Sinn machen,
+ *     umgebungsspezifische Anpassungen in einem separaten Verzeichnis vorzunehmen. Ein oder mehrere
+ *     solche Verzeichnisse können mit `additionalLocations` konfiguriert werden. Die anzugebenden
+ *     Pfade können entweder absolut oder relativ zum Daten-Verzeichnis sein, also z.B.:
  *     <p><code>
  * ```yml
  * store:
@@ -245,12 +226,10 @@ import org.hibernate.validator.constraints.NotEmpty;
  * env/test/overrides/{typ}/{id}.yml
  * ``
  * </code>
- *     <p>
- * ## Aufsplitten von Defaults und Overrides
- * <p>
- * Defaults und Overrides können in kleinere
- *     Dateien aufgesplittet werden, z.B. um die Übersichtlichkeit zu erhöhen. Die Aufsplittung
- *     folgt dabei der Objektstruktur in den Konfigurationsobjekten.
+ *     <p>## Aufsplitten von Defaults und Overrides
+ *     <p>Defaults und Overrides können in kleinere Dateien aufgesplittet werden, z.B. um die
+ *     Übersichtlichkeit zu erhöhen. Die Aufsplittung folgt dabei der Objektstruktur in den
+ *     Konfigurationsobjekten.
  *     <p><code>
  * ```yml
  * key1:
@@ -311,16 +290,16 @@ import org.hibernate.validator.constraints.NotEmpty;
  *     [Konfigurationsobjekt-Typen](README.md#configuration-object-types) im Abschnitt
  *     ["Besonderheiten"](README.md#special-cases) eingegangen.
  */
-@DocFile(path = "application", name = "40-store.md", tables = {
-    //TODO: needs annotated methods, use immutables
-    @DocTable(
-        name = "properties",
-        rows = {
-            @DocStep(type = Step.JSON_PROPERTIES)
-        },
-        columnSet = ColumnSet.JSON_PROPERTIES
-    )
-})
+@DocFile(
+    path = "application",
+    name = "40-store.md",
+    tables = {
+      // TODO: needs annotated methods, use immutables
+      @DocTable(
+          name = "properties",
+          rows = {@DocStep(type = Step.JSON_PROPERTIES)},
+          columnSet = ColumnSet.JSON_PROPERTIES)
+    })
 public class StoreConfiguration {
 
   public enum StoreMode {
@@ -331,7 +310,8 @@ public class StoreConfiguration {
 
   /**
    * @langEn The store contains configuration objects.
-   * @langDe `READ_WRITE` oder `READ_ONLY`. Bestimmt ob die Software Änderungen am Store vornehmen darf.
+   * @langDe `READ_WRITE` oder `READ_ONLY`. Bestimmt ob die Software Änderungen am Store vornehmen
+   *     darf.
    * @default `READ_WRITE`
    */
   @JsonProperty public StoreMode mode = StoreMode.READ_WRITE;

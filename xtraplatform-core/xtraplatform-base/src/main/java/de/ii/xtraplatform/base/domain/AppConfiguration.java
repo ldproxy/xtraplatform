@@ -57,7 +57,6 @@ import javax.validation.constraints.NotNull;
  *     <p>Um die Dateien aus obigem Beispiel in `env/test` zu laden, müsste man dann die
  *     Umgebunsvariable `DEPLOYMENT_ENV=test` setzen. Wenn diese nicht gesetzt ist würde das
  *     Verzeichnis `env/production` geladen.
- *
  * @langEn ### HTTP-Proxy If the application needs to use an HTTP proxy to access external
  *     resources, it can be configured as follows.
  *     <p>In this example, the HTTP proxy URL is `http://localhost:8888`. Connections to hosts
@@ -103,8 +102,6 @@ import javax.validation.constraints.NotNull;
  * @langDe ### Idle-Timeout Diese Einstellung sollte nur angepasst werden, falls Nutzer von
  *     anhaltenden Problemen mit langlaufenden Requests berichten. In den meisten Fällen wird die
  *     Standard-Einstellung von 30 Sekunden empfohlen.
- *
-
  * @see StoreConfiguration
  * @see ServerConfiguration
  * @see LoggingConfiguration
