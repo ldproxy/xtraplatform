@@ -14,11 +14,9 @@ import io.dropwizard.server.DefaultServerFactory;
 
 /**
  * @langEn # Web Server
- * <p>
- * ## Port
- * <p>
- * The default port of the web server is `7080`. This can be changed, e.g. if there
- *     is a conflict with another application.
+ *     <p>## Port
+ *     <p>The default port of the web server is `7080`. This can be changed, e.g. if there is a
+ *     conflict with another application.
  *     <p><code>
  * ```yaml
  * server:
@@ -27,29 +25,24 @@ import io.dropwizard.server.DefaultServerFactory;
  *       port: 8080
  * ```
  * </code>
- *     <p>
- * ## External URL
- * <p>
- * If the application is run behind another web server, e.g. for HTTPS or to change the path where
- * the services are accessible (`/rest/services`), the external URL must be configured.
- * <p>A common use case would be to use *Apache HTTP Server* to set up a *ProxyPass* from
- * `https://example.org/ldproxy` to `http://ldproxy-host:7080/rest/services`. Then the following
- * would need to be configured:
- * <p><code>
+ *     <p>## External URL
+ *     <p>If the application is run behind another web server, e.g. for HTTPS or to change the path
+ *     where the services are accessible (`/rest/services`), the external URL must be configured.
+ *     <p>A common use case would be to use *Apache HTTP Server* to set up a *ProxyPass* from
+ *     `https://example.org/ldproxy` to `http://ldproxy-host:7080/rest/services`. Then the following
+ *     would need to be configured:
+ *     <p><code>
  * ```yaml
  * server:
  *   externalUrl: https://example.org/ldproxy/
  * ```
  * </code>
- * <p>
- * ## Request-Logging
- * <p>
- * Request logging is disabled by default. This example would enable writing request logs to
- * `data/log/requests.log`. It also enables daily log rotation and keeps old logs zipped for a
- * week.
- * <p>
- * <code>
- *```yaml
+ *     <p>## Request-Logging
+ *     <p>Request logging is disabled by default. This example would enable writing request logs to
+ *     `data/log/requests.log`. It also enables daily log rotation and keeps old logs zipped for a
+ *     week.
+ *     <p><code>
+ * ```yaml
  * server:
  *   requestLog:
  *     type: classic
@@ -62,13 +55,11 @@ import io.dropwizard.server.DefaultServerFactory;
  *         archivedFileCount: 7
  * ```
  * </code>
- * <p>
+ *     <p>
  * @langDe # Webserver
- * <p>
- * ## Port
- * <p>
- * Der Standard-Port des Webservers ist `7080`. Dieser kann geändert werden, z.B.
- *     wenn es einen Konflikt mit einer anderen Anwendung gibt.
+ *     <p>## Port
+ *     <p>Der Standard-Port des Webservers ist `7080`. Dieser kann geändert werden, z.B. wenn es
+ *     einen Konflikt mit einer anderen Anwendung gibt.
  *     <p><code>
  * ```yaml
  * server:
@@ -77,30 +68,25 @@ import io.dropwizard.server.DefaultServerFactory;
  *       port: 8080
  * ```
  * </code>
- *     <p>
- * ## Externe URL
- * <p>
- * Wenn die Applikation hinter einem weiteren Webserver betrieben wird, z.B. für HTTPS oder um den
- * Pfad zu ändern, unter dem die Dienste erreichbar sind (`/rest/services`), muss die externe URL
- * konfiguriert werden.
- * <p>Ein verbreiteter Anwendungsfall wäre mittels *Apache HTTP Server* ein *ProxyPass* von
- * `https://example.org/ldproxy` nach `http://ldproxy-host:7080/rest/services` einzurichten. Dann
- * müsste folgendes konfiguriert werden:
- * <p><code>
+ *     <p>## Externe URL
+ *     <p>Wenn die Applikation hinter einem weiteren Webserver betrieben wird, z.B. für HTTPS oder
+ *     um den Pfad zu ändern, unter dem die Dienste erreichbar sind (`/rest/services`), muss die
+ *     externe URL konfiguriert werden.
+ *     <p>Ein verbreiteter Anwendungsfall wäre mittels *Apache HTTP Server* ein *ProxyPass* von
+ *     `https://example.org/ldproxy` nach `http://ldproxy-host:7080/rest/services` einzurichten.
+ *     Dann müsste folgendes konfiguriert werden:
+ *     <p><code>
  * ```yaml
  * server:
  *   externalUrl: https://example.org/ldproxy/
  * ```
  * </code>
- * <p>
- * ## Request-Logging
- * <p>
- * Request-Logging ist standardmäßig deaktiviert. Dieses Beispiel würde
- * das Schreiben von Request-Logs nach `data/log/requests.log` aktivieren. Es aktiviert auch die
- * tägliche Log-Rotation und verwahrt alte Logs gezippt für eine Woche.
- * <p>
- * <code>
- *```yaml
+ *     <p>## Request-Logging
+ *     <p>Request-Logging ist standardmäßig deaktiviert. Dieses Beispiel würde das Schreiben von
+ *     Request-Logs nach `data/log/requests.log` aktivieren. Es aktiviert auch die tägliche
+ *     Log-Rotation und verwahrt alte Logs gezippt für eine Woche.
+ *     <p><code>
+ * ```yaml
  * server:
  *   requestLog:
  *     type: classic
@@ -113,7 +99,7 @@ import io.dropwizard.server.DefaultServerFactory;
  *         archivedFileCount: 7
  * ```
  * </code>
- * <p>
+ *     <p>
  */
 @DocFile(path = "application", name = "60-server.md")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = ServerConfiguration.class)
