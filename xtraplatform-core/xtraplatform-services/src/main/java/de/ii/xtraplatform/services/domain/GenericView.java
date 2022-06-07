@@ -40,7 +40,13 @@ public class GenericView extends View {
   }
 
   public String getQuery() {
+
     return "?" + (uri.getQuery() != null ? uri.getQuery() + "&" : "");
+  }
+
+  public String getRawQuery() {
+
+    return "?" + (uri.getRawQuery() != null ? uri.getRawQuery() + "&" : "");
   }
 
   public Object getData() {
