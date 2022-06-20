@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package de.ii.xtraplatform.web.domain;
 
 import com.google.common.hash.Funnel;
@@ -14,7 +21,7 @@ import java.util.Objects;
 import java.util.SimpleTimeZone;
 import javax.ws.rs.core.EntityTag;
 
-@SuppressWarnings("UnstableApiUsage") //com.google.common.hash.*
+@SuppressWarnings("UnstableApiUsage") // com.google.common.hash.*
 public interface ETag {
 
   static EntityTag from(Date date) {
@@ -25,17 +32,14 @@ public interface ETag {
     SimpleDateFormat sdf = new SimpleDateFormat();
     sdf.setTimeZone(new SimpleTimeZone(0, "GMT"));
     sdf.applyPattern("dd MMM yyyy HH:mm:ss z");
-    String eTag = Hashing.murmur3_128()
-        .hashString(sdf.format(date), StandardCharsets.UTF_8)
-        .toString();
+    String eTag =
+        Hashing.murmur3_128().hashString(sdf.format(date), StandardCharsets.UTF_8).toString();
 
     return new EntityTag(eTag, true);
   }
 
   static EntityTag from(byte[] byteArray) {
-    String eTag = Hashing.murmur3_128()
-        .hashBytes(byteArray)
-        .toString();
+    String eTag = Hashing.murmur3_128().hashBytes(byteArray).toString();
 
     return new EntityTag(eTag, false);
   }
@@ -58,12 +62,13 @@ public interface ETag {
   }
 
   static <S> EntityTag from(S entity, Funnel<S> funnel, String mediaType) {
-    String eTag = Hashing.murmur3_128()
-        .newHasher()
-        .putObject(entity, funnel)
-        .putString(mediaType, StandardCharsets.UTF_8)
-        .hash()
-        .toString();
+    String eTag =
+        Hashing.murmur3_128()
+            .newHasher()
+            .putObject(entity, funnel)
+            .putString(mediaType, StandardCharsets.UTF_8)
+            .hash()
+            .toString();
 
     return new EntityTag(eTag, true);
   }
