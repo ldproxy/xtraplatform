@@ -94,7 +94,7 @@ public class ServicesEndpoint implements Endpoint {
     List<ServiceData> services =
         entityRegistry.getEntitiesForType(Service.class).stream()
             .map(Service::getData)
-            .filter(serviceData -> !serviceData.hasError())
+            // .filter(serviceData -> !serviceData.hasError())
             .collect(Collectors.toList());
 
     MediaType mediaType =
@@ -216,7 +216,7 @@ public class ServicesEndpoint implements Endpoint {
   private Service getService(String id, String callback) {
     Optional<Service> s = entityRegistry.getEntity(Service.class, id);
 
-    if (!s.isPresent() || s.get().getData().hasError()) {
+    if (s.isEmpty() /*|| s.get().getData().hasError()*/) {
       throw new NotFoundException();
     }
 
