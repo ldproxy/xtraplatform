@@ -60,22 +60,22 @@ public class ConfigurationReader {
           Constants.ENV.DEVELOPMENT,
               ImmutableMap.of(
                   APPENDER.CONSOLE,
-                      "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %gray([%c{44}]) %magenta([%t]) %blue(%marker) %n%rEx",
+                      "%highlight(%-5p) %gray([%d{ISO8601,%dwTimeZone}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %gray([%c{44}]) %magenta([%t]) %blue(%marker) %n%rEx",
                   APPENDER.OTHER,
-                      "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} [%c{44}] [%t] %n%rEx"),
+                      "%-5p [%d{ISO8601,%dwTimeZone}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} [%c{44}] [%t] %n%rEx"),
           Constants.ENV.NATIVE,
               ImmutableMap.of(
                   APPENDER.CONSOLE,
-                      "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
+                      "%highlight(%-5p) %gray([%d{ISO8601,%dwTimeZone}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
                   APPENDER.OTHER,
-                      "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"),
+                      "%-5p [%d{ISO8601,%dwTimeZone}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"),
           // TODO: is this needed?
           Constants.ENV.CONTAINER,
               ImmutableMap.of(
                   APPENDER.CONSOLE,
-                      "%highlight(%-5p) %gray([%d{ISO8601,UTC}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
+                      "%highlight(%-5p) %gray([%d{ISO8601,%dwTimeZone}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
                   APPENDER.OTHER,
-                      "%-5p [%d{ISO8601,UTC}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"));
+                      "%-5p [%d{ISO8601,%dwTimeZone}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"));
 
   private final Map<String, ByteSource> configsToMergeAfterBase;
   private final ObjectMapper mapper;
