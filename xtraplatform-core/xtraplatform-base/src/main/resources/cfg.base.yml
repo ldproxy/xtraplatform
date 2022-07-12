@@ -16,7 +16,7 @@ server:
   shutdownGracePeriod: 5s
   enableThreadNameFilter: false
   registerDefaultExceptionMappers: false
-  externalUrl: ${EXTERNAL_URL:-_DEFAULT_}
+  externalUrl: ${EXTERNAL_URL:-}
 
 httpClient:
   timeout: 30s
@@ -27,5 +27,5 @@ httpClient:
     trustSelfSignedCertificates: true
 
 logging:
-  level: 'INFO'
+  level: ${LOG_LEVEL:-INFO}
   appenders: []

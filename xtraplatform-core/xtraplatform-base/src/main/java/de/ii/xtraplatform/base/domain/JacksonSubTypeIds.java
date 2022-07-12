@@ -8,10 +8,25 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
-import java.util.Map;
+import java.util.List;
+import org.immutables.value.Value;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @AutoMultiBind
 public interface JacksonSubTypeIds {
-  Map<Class<?>, String> getMapping();
+
+  @Value.Immutable
+  interface JacksonSubType {
+    Class<?> getSuperType();
+
+    Class<?> getSubType();
+
+    String getId();
+
+    List<String> getAliases();
+  }
+
+  List<JacksonSubType> getSubTypes();
 }

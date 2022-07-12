@@ -31,9 +31,10 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.github.azahnen.dagger.annotations.AutoBind;
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.JacksonSubTypeIds.JacksonSubType;
 import io.dropwizard.jackson.CaffeineModule;
 import io.dropwizard.jackson.FuzzyEnumModule;
 import java.util.HashMap;
@@ -44,7 +45,9 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 // TODO: to store, only use for de/serialization
 // TODO: find all usages, is a generic version needed? also see Jackson.newObjectMapper()
 @Singleton
@@ -56,14 +59,16 @@ public class JacksonProvider implements Jackson {
   private final DynamicHandlerInstantiator dynamicHandlerInstantiator;
   private final ObjectMapper jsonMapper;
   private final Lazy<Set<JacksonSubTypeIds>> subTypeIds;
-  private final BiMap<Class<?>, String> mapping;
+  private final Multimap<Class<?>, JacksonSubType> classMapping;
+  private final Multimap<String, JacksonSubType> idMapping;
 
   @Inject
   public JacksonProvider(Lazy<Set<JacksonSubTypeIds>> subTypeIds) {
     this.dynamicHandlerInstantiator = new DynamicHandlerInstantiator();
     this.jsonMapper = configureMapper(new ObjectMapper());
     this.subTypeIds = subTypeIds;
-    this.mapping = HashBiMap.create();
+    this.classMapping = HashMultimap.create();
+    this.idMapping = HashMultimap.create();
   }
 
   private ObjectMapper configureMapper(ObjectMapper mapper) {
@@ -94,11 +99,26 @@ public class JacksonProvider implements Jackson {
     return configureMapper(new ObjectMapper(jsonFactory));
   }
 
-  private BiMap<Class<?>, String> getMapping() {
-    if (mapping.isEmpty()) {
-      subTypeIds.get().forEach(ids -> mapping.putAll(ids.getMapping()));
+  private Multimap<Class<?>, JacksonSubType> getClassMapping() {
+    if (classMapping.isEmpty()) {
+      subTypeIds.get().stream()
+          .flatMap(ids -> ids.getSubTypes().stream())
+          .forEach(subType -> classMapping.put(subType.getSubType(), subType));
     }
-    return mapping;
+    return classMapping;
+  }
+
+  private Multimap<String, JacksonSubType> getIdMapping() {
+    if (idMapping.isEmpty()) {
+      subTypeIds.get().stream()
+          .flatMap(ids -> ids.getSubTypes().stream())
+          .forEach(
+              subType -> {
+                idMapping.put(subType.getId(), subType);
+                subType.getAliases().forEach(alias -> idMapping.put(alias, subType));
+              });
+    }
+    return idMapping;
   }
 
   // TODO: needs to be in domain to access this
@@ -132,13 +152,13 @@ public class JacksonProvider implements Jackson {
 
     @Override
     public String idFromValueAndType(Object value, Class<?> suggestedType) {
-      if (getMapping().containsKey(suggestedType)) {
-        return getMapping().get(suggestedType);
+      if (getClassMapping().containsKey(suggestedType)) {
+        return getClassMapping().get(suggestedType).iterator().next().getId();
       }
       Class<?> aClass = value.getClass();
       while (aClass != null) {
-        if (getMapping().containsKey(aClass)) {
-          return getMapping().get(aClass);
+        if (getClassMapping().containsKey(aClass)) {
+          return getClassMapping().get(aClass).iterator().next().getId();
         }
         aClass = aClass.getSuperclass();
       }
@@ -148,8 +168,9 @@ public class JacksonProvider implements Jackson {
 
     @Override
     public JavaType typeFromId(DatabindContext context, String id) {
-      if (getMapping().inverse().containsKey(id)) {
-        Class<?> clazz = getMapping().inverse().get(id);
+      if (getIdMapping().containsKey(id)) {
+        // TODO: compare baseType with getSuperType to allow the same id for different super classes
+        Class<?> clazz = getIdMapping().get(id).iterator().next().getSubType();
         JavaType javaType =
             TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
         return javaType;
