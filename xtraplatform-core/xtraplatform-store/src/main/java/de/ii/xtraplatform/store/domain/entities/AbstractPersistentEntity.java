@@ -24,7 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public abstract class AbstractPersistentEntity<T extends EntityData>
     implements PersistentEntity, Reloadable, EntityState {
 

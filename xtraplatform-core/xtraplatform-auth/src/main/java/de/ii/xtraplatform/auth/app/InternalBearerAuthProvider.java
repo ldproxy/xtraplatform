@@ -27,7 +27,9 @@ import io.dropwizard.setup.Environment;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Singleton
 @AutoBind
 public class InternalBearerAuthProvider implements AuthProvider<User>, DropwizardPlugin {

@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface EntityRegistry {
   <T extends PersistentEntity> List<T> getEntitiesForType(Class<T> type);
 

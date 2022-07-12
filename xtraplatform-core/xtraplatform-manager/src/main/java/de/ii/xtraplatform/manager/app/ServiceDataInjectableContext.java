@@ -10,5 +10,7 @@ package de.ii.xtraplatform.manager.app;
 import de.ii.xtraplatform.services.domain.InjectableContext;
 import de.ii.xtraplatform.services.domain.ServiceData;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface ServiceDataInjectableContext extends InjectableContext<ServiceData> {}

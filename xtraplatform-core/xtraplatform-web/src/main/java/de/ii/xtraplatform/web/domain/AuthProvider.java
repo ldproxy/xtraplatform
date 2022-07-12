@@ -13,7 +13,9 @@ import io.dropwizard.auth.AuthValueFactoryProvider;
 import java.security.Principal;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @AutoMultiBind
 public interface AuthProvider<T extends Principal> {
   AuthDynamicFeature getAuthDynamicFeature();

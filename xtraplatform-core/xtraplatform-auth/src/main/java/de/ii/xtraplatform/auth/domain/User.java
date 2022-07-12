@@ -10,7 +10,9 @@ package de.ii.xtraplatform.auth.domain;
 import java.security.Principal;
 import org.immutables.value.Value;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Value.Immutable
 public interface User extends Principal {
 

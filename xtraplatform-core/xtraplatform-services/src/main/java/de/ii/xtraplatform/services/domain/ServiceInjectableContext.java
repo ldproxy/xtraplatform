@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface ServiceInjectableContext extends InjectableContext<Service> {
   String SERVICE_CONTEXT_KEY = "XP_SERVICE";
 }

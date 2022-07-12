@@ -13,7 +13,9 @@ import java.util.List;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @AutoMultiBind
 public interface ServiceListingProvider {
   // TODO: one provider per mime type

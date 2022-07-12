@@ -10,7 +10,9 @@ package de.ii.xtraplatform.base.domain;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface Jackson {
   public ObjectMapper getDefaultObjectMapper();
 

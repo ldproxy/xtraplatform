@@ -31,7 +31,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Singleton
 @AutoBind
 public class AdminEndpoint extends HttpServlet implements AdminEndpointServlet {

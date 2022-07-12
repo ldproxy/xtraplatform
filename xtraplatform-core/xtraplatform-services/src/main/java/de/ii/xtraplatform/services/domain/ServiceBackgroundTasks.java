@@ -9,7 +9,9 @@ package de.ii.xtraplatform.services.domain;
 
 import java.util.Optional;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface ServiceBackgroundTasks {
 
   String COMMON_QUEUE = "COMMON_QUEUE";

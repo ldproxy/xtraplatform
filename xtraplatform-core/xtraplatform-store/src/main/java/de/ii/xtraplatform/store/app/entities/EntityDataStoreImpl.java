@@ -64,7 +64,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Singleton
 @AutoBind(interfaces = {EntityDataStore.class})
 public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityData>

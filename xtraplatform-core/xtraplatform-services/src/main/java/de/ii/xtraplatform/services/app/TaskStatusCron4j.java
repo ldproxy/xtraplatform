@@ -17,7 +17,9 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class TaskStatusCron4j implements TaskStatus {
   private static final Logger LOGGER = LoggerFactory.getLogger(TaskStatusCron4j.class);
 

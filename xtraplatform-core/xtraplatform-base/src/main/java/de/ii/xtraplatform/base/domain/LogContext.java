@@ -22,7 +22,9 @@ import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class LogContext {
 
   public enum CONTEXT {

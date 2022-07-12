@@ -12,7 +12,9 @@ import de.ii.xtraplatform.store.domain.entities.AbstractPersistentEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public abstract class AbstractService<T extends ServiceData> extends AbstractPersistentEntity<T>
     implements Service {
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractService.class);

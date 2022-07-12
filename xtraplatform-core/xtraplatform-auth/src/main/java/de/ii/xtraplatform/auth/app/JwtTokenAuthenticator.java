@@ -15,7 +15,9 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class JwtTokenAuthenticator implements Authenticator<String, User> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenAuthenticator.class);

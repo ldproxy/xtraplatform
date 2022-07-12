@@ -39,7 +39,9 @@ import org.eclipse.jetty.server.Server;
 import org.slf4j.LoggerFactory;
 
 // TODO: merge into AppLauncher
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Singleton
 @AutoBind
 public class DropwizardProvider implements AppLifeCycle {

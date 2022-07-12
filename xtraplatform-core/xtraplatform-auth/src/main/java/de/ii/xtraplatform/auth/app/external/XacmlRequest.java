@@ -13,7 +13,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class XacmlRequest {
   public final Map<String, Map<String, List<Attribute>>> Request;
 

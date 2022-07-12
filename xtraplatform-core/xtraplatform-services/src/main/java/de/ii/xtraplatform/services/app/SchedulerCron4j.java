@@ -36,7 +36,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.threeten.extra.AmountFormats;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Singleton
 @AutoBind
 public class SchedulerCron4j implements Scheduler, AppLifeCycle {

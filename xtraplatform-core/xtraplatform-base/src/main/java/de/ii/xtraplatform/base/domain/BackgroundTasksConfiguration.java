@@ -12,7 +12,9 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-/** @title BackgroundTasks */
+/**
+ * @title BackgroundTasks
+ */
 public class BackgroundTasksConfiguration {
 
   /**

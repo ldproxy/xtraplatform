@@ -17,7 +17,9 @@ import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
 import java.util.OptionalLong;
 import org.immutables.value.Value;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class User extends AbstractPersistentEntity<User.UserData> {
 
   public static final String ENTITY_TYPE = "users";

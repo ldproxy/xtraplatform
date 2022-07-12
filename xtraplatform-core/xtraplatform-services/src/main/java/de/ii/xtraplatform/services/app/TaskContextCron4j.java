@@ -10,7 +10,9 @@ package de.ii.xtraplatform.services.app;
 import de.ii.xtraplatform.services.domain.TaskContext;
 import it.sauronsoftware.cron4j.TaskExecutionContext;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class TaskContextCron4j implements TaskContext {
   private final TaskExecutionContext taskExecutionContext;
   private final int maxPartials;

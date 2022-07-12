@@ -11,7 +11,9 @@ import com.google.common.base.Strings;
 import java.util.List;
 import java.util.Objects;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class XacmlResponse {
   public List<Decision> Response;
 

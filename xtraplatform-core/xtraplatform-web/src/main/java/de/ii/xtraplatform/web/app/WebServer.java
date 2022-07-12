@@ -19,7 +19,9 @@ import javax.inject.Singleton;
 import org.eclipse.jetty.server.Server;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Singleton
 @AutoBind
 public class WebServer implements AppLifeCycle, DropwizardPlugin {

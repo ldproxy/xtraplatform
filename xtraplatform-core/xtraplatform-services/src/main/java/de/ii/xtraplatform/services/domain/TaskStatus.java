@@ -11,7 +11,9 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface TaskStatus {
   String getId();
 

@@ -9,7 +9,9 @@ package de.ii.xtraplatform.services.domain;
 
 import javax.ws.rs.container.ContainerRequestContext;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface InjectableContext<T> {
   void inject(ContainerRequestContext requestContext, T injectable);
 }
