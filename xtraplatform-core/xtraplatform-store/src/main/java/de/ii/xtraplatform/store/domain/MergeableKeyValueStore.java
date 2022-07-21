@@ -10,7 +10,9 @@ package de.ii.xtraplatform.store.domain;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 // TODO: KeyValueStoreWithMerging
 public interface MergeableKeyValueStore<T> extends KeyValueStore<T> {
 

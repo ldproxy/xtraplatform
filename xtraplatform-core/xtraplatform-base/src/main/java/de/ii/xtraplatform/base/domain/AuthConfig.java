@@ -16,9 +16,13 @@ import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 
-/** @title Authorization */
+/**
+ * @title Authorization
+ */
 public class AuthConfig {
 
   @JsonIgnore

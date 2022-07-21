@@ -15,7 +15,9 @@ import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import java.util.Objects;
 import org.slf4j.Marker;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class LoggingFilter extends TurboFilter {
 
   private boolean showThirdPartyLoggers;

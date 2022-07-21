@@ -18,7 +18,9 @@ import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @JsonDeserialize(builder = ImmutableServiceDataCommon.Builder.class)
 public interface ServiceData extends EntityData, AutoEntity {
 
@@ -29,7 +31,9 @@ public interface ServiceData extends EntityData, AutoEntity {
 
   String getServiceType();
 
-  /** @return label for service */
+  /**
+   * @return label for service
+   */
   @Value.Default
   default String getLabel() {
     return getId();

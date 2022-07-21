@@ -11,7 +11,9 @@ import de.ii.xtraplatform.store.domain.entities.EntityState;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Value.Immutable
 @Value.Style(deepImmutablesDetection = true)
 public interface ServiceStatus extends ServiceData {

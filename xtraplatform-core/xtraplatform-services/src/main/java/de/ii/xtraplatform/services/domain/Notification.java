@@ -11,7 +11,9 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.immutables.value.Value;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Value.Immutable
 public abstract class Notification {
 

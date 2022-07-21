@@ -24,7 +24,9 @@ import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.setup.Environment;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 // TODO: ranking, which one to use
 // TODO: AutoBind
 public class ExternalBearerAuthProvider implements AuthProvider<User>, DropwizardPlugin {

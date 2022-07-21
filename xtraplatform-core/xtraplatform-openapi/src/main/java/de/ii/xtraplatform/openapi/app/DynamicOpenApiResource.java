@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.openapi.app;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
 import de.ii.xtraplatform.web.domain.Endpoint;

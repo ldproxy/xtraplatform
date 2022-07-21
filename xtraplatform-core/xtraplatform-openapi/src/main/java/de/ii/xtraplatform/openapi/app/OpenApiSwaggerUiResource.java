@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.openapi.app;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;

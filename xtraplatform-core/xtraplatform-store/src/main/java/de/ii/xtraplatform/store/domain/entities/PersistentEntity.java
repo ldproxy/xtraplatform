@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface PersistentEntity {
 
   default String getId() {

@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.auth.domain;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public enum Role {
   NONE,
   USER,

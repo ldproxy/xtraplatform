@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface TaskQueue {
   CompletableFuture<TaskStatus> launch(Task task);
 

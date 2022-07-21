@@ -11,7 +11,9 @@ import de.ii.xtraplatform.services.domain.TaskContext;
 import it.sauronsoftware.cron4j.Task;
 import it.sauronsoftware.cron4j.TaskExecutionContext;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class TaskCron4j extends Task {
 
   private final de.ii.xtraplatform.services.domain.Task task;

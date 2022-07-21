@@ -12,7 +12,9 @@ import java.time.Instant;
 import java.util.Optional;
 import org.immutables.value.Value;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface EntityData extends de.ii.xtraplatform.store.domain.Value {
 
   String getId();

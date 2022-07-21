@@ -9,7 +9,9 @@ package de.ii.xtraplatform.services.domain;
 
 import org.slf4j.MDC;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface Task {
 
   String getId();

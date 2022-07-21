@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.web.app;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface StaticResourceConstants {
   /** The indicator the for resources themselves. */
   String WEB_RESOURCE_KEY = "X-Web-Resource";

@@ -11,7 +11,9 @@ import io.dropwizard.auth.Authorizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class UserAuthorizer implements Authorizer<User> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(UserAuthorizer.class);

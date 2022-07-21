@@ -10,10 +10,8 @@ package de.ii.xtraplatform.services.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Strings;
 import de.ii.xtraplatform.base.domain.AppContext;
-import de.ii.xtraplatform.base.domain.ConfigurationReader;
 import de.ii.xtraplatform.services.domain.ServicesContext;
 import java.net.URI;
-import java.util.Objects;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -27,8 +25,7 @@ public class ServicesContextImpl implements ServicesContext {
   ServicesContextImpl(AppContext appContext) {
     String externalUrl = appContext.getConfiguration().getServerFactory().getExternalUrl();
 
-    if (Strings.isNullOrEmpty(externalUrl)
-        || Objects.equals(externalUrl, ConfigurationReader.DEFAULT_VALUE)) {
+    if (Strings.isNullOrEmpty(externalUrl)) {
       this.uri = appContext.getUri().resolve("rest/services");
       return;
     }

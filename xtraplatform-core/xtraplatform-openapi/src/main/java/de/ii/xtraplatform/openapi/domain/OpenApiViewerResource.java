@@ -9,7 +9,9 @@ package de.ii.xtraplatform.openapi.domain;
 
 import javax.ws.rs.core.Response;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface OpenApiViewerResource {
   Response getFile(String file);
 }

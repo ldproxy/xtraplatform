@@ -7,5 +7,7 @@
  */
 package de.ii.xtraplatform.auth.app;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class SimpleJwtAuth {}

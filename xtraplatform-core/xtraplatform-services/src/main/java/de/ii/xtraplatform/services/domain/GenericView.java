@@ -12,7 +12,9 @@ import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author fischer */
+/**
+ * @author fischer
+ */
 public class GenericView extends View {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GenericView.class);

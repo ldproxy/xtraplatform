@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.service.api;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class ServiceDataTest {
 
   /*private static final Logger LOGGER = LoggerFactory.getLogger(ServiceDataTest.class);

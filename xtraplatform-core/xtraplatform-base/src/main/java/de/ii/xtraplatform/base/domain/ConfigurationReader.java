@@ -47,7 +47,6 @@ public class ConfigurationReader {
 
   public static final String CFG_FILE_NAME = "cfg.yml";
   public static final String CFG_FILE_NAME_LEGACY = "xtraplatform.json";
-  public static final String DEFAULT_VALUE = "_DEFAULT_";
 
   private static final String CFG_FILE_BASE = "/cfg.base.yml";
   private static final String CFG_FILE_CONSOLE = "/cfg.console.yml";

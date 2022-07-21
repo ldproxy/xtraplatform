@@ -7,5 +7,7 @@
  */
 package de.ii.xtraplatform.auth.domain;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class Administrator {}

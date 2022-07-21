@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public abstract class AbstractSchedulerTask implements SchedulerTask {
 
   private String id;

@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.google.common.hash.Funnel;
+import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
 import com.google.common.io.Files;
@@ -23,6 +24,19 @@ import javax.ws.rs.core.EntityTag;
 
 @SuppressWarnings("UnstableApiUsage") // com.google.common.hash.*
 public interface ETag {
+
+  enum Type {
+    WEAK,
+    STRONG
+  }
+
+  interface Incremental {
+    Incremental put(String string);
+
+    Incremental put(byte[] bytes);
+
+    EntityTag build(Type type);
+  }
 
   static EntityTag from(Date date) {
     if (Objects.isNull(date)) {
@@ -71,5 +85,28 @@ public interface ETag {
             .toString();
 
     return new EntityTag(eTag, true);
+  }
+
+  static Incremental incremental() {
+    Hasher hasher = Hashing.murmur3_128().newHasher();
+
+    return new Incremental() {
+      @Override
+      public Incremental put(String string) {
+        hasher.putString(string, StandardCharsets.UTF_8);
+        return this;
+      }
+
+      @Override
+      public Incremental put(byte[] bytes) {
+        hasher.putBytes(bytes);
+        return this;
+      }
+
+      @Override
+      public EntityTag build(Type type) {
+        return new EntityTag(hasher.hash().toString(), type == Type.WEAK);
+      }
+    };
   }
 }

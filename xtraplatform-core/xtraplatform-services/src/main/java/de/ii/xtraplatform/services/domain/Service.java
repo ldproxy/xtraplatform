@@ -9,7 +9,9 @@ package de.ii.xtraplatform.services.domain;
 
 import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface Service extends PersistentEntity {
 
   String TYPE = "services";

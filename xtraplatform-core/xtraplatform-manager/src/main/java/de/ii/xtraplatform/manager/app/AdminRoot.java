@@ -10,7 +10,9 @@ package de.ii.xtraplatform.manager.app;
 import java.util.ArrayList;
 import java.util.List;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class AdminRoot {
   private String version;
   private List<String> resources;

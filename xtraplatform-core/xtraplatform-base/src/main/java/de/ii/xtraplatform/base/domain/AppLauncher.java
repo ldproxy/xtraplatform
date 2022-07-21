@@ -28,7 +28,9 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public class AppLauncher implements AppContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(AppLauncher.class);
 
@@ -122,8 +124,7 @@ public class AppLauncher implements AppContext {
     }
 
     String externalUrl = getConfiguration().getServerFactory().getExternalUrl();
-    if (Strings.isNullOrEmpty(externalUrl)
-        || Objects.equals(externalUrl, ConfigurationReader.DEFAULT_VALUE)) {
+    if (Strings.isNullOrEmpty(externalUrl)) {
       this.uri =
           URI.create(String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort()));
     } else {

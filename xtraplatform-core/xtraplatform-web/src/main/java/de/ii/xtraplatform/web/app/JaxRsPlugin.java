@@ -28,7 +28,9 @@ import org.glassfish.jersey.internal.inject.Binder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 @Singleton
 @AutoBind
 public class JaxRsPlugin implements DropwizardPlugin {

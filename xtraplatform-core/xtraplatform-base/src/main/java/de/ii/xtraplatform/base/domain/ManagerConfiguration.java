@@ -11,7 +11,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-/** @title Manager */
+/**
+ * @title Manager
+ */
 public class ManagerConfiguration {
 
   /**

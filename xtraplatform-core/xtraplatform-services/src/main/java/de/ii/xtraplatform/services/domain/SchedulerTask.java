@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-/** @author zahnen */
+/**
+ * @author zahnen
+ */
 public interface SchedulerTask {
 
   public String getId();
