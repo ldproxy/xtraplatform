@@ -19,6 +19,7 @@ import java.io.Closeable;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
@@ -64,6 +65,10 @@ public interface Reactive {
 
     static <T> Source<T> iterable(Iterable<T> iterable) {
       return new SourceDefault<>(iterable);
+    }
+
+    static <T> Source<T> empty() {
+      return new SourceDefault<>(List.of());
     }
 
     static <T> Source<T> publisher(Publisher<T> publisher) {

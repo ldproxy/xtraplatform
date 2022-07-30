@@ -158,6 +158,23 @@ public class LogContext {
   }
 
   /**
+   * Log the message of a Throwable with a custom prefix in the WARN level and log the stacktrace of
+   * the Throwable in the DEBUG level with the STACKTRACE marker.
+   *
+   * @param logger The Logger to use
+   * @param throwable The throwable to log
+   * @param messagePrefix The message prefix
+   * @param messagePrefixArgs The message prefix substitutions
+   */
+  public static void errorAsWarn(
+      Logger logger, Throwable throwable, String messagePrefix, Object... messagePrefixArgs) {
+    Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
+    args[messagePrefixArgs.length] = getMessage(throwable);
+
+    logThrowable(logger, Level.INFO, throwable, messagePrefix + ": {}", args);
+  }
+
+  /**
    * Log the message of a Throwable with a custom prefix in the DEBUG level and log the stacktrace
    * of the Throwable in the DEBUG level with the STACKTRACE marker.
    *

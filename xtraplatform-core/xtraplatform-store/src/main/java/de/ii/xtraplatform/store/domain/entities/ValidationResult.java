@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
-import java.util.List;
+import java.util.Set;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -35,11 +35,11 @@ public interface ValidationResult {
 
   MODE getMode();
 
-  List<String> getErrors();
+  Set<String> getErrors();
 
-  List<String> getStrictErrors();
+  Set<String> getStrictErrors();
 
-  List<String> getWarnings();
+  Set<String> getWarnings();
 
   @Value.Derived
   default boolean isSuccess() {
