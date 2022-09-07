@@ -25,6 +25,7 @@ import java.security.Principal;
 import java.util.List;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 import org.glassfish.jersey.message.internal.ReaderWriter;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author zahnen
  */
+@PreMatching
 public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<String, P> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDynamicAuthFilter.class);
 
@@ -135,7 +137,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
       LOGGER.debug(
           "XACML R {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlResponse));
 
-      return xacmlResponse.isAllowed();
+      return xacmlResponse.isAllowed() || xacmlResponse.isNotApplicable();
 
     } catch (Throwable e) {
       // ignore

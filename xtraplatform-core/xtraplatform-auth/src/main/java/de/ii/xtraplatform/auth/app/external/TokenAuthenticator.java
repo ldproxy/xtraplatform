@@ -9,6 +9,7 @@ package de.ii.xtraplatform.auth.app.external;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Splitter;
 import de.ii.xtraplatform.auth.domain.ImmutableUser;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
@@ -30,6 +31,7 @@ public class TokenAuthenticator implements Authenticator<String, User> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TokenAuthenticator.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
   private static final TypeReference<Map<String, Object>> TYPE_REF =
       new TypeReference<Map<String, Object>>() {};
 
@@ -58,8 +60,10 @@ public class TokenAuthenticator implements Authenticator<String, User> {
             Role.fromString(
                 Optional.ofNullable((String) userInfo.get(authConfig.userRoleKey)).orElse("USER"));
         List<String> scopes =
-            Optional.ofNullable((List<String>) userInfo.get(authConfig.userScopesKey))
-                .orElse(List.of());
+            userInfo.get(authConfig.userScopesKey) instanceof String
+                ? SPLITTER.splitToList((String) userInfo.get(authConfig.userScopesKey))
+                : Optional.ofNullable((List<String>) userInfo.get(authConfig.userScopesKey))
+                    .orElse(List.of());
 
         return Optional.of(ImmutableUser.builder().name(name).role(role).scopes(scopes).build());
       } catch (Throwable e) {

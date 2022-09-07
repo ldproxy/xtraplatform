@@ -16,7 +16,6 @@ import de.ii.xtraplatform.web.domain.AuthProvider;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.web.domain.JaxRsConsumer;
-import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.chained.ChainedAuthFilter;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
@@ -102,7 +101,8 @@ public class JaxRsPlugin implements DropwizardPlugin {
                   Comparator.<AuthProvider<?>>comparingInt(AuthProvider::getPriority).reversed())
               .map(AuthProvider::getAuthFilter)
               .collect(Collectors.toList());
-      jersey.register(new AuthDynamicFeature(new ChainedAuthFilter<>(filters)));
+      jersey.register(
+          new WebApplicationExceptionCatchingFilterPreMatching(new ChainedAuthFilter<>(filters)));
     }
     if (isAuthProviderAvailable && !endpoints.get().isEmpty()) {
       for (Object resource : endpoints.get()) {
