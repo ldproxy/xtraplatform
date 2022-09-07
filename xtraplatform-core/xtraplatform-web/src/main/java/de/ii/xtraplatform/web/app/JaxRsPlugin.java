@@ -16,9 +16,15 @@ import de.ii.xtraplatform.web.domain.AuthProvider;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.web.domain.JaxRsConsumer;
+import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.AuthFilter;
+import io.dropwizard.auth.chained.ChainedAuthFilter;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.setup.Environment;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -81,12 +87,22 @@ public class JaxRsPlugin implements DropwizardPlugin {
     JerseyEnvironment jersey = environment.jersey();
 
     for (AuthProvider<?> provider : authProviders.get()) {
-      jersey.register(provider.getAuthDynamicFeature());
-      jersey.register(provider.getRolesAllowedDynamicFeature());
-      jersey.register(provider.getAuthValueFactoryProvider());
-      this.isAuthProviderAvailable = true;
+      if (!isAuthProviderAvailable) {
+        jersey.register(provider.getRolesAllowedDynamicFeature());
+        jersey.register(provider.getAuthValueFactoryProvider());
+        this.isAuthProviderAvailable = true;
+      }
       if (LOGGER.isDebugEnabled(MARKER.DI))
         LOGGER.debug(MARKER.DI, "Registered JAX-RS Auth Provider {}", provider.getClass());
+    }
+    if (isAuthProviderAvailable) {
+      List<AuthFilter> filters =
+          authProviders.get().stream()
+              .sorted(
+                  Comparator.<AuthProvider<?>>comparingInt(AuthProvider::getPriority).reversed())
+              .map(AuthProvider::getAuthFilter)
+              .collect(Collectors.toList());
+      jersey.register(new AuthDynamicFeature(new ChainedAuthFilter<>(filters)));
     }
     if (isAuthProviderAvailable && !endpoints.get().isEmpty()) {
       for (Object resource : endpoints.get()) {

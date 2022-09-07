@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.auth.app.external;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -19,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.List;
 import javax.ws.rs.WebApplicationException;
@@ -37,7 +39,8 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
 
   private static final MediaType XACML = new MediaType("application", "xacml+json", "utf-8");
   private static final MediaType GEOJSON = new MediaType("application", "geo+json", "utf-8");
-  private static final ObjectMapper JSON = new ObjectMapper();
+  private static final ObjectMapper JSON =
+      new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
   private final String edaUrl;
   private final String ppUrl;
@@ -58,7 +61,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
   }
 
   // TODO
-  static List<String> METHODS = ImmutableList.of("POST", "PUT", "DELETE");
+  static List<String> METHODS = ImmutableList.of("GET", "POST", "PUT", "DELETE");
 
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -70,9 +73,9 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
 
       List<String> pathSegments =
           Splitter.on('/').omitEmptyStrings().splitToList(requestContext.getUriInfo().getPath());
-      int serviceIndex = pathSegments.indexOf("services") + 1;
+      int serviceIndex = pathSegments.indexOf("services");
 
-      if (serviceIndex > 0 && pathSegments.size() > 1) {
+      if (serviceIndex >= 0 && pathSegments.size() > serviceIndex) {
         boolean authorized =
             isAuthorized(
                 requestContext.getSecurityContext().getUserPrincipal().getName(),
@@ -114,20 +117,23 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
 
   private boolean isAuthorized(String user, String method, String path, byte[] body) {
 
-    // LOGGER.debug("EDA {} {} {} {}", user, method, path, new String(body,
-    // Charset.forName("utf-8")));
+    LOGGER.debug("EDA {} {} {} {}", user, method, path, new String(body, Charset.forName("utf-8")));
 
     try {
 
       XacmlRequest xacmlRequest1 = new XacmlRequest(user, method, path, body);
       byte[] xacmlRequest = JSON.writeValueAsBytes(xacmlRequest1);
 
-      // LOGGER.debug("XACML {}", JSON.writerWithDefaultPrettyPrinter()
-      //                             .writeValueAsString(xacmlRequest1));
+      LOGGER.debug(
+          "XACML {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlRequest1));
 
-      InputStream response = httpClient.postAsInputStream(edaUrl, xacmlRequest, XACML);
+      InputStream response =
+          httpClient.postAsInputStream(edaUrl, xacmlRequest, MediaType.APPLICATION_JSON_TYPE);
 
       XacmlResponse xacmlResponse = JSON.readValue(response, XacmlResponse.class);
+
+      LOGGER.debug(
+          "XACML R {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlResponse));
 
       return xacmlResponse.isAllowed();
 

@@ -16,9 +16,8 @@ import de.ii.xtraplatform.base.domain.AuthConfig;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -31,8 +30,8 @@ public class TokenAuthenticator implements Authenticator<String, User> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TokenAuthenticator.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
-  private static final TypeReference<Map<String, String>> TYPE_REF =
-      new TypeReference<Map<String, String>>() {};
+  private static final TypeReference<Map<String, Object>> TYPE_REF =
+      new TypeReference<Map<String, Object>>() {};
 
   private final AuthConfig authConfig;
   private final HttpClient httpClient;
@@ -44,40 +43,25 @@ public class TokenAuthenticator implements Authenticator<String, User> {
 
   @Override
   public Optional<User> authenticate(String token) throws AuthenticationException {
-    if (authConfig.isActive()) {
+    if (authConfig.isActive() && !authConfig.isJwt()) {
       try {
-        if (authConfig.isJwt()) {
-          // validate
-          // parse
-          Claims claimsJws =
-              Jwts.parser().setSigningKey(authConfig.jwtSigningKey).parseClaimsJws(token).getBody();
+        String url = authConfig.userInfoEndpoint.replace("{{token}}", token);
+        InputStream response =
+            httpClient.getAsInputStream(url, Map.of("Authorization", "Bearer " + token));
 
-          return Optional.of(
-              ImmutableUser.builder()
-                  .name(claimsJws.getSubject())
-                  .role(
-                      Role.fromString(
-                          Optional.ofNullable(
-                                  claimsJws.get(authConfig.getUserRoleKey, String.class))
-                              .orElse("USER")))
-                  .build());
-        } else {
-          // validate/exchange
-          // parse
-          String url = authConfig.getUserInfoEndpoint.replace("{{token}}", token);
-          InputStream response = httpClient.getAsInputStream(url);
+        Map<String, Object> userInfo = MAPPER.readValue(response, TYPE_REF);
 
-          Map<String, String> userInfo = MAPPER.readValue(response, TYPE_REF);
+        LOGGER.debug("USERINFO {}", userInfo);
 
-          return Optional.of(
-              ImmutableUser.builder()
-                  .name(userInfo.get(authConfig.getUserNameKey))
-                  .role(
-                      Role.fromString(
-                          Optional.ofNullable(userInfo.get(authConfig.getUserRoleKey))
-                              .orElse("USER")))
-                  .build());
-        }
+        String name = (String) userInfo.get(authConfig.userNameKey);
+        Role role =
+            Role.fromString(
+                Optional.ofNullable((String) userInfo.get(authConfig.userRoleKey)).orElse("USER"));
+        List<String> scopes =
+            Optional.ofNullable((List<String>) userInfo.get(authConfig.userScopesKey))
+                .orElse(List.of());
+
+        return Optional.of(ImmutableUser.builder().name(name).role(role).scopes(scopes).build());
       } catch (Throwable e) {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("Error validating token", e);

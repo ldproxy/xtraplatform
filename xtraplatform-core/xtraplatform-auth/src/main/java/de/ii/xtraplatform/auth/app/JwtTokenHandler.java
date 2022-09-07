@@ -57,7 +57,7 @@ public class JwtTokenHandler implements TokenHandler {
     JwtBuilder jwtBuilder =
         new DefaultJwtBuilder()
             .setSubject(user.getName())
-            .claim(authConfig.getUserRoleKey, user.getRole().toString())
+            .claim(authConfig.userRoleKey, user.getRole().toString())
             .claim("rememberMe", rememberMe)
             .setExpiration(expiration);
     if (user.getForceChangePassword()) {
@@ -81,7 +81,7 @@ public class JwtTokenHandler implements TokenHandler {
                 .name(claimsJws.getSubject())
                 .role(
                     Role.fromString(
-                        Optional.ofNullable(claimsJws.get(authConfig.getUserRoleKey, String.class))
+                        Optional.ofNullable(claimsJws.get(authConfig.userRoleKey, String.class))
                             .orElse("USER")))
                 .build());
       } catch (Throwable e) {
