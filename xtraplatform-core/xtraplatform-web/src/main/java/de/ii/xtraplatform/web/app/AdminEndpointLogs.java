@@ -101,6 +101,10 @@ public class AdminEndpointLogs implements AdminSubEndpoint {
           .map(
               loggingFilter ->
                   ImmutableMap.of(
+                      "apiRequests", loggingFilter.isApiRequests(),
+                      "apiRequestUsers", loggingFilter.isApiRequestUsers(),
+                      "apiRequestHeaders", loggingFilter.isApiRequestHeaders(),
+                      "apiRequestBodies", loggingFilter.isApiRequestBodies(),
                       "sqlQueries", loggingFilter.isSqlQueries(),
                       "sqlResults", loggingFilter.isSqlResults(),
                       "configDumps", loggingFilter.isConfigDumps(),

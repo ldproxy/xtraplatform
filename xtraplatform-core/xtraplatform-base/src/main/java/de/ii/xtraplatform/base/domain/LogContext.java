@@ -33,6 +33,10 @@ public class LogContext {
   }
 
   public enum MARKER implements MyMarker {
+    REQUEST,
+    REQUEST_USER,
+    REQUEST_HEADER,
+    REQUEST_BODY,
     SQL,
     SQL_RESULT,
     STACKTRACE,
