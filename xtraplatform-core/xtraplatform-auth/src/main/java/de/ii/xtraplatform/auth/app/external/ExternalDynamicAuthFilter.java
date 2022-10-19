@@ -12,6 +12,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import de.ii.xtraplatform.auth.domain.ImmutableUser;
+import de.ii.xtraplatform.auth.domain.User;
+import de.ii.xtraplatform.auth.domain.User.PolicyDecision;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.DefaultUnauthorizedHandler;
@@ -78,8 +81,8 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
       int serviceIndex = pathSegments.indexOf("services");
 
       if (serviceIndex >= 0 && pathSegments.size() > serviceIndex) {
-        boolean authorized =
-            isAuthorized(
+        PolicyDecision policyDecision =
+            askPDP(
                 requestContext.getSecurityContext().getUserPrincipal().getName(),
                 requestContext.getMethod(),
                 "/"
@@ -87,10 +90,35 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
                         .join(pathSegments.subList(serviceIndex + 1, pathSegments.size())),
                 getEntityBody(requestContext));
 
-        if (!authorized) {
+        User user =
+            ImmutableUser.builder()
+                .from(requestContext.getSecurityContext().getUserPrincipal())
+                .policyDecision(policyDecision)
+                .build();
+
+        requestContext.setSecurityContext(
+            new SecurityContext() {
+              public Principal getUserPrincipal() {
+                return user;
+              }
+
+              public boolean isUserInRole(String role) {
+                return requestContext.getSecurityContext().isUserInRole(role);
+              }
+
+              public boolean isSecure() {
+                return requestContext.getSecurityContext().isSecure();
+              }
+
+              public String getAuthenticationScheme() {
+                return requestContext.getSecurityContext().getAuthenticationScheme();
+              }
+            });
+
+        if (policyDecision == PolicyDecision.DENY) {
           // reset security context, because we use @PermitAll and then decide based on Principal
           // existence
-          requestContext.setSecurityContext(oldSecurityContext);
+          // requestContext.setSecurityContext(oldSecurityContext);
           // is ignored for @PermitAll
           throw new WebApplicationException(unauthorizedHandler.buildResponse(prefix, realm));
         }
@@ -117,7 +145,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     }
   }
 
-  private boolean isAuthorized(String user, String method, String path, byte[] body) {
+  private PolicyDecision askPDP(String user, String method, String path, byte[] body) {
 
     LOGGER.debug("EDA {} {} {} {}", user, method, path, new String(body, Charset.forName("utf-8")));
 
@@ -137,13 +165,15 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
       LOGGER.debug(
           "XACML R {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlResponse));
 
-      return xacmlResponse.isAllowed() || xacmlResponse.isNotApplicable();
+      return xacmlResponse.isAllowed()
+          ? PolicyDecision.PERMIT
+          : xacmlResponse.isNotApplicable() ? PolicyDecision.NOT_APPLICABLE : PolicyDecision.DENY;
 
     } catch (Throwable e) {
       // ignore
     }
 
-    return false;
+    return PolicyDecision.DENY;
   }
 
   private byte[] getEntityBody(ContainerRequestContext requestContext) {
