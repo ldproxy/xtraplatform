@@ -23,6 +23,12 @@ public class XacmlResponse {
         && Strings.nullToEmpty(Response.get(0).Decision).equals("Permit");
   }
 
+  boolean isNotApplicable() {
+    return Objects.nonNull(Response)
+        && !Response.isEmpty()
+        && Strings.nullToEmpty(Response.get(0).Decision).equals("NotApplicable");
+  }
+
   static class Decision {
     public String Decision;
   }

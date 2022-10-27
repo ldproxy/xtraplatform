@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.auth.app.external;
 
 import com.codahale.metrics.MetricRegistry;
+import com.github.azahnen.dagger.annotations.AutoBind;
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthorizer;
@@ -18,23 +19,26 @@ import de.ii.xtraplatform.web.domain.AuthProvider;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.Http;
 import de.ii.xtraplatform.web.domain.HttpClient;
-import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.setup.Environment;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * @author zahnen
  */
-// TODO: ranking, which one to use
-// TODO: AutoBind
+@Singleton
+@AutoBind
 public class ExternalBearerAuthProvider implements AuthProvider<User>, DropwizardPlugin {
 
   private final HttpClient httpClient;
   private final AuthConfig authConfig;
   private MetricRegistry metricRegistry;
 
+  @Inject
   public ExternalBearerAuthProvider(AppContext appContext, Http http) {
     this.httpClient = http.getDefaultClient();
     this.authConfig = appContext.getConfiguration().auth;
@@ -46,7 +50,12 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
   }
 
   @Override
-  public AuthDynamicFeature getAuthDynamicFeature() {
+  public int getPriority() {
+    return 1000;
+  }
+
+  @Override
+  public AuthFilter<String, User> getAuthFilter() {
     TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig, httpClient);
 
     CachingAuthenticator<String, User> cachingAuthenticator =
@@ -65,16 +74,15 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
             .setPrefix("Bearer")
             .buildAuthFilter();
 
-    if (!authConfig.getExternalDynamicAuthorizationEndpoint.isEmpty()) {
-      return new AuthDynamicFeature(
-          new ExternalDynamicAuthFilter<>(
-              authConfig.getExternalDynamicAuthorizationEndpoint,
-              authConfig.getPostProcessingEndpoint,
-              httpClient,
-              authFilter));
+    if (!authConfig.externalDynamicAuthorizationEndpoint.isEmpty()) {
+      return new ExternalDynamicAuthFilter<>(
+          authConfig.externalDynamicAuthorizationEndpoint,
+          authConfig.postProcessingEndpoint,
+          httpClient,
+          authFilter);
     }
 
-    return new AuthDynamicFeature(authFilter);
+    return authFilter;
   }
 
   @Override

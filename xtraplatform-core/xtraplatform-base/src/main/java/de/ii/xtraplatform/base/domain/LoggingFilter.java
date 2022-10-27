@@ -11,6 +11,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.turbo.TurboFilter;
 import ch.qos.logback.core.spi.FilterReply;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import java.util.Objects;
 import org.slf4j.Marker;
@@ -21,6 +22,10 @@ import org.slf4j.Marker;
 public class LoggingFilter extends TurboFilter {
 
   private boolean showThirdPartyLoggers;
+  private boolean apiRequests;
+  private boolean apiRequestUsers;
+  private boolean apiRequestHeaders;
+  private boolean apiRequestBodies;
   private boolean sqlQueries;
   private boolean sqlResults;
   private boolean configDumps;
@@ -29,12 +34,20 @@ public class LoggingFilter extends TurboFilter {
 
   public LoggingFilter(
       boolean showThirdPartyLoggers,
+      boolean apiRequests,
+      boolean apiRequestUsers,
+      boolean apiRequestHeaders,
+      boolean apiRequestBodies,
       boolean sqlQueries,
       boolean sqlResults,
       boolean configDumps,
       boolean stackTraces,
       boolean wiring) {
     this.showThirdPartyLoggers = showThirdPartyLoggers;
+    this.apiRequests = apiRequests;
+    this.apiRequestUsers = apiRequestUsers;
+    this.apiRequestHeaders = apiRequestHeaders;
+    this.apiRequestBodies = apiRequestBodies;
     this.sqlQueries = sqlQueries;
     this.sqlResults = sqlResults;
     this.configDumps = configDumps;
@@ -45,6 +58,20 @@ public class LoggingFilter extends TurboFilter {
   @Override
   public FilterReply decide(
       Marker marker, Logger logger, Level level, String format, Object[] params, Throwable t) {
+
+    if (Objects.equals(marker, MARKER.REQUEST)
+        && (apiRequests || level == Level.DEBUG || level == Level.TRACE)) {
+      return FilterReply.ACCEPT;
+    }
+    if (apiRequestUsers && Objects.equals(marker, MARKER.REQUEST_USER)) {
+      return FilterReply.ACCEPT;
+    }
+    if (apiRequestHeaders && Objects.equals(marker, MARKER.REQUEST_HEADER)) {
+      return FilterReply.ACCEPT;
+    }
+    if (apiRequestBodies && Objects.equals(marker, MARKER.REQUEST_BODY)) {
+      return FilterReply.ACCEPT;
+    }
 
     if (sqlQueries
         && (Objects.equals(marker, MARKER.SQL)
@@ -83,6 +110,46 @@ public class LoggingFilter extends TurboFilter {
 
   public void setShowThirdPartyLoggers(boolean showThirdPartyLoggers) {
     this.showThirdPartyLoggers = showThirdPartyLoggers;
+  }
+
+  @JsonProperty
+  public boolean isApiRequests() {
+    return apiRequests;
+  }
+
+  @JsonProperty
+  public void setApiRequests(boolean apiRequests) {
+    this.apiRequests = apiRequests;
+  }
+
+  @JsonProperty
+  public boolean isApiRequestUsers() {
+    return apiRequestUsers;
+  }
+
+  @JsonProperty
+  public void setApiRequestUsers(boolean apiRequestUsers) {
+    this.apiRequestUsers = apiRequestUsers;
+  }
+
+  @JsonProperty
+  public boolean isApiRequestHeaders() {
+    return apiRequestHeaders;
+  }
+
+  @JsonProperty
+  public void setApiRequestHeaders(boolean apiRequestHeaders) {
+    this.apiRequestHeaders = apiRequestHeaders;
+  }
+
+  @JsonProperty
+  public boolean isApiRequestBodies() {
+    return apiRequestBodies;
+  }
+
+  @JsonProperty
+  public void setApiRequestBodies(boolean apiRequestBodies) {
+    this.apiRequestBodies = apiRequestBodies;
   }
 
   public boolean isSqlQueries() {

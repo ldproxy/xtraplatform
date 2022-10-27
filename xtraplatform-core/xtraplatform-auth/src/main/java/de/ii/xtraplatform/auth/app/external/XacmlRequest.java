@@ -9,7 +9,7 @@ package de.ii.xtraplatform.auth.app.external;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +28,7 @@ public class XacmlRequest {
         ImmutableList.<Attribute>builder()
             .add(new Attribute("urn:oasis:names:tc:xacml:1.0:action:action-id", method));
     if (method.equals("POST") || method.equals("PUT")) {
-      action.add(new Attribute("payload", Base64.getEncoder().encodeToString(body)));
+      action.add(new Attribute("payload", new String(body, StandardCharsets.UTF_8)));
     }
 
     Request =

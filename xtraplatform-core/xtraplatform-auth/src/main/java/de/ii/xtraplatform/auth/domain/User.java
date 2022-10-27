@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.auth.domain;
 
 import java.security.Principal;
+import java.util.List;
 import org.immutables.value.Value;
 
 /**
@@ -16,9 +17,23 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface User extends Principal {
 
+  enum PolicyDecision {
+    NONE,
+    PERMIT,
+    DENY,
+    NOT_APPLICABLE
+  }
+
+  List<String> getScopes();
+
   @Value.Default
   default Role getRole() {
     return Role.NONE;
+  }
+
+  @Value.Default
+  default PolicyDecision getPolicyDecision() {
+    return PolicyDecision.NONE;
   }
 
   @Value.Default

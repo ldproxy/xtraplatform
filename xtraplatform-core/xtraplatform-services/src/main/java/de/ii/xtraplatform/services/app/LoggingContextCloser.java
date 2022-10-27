@@ -9,6 +9,7 @@ package de.ii.xtraplatform.services.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import java.io.IOException;
 import java.io.OutputStream;
 import javax.inject.Inject;
@@ -52,10 +53,13 @@ public class LoggingContextCloser implements ContainerResponseFilter {
   }
 
   private void closeLoggingContext(ContainerResponseContext responseContext) {
-    if (LOGGER.isDebugEnabled())
+    if (LOGGER.isDebugEnabled(MARKER.REQUEST)) {
       LOGGER.debug(
-          "Sending response: {} {}", responseContext.getStatus(), responseContext.getStatusInfo());
-
+          MARKER.REQUEST,
+          "Sending response: {} {}",
+          responseContext.getStatus(),
+          responseContext.getStatusInfo());
+    }
     LogContext.remove(LogContext.CONTEXT.REQUEST);
   }
 

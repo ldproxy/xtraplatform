@@ -33,7 +33,7 @@ public class AuthConfig {
   @JsonIgnore
   public boolean isActive() {
     try {
-      return (isJwt() || new URI(getUserInfoEndpoint.replace("{{token}}", "token")).isAbsolute());
+      return (isJwt() || new URI(userInfoEndpoint.replace("{{token}}", "token")).isAbsolute());
     } catch (URISyntaxException e) {
       return false;
     }
@@ -61,15 +61,17 @@ public class AuthConfig {
   @JsonProperty
   public String jwtSigningKey;
 
-  @Valid @NotNull @JsonProperty public String getUserNameKey = "name";
+  @Valid @NotNull @JsonProperty public String userNameKey = "name";
 
-  @Valid @NotNull @JsonProperty public String getUserRoleKey = "role";
+  @Valid @NotNull @JsonProperty public String userRoleKey = "role";
 
-  @Valid @NotNull @JsonProperty public String getUserInfoEndpoint = "";
+  @Valid @NotNull @JsonProperty public String userScopesKey = "role";
 
-  @Valid @NotNull @JsonProperty public String getConnectionInfoEndpoint = "";
+  @Valid @NotNull @JsonProperty public String userInfoEndpoint = "";
 
-  @Valid @NotNull @JsonProperty public String getExternalDynamicAuthorizationEndpoint = "";
+  @Valid @NotNull @JsonProperty public String connectionInfoEndpoint = "";
 
-  @Valid @NotNull @JsonProperty public String getPostProcessingEndpoint = "";
+  @Valid @NotNull @JsonProperty public String externalDynamicAuthorizationEndpoint = "";
+
+  @Valid @NotNull @JsonProperty public String postProcessingEndpoint = "";
 }

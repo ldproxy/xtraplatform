@@ -8,8 +8,10 @@
 package de.ii.xtraplatform.services.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
+import com.google.common.base.Joiner;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceEndpoint;
@@ -22,7 +24,10 @@ import de.ii.xtraplatform.web.domain.MediaTypeCharset;
 import de.ii.xtraplatform.web.domain.StaticResourceHandler;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Hidden;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -241,14 +246,49 @@ public class ServicesEndpoint implements Endpoint {
       LogContext.remove(LogContext.CONTEXT.SERVICE);
     }
 
-    if (LOGGER.isDebugEnabled()) {
+    if (LOGGER.isDebugEnabled(MARKER.REQUEST)) {
       LogContext.put(LogContext.CONTEXT.REQUEST, LogContext.generateRandomUuid().toString());
+
       LOGGER.debug(
+          MARKER.REQUEST,
           "Processing request: {} {}",
           containerRequestContext.getMethod(),
           formatUri(containerRequestContext.getUriInfo().getRequestUri(), serviceId, version));
     } else {
       LogContext.remove(LogContext.CONTEXT.REQUEST);
+    }
+
+    if (LOGGER.isDebugEnabled(MARKER.REQUEST_USER)) {
+      Principal principal = containerRequestContext.getSecurityContext().getUserPrincipal();
+
+      if (Objects.nonNull(principal)) {
+        LOGGER.debug(MARKER.REQUEST_USER, "Request user: {}", principal.getName());
+      } else {
+        LOGGER.debug(MARKER.REQUEST_USER, "Request user: null");
+      }
+    }
+
+    if (LOGGER.isDebugEnabled(MARKER.REQUEST_HEADER)) {
+      String headers =
+          Joiner.on("\n  ").withKeyValueSeparator(": ").join(containerRequestContext.getHeaders());
+
+      LOGGER.debug(MARKER.REQUEST_HEADER, "Request headers: \n  {}", headers);
+    }
+
+    if (LOGGER.isDebugEnabled(MARKER.REQUEST_BODY)) {
+      if (containerRequestContext.hasEntity()) {
+        try {
+          containerRequestContext.getEntityStream().mark(Integer.MAX_VALUE);
+          String body =
+              new String(
+                  containerRequestContext.getEntityStream().readAllBytes(), StandardCharsets.UTF_8);
+          containerRequestContext.getEntityStream().reset();
+
+          LOGGER.debug(MARKER.REQUEST_BODY, "Request body: \n  {}", body);
+        } catch (IOException e) {
+          // ignore
+        }
+      }
     }
   }
 

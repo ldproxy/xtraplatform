@@ -17,7 +17,6 @@ import de.ii.xtraplatform.auth.domain.UserAuthorizer;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.domain.AuthProvider;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
-import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
@@ -48,7 +47,12 @@ public class InternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
   }
 
   @Override
-  public AuthDynamicFeature getAuthDynamicFeature() {
+  public int getPriority() {
+    return 0;
+  }
+
+  @Override
+  public AuthFilter<String, User> getAuthFilter() {
     JwtTokenAuthenticator tokenAuthenticator = new JwtTokenAuthenticator(tokenHandler);
 
     CachingAuthenticator<String, User> cachingAuthenticator =
@@ -73,8 +77,7 @@ public class InternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
             .setRealm("xtraplatform")
             .buildAuthFilter();
 
-    return new AuthDynamicFeature(
-        new ChainedAuthFilter<String, User>(Lists.newArrayList(authFilter, authFilter2)));
+    return new ChainedAuthFilter<>(Lists.newArrayList(authFilter, authFilter2));
   }
 
   @Override

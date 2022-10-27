@@ -76,6 +76,10 @@ import io.dropwizard.logging.LoggingUtil;
 public class LoggingConfiguration extends DefaultLoggingFactory {
 
   private boolean showThirdPartyLoggers;
+  private boolean apiRequests;
+  private boolean apiRequestUsers;
+  private boolean apiRequestHeaders;
+  private boolean apiRequestBodies;
   private boolean sqlQueries;
   private boolean sqlResults;
   private boolean configDumps;
@@ -85,6 +89,10 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
   public LoggingConfiguration() {
     super();
     this.showThirdPartyLoggers = false;
+    this.apiRequests = false;
+    this.apiRequestUsers = false;
+    this.apiRequestHeaders = false;
+    this.apiRequestBodies = false;
     this.sqlQueries = false;
     this.sqlResults = false;
     this.configDumps = false;
@@ -101,7 +109,16 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
     LoggingUtil.getLoggerContext()
         .addTurboFilter(
             new LoggingFilter(
-                showThirdPartyLoggers, sqlQueries, sqlResults, configDumps, stackTraces, wiring));
+                showThirdPartyLoggers,
+                apiRequests,
+                apiRequestUsers,
+                apiRequestHeaders,
+                apiRequestBodies,
+                sqlQueries,
+                sqlResults,
+                configDumps,
+                stackTraces,
+                wiring));
   }
 
   @JsonProperty("showThirdPartyLoggers")
@@ -112,6 +129,46 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
   @JsonProperty("showThirdPartyLoggers")
   public void setThirdPartyLogging(boolean showThirdPartyLoggers) {
     this.showThirdPartyLoggers = showThirdPartyLoggers;
+  }
+
+  @JsonProperty
+  public boolean isApiRequests() {
+    return apiRequests;
+  }
+
+  @JsonProperty
+  public void setApiRequests(boolean apiRequests) {
+    this.apiRequests = apiRequests;
+  }
+
+  @JsonProperty
+  public boolean isApiRequestUsers() {
+    return apiRequestUsers;
+  }
+
+  @JsonProperty
+  public void setApiRequestUsers(boolean apiRequestUsers) {
+    this.apiRequestUsers = apiRequestUsers;
+  }
+
+  @JsonProperty
+  public boolean isApiRequestHeaders() {
+    return apiRequestHeaders;
+  }
+
+  @JsonProperty
+  public void setApiRequestHeaders(boolean apiRequestHeaders) {
+    this.apiRequestHeaders = apiRequestHeaders;
+  }
+
+  @JsonProperty
+  public boolean isApiRequestBodies() {
+    return apiRequestBodies;
+  }
+
+  @JsonProperty
+  public void setApiRequestBodies(boolean apiRequestBodies) {
+    this.apiRequestBodies = apiRequestBodies;
   }
 
   @JsonProperty

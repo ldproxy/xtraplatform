@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
-import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import java.security.Principal;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
@@ -18,7 +18,10 @@ import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
  */
 @AutoMultiBind
 public interface AuthProvider<T extends Principal> {
-  AuthDynamicFeature getAuthDynamicFeature();
+
+  int getPriority();
+
+  AuthFilter<String, T> getAuthFilter();
 
   default Class<?> getRolesAllowedDynamicFeature() {
     return RolesAllowedDynamicFeature.class;

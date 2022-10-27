@@ -24,6 +24,7 @@ import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.logging.AbstractAppenderFactory;
 import io.dropwizard.logging.ConsoleAppenderFactory;
 import io.dropwizard.logging.DefaultLoggingFactory;
+import io.dropwizard.util.DataSize;
 import io.dropwizard.util.Duration;
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
@@ -280,6 +281,7 @@ public class ConfigurationReader {
     mergeMapper.configOverride(List.class).setMergeable(false);
     mergeMapper.configOverride(Map.class).setMergeable(false);
     mergeMapper.configOverride(Duration.class).setMergeable(false);
+    mergeMapper.configOverride(DataSize.class).setMergeable(false);
 
     return mergeMapper;
   }

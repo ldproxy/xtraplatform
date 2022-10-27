@@ -68,6 +68,18 @@ public class LogConfigurationTask extends Task implements DropwizardPlugin {
 
   private void setFilter(LoggingFilter loggingFilter, String filter, boolean enable) {
     switch (filter) {
+      case "apiRequests":
+        loggingFilter.setApiRequests(enable);
+        break;
+      case "apiRequestUsers":
+        loggingFilter.setApiRequestUsers(enable);
+        break;
+      case "apiRequestHeaders":
+        loggingFilter.setApiRequestHeaders(enable);
+        break;
+      case "apiRequestBodies":
+        loggingFilter.setApiRequestBodies(enable);
+        break;
       case "sqlQueries":
         loggingFilter.setSqlQueries(enable);
         break;
@@ -81,6 +93,10 @@ public class LogConfigurationTask extends Task implements DropwizardPlugin {
         loggingFilter.setStackTraces(enable);
         break;
       case "*":
+        loggingFilter.setApiRequests(enable);
+        loggingFilter.setApiRequestUsers(enable);
+        loggingFilter.setApiRequestHeaders(enable);
+        loggingFilter.setApiRequestBodies(enable);
         loggingFilter.setSqlQueries(enable);
         loggingFilter.setSqlResults(enable);
         loggingFilter.setConfigDumps(enable);
