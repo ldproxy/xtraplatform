@@ -58,24 +58,24 @@ public class ConfigurationReader {
   private static final Map<Constants.ENV, Map<APPENDER, String>> LOG_FORMATS =
       ImmutableMap.of(
           Constants.ENV.DEVELOPMENT,
-              ImmutableMap.of(
-                  APPENDER.CONSOLE,
-                      "%highlight(%-5p) %gray([%d{ISO8601,%dwTimeZone}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %gray([%c{44}]) %magenta([%t]) %blue(%marker) %n%rEx",
-                  APPENDER.OTHER,
-                      "%-5p [%d{ISO8601,%dwTimeZone}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} [%c{44}] [%t] %n%rEx"),
+          ImmutableMap.of(
+              APPENDER.CONSOLE,
+              "%highlight(%-5p) %gray([%d{ISO8601,%dwTimeZone}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %gray([%c{44}]) %magenta([%t]) %blue(%marker) %n%rEx",
+              APPENDER.OTHER,
+              "%-5p [%d{ISO8601,%dwTimeZone}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} [%c{44}] [%t] %n%rEx"),
           Constants.ENV.NATIVE,
-              ImmutableMap.of(
-                  APPENDER.CONSOLE,
-                      "%highlight(%-5p) %gray([%d{ISO8601,%dwTimeZone}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
-                  APPENDER.OTHER,
-                      "%-5p [%d{ISO8601,%dwTimeZone}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"),
+          ImmutableMap.of(
+              APPENDER.CONSOLE,
+              "%highlight(%-5p) %gray([%d{ISO8601,%dwTimeZone}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
+              APPENDER.OTHER,
+              "%-5p [%d{ISO8601,%dwTimeZone}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"),
           // TODO: is this needed?
           Constants.ENV.CONTAINER,
-              ImmutableMap.of(
-                  APPENDER.CONSOLE,
-                      "%highlight(%-5p) %gray([%d{ISO8601,%dwTimeZone}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
-                  APPENDER.OTHER,
-                      "%-5p [%d{ISO8601,%dwTimeZone}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"));
+          ImmutableMap.of(
+              APPENDER.CONSOLE,
+              "%highlight(%-5p) %gray([%d{ISO8601,%dwTimeZone}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
+              APPENDER.OTHER,
+              "%-5p [%d{ISO8601,%dwTimeZone}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"));
 
   private final Map<String, ByteSource> configsToMergeAfterBase;
   private final ObjectMapper mapper;
@@ -158,8 +158,12 @@ public class ConfigurationReader {
     return environmentVariableSubstitutor.replace(cfg);
   }
 
-  public AppConfiguration configFromString(String cfg) throws IOException {
-    return mapper.readValue(cfg, AppConfiguration.class);
+  public AppConfiguration configFromString(String cfg, Constants.ENV env) throws IOException {
+    AppConfiguration appConfiguration = mapper.readValue(cfg, AppConfiguration.class);
+
+    applyForcedDefaults(appConfiguration, env);
+
+    return appConfiguration;
   }
 
   public void loadMergedLogging(Path userConfig, Constants.ENV env) {
@@ -266,6 +270,8 @@ public class ConfigurationReader {
   }
 
   private static void applyForcedDefaults(AppConfiguration cfg, Constants.ENV env) {
+    cfg.getServerFactory().setRegisterDefaultExceptionMappers(false);
+
     cfg.getServerFactory()
         .getApplicationConnectors()
         .forEach(
