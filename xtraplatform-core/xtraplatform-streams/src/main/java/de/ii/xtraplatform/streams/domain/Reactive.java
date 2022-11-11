@@ -322,5 +322,7 @@ public interface Reactive {
     // ExecutionContextExecutor getDispatcher();
 
     int getCapacity();
+
+    int getActiveStreams();
   }
 }
