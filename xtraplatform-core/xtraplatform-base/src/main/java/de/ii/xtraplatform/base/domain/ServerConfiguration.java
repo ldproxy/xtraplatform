@@ -121,4 +121,10 @@ public class ServerConfiguration extends DefaultServerFactory {
   public void setExternalUrl(final String externalUrl) {
     this.externalUrl = externalUrl;
   }
+
+  // needed because @JsonProperty for the getter is missing in AbstractServerFactory
+  @JsonProperty
+  public Boolean getRegisterDefaultExceptionMappers() {
+    return super.getRegisterDefaultExceptionMappers();
+  }
 }

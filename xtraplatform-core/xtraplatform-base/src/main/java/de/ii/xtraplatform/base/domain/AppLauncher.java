@@ -113,7 +113,7 @@ public class AppLauncher implements AppContext {
     }
 
     String cfgString = configurationReader.loadMergedConfigAsString(cfgFile, env);
-    this.cfg = configurationReader.configFromString(cfgString);
+    this.cfg = configurationReader.configFromString(cfgString, env);
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Base configurations: {}", configurationReader.getBaseConfigs(env).keySet());
