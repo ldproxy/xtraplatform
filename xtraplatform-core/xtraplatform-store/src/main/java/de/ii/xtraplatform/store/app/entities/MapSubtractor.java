@@ -96,12 +96,14 @@ public class MapSubtractor {
                                   ((Map<String, Object>) leftItem).get("buildingBlock"),
                                   ((Map<String, Object>) item).get("buildingBlock")))
                   .findFirst();
+
+          // TODO: I guess the correct way to define ignoreKeys would be in EntityFactory
           if (leftMatch.isPresent()) {
             Map<String, Object> subtracted =
                 subtract(
                     (Map<String, Object>) leftMatch.get(),
                     (Map<String, Object>) item,
-                    ImmutableList.of("buildingBlock"));
+                    ImmutableList.of("buildingBlock", "type"));
             diff.set(diff.indexOf(leftMatch.get()), subtracted);
           }
         }
