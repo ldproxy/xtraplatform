@@ -459,6 +459,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
       Map<String, Object> map = asMap(identifier, merged);
 
+      // TODO: I guess the correct way to define ignoreKeys would be in EntityFactory
       Map<String, Object> withoutDefaults =
           defaultsStore.subtractDefaults(
               identifier, merged.getEntitySubType(), map, ImmutableList.of("enabled"));
