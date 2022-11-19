@@ -41,7 +41,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsPath;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
-import de.ii.xtraplatform.store.domain.entities.EntityFactories;
+import de.ii.xtraplatform.store.domain.entities.EntityFactoriesImpl;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -66,7 +66,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityDataDefaultsStoreImpl.class);
 
-  private final EntityFactories entityFactories;
+  private final EntityFactoriesImpl entityFactories;
   private final ValueEncodingJackson<Map<String, Object>> valueEncoding;
   private final ValueEncodingJackson<EntityDataBuilder<EntityData>> valueEncodingBuilder;
   private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
@@ -80,7 +80,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       EventStore eventStore,
       Jackson jackson,
       Lazy<Set<EntityFactory>> entityFactories) {
-    this.entityFactories = new EntityFactories(entityFactories);
+    this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.eventStore = eventStore;
     this.valueEncoding =
         new ValueEncodingJackson<>(

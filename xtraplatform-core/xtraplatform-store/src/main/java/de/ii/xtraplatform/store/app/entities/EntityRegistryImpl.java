@@ -10,7 +10,7 @@ package de.ii.xtraplatform.store.app.entities;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
 import dagger.Lazy;
-import de.ii.xtraplatform.store.domain.entities.EntityFactories;
+import de.ii.xtraplatform.store.domain.entities.EntityFactoriesImpl;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.EntityState;
@@ -30,11 +30,11 @@ public class EntityRegistryImpl implements EntityRegistry {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityRegistryImpl.class);
 
-  private final EntityFactories entityFactories;
+  private final EntityFactoriesImpl entityFactories;
 
   @Inject
   public EntityRegistryImpl(Lazy<Set<EntityFactory>> entityFactories) {
-    this.entityFactories = new EntityFactories(entityFactories);
+    this.entityFactories = new EntityFactoriesImpl(entityFactories);
   }
 
   @Override

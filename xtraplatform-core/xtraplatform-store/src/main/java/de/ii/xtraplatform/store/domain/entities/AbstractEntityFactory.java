@@ -117,7 +117,7 @@ public abstract class AbstractEntityFactory<
     if (instances.containsKey(id)) {
       U entity = instances.get(id);
       entity.onInvalidate();
-      entity.onPostRegistration();
+      entity.onPostUnregistration();
       instances.remove(id);
       instanceConfigurationHashes.remove(id);
       entityGoneListeners.forEach(listener -> listener.accept(entity));

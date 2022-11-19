@@ -38,7 +38,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.store.domain.entities.EntityDataOverridesPath;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
-import de.ii.xtraplatform.store.domain.entities.EntityFactories;
+import de.ii.xtraplatform.store.domain.entities.EntityFactoriesImpl;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityStoreDecorator;
 import java.io.IOException;
@@ -76,7 +76,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private static final List<String> EVENT_TYPES = ImmutableList.of("entities", "overrides");
 
   private final boolean isEventStoreReadOnly;
-  private final EntityFactories entityFactories;
+  private final EntityFactoriesImpl entityFactories;
   private final Queue<Map.Entry<Identifier, EntityData>> additionalEvents;
   private final ValueEncodingJackson<EntityData> valueEncoding;
   private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
@@ -91,7 +91,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore) {
     this.isEventStoreReadOnly = eventStore.isReadOnly();
-    this.entityFactories = new EntityFactories(entityFactories);
+    this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.additionalEvents = new ConcurrentLinkedQueue<>();
     this.valueEncoding =
         new ValueEncodingJackson<>(
