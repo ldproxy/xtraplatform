@@ -148,6 +148,11 @@ public class RunnerRx implements Runner {
     return capacity;
   }
 
+  @Override
+  public int getActiveStreams() {
+    return running.get();
+  }
+
   private static ExecutorService getConfig(String name, int capacity) {
     return capacity == Runner.DYNAMIC_CAPACITY
         ? getDefaultConfig(name)
