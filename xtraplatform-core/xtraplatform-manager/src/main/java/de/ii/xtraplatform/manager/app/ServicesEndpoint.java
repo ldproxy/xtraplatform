@@ -29,7 +29,7 @@ import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
-import de.ii.xtraplatform.store.domain.entities.EntityFactories;
+import de.ii.xtraplatform.store.domain.entities.EntityFactoriesImpl;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
@@ -89,7 +89,7 @@ public class ServicesEndpoint implements Endpoint {
   private final EntityDataStore<EntityData> entityRepository;
   private final EntityDataStore<ServiceData> serviceRepository;
   private final EntityRegistry entityRegistry;
-  private final EntityFactories entityFactories;
+  private final EntityFactoriesImpl entityFactories;
   private final EntityDataDefaultsStore defaultsStore;
   private final ServiceBackgroundTasks serviceBackgroundTasks;
   private final ObjectMapper objectMapper;
@@ -107,7 +107,7 @@ public class ServicesEndpoint implements Endpoint {
     this.entityRepository = (EntityDataStore<EntityData>) entityRepository;
     this.serviceRepository = getServiceRepository(this.entityRepository);
     this.entityRegistry = entityRegistry;
-    this.entityFactories = new EntityFactories(entityFactories);
+    this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.defaultsStore = defaultsStore;
     this.serviceBackgroundTasks = serviceBackgroundTasks;
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);
