@@ -10,6 +10,7 @@ package de.ii.xtraplatform.store.app.entities;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
 import dagger.Lazy;
@@ -220,33 +221,65 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
     return (EntityDataBuilder<EntityData>)
-        entityFactories.get(identifier.path().get(0)).superDataBuilder();
+        entityFactories.get(entityType(identifier)).superDataBuilder();
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, String entitySubtype) {
-    // List<String> subtypePath = entityFactory.getTypeAsList(entitySubtype);
+    Identifier defaultsIdentifier = defaults(identifier, entitySubtype);
 
-    ImmutableIdentifier defaultsIdentifier =
-        ImmutableIdentifier.builder()
-            .from(identifier)
-            .id(EntityDataDefaultsStore.EVENT_TYPE)
-            .addPath(entitySubtype.toLowerCase())
-            .build();
     if (defaultsStore.has(defaultsIdentifier)) {
       return defaultsStore.getBuilder(defaultsIdentifier);
     }
 
+    for (int i = 1; i < defaultsIdentifier.path().size(); i++) {
+      Identifier parent = parent(defaultsIdentifier, i);
+
+      if (defaultsStore.has(parent)) {
+        return defaultsStore.getBuilder(parent);
+      }
+    }
+
     return (EntityDataBuilder<EntityData>)
-        entityFactories.get(identifier.path().get(0), entitySubtype).dataBuilder();
+        entityFactories.get(entityType(identifier), entitySubtype).dataBuilder();
   }
 
   protected EntityData hydrate(Identifier identifier, EntityData entityData) {
-    String entityType = identifier.path().get(0);
-    return entityFactories.get(entityType, entityData.getEntitySubType()).hydrateData(entityData);
+    return entityFactories
+        .get(entityType(identifier), entityData.getEntitySubType())
+        .hydrateData(entityData);
   }
 
   protected void addAdditionalEvent(Identifier identifier, EntityData entityData) {
     additionalEvents.add(new AbstractMap.SimpleImmutableEntry<>(identifier, entityData));
+  }
+
+  private static String entityType(Identifier identifier) {
+    return identifier.path().get(identifier.path().size() - 1);
+  }
+
+  private static List<String> entityGroup(Identifier identifier) {
+    return identifier.path().size() > 1
+        ? Lists.reverse(identifier.path().subList(0, identifier.path().size() - 1))
+        : List.of();
+  }
+
+  private static Identifier defaults(Identifier identifier, String subType) {
+    return ImmutableIdentifier.builder()
+        .id(EntityDataDefaultsStore.EVENT_TYPE)
+        .path(entityGroup(identifier))
+        .addPath(entityType(identifier))
+        .addPath(subType.toLowerCase())
+        .build();
+  }
+
+  private static Identifier parent(Identifier identifier, int distance) {
+    if (distance >= identifier.path().size()) {
+      return identifier;
+    }
+    return ImmutableIdentifier.builder()
+        .from(identifier)
+        .path(identifier.path().subList(distance, identifier.path().size()))
+        .build();
   }
 
   @Override
@@ -266,7 +299,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 identifiers().stream()
                     // TODO: set priority per entity type (for now alphabetic works:
                     //  codelists < providers < services)
-                    .sorted(Comparator.comparing(identifier -> identifier.path().get(0)))
+                    .sorted(Comparator.comparing(EntityDataStoreImpl::entityType))
                     .reduce(
                         CompletableFuture.completedFuture((Void) null),
                         (completableFuture, identifier) ->
@@ -319,7 +352,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         EntityData hydratedData = hydrateData(identifier, entityData);
 
         return entityFactories
-            .get(identifier.path().get(0), entityData.getEntitySubType())
+            .get(entityType(identifier), entityData.getEntitySubType())
             .createInstance(hydratedData)
             .whenComplete(
                 (entity, throwable) -> {
@@ -348,7 +381,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         EntityData hydratedData = hydrateData(identifier, entityData);
 
         return entityFactories
-            .get(identifier.path().get(0), entityData.getEntitySubType())
+            .get(entityType(identifier), entityData.getEntitySubType())
             .updateInstance(hydratedData)
             .thenAccept(ignore -> CompletableFuture.completedFuture(null));
       } catch (Throwable e) {
@@ -360,7 +393,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   @Override
   protected void onDelete(Identifier identifier) {
     entityFactories
-        .getAll(identifier.path().get(0))
+        .getAll(entityType(identifier))
         .forEach(factory -> factory.deleteInstance(identifier.id()));
   }
 
@@ -468,7 +501,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
           subtractResetted(
               withoutDefaults,
               partialData,
-              entityFactories.get(identifier.path().get(0), merged.getEntitySubType()));
+              entityFactories.get(entityType(identifier), merged.getEntitySubType()));
 
       return getEventSourcing()
           .pushPartialMutationEvent(identifier, withoutResetted)
@@ -624,21 +657,21 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             putPartialWithoutTrigger(identifier, withoutDefaults).join();
             LOGGER.info(
                 "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-                identifier.path().get(0),
+                entityType(identifier),
                 entityData.getId());
           } catch (IOException e) {
             LogContext.error(
                 LOGGER,
                 e,
                 "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved",
-                identifier.path().get(0),
+                entityType(identifier),
                 entityData.getId());
           }
 
         } else {
           LOGGER.warn(
               "Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
-              identifier.path().get(0),
+              entityType(identifier),
               entityData.getId());
         }
       }

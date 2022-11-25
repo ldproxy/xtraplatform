@@ -14,6 +14,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.Jackson;
@@ -174,7 +175,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       return Stream.empty();
     }
 
-    EntityDataDefaultsPath defaultsPath = EntityDataDefaultsPath.from(event.identifier());
+    EntityDataDefaultsPath defaultsPath =
+        EntityDataDefaultsPath.from(event.identifier(), entityFactories.getTypes());
 
     List<String> subTypes =
         entityFactories.getSubTypes(defaultsPath.getEntityType(), defaultsPath.getEntitySubtype());
@@ -183,7 +185,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     List<Identifier> cacheKeys = getCacheKeys(defaultsPath, subTypes);
 
-    // LOGGER.debug("Applying to subtypes as well 2: {}", cacheKeys);
+    // LOGGER.debug("Applying to subtypes as well 2: {} ### {}", event.identifier(), cacheKeys);
 
     return cacheKeys.stream()
         .map(
@@ -192,9 +194,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                   ImmutableReplayEvent.builder().from(event).identifier(cacheKey);
               if (!defaultsPath.getKeyPath().isEmpty()
                   && !Objects.equals(defaultsPath.getKeyPath().get(0), EVENT_TYPE)) {
+                int entityIndex = cacheKey.path().indexOf(defaultsPath.getEntityType());
                 Optional<KeyPathAlias> keyPathAlias =
                     entityFactories
-                        .get(cacheKey.path().get(0), cacheKey.path().get(1))
+                        .get(cacheKey.path().get(entityIndex), cacheKey.path().get(entityIndex + 1))
                         .getKeyPathAlias(
                             defaultsPath.getKeyPath().get(defaultsPath.getKeyPath().size() - 1));
                 try {
@@ -215,17 +218,13 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       EntityDataDefaultsPath defaultsPath, List<String> subTypes) {
 
     return ImmutableList.<Identifier>builder()
-        .add(
-            ImmutableIdentifier.builder()
-                .addPath(defaultsPath.getEntityType())
-                .addAllPath(defaultsPath.getEntitySubtype())
-                .id(EntityDataDefaultsStore.EVENT_TYPE)
-                .build())
+        .add(defaultsPath.asIdentifier())
         .addAll(
             subTypes.stream()
                 .map(
                     subType ->
                         ImmutableIdentifier.builder()
+                            .addAllPath(Lists.reverse(defaultsPath.getGroups()))
                             .addPath(defaultsPath.getEntityType())
                             .addPath(subType)
                             .id(EntityDataDefaultsStore.EVENT_TYPE)
@@ -345,12 +344,34 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       return eventSourcing.getFromCache(identifier);
     }
 
+    for (int i = 1; i < identifier.path().size(); i++) {
+      ImmutableIdentifier parent =
+          ImmutableIdentifier.builder()
+              .from(identifier)
+              .path(identifier.path().subList(i, identifier.path().size()))
+              .build();
+      if (eventSourcing.isInCache(parent)) {
+        try {
+          Map<String, Object> deserialize =
+              valueEncodingMap.deserialize(
+                  parent,
+                  valueEncodingEntity.serialize(eventSourcing.getFromCache(parent)),
+                  valueEncoding.getDefaultFormat(),
+                  false);
+
+          return deserialize;
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+
     return new LinkedHashMap<>();
   }
 
   public EntityDataBuilder<EntityData> getNewBuilder(Identifier identifier) {
-
-    EntityDataDefaultsPath defaultsPath = EntityDataDefaultsPath.from(identifier);
+    EntityDataDefaultsPath defaultsPath =
+        EntityDataDefaultsPath.from(identifier, entityFactories.getTypes());
 
     Optional<String> subtype = entityFactories.getTypeAsString(defaultsPath.getEntitySubtype());
 

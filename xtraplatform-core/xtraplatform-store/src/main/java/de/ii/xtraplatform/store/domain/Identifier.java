@@ -30,6 +30,10 @@ public interface Identifier extends Comparable<Identifier> {
   @Override
   default int compareTo(Identifier identifier) {
 
+    if (path().size() != identifier.path().size()) {
+      return path().size() - identifier.path().size();
+    }
+
     for (int i = 0; i < path().size() && i < identifier.path().size(); i++) {
       int compared = path().get(i).compareTo(identifier.path().get(i));
       if (compared != 0) {

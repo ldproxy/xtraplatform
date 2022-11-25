@@ -24,21 +24,40 @@ public interface EventFilter {
   default boolean matches(EntityEvent event) {
     Identifier identifier = event.identifier();
 
-    if (!getEntityTypes().contains("*")
-        && (identifier.path().isEmpty() || !getEntityTypes().contains(identifier.path().get(0)))
-        && (!Objects.equals(event.type(), "defaults")
+    if (!getEntityTypes().contains("*")) {
+      if (identifier.path().isEmpty() || !containsEntityType(identifier.path())) {
+        if ((!Objects.equals(event.type(), "defaults")
             || !getEntityTypes().contains(identifier.id()))) {
-      return false;
+          return false;
+        }
+      }
     }
 
     // TODO
     if (!getIds().isEmpty() && !Objects.equals(event.type(), "defaults")) {
-      String id = identifier.path().size() > 1 ? identifier.path().get(1) : identifier.id();
+      String id =
+          identifier.path().size() - 1 == indexOfEntityType(identifier.path())
+              ? identifier.path().get(identifier.path().size() - 1)
+              : identifier.id();
 
       return getIds().contains(id) || getIds().contains("*");
     }
 
     return true;
+  }
+
+  default boolean containsEntityType(List<String> path) {
+    return indexOfEntityType(path) > -1;
+  }
+
+  default int indexOfEntityType(List<String> path) {
+    for (int i = 0; i < path.size(); i++) {
+      if (getEntityTypes().contains(path.get(i))) {
+        return i;
+      }
+    }
+
+    return -1;
   }
 
   static EventFilter fromPath(Path path) {

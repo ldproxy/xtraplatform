@@ -27,5 +27,7 @@ public interface EntityFactories {
 
   List<String> getSubTypes(String entityType, List<String> entitySubType);
 
+  Set<String> getTypes();
+
   Optional<String> getTypeAsString(List<String> entitySubtype);
 }

@@ -10,8 +10,11 @@ package de.ii.xtraplatform.store.domain.entities;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import de.ii.xtraplatform.store.domain.Identifier;
+import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
 import java.util.List;
+import java.util.Set;
 import org.immutables.value.Value;
 
 // TODO: unit tests for all cases
@@ -20,9 +23,9 @@ public interface EntityDataDefaultsPath {
 
   Splitter DOT_SPLITTER = Splitter.on('.');
 
-  static EntityDataDefaultsPath from(Identifier identifier) {
+  static EntityDataDefaultsPath from(Identifier identifier, Set<String> entityTypes) {
     ModifiableEntityDataDefaultsPath defaultsPath = ModifiableEntityDataDefaultsPath.create();
-    List<String> pathSegments;
+    List<String> pathSegments = ImmutableList.of();
 
     if (identifier.path().isEmpty()) {
       if (identifier.id().contains(".")) {
@@ -31,11 +34,22 @@ public interface EntityDataDefaultsPath {
         pathSegments = DOT_SPLITTER.splitToList(identifier.id().substring(firstDot + 1));
       } else {
         defaultsPath.setEntityType(identifier.id());
-        pathSegments = ImmutableList.of();
+        // pathSegments = ImmutableList.of();
       }
     } else {
-      defaultsPath.setEntityType(identifier.path().get(0));
-      pathSegments = identifier.path().subList(1, identifier.path().size());
+      for (int i = 0; i < identifier.path().size(); i++) {
+        if (entityTypes.contains(identifier.path().get(i))) {
+          defaultsPath.setEntityType(identifier.path().get(i));
+          if (i > 0) {
+            defaultsPath.setGroups(identifier.path().subList(0, i));
+          }
+          if (identifier.path().size() > i + 1) {
+            pathSegments = identifier.path().subList(i + 1, identifier.path().size());
+          }
+        }
+      }
+      // defaultsPath.setEntityType(identifier.path().get(0));
+      // pathSegments = identifier.path().subList(1, identifier.path().size());
     }
 
     // TODO: describe cases, how would catch happen?
@@ -60,9 +74,21 @@ public interface EntityDataDefaultsPath {
     return defaultsPath;
   }
 
+  List<String> getGroups();
+
   String getEntityType();
 
   List<String> getEntitySubtype();
 
   List<String> getKeyPath();
+
+  @Value.Lazy
+  default Identifier asIdentifier() {
+    return ImmutableIdentifier.builder()
+        .addAllPath(Lists.reverse(getGroups()))
+        .addPath(getEntityType())
+        .addAllPath(getEntitySubtype())
+        .id(EntityDataDefaultsStore.EVENT_TYPE)
+        .build();
+  }
 }
