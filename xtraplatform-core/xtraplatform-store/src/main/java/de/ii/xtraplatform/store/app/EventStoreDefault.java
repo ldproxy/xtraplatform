@@ -12,12 +12,14 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.StoreConfiguration;
 import de.ii.xtraplatform.base.domain.StoreConfiguration.StoreMode;
+import de.ii.xtraplatform.base.domain.StoreFilters;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.store.domain.Identifier;
+import de.ii.xtraplatform.store.domain.ImmutableEventFilter;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.store.domain.ImmutableReloadEvent;
 import de.ii.xtraplatform.store.domain.ImmutableReplayEvent;
@@ -28,6 +30,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -74,9 +77,23 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
   public void onStart() {
     LOGGER.info("Store mode: {}", storeConfiguration.mode);
 
+    EventFilter startupFilter = getStartupFilter();
+
+    if (storeConfiguration.filter.isPresent()) {
+      LOGGER.info("Store filter: {}", startupFilter);
+    }
+
     driver.start();
 
-    driver.loadEventStream().forEach(subscriptions::emitEvent);
+    driver
+        .loadEventStream()
+        // TODO: trace
+        .peek(
+            event ->
+                LOGGER.debug(
+                    "{} {}", startupFilter.matches(event) ? "Loading" : "Skipping", event.asPath()))
+        .filter(startupFilter::matches)
+        .forEach(subscriptions::emitEvent);
 
     // replay done
     subscriptions.startListening();
@@ -88,9 +105,9 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                   driver.startWatching(
                       changedFiles -> {
                         LOGGER.info("Store changes detected: {}", changedFiles);
-                        EventFilter filter = EventFilter.fromPaths(changedFiles);
+                        EventFilter replayFilter = EventFilter.fromPaths(changedFiles);
                         // LOGGER.debug("FILTER {}", filter);
-                        replay(filter);
+                        replay(replayFilter);
                       }))
           .start();
     }
@@ -208,5 +225,18 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
         });
     // TODO: type
     subscriptions.emitEvent(ImmutableReloadEvent.builder().type("entities").filter(filter).build());
+  }
+
+  private EventFilter getStartupFilter() {
+    return ImmutableEventFilter.builder()
+        .addEventTypes("entities")
+        .entityTypes(
+            storeConfiguration
+                .filter
+                .map(StoreFilters::getEntityTypes)
+                .flatMap(l -> l.isEmpty() ? Optional.empty() : Optional.of(l))
+                .orElse(List.of("*")))
+        .ids(storeConfiguration.filter.map(StoreFilters::getEntityIds).orElse(List.of("*")))
+        .build();
   }
 }

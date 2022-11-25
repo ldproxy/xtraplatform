@@ -15,6 +15,7 @@ import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -341,4 +342,6 @@ public class StoreConfiguration {
 
   @Valid @NotNull @JsonProperty
   public List<String> overridesPathPatterns = ImmutableList.of("{type}/{path:**}/#overrides#/{id}");
+
+  @Valid @NotNull @JsonProperty public Optional<StoreFilters> filter = Optional.empty();
 }
