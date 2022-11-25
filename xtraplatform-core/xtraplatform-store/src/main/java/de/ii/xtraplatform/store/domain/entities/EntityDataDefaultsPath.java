@@ -34,7 +34,6 @@ public interface EntityDataDefaultsPath {
         pathSegments = DOT_SPLITTER.splitToList(identifier.id().substring(firstDot + 1));
       } else {
         defaultsPath.setEntityType(identifier.id());
-        // pathSegments = ImmutableList.of();
       }
     } else {
       for (int i = 0; i < identifier.path().size(); i++) {
@@ -48,13 +47,10 @@ public interface EntityDataDefaultsPath {
           }
         }
       }
-      // defaultsPath.setEntityType(identifier.path().get(0));
-      // pathSegments = identifier.path().subList(1, identifier.path().size());
     }
 
     // TODO: describe cases, how would catch happen?
     if (!pathSegments.isEmpty()) {
-      // for (int i = pathSegments.size(); i > 0; i--) {
       try {
         List<String> subtype = pathSegments.subList(0, pathSegments.size());
         defaultsPath.setEntitySubtype(ImmutableList.of(Joiner.on('/').join(subtype)));

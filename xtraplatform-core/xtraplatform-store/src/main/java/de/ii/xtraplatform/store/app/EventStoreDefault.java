@@ -11,7 +11,6 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.StoreConfiguration;
-import de.ii.xtraplatform.base.domain.StoreConfiguration.StoreMode;
 import de.ii.xtraplatform.base.domain.StoreFilters;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventFilter;
@@ -54,7 +53,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
     this.driver = eventStoreDriver;
     this.subscriptions = new EventSubscriptionsImpl(reactive.runner("events"));
     this.storeConfiguration = appContext.getConfiguration().store;
-    this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
+    this.isReadOnly = storeConfiguration.isReadOnly();
   }
 
   public EventStoreDefault(
@@ -64,7 +63,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
     this.driver = eventStoreDriver;
     this.subscriptions = subscriptions;
     this.storeConfiguration = storeConfiguration;
-    this.isReadOnly = storeConfiguration.mode == StoreMode.READ_ONLY;
+    this.isReadOnly = storeConfiguration.isReadOnly();
   }
 
   @Override
@@ -75,11 +74,11 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
 
   @Override
   public void onStart() {
-    LOGGER.info("Store mode: {}", storeConfiguration.mode);
+    LOGGER.info("Store mode: {}", storeConfiguration.getMode());
 
     EventFilter startupFilter = getStartupFilter();
 
-    if (storeConfiguration.filter.isPresent()) {
+    if (storeConfiguration.isFiltered()) {
       LOGGER.info("Store filter: {}", startupFilter);
     }
 
@@ -98,7 +97,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
     // replay done
     subscriptions.startListening();
 
-    if (storeConfiguration.watch && driver.supportsWatch()) {
+    if (storeConfiguration.isWatch() && driver.supportsWatch()) {
       LOGGER.info("Watching store for changes");
       new Thread(
               () ->
@@ -232,11 +231,11 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
         .addEventTypes("entities")
         .entityTypes(
             storeConfiguration
-                .filter
+                .getFilter()
                 .map(StoreFilters::getEntityTypes)
                 .flatMap(l -> l.isEmpty() ? Optional.empty() : Optional.of(l))
                 .orElse(List.of("*")))
-        .ids(storeConfiguration.filter.map(StoreFilters::getEntityIds).orElse(List.of("*")))
+        .ids(storeConfiguration.getFilter().map(StoreFilters::getEntityIds).orElse(List.of("*")))
         .build();
   }
 }

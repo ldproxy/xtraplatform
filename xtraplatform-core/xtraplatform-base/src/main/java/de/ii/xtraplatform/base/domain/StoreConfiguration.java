@@ -7,8 +7,8 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.docs.DocFile;
 import de.ii.xtraplatform.docs.DocStep;
 import de.ii.xtraplatform.docs.DocStep.Step;
@@ -16,9 +16,7 @@ import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import java.util.List;
 import java.util.Optional;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.NotEmpty;
+import org.immutables.value.Value;
 
 /**
  * @langEn # Store
@@ -301,9 +299,11 @@ import org.hibernate.validator.constraints.NotEmpty;
           rows = {@DocStep(type = Step.JSON_PROPERTIES)},
           columnSet = ColumnSet.JSON_PROPERTIES)
     })
-public class StoreConfiguration {
+@Value.Immutable
+@JsonDeserialize(builder = ImmutableStoreConfiguration.Builder.class)
+public interface StoreConfiguration {
 
-  public enum StoreMode {
+  enum StoreMode {
     READ_WRITE,
     READ_ONLY,
     DISTRIBUTED,
@@ -315,33 +315,52 @@ public class StoreConfiguration {
    *     darf.
    * @default `READ_WRITE`
    */
-  @JsonProperty public StoreMode mode = StoreMode.READ_WRITE;
+  @Value.Default
+  default StoreMode getMode() {
+    return StoreMode.READ_WRITE;
+  }
 
-  @Valid @NotNull @JsonProperty public String location = "store";
+  // TODO: test merging
+  @Value.Default
+  default String getLocation() {
+    return "store";
+  }
 
   /**
    * @langEn List of paths with [additional directories](#additional-locations).
    * @langDe Liste von Pfaden mit [zusätzlichen Verzeichnissnen](#additional-locations).
    * @default `[]`
    */
-  @Valid @NotNull @JsonProperty public List<String> additionalLocations = ImmutableList.of();
+  List<String> getAdditionalLocations();
 
-  @Valid @NotNull @JsonProperty public boolean watch = false;
+  @Value.Default
+  default boolean isWatch() {
+    return false;
+  }
 
-  @Valid @NotNull @JsonProperty public boolean secured = false;
+  // TODO
+  @Value.Default
+  default boolean isFailOnUnknownProperties() {
+    return false;
+  }
 
-  @Valid @NotNull @JsonProperty public boolean failOnUnknownProperties = false;
+  Optional<StoreFilters> getFilter();
 
-  // defaultValuesPathPattern
-  @Valid @NotNull @JsonProperty
-  public List<String> defaultValuesPathPatterns =
-      ImmutableList.of("{type}/{path:**}/{id}", "{type}/{path:**}/{id}");
+  @JsonIgnore
+  @Value.Derived
+  default boolean isReadOnly() {
+    return getMode() == StoreMode.READ_ONLY;
+  }
 
-  // keyValuePathPattern
-  @Valid @NotEmpty @JsonProperty public String instancePathPattern = "{type}/{path:**}/{id}";
+  @JsonIgnore
+  @Value.Derived
+  default boolean isReadWrite() {
+    return getMode() == StoreMode.READ_ONLY;
+  }
 
-  @Valid @NotNull @JsonProperty
-  public List<String> overridesPathPatterns = ImmutableList.of("{type}/{path:**}/#overrides#/{id}");
-
-  @Valid @NotNull @JsonProperty public Optional<StoreFilters> filter = Optional.empty();
+  @JsonIgnore
+  @Value.Derived
+  default boolean isFiltered() {
+    return getFilter().isPresent();
+  }
 }

@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
 public class EventPaths {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventPaths.class);
+
+  private static final String KEY_PATTERN = "{type}/{path:**}/{id}";
   private static final Pattern PATH_PATTERN =
       Pattern.compile("(?<separator>\\/(?:[^\\/{}]+\\/)*|^)\\{(?<name>[\\w]+)(?::(?<glob>\\*+))?}");
   private static final Splitter PATH_SPLITTER = Splitter.on('/').omitEmptyStrings();
@@ -43,42 +45,12 @@ public class EventPaths {
   private final Path rootPath;
   private final Pattern mainPathPatternRead;
   private final String mainPathPatternWrite;
-  private final List<Pattern> overridePathPatternsRead;
-  private final List<String> overridePathPatternsWrite;
-  private final String savePathPattern;
 
-  public EventPaths(
-      Path rootPath,
-      String mainPathPattern,
-      List<String> overridePathPatterns,
-      Function<String, String> pathAdjuster) {
+  public EventPaths(Path rootPath, Function<String, String> pathAdjuster) {
     this.rootPath = rootPath;
-    this.mainPathPatternRead = pathToPattern(mainPathPattern, pathAdjuster);
+    this.mainPathPatternRead = pathToPattern(KEY_PATTERN, pathAdjuster);
     this.mainPathPatternWrite =
-        mainPathPattern.replace("{type}", "%s").replace("{path:**}", "%s").replace("{id}", "%s");
-    this.overridePathPatternsRead =
-        overridePathPatterns.stream()
-            .map((String path) -> pathToPattern(path, pathAdjuster))
-            .collect(Collectors.toList());
-    this.overridePathPatternsWrite =
-        overridePathPatterns.stream()
-            .map(
-                pattern ->
-                    pattern
-                        .replace("{type}", "%s")
-                        .replace("{path:**}", "%s")
-                        .replace("{id}", "%s"))
-            .collect(Collectors.toList());
-    ;
-    this.savePathPattern = overridePathPatternsWrite.get(overridePathPatternsWrite.size() - 1);
-
-    if (LOGGER.isTraceEnabled()) {
-      LOGGER.trace(
-          "STORE PATH PATTERNS: {}, {}, {}",
-          this.mainPathPatternRead,
-          this.overridePathPatternsRead,
-          savePathPattern);
-    }
+        KEY_PATTERN.replace("{type}", "%s").replace("{path:**}", "%s").replace("{id}", "%s");
   }
 
   public Path getRootPath() {
@@ -90,10 +62,7 @@ public class EventPaths {
   }
 
   public List<Path> getDeletePaths(String type, Identifier identifier, String format) {
-    return Stream.concat(
-            overridePathPatternsWrite.stream()
-                .map(pattern -> getEventPath(type, identifier, null, pattern)),
-            Stream.of(getEventPath(type, identifier, null, mainPathPatternWrite)))
+    return Stream.of(getEventPath(type, identifier, null, mainPathPatternWrite))
         .collect(Collectors.toList());
   }
 
@@ -148,7 +117,7 @@ public class EventPaths {
   }
 
   public Stream<Pattern> getPathPatternStream() {
-    return Stream.concat(Stream.of(mainPathPatternRead), overridePathPatternsRead.stream());
+    return Stream.of(mainPathPatternRead);
   }
 
   private Pattern pathToPattern(String path, Function<String, String> pathAdjuster) {

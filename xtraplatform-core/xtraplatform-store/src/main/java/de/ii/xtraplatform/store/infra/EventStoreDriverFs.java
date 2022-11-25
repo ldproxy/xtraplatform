@@ -70,25 +70,15 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
   public EventStoreDriverFs(Path dataDirectory, StoreConfiguration storeConfiguration) {
     this.storeDirectory = getStoreDirectory(dataDirectory, storeConfiguration);
-    this.eventPaths =
-        new EventPaths(
-            storeDirectory,
-            storeConfiguration.instancePathPattern,
-            storeConfiguration.overridesPathPatterns,
-            this::adjustPathPattern);
+    this.eventPaths = new EventPaths(storeDirectory, this::adjustPathPattern);
     this.isEnabled = true; // TODO: storeConfiguration.driver = StoreDriver.FS
-    this.isReadOnly = storeConfiguration.mode == StoreConfiguration.StoreMode.READ_ONLY;
+    this.isReadOnly = storeConfiguration.isReadOnly();
 
     this.additionalDirectories = getAdditionalDirectories(dataDirectory, storeConfiguration);
     this.additionalEventPaths =
         additionalDirectories.stream()
             .map(
-                additionalDirectory ->
-                    new EventPaths(
-                        additionalDirectory,
-                        storeConfiguration.instancePathPattern,
-                        storeConfiguration.overridesPathPatterns,
-                        this::adjustPathPattern))
+                additionalDirectory -> new EventPaths(additionalDirectory, this::adjustPathPattern))
             .collect(Collectors.toList());
   }
 
@@ -145,6 +135,16 @@ public class EventStoreDriverFs implements EventStoreDriver {
   @Override
   public Stream<EntityEvent> loadEventStream() {
     if (!isEnabled) return Stream.<EntityEvent>empty();
+
+    // TODO
+    /*Path pkgDir = storeDirectory.getParent().resolve("pkgs");
+    try {
+      de.ii.xtraplatform.store.app.xpk.XpkReader xpkReader = new de.ii.xtraplatform.store.app.xpk.XpkReader();
+      xpkReader.readPackages(pkgDir, (path, payload) -> LOGGER.error("PKG ENTRY {}", path));
+    } catch (Throwable e) {
+      // ignore
+      LOGGER.error("", e);
+    }*/
 
     try {
       return Stream.concat(
@@ -347,10 +347,9 @@ public class EventStoreDriverFs implements EventStoreDriver {
   }
 
   private Path getStoreDirectory(Path dataDir, StoreConfiguration storeConfiguration) {
-    Path storeLocation = Paths.get(storeConfiguration.location);
+    Path storeLocation = Paths.get(storeConfiguration.getLocation());
     if (storeLocation.isAbsolute()) {
-      if (storeConfiguration.mode == StoreConfiguration.StoreMode.READ_WRITE
-          && !storeLocation.startsWith(dataDir)) {
+      if (storeConfiguration.isReadWrite() && !storeLocation.startsWith(dataDir)) {
         // not allowed?
         throw new IllegalStateException(
             String.format(
@@ -366,11 +365,10 @@ public class EventStoreDriverFs implements EventStoreDriver {
   private List<Path> getAdditionalDirectories(Path dataDir, StoreConfiguration storeConfiguration) {
     ImmutableList.Builder<Path> additionalDirectories = new ImmutableList.Builder<>();
 
-    for (String additionalLocation : storeConfiguration.additionalLocations) {
+    for (String additionalLocation : storeConfiguration.getAdditionalLocations()) {
       Path storeLocation = Paths.get(additionalLocation);
       if (storeLocation.isAbsolute()) {
-        if (storeConfiguration.mode == StoreConfiguration.StoreMode.READ_WRITE
-            && !storeLocation.startsWith(dataDir)) {
+        if (storeConfiguration.isReadWrite() && !storeLocation.startsWith(dataDir)) {
           // not allowed?
           throw new IllegalStateException(
               String.format(

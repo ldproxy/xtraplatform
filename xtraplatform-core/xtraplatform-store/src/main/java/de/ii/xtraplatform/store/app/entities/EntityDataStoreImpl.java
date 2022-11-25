@@ -96,10 +96,10 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.additionalEvents = new ConcurrentLinkedQueue<>();
     this.valueEncoding =
         new ValueEncodingJackson<>(
-            jackson, appContext.getConfiguration().store.failOnUnknownProperties);
+            jackson, appContext.getConfiguration().store.isFailOnUnknownProperties());
     this.valueEncodingMap =
         new ValueEncodingJackson<>(
-            jackson, appContext.getConfiguration().store.failOnUnknownProperties);
+            jackson, appContext.getConfiguration().store.isFailOnUnknownProperties());
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
@@ -183,13 +183,10 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       return ImmutableList.of(event);
     }
 
-    EntityDataOverridesPath overridesPath = EntityDataOverridesPath.from(event.identifier());
+    EntityDataOverridesPath overridesPath =
+        EntityDataOverridesPath.from(event.identifier(), entityFactories.getTypes());
 
-    Identifier cacheKey =
-        ImmutableIdentifier.builder()
-            .addPath(overridesPath.getEntityType())
-            .id(overridesPath.getEntityId())
-            .build();
+    Identifier cacheKey = overridesPath.asIdentifier();
 
     // override without matching entity
     if (!eventSourcing.isInCache(cacheKey)) {
