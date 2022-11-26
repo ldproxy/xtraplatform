@@ -45,4 +45,11 @@ public interface EntityEvent extends TypedEvent, Comparable<EntityEvent> {
   default String asPath() {
     return String.format("%s/%s.%s", type(), identifier().asPath(), format());
   }
+
+  @JsonIgnore
+  @Value.Derived
+  @Value.Auxiliary
+  default String asPathNoType() {
+    return String.format("%s.%s", identifier().asPath(), format());
+  }
 }

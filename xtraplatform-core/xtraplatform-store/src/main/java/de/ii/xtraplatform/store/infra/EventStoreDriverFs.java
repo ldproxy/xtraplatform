@@ -18,29 +18,30 @@ import com.google.common.collect.ImmutableList;
 import com.sun.nio.file.SensitivityWatchEventModifier;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.LogContext;
-import de.ii.xtraplatform.base.domain.StoreConfiguration;
-import de.ii.xtraplatform.store.app.EventPaths;
+import de.ii.xtraplatform.base.domain.StoreSource;
+import de.ii.xtraplatform.base.domain.StoreSource.Type;
+import de.ii.xtraplatform.store.app.EventSource;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.Identifier;
+import de.ii.xtraplatform.store.domain.Store;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,155 +52,106 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class EventStoreDriverFs implements EventStoreDriver {
+public class EventStoreDriverFs
+    implements EventStoreDriver, EventStoreDriver.Watch, EventStoreDriver.Write {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverFs.class);
-  private static final String STORE_DIR_LEGACY = "config-store";
+  private static final String TYPE = "FS";
 
-  private final Path storeDirectory;
-  private final List<Path> additionalDirectories;
-  private final EventPaths eventPaths;
-  private final List<EventPaths> additionalEventPaths;
+  private final List<EventSource> sources;
+  private final Optional<EventSource> writableSource;
+  private final Path dataDirectory;
   private final boolean isEnabled;
-  private final boolean isReadOnly;
 
   @Inject
-  EventStoreDriverFs(AppContext appContext) {
-    this(appContext.getDataDir(), appContext.getConfiguration().store);
+  EventStoreDriverFs(AppContext appContext, Store storeSources) {
+    this(appContext.getDataDir(), storeSources);
   }
 
-  public EventStoreDriverFs(Path dataDirectory, StoreConfiguration storeConfiguration) {
-    this.storeDirectory = getStoreDirectory(dataDirectory, storeConfiguration);
-    this.eventPaths = new EventPaths(storeDirectory, this::adjustPathPattern);
-    this.isEnabled = true; // TODO: storeConfiguration.driver = StoreDriver.FS
-    this.isReadOnly = storeConfiguration.isReadOnly();
-
-    this.additionalDirectories = getAdditionalDirectories(dataDirectory, storeConfiguration);
-    this.additionalEventPaths =
-        additionalDirectories.stream()
-            .map(
-                additionalDirectory -> new EventPaths(additionalDirectory, this::adjustPathPattern))
-            .collect(Collectors.toList());
+  public EventStoreDriverFs(Path dataDirectory, Store storeSources) {
+    this.dataDirectory = dataDirectory;
+    this.sources = storeSources.get(Type.FS, this::from);
+    this.writableSource = storeSources.getWritable(Type.FS, this::from);
+    this.isEnabled = !sources.isEmpty();
   }
 
-  private String adjustPathPattern(String pattern) {
-    return pattern.replaceAll("\\/", "\\" + FileSystems.getDefault().getSeparator());
+  @Override
+  public String getType() {
+    return TYPE;
   }
 
   @Override
   public void start() {
     if (!isEnabled) return;
 
-    if (!Files.exists(storeDirectory) && isReadOnly) {
-      throw new IllegalArgumentException(
-          "Store path does not exist and cannot be created because store is read-only");
-    }
-
-    LOGGER.info("Store location: {}", storeDirectory.toAbsolutePath());
-
-    if (!additionalEventPaths.isEmpty()) {
-      LOGGER.info(
-          "Additional store locations: {}",
-          additionalEventPaths.stream()
-              .map(EventPaths::getRootPath)
-              .map(Path::toAbsolutePath)
-              .collect(Collectors.toList()));
-    }
-
-    try {
-      boolean usingNewStore =
-          Files.isDirectory(storeDirectory) && Files.list(storeDirectory).findFirst().isPresent();
-      Files.createDirectories(storeDirectory);
-
-      Path legacyStoreDirectory = storeDirectory.getParent().resolve(STORE_DIR_LEGACY);
-      boolean usingLegacyStore =
-          Files.isDirectory(legacyStoreDirectory)
-              && Files.list(legacyStoreDirectory).findFirst().isPresent();
-
-      if (usingLegacyStore) {
-        if (usingNewStore) {
-          LOGGER.warn(
-              "Found non-empty stores in '{}' and '{}'. Please merge manually and remove '{}'.",
-              legacyStoreDirectory.toAbsolutePath(),
-              storeDirectory.toAbsolutePath(),
-              legacyStoreDirectory.toAbsolutePath());
-        } else {
-          migrateStore(legacyStoreDirectory);
-        }
+    for (EventSource source : sources) {
+      if (!Files.exists(source.getRootPath()) && !source.getRootPath().startsWith(dataDirectory)) {
+        LOGGER.warn("Store source {} not found.", source.getSource().getShortLabel());
       }
-    } catch (IOException e) {
-
     }
   }
 
   @Override
   public Stream<EntityEvent> loadEventStream() {
-    if (!isEnabled) return Stream.<EntityEvent>empty();
+    if (!isEnabled) return Stream.empty();
 
-    // TODO
-    /*Path pkgDir = storeDirectory.getParent().resolve("pkgs");
-    try {
-      de.ii.xtraplatform.store.app.xpk.XpkReader xpkReader = new de.ii.xtraplatform.store.app.xpk.XpkReader();
-      xpkReader.readPackages(pkgDir, (path, payload) -> LOGGER.error("PKG ENTRY {}", path));
-    } catch (Throwable e) {
-      // ignore
-      LOGGER.error("", e);
-    }*/
-
-    try {
-      return Stream.concat(
-          eventPaths
-              .getPathPatternStream()
-              .flatMap(
-                  pathPattern ->
-                      loadPathStream(storeDirectory)
-                          .map(
-                              path ->
-                                  eventPaths.pathToEvent(
-                                      pathPattern, path, this::readPayload, false))
-                          .filter(Objects::nonNull))
-              .sorted(Comparator.naturalOrder()),
-          additionalEventPaths.stream()
-              .filter(additionalEventPath -> Files.exists(additionalEventPath.getRootPath()))
-              .flatMap(
-                  additionalEventPath ->
-                      additionalEventPath
-                          .getPathPatternStream()
-                          .flatMap(
-                              pathPattern ->
-                                  loadPathStream(additionalEventPath.getRootPath())
-                                      .map(
-                                          path ->
-                                              additionalEventPath.pathToEvent(
-                                                  pathPattern, path, this::readPayload, true))
-                                      .filter(Objects::nonNull))
-                          .sorted(Comparator.naturalOrder())));
-
-    } catch (Throwable e) {
-      LogContext.error(LOGGER, e, "Reading events from '{}' failed", storeDirectory);
-    }
-
-    return Stream.empty();
+    return sources.stream()
+        .filter(pathParser -> Files.exists(pathParser.getRootPath()))
+        .flatMap(
+            pathParser ->
+                pathParser
+                    .getPathPatternStream()
+                    .flatMap(
+                        pathPattern -> {
+                          try {
+                            return loadPathStream(pathParser.getRootPath())
+                                .map(
+                                    path ->
+                                        pathParser.pathToEvent(
+                                            pathPattern, path, this::readPayload))
+                                .filter(Objects::nonNull);
+                          } catch (Throwable e) {
+                            LogContext.error(
+                                LOGGER,
+                                e,
+                                "Loading {} failed.",
+                                pathParser.getSource().getShortLabel());
+                          }
+                          return Stream.empty();
+                        })
+                    .sorted(Comparator.naturalOrder())); // );
   }
 
   @Override
-  public boolean supportsWatch() {
+  public boolean canWatch() {
     return true;
   }
 
   // TODO: stopWatching, move watchService to class, watch new directories, file extension filter
   @Override
-  public void startWatching(Consumer<List<Path>> watchEventConsumer) {
+  public void start(Consumer<List<Path>> watchEventConsumer) {
     if (!isEnabled) return;
+
+    List<EventSource> watchSources =
+        sources.stream()
+            .filter(source -> source.getSource().isWatchable())
+            .filter(source -> Files.isDirectory(source.getRootPath()))
+            .collect(Collectors.toList());
 
     try {
       WatchService watchService = FileSystems.getDefault().newWatchService();
       final Map<WatchKey, List<Path>> keys = new HashMap<>();
 
-      keys.putAll(watchDirectory(watchService, storeDirectory));
+      for (EventSource source : watchSources) {
+        try {
+          keys.putAll(watchDirectory(watchService, source.getRootPath()));
 
-      for (Path additionalDirectory : additionalDirectories) {
-        keys.putAll(watchDirectory(watchService, additionalDirectory));
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Watching source {}.", source.getSource().getShortLabel());
+          }
+        } catch (IOException e) {
+          LogContext.error(LOGGER, e, "Cannot watch source {}", source.getSource().getShortLabel());
+        }
       }
 
       WatchKey key;
@@ -234,7 +186,7 @@ public class EventStoreDriverFs implements EventStoreDriver {
         key.reset();
       }
     } catch (IOException | InterruptedException e) {
-      LogContext.error(LOGGER, e, "Could not watch directory {}", storeDirectory);
+      LogContext.error(LOGGER, e, "Could not watch store.");
     }
   }
 
@@ -279,10 +231,15 @@ public class EventStoreDriverFs implements EventStoreDriver {
   }
 
   @Override
-  public void saveEvent(EntityEvent event) throws IOException {
+  public void push(EntityEvent event) throws IOException {
+    if (writableSource.isEmpty()) {
+      LOGGER.warn("Ignoring write event for '{}', no writable source found.", event.asPath());
+      return;
+    }
+
     // TODO: check mainPath first, if exists use override
     // TODO: if override exists, merge with incoming
-    Path eventPath = eventPaths.getSavePath(event);
+    Path eventPath = writableSource.get().getSavePath(event);
     /*if (Files.exists(eventPath)) {
         eventPath = getEventFilePath(event.type(), event.identifier(), event.format(), savePathPattern);
     }*/
@@ -296,9 +253,13 @@ public class EventStoreDriverFs implements EventStoreDriver {
 
   // TODO: only delete overrides if migration
   @Override
-  public void deleteAllEvents(String type, Identifier identifier, String format)
-      throws IOException {
-    for (Path path : eventPaths.getDeletePaths(type, identifier, format)) {
+  public void deleteAll(String type, Identifier identifier, String format) throws IOException {
+    if (writableSource.isEmpty()) {
+      LOGGER.warn("Ignoring delete event for '{}', no writable source found.", identifier.asPath());
+      return;
+    }
+
+    for (Path path : writableSource.get().getDeletePaths(type, identifier, format)) {
       deleteEvent(path);
     }
   }
@@ -346,86 +307,17 @@ public class EventStoreDriverFs implements EventStoreDriver {
                 }));
   }
 
-  private Path getStoreDirectory(Path dataDir, StoreConfiguration storeConfiguration) {
-    Path storeLocation = Paths.get(storeConfiguration.getLocation());
-    if (storeLocation.isAbsolute()) {
-      if (storeConfiguration.isReadWrite() && !storeLocation.startsWith(dataDir)) {
-        // not allowed?
-        throw new IllegalStateException(
-            String.format(
-                "Invalid store location (%s). READ_WRITE stores must reside inside the data directory (%s).",
-                storeLocation, dataDir));
-      }
-      return storeLocation;
-    }
-
-    return dataDir.resolve(storeLocation);
+  private EventSource from(StoreSource source) {
+    return new EventSource(
+        getRootDirectory(dataDirectory, source), source, this::adjustPathPattern);
   }
 
-  private List<Path> getAdditionalDirectories(Path dataDir, StoreConfiguration storeConfiguration) {
-    ImmutableList.Builder<Path> additionalDirectories = new ImmutableList.Builder<>();
-
-    for (String additionalLocation : storeConfiguration.getAdditionalLocations()) {
-      Path storeLocation = Paths.get(additionalLocation);
-      if (storeLocation.isAbsolute()) {
-        if (storeConfiguration.isReadWrite() && !storeLocation.startsWith(dataDir)) {
-          // not allowed?
-          throw new IllegalStateException(
-              String.format(
-                  "Invalid store location (%s). READ_WRITE stores must reside inside the data directory (%s).",
-                  storeLocation, dataDir));
-        }
-        additionalDirectories.add(storeLocation);
-      } else {
-        additionalDirectories.add(dataDir.resolve(storeLocation));
-      }
-    }
-
-    return additionalDirectories.build();
+  private String adjustPathPattern(String pattern) {
+    return pattern.replaceAll("\\/", "\\" + FileSystems.getDefault().getSeparator());
   }
 
-  private void migrateStore(Path legacyStoreDirectory) {
-    try {
-      List<Path> directoriesToDelete = new ArrayList<>();
-
-      Files.walk(legacyStoreDirectory)
-          .forEach(
-              fileOrDirectory -> {
-                try {
-                  Path newFileOrDirectory =
-                      storeDirectory.resolve(legacyStoreDirectory.relativize(fileOrDirectory));
-                  if (Files.isDirectory(fileOrDirectory)) {
-                    if (Files.list(fileOrDirectory).findFirst().isPresent()) {
-                      LOGGER.debug("Creating directory {}", newFileOrDirectory);
-                      Files.createDirectories(newFileOrDirectory);
-                    }
-                    directoriesToDelete.add(0, fileOrDirectory);
-                  } else {
-                    LOGGER.debug("Copying File {}", newFileOrDirectory);
-                    Files.copy(
-                        fileOrDirectory, newFileOrDirectory); // use flag to override existing
-                    Files.delete(fileOrDirectory);
-                  }
-                } catch (Exception e) {
-                  throw new IllegalStateException(e.getMessage());
-                }
-              });
-
-      for (Path path : directoriesToDelete) {
-        Files.delete(path);
-      }
-
-      LOGGER.info(
-          "Migrated store from '{}' to '{}'",
-          legacyStoreDirectory.toAbsolutePath(),
-          storeDirectory.toAbsolutePath());
-    } catch (Throwable e) {
-      LogContext.error(
-          LOGGER,
-          e,
-          "Error migrating store from '{}' to '{}': {}",
-          legacyStoreDirectory.toAbsolutePath(),
-          storeDirectory.toAbsolutePath());
-    }
+  private static Path getRootDirectory(Path dataDir, StoreSource storeSource) {
+    Path src = Path.of(storeSource.getSrc());
+    return src.isAbsolute() ? src : dataDir.resolve(src);
   }
 }

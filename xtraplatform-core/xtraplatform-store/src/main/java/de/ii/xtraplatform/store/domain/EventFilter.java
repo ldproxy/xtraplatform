@@ -26,24 +26,21 @@ public interface EventFilter {
 
     if (!getEntityTypes().contains("*")) {
       if (identifier.path().isEmpty() || !containsEntityType(identifier.path())) {
-        if ((!Objects.equals(event.type(), "defaults")
-            || !getEntityTypes().contains(identifier.id()))) {
+        if ((!isDefault(event) || !getEntityTypes().contains(identifier.id()))) {
           return false;
         }
       }
     }
 
-    // TODO
-    if (!getIds().isEmpty() && !Objects.equals(event.type(), "defaults")) {
-      String id =
-          identifier.path().size() - 1 == indexOfEntityType(identifier.path())
-              ? identifier.path().get(identifier.path().size() - 1)
-              : identifier.id();
-
-      return getIds().contains(id) || getIds().contains("*");
+    if (!getIds().isEmpty() && !isDefault(event)) {
+      return getIds().contains(identifier.id()) || getIds().contains("*");
     }
 
     return true;
+  }
+
+  default boolean isDefault(EntityEvent event) {
+    return Objects.equals(event.type(), "defaults");
   }
 
   default boolean containsEntityType(List<String> path) {

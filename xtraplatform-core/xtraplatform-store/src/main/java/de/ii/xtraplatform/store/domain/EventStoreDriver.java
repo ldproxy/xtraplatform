@@ -15,19 +15,41 @@ import java.util.stream.Stream;
 
 public interface EventStoreDriver {
 
+  interface Write {
+    void push(EntityEvent event) throws IOException;
+
+    void deleteAll(String type, Identifier identifier, String format) throws IOException;
+  }
+
+  interface Watch {
+    void start(Consumer<List<Path>> watchEventConsumer);
+  }
+
+  String getType();
+
   void start();
 
   Stream<EntityEvent> loadEventStream();
 
-  void saveEvent(EntityEvent event) throws IOException;
-
-  void deleteAllEvents(String type, Identifier identifier, String format) throws IOException;
-
-  default boolean supportsWatch() {
-    return false;
+  default boolean canWrite() {
+    return this instanceof Write;
   }
 
-  default void startWatching(Consumer<List<Path>> watchEventConsumer) {
-    throw new UnsupportedOperationException();
+  default Write write() {
+    if (!canWrite()) {
+      throw new UnsupportedOperationException("Write not supported");
+    }
+    return (Write) this;
+  }
+
+  default boolean canWatch() {
+    return this instanceof Watch;
+  }
+
+  default Watch watch() {
+    if (!canWatch()) {
+      throw new UnsupportedOperationException("Watch not supported");
+    }
+    return (Watch) this;
   }
 }

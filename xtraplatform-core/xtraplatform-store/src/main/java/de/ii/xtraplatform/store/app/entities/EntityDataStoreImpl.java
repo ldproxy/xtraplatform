@@ -171,11 +171,11 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       return ImmutableList.of();
     }
 
-    if (Objects.nonNull(event.additionalLocation()) && event.type().equals(EVENT_TYPES.get(0))) {
+    if (event.type().equals(EVENT_TYPES.get(0)) && eventSourcing.isInCache(event.identifier())) {
       LOGGER.warn(
-          "Ignoring entity '{}' in '{}', entities are not allowed in additionalLocations",
-          event.asPath(),
-          event.additionalLocation());
+          "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single source, use overrides to update it from another source.",
+          event.asPathNoType(),
+          event.source().orElse("UNKNOWN"));
       return ImmutableList.of();
     }
 

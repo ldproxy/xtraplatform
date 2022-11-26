@@ -11,6 +11,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
@@ -29,9 +30,9 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EventPaths {
+public class EventSource {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(EventPaths.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(EventSource.class);
 
   private static final String KEY_PATTERN = "{type}/{path:**}/{id}";
   private static final Pattern PATH_PATTERN =
@@ -43,11 +44,14 @@ public class EventPaths {
   private static final String FORMAT_GROUP = "format";
 
   private final Path rootPath;
+
+  private final StoreSource source;
   private final Pattern mainPathPatternRead;
   private final String mainPathPatternWrite;
 
-  public EventPaths(Path rootPath, Function<String, String> pathAdjuster) {
+  public EventSource(Path rootPath, StoreSource source, Function<String, String> pathAdjuster) {
     this.rootPath = rootPath;
+    this.source = source;
     this.mainPathPatternRead = pathToPattern(KEY_PATTERN, pathAdjuster);
     this.mainPathPatternWrite =
         KEY_PATTERN.replace("{type}", "%s").replace("{path:**}", "%s").replace("{id}", "%s");
@@ -55,6 +59,10 @@ public class EventPaths {
 
   public Path getRootPath() {
     return rootPath;
+  }
+
+  public StoreSource getSource() {
+    return source;
   }
 
   public Path getSavePath(EntityEvent event) {
@@ -75,7 +83,7 @@ public class EventPaths {
   }
 
   public EntityEvent pathToEvent(
-      Pattern pathPattern, Path path, Function<Path, byte[]> readPayload, boolean isAdditional) {
+      Pattern pathPattern, Path path, Function<Path, byte[]> readPayload) {
     int parentCount = rootPath.getNameCount();
     Matcher pathMatcher =
         pathPattern.matcher(path.subpath(parentCount, path.getNameCount()).toString());
@@ -108,7 +116,7 @@ public class EventPaths {
             .identifier(ImmutableIdentifier.builder().id(eventId).path(eventPathSegments).build())
             .payload(bytes)
             .format(eventPayloadFormat.orElse(null))
-            .additionalLocation(isAdditional ? rootPath.toString() : null)
+            .source(source.getShortLabel())
             .build();
       }
     }

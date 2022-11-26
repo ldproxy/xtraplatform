@@ -9,6 +9,8 @@ package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.docs.DocFile;
 import de.ii.xtraplatform.docs.DocStep;
 import de.ii.xtraplatform.docs.DocStep.Step;
@@ -16,6 +18,7 @@ import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 /**
@@ -303,6 +306,9 @@ import org.immutables.value.Value;
 @JsonDeserialize(builder = ImmutableStoreConfiguration.Builder.class)
 public interface StoreConfiguration {
 
+  String DEFAULT_LOCATION = "store";
+  String MAIN_REF = "main";
+
   enum StoreMode {
     READ_WRITE,
     READ_ONLY,
@@ -321,9 +327,10 @@ public interface StoreConfiguration {
   }
 
   // TODO: test merging
+  @Deprecated(since = "3.3")
   @Value.Default
   default String getLocation() {
-    return "store";
+    return DEFAULT_LOCATION;
   }
 
   /**
@@ -331,6 +338,7 @@ public interface StoreConfiguration {
    * @langDe Liste von Pfaden mit [zusätzlichen Verzeichnissnen](#additional-locations).
    * @default `[]`
    */
+  @Deprecated(since = "3.3")
   List<String> getAdditionalLocations();
 
   @Value.Default
@@ -343,6 +351,8 @@ public interface StoreConfiguration {
   default boolean isFailOnUnknownProperties() {
     return false;
   }
+
+  List<StoreSource> getSources();
 
   Optional<StoreFilters> getFilter();
 
@@ -362,5 +372,34 @@ public interface StoreConfiguration {
   @Value.Derived
   default boolean isFiltered() {
     return getFilter().isPresent();
+  }
+
+  @Deprecated(since = "3.3")
+  @Value.Check
+  default StoreConfiguration backwardsCompatibility() {
+    if (getSources().isEmpty()) {
+      return new ImmutableStoreConfiguration.Builder()
+          .from(this)
+          .addSources(
+              new ImmutableStoreSource.Builder()
+                  .type(Type.FS)
+                  .content(Content.ALL)
+                  .src(getLocation())
+                  .id(MAIN_REF)
+                  .build())
+          .addAllSources(
+              getAdditionalLocations().stream()
+                  .map(
+                      location ->
+                          new ImmutableStoreSource.Builder()
+                              .type(Type.FS)
+                              .content(Content.ALL)
+                              .src(location)
+                              .build())
+                  .collect(Collectors.toList()))
+          .build();
+    }
+
+    return this;
   }
 }

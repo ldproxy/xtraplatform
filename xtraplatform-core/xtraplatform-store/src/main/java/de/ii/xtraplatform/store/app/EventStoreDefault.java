@@ -68,46 +68,48 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
 
   @Override
   public int getPriority() {
-    // start first
-    return 1;
+    return 20;
   }
 
   @Override
   public void onStart() {
-    LOGGER.info("Store mode: {}", storeConfiguration.getMode());
-
     EventFilter startupFilter = getStartupFilter();
-
-    if (storeConfiguration.isFiltered()) {
-      LOGGER.info("Store filter: {}", startupFilter);
-    }
 
     driver.start();
 
     driver
         .loadEventStream()
-        // TODO: trace
         .peek(
-            event ->
-                LOGGER.debug(
-                    "{} {}", startupFilter.matches(event) ? "Loading" : "Skipping", event.asPath()))
+            event -> {
+              if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(
+                    "{} {}", startupFilter.matches(event) ? "Loading" : "Skipping", event.asPath());
+              }
+            })
         .filter(startupFilter::matches)
         .forEach(subscriptions::emitEvent);
 
     // replay done
     subscriptions.startListening();
 
-    if (storeConfiguration.isWatch() && driver.supportsWatch()) {
+    if (storeConfiguration.isWatch() && driver.canWatch()) {
       LOGGER.info("Watching store for changes");
+      // TODO: executor
       new Thread(
               () ->
-                  driver.startWatching(
-                      changedFiles -> {
-                        LOGGER.info("Store changes detected: {}", changedFiles);
-                        EventFilter replayFilter = EventFilter.fromPaths(changedFiles);
-                        // LOGGER.debug("FILTER {}", filter);
-                        replay(replayFilter);
-                      }))
+                  driver
+                      .watch()
+                      .start(
+                          changedFiles -> {
+                            LOGGER.info("Store changes detected: {}", changedFiles);
+                            EventFilter replayFilter = EventFilter.fromPaths(changedFiles);
+
+                            if (LOGGER.isTraceEnabled()) {
+                              LOGGER.trace("Replay filter {}", replayFilter);
+                            }
+
+                            replay(replayFilter);
+                          }))
           .start();
     }
   }
@@ -121,14 +123,20 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
   public void push(EntityEvent event) {
     if (isReadOnly) {
       throw new UnsupportedOperationException(
-          "Operating in read-only mode, writes are not allowed.");
+          "Store is operating in read-only mode, write operations are not allowed.");
+    }
+    if (!driver.canWrite()) {
+      throw new UnsupportedOperationException(
+          String.format(
+              "Store driver %s is read-only, write operations are not supported.",
+              driver.getType()));
     }
 
     try {
       if (Objects.equals(event.deleted(), true)) {
-        driver.deleteAllEvents(event.type(), event.identifier(), event.format());
+        driver.write().deleteAll(event.type(), event.identifier(), event.format());
       } else {
-        driver.saveEvent(event);
+        driver.write().push(event);
       }
     } catch (IOException e) {
       throw new IllegalStateException("Could not save event", e);

@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
 import org.immutables.value.Value;
@@ -18,4 +19,13 @@ public interface StoreFilters {
   List<String> getEntityTypes();
 
   List<String> getEntityIds();
+
+  @JsonIgnore
+  @Value.Derived
+  default String getAsLabel() {
+    return String.format(
+        "entityTypes=[%s], entityIds=[%s]",
+        getEntityTypes().isEmpty() ? "*" : String.join(", ", getEntityTypes()),
+        getEntityIds().isEmpty() ? "*" : String.join(", ", getEntityIds()));
+  }
 }
