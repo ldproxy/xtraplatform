@@ -19,12 +19,14 @@ import com.sun.nio.file.SensitivityWatchEventModifier;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
+import de.ii.xtraplatform.base.domain.StoreSource.Mode;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.store.app.EventSource;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
+import de.ii.xtraplatform.store.domain.EventStoreDriver.Watcher;
+import de.ii.xtraplatform.store.domain.EventStoreDriver.Writer;
 import de.ii.xtraplatform.store.domain.Identifier;
-import de.ii.xtraplatform.store.domain.Store;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -41,7 +43,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,106 +53,85 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class EventStoreDriverFs
-    implements EventStoreDriver, EventStoreDriver.Watch, EventStoreDriver.Write {
+public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverFs.class);
-  private static final String TYPE = "FS";
 
-  private final List<EventSource> sources;
-  private final Optional<EventSource> writableSource;
   private final Path dataDirectory;
-  private final boolean isEnabled;
 
   @Inject
-  EventStoreDriverFs(AppContext appContext, Store storeSources) {
-    this(appContext.getDataDir(), storeSources);
+  EventStoreDriverFs(AppContext appContext) {
+    this(appContext.getDataDir());
   }
 
-  public EventStoreDriverFs(Path dataDirectory, Store storeSources) {
+  public EventStoreDriverFs(Path dataDirectory) {
     this.dataDirectory = dataDirectory;
-    this.sources = storeSources.get(Type.FS, this::from);
-    this.writableSource = storeSources.getWritable(Type.FS, this::from);
-    this.isEnabled = !sources.isEmpty();
   }
 
   @Override
-  public String getType() {
-    return TYPE;
+  public Type getType() {
+    return Type.FS;
   }
 
   @Override
-  public void start() {
-    if (!isEnabled) return;
+  public boolean isAvailable(StoreSource storeSource) {
+    EventSource source = from(storeSource);
 
-    for (EventSource source : sources) {
-      if (!Files.exists(source.getRootPath()) && !source.getRootPath().startsWith(dataDirectory)) {
-        LOGGER.warn("Store source {} not found.", source.getSource().getShortLabel());
-      }
+    return Files.isDirectory(source.getRootPath());
+  }
+
+  @Override
+  public Stream<EntityEvent> load(StoreSource storeSource) {
+    EventSource source = from(storeSource);
+
+    if (!Files.exists(source.getRootPath()) && !source.getRootPath().startsWith(dataDirectory)) {
+      LOGGER.warn("Store source {} not found.", source.getSource().getShortLabel());
+      return Stream.empty();
     }
-  }
+    if (!Files.isDirectory(source.getRootPath())) {
+      LOGGER.warn("Store source {} is not a directory.", source.getSource().getShortLabel());
+      return Stream.empty();
+    }
 
-  @Override
-  public Stream<EntityEvent> loadEventStream() {
-    if (!isEnabled) return Stream.empty();
-
-    return sources.stream()
-        .filter(pathParser -> Files.exists(pathParser.getRootPath()))
+    return source
+        .getPathPatternStream()
         .flatMap(
-            pathParser ->
-                pathParser
-                    .getPathPatternStream()
-                    .flatMap(
-                        pathPattern -> {
-                          try {
-                            return loadPathStream(pathParser.getRootPath())
-                                .map(
-                                    path ->
-                                        pathParser.pathToEvent(
-                                            pathPattern, path, this::readPayload))
-                                .filter(Objects::nonNull);
-                          } catch (Throwable e) {
-                            LogContext.error(
-                                LOGGER,
-                                e,
-                                "Loading {} failed.",
-                                pathParser.getSource().getShortLabel());
-                          }
-                          return Stream.empty();
-                        })
-                    .sorted(Comparator.naturalOrder())); // );
-  }
-
-  @Override
-  public boolean canWatch() {
-    return true;
+            pathPattern -> {
+              try {
+                return loadPathStream(source.getRootPath())
+                    .map(path -> source.pathToEvent(pathPattern, path, this::readPayload))
+                    .filter(Objects::nonNull);
+              } catch (Throwable e) {
+                LogContext.error(
+                    LOGGER, e, "Loading {} failed.", source.getSource().getShortLabel());
+              }
+              return Stream.empty();
+            })
+        .sorted(Comparator.naturalOrder());
   }
 
   // TODO: stopWatching, move watchService to class, watch new directories, file extension filter
   @Override
-  public void start(Consumer<List<Path>> watchEventConsumer) {
-    if (!isEnabled) return;
+  public void listen(StoreSource storeSource, Consumer<List<Path>> watchEventConsumer) {
+    EventSource source = from(storeSource);
 
-    List<EventSource> watchSources =
-        sources.stream()
-            .filter(source -> source.getSource().isWatchable())
-            .filter(source -> Files.isDirectory(source.getRootPath()))
-            .collect(Collectors.toList());
+    if (!source.getSource().isWatchable()) {
+      LOGGER.warn("Watching is disabled for source {}.", source.getSource().getShortLabel());
+      return;
+    }
 
     try {
       WatchService watchService = FileSystems.getDefault().newWatchService();
       final Map<WatchKey, List<Path>> keys = new HashMap<>();
 
-      for (EventSource source : watchSources) {
-        try {
-          keys.putAll(watchDirectory(watchService, source.getRootPath()));
+      try {
+        keys.putAll(watchDirectory(watchService, source.getRootPath()));
 
-          if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Watching source {}.", source.getSource().getShortLabel());
-          }
-        } catch (IOException e) {
-          LogContext.error(LOGGER, e, "Cannot watch source {}", source.getSource().getShortLabel());
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Watching source {}.", source.getSource().getShortLabel());
         }
+      } catch (IOException e) {
+        LogContext.error(LOGGER, e, "Cannot watch source {}", source.getSource().getShortLabel());
       }
 
       WatchKey key;
@@ -231,15 +211,17 @@ public class EventStoreDriverFs
   }
 
   @Override
-  public void push(EntityEvent event) throws IOException {
-    if (writableSource.isEmpty()) {
-      LOGGER.warn("Ignoring write event for '{}', no writable source found.", event.asPath());
+  public void push(StoreSource storeSource, EntityEvent event) throws IOException {
+    EventSource source = from(storeSource);
+
+    if (source.getSource().getMode() == Mode.RO) {
+      LOGGER.warn("Writing is disabled for source {}.", source.getSource().getShortLabel());
       return;
     }
 
     // TODO: check mainPath first, if exists use override
     // TODO: if override exists, merge with incoming
-    Path eventPath = writableSource.get().getSavePath(event);
+    Path eventPath = source.getSavePath(event);
     /*if (Files.exists(eventPath)) {
         eventPath = getEventFilePath(event.type(), event.identifier(), event.format(), savePathPattern);
     }*/
@@ -253,13 +235,16 @@ public class EventStoreDriverFs
 
   // TODO: only delete overrides if migration
   @Override
-  public void deleteAll(String type, Identifier identifier, String format) throws IOException {
-    if (writableSource.isEmpty()) {
-      LOGGER.warn("Ignoring delete event for '{}', no writable source found.", identifier.asPath());
+  public void deleteAll(StoreSource storeSource, String type, Identifier identifier, String format)
+      throws IOException {
+    EventSource source = from(storeSource);
+
+    if (source.getSource().getMode() == Mode.RO) {
+      LOGGER.warn("Writing is disabled for source {}.", source.getSource().getShortLabel());
       return;
     }
 
-    for (Path path : writableSource.get().getDeletePaths(type, identifier, format)) {
+    for (Path path : source.getDeletePaths(type, identifier, format)) {
       deleteEvent(path);
     }
   }

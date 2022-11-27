@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.store.domain;
 
+import de.ii.xtraplatform.base.domain.StoreFilters;
 import de.ii.xtraplatform.base.domain.StoreSource;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +21,8 @@ public interface Store {
 
   List<StoreSource> get(Type type);
 
+  List<StoreSource> get(Content content);
+
   <U> List<U> get(Type type, Function<StoreSource, U> map);
 
   boolean has(Type type);
@@ -26,4 +30,10 @@ public interface Store {
   Optional<StoreSource> getWritable(Type type);
 
   <U> Optional<U> getWritable(Type type, Function<StoreSource, U> map);
+
+  boolean isWritable();
+
+  boolean isWatchable();
+
+  Optional<StoreFilters> getFilter();
 }

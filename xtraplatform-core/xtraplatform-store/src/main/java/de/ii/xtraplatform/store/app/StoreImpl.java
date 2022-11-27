@@ -12,7 +12,9 @@ import com.google.common.collect.Lists;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.StoreConfiguration;
+import de.ii.xtraplatform.base.domain.StoreFilters;
 import de.ii.xtraplatform.base.domain.StoreSource;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Mode;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.store.domain.Store;
@@ -52,6 +54,7 @@ public class StoreImpl implements Store, AppLifeCycle {
     return 10;
   }
 
+  // TODO: sources have to replayed in order, so trigger from here?
   @Override
   public void onStart() {
     LOGGER.info(
@@ -74,6 +77,13 @@ public class StoreImpl implements Store, AppLifeCycle {
   public List<StoreSource> get(Type type) {
     return sources.stream()
         .filter(source -> source.getType() == type)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  @Override
+  public List<StoreSource> get(Content content) {
+    return sources.stream()
+        .filter(source -> source.getContent() == content || source.getContent() == Content.ALL)
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -103,5 +113,20 @@ public class StoreImpl implements Store, AppLifeCycle {
         .filter(source -> source.getType() == type && source.getMode() == Mode.RW)
         .map(map)
         .findFirst();
+  }
+
+  @Override
+  public boolean isWritable() {
+    return storeConfiguration.isReadWrite();
+  }
+
+  @Override
+  public boolean isWatchable() {
+    return storeConfiguration.isWatch();
+  }
+
+  @Override
+  public Optional<StoreFilters> getFilter() {
+    return storeConfiguration.getFilter();
   }
 }

@@ -7,49 +7,55 @@
  */
 package de.ii.xtraplatform.store.domain;
 
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
+import de.ii.xtraplatform.base.domain.StoreSource;
+import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+@AutoMultiBind
 public interface EventStoreDriver {
 
-  interface Write {
-    void push(EntityEvent event) throws IOException;
+  interface Writer {
 
-    void deleteAll(String type, Identifier identifier, String format) throws IOException;
+    void push(StoreSource storeSource, EntityEvent event) throws IOException;
+
+    void deleteAll(StoreSource storeSource, String type, Identifier identifier, String format)
+        throws IOException;
   }
 
-  interface Watch {
-    void start(Consumer<List<Path>> watchEventConsumer);
+  interface Watcher {
+    void listen(StoreSource storeSource, Consumer<List<Path>> watchEventConsumer);
   }
 
-  String getType();
+  Type getType();
 
-  void start();
+  boolean isAvailable(StoreSource storeSource);
 
-  Stream<EntityEvent> loadEventStream();
+  Stream<EntityEvent> load(StoreSource storeSource);
 
   default boolean canWrite() {
-    return this instanceof Write;
+    return this instanceof Writer;
   }
 
-  default Write write() {
+  default Writer writer() {
     if (!canWrite()) {
-      throw new UnsupportedOperationException("Write not supported");
+      throw new UnsupportedOperationException("Writer not supported");
     }
-    return (Write) this;
+    return (Writer) this;
   }
 
   default boolean canWatch() {
-    return this instanceof Watch;
+    return this instanceof Watcher;
   }
 
-  default Watch watch() {
+  default Watcher watcher() {
     if (!canWatch()) {
-      throw new UnsupportedOperationException("Watch not supported");
+      throw new UnsupportedOperationException("Watcher not supported");
     }
-    return (Watch) this;
+    return (Watcher) this;
   }
 }
