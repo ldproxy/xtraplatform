@@ -55,8 +55,7 @@ public interface StoreSource {
     DEFAULTS,
     ENTITIES,
     OVERRIDES,
-    BLOBS,
-    LOCALS;
+    RESOURCES;
 
     public String getPrefix() {
       return Objects.equals(this, ALL) ? "" : this.name().toLowerCase(Locale.ROOT);
@@ -104,6 +103,13 @@ public interface StoreSource {
   }
 
   boolean isWatchable();
+
+  @JsonIgnore
+  @Value.Derived
+  @Value.Auxiliary
+  default boolean isWritable() {
+    return getMode() == Mode.RW;
+  }
 
   @JsonIgnore
   @Value.Derived
