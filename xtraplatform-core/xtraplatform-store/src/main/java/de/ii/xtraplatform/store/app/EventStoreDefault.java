@@ -162,7 +162,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                 d -> {
                   if (!d.isAvailable(storeSource)) {
                     if (warn) {
-                      LOGGER.warn("Store source {} not found.", storeSource.getShortLabel());
+                      LOGGER.warn("Store source {} not found.", storeSource.getLabel());
                     }
                     foundUnavailable[0] = true;
                     return false;
@@ -172,7 +172,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
             .findFirst();
 
     if (driver.isEmpty() && !foundUnavailable[0]) {
-      LOGGER.error("No driver found for source {}.", storeSource.getShortLabel());
+      LOGGER.error("No driver found for source {}.", storeSource.getLabel());
     }
 
     return driver;
@@ -206,7 +206,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
       LOGGER.warn(
           "Ignoring write event for '{}', no driver found for source {}.",
           event.asPath(),
-          writableSource.get().getShortLabel());
+          writableSource.get().getLabel());
       return;
     }
     if (!driver.get().canWrite()) {

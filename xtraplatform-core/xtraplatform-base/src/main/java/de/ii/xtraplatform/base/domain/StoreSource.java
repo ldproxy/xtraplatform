@@ -8,20 +8,46 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.nio.file.Path;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import de.ii.xtraplatform.base.domain.StoreSource.Type;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import org.immutables.value.Value;
 
-@Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSource.Builder.class)
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY,
+    property = StoreSource.TYPE_PROP,
+    visible = true)
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = StoreSourceFs.class, name = Type.FS_KEY),
+  @JsonSubTypes.Type(value = StoreSourceBuiltin.class, name = StoreSourceBuiltin.KEY)
+})
 public interface StoreSource {
 
+  String TYPE_PROP = "type";
+  String MODE_PROP = "mode";
+  String ZIP_SUFFIX = ".zip";
+
   enum Type {
-    FS,
-    ZIP,
-    GIT,
-    REF
+    FS(Type.FS_KEY),
+    REF(Type.REF_KEY);
+
+    public static final String FS_KEY = "FS";
+    public static final String REF_KEY = "REF";
+
+    private final String key;
+
+    Type(String key) {
+      this.key = key;
+    }
+
+    public String key() {
+      return key;
+    }
   }
 
   enum Content {
@@ -30,7 +56,11 @@ public interface StoreSource {
     ENTITIES,
     OVERRIDES,
     BLOBS,
-    LOCALS
+    LOCALS;
+
+    public String getPrefix() {
+      return Objects.equals(this, ALL) ? "" : this.name().toLowerCase(Locale.ROOT);
+    }
   }
 
   enum Mode {
@@ -38,45 +68,61 @@ public interface StoreSource {
     RW,
   }
 
-  Type getType();
+  @JsonProperty(StoreSource.TYPE_PROP)
+  String getTypeString();
+
+  @JsonIgnore
+  @Value.Derived
+  default Type getType() {
+    return Type.valueOf(getTypeString());
+  }
 
   @Value.Default
   default Content getContent() {
     return Content.ALL;
   }
 
+  @JsonProperty(StoreSource.MODE_PROP)
   @Value.Default
-  default Mode getMode() {
-    return getType() == Type.FS ? Mode.RW : Mode.RO;
+  default Mode getDesiredMode() {
+    return Mode.RO;
   }
 
-  @Value.Default
-  default boolean isWatchable() {
-    return getType() == Type.FS;
+  @JsonIgnore
+  @Value.Derived
+  default Mode getMode() {
+    return isArchive() ? Mode.RO : getDesiredMode();
   }
 
   String getSrc();
 
-  Optional<String> getId();
+  Optional<String> getPrefix();
+
+  @Value.Default
+  default String getArchiveRoot() {
+    return "/";
+  }
+
+  boolean isWatchable();
 
   @JsonIgnore
   @Value.Derived
   @Value.Auxiliary
-  default String getShortLabel() {
-    return String.format("%s(%s)", getType(), getSrc());
+  default boolean isSingleContent() {
+    return getContent() != Content.ALL;
+  }
+
+  @JsonIgnore
+  @Value.Derived
+  @Value.Auxiliary
+  default boolean isArchive() {
+    return getSrc().toLowerCase(Locale.ROOT).endsWith(ZIP_SUFFIX);
   }
 
   @JsonIgnore
   @Value.Derived
   @Value.Auxiliary
   default String getLabel() {
-    return String.format("%s %s [%s] [%s]", getType(), getSrc(), getContent(), getMode());
-  }
-
-  default String getLabel(Path rootDir) {
-    Path src = Path.of(getSrc());
-    return String.format(
-        "%s %s [%s] [%s]",
-        getType(), src.isAbsolute() ? src : rootDir.resolve(src), getContent(), getMode());
+    return String.format("%s(%s)", getType(), getSrc());
   }
 }

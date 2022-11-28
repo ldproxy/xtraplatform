@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.store.app.EventSourcing;
@@ -61,9 +62,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
-@AutoBind(interfaces = {EntityDataDefaultsStore.class})
+@AutoBind(interfaces = {EntityDataDefaultsStore.class, AppLifeCycle.class})
 public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<Map<String, Object>>
-    implements EntityDataDefaultsStore {
+    implements EntityDataDefaultsStore, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityDataDefaultsStoreImpl.class);
 
@@ -91,7 +92,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             eventStore,
             ImmutableList.of(EntityDataDefaultsStore.EVENT_TYPE),
             valueEncoding,
-            this::onStart,
+            this::onListenStart,
             Optional.of(this::processReplayEvent),
             Optional.of(this::processMutationEvent),
             Optional.empty(),
@@ -99,7 +100,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
     valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getDefaults, eventSourcing));
-    eventSourcing.start();
+    // eventSourcing.start();
 
     this.valueEncodingBuilder =
         new ValueEncodingJackson<>(
@@ -154,6 +155,16 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                 return null;
               }
             }));
+  }
+
+  @Override
+  public int getPriority() {
+    return 30;
+  }
+
+  @Override
+  public void onStart() {
+    eventSourcing.start();
   }
 
   private List<ReplayEvent> processReplayEvent(ReplayEvent event) {
@@ -421,7 +432,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
   // TODO: load defaults from EntityFactory that weren't loaded by event
   @Override
-  protected CompletableFuture<Void> onStart() {
+  protected CompletableFuture<Void> onListenStart() {
 
     identifiers()
         .forEach(
@@ -440,7 +451,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
             });
 
-    return super.onStart();
+    return super.onListenStart();
   }
 
   @Override

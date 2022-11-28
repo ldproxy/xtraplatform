@@ -22,7 +22,7 @@ public abstract class AbstractKeyValueStore<T> implements KeyValueStore<T> {
 
   protected abstract EventSourcing<T> getEventSourcing();
 
-  protected CompletableFuture<Void> onStart() {
+  protected CompletableFuture<Void> onListenStart() {
     return CompletableFuture.completedFuture(null);
   }
 

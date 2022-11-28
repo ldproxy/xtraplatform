@@ -15,6 +15,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
@@ -69,9 +70,9 @@ import org.slf4j.MDC;
  * @author zahnen
  */
 @Singleton
-@AutoBind(interfaces = {EntityDataStore.class})
+@AutoBind(interfaces = {EntityDataStore.class, AppLifeCycle.class})
 public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityData>
-    implements EntityDataStore<EntityData> {
+    implements EntityDataStore<EntityData>, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityDataStoreImpl.class);
   private static final List<String> EVENT_TYPES = ImmutableList.of("entities", "overrides");
@@ -105,7 +106,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             eventStore,
             EVENT_TYPES,
             valueEncoding,
-            this::onStart,
+            this::onListenStart,
             Optional.of(this::processEvent),
             Optional.empty(),
             Optional.of(this::onUpdate));
@@ -120,7 +121,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     new ValueDecoderEntityDataMigration(
         eventSourcing, entityFactories, this::addAdditionalEvent));*/
     valueEncoding.addDecoderMiddleware(new ValueDecoderIdValidator());
-    eventSourcing.start();
 
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
@@ -136,6 +136,16 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 return null;
               }
             }));
+  }
+
+  @Override
+  public int getPriority() {
+    return 40;
+  }
+
+  @Override
+  public void onStart() {
+    eventSourcing.start();
   }
 
   @Override
@@ -251,6 +261,9 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   private static String entityType(Identifier identifier) {
+    if (identifier.path().isEmpty()) {
+      throw new IllegalArgumentException("Invalid path, no entity type found.");
+    }
     return identifier.path().get(identifier.path().size() - 1);
   }
 
@@ -280,7 +293,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   @Override
-  protected CompletableFuture<Void> onStart() {
+  protected CompletableFuture<Void> onListenStart() {
     // TODO: getAllPaths
     return playAdditionalEvents()
         .thenCompose(

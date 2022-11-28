@@ -38,7 +38,6 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +57,8 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverFs.class);
 
   private final Path dataDirectory;
+  private final EventReader eventReaderDir;
+  private final EventReader eventReaderZip;
 
   @Inject
   EventStoreDriverFs(AppContext appContext) {
@@ -66,6 +67,8 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
 
   public EventStoreDriverFs(Path dataDirectory) {
     this.dataDirectory = dataDirectory;
+    this.eventReaderDir = new EventReaderDir();
+    this.eventReaderZip = new EventReaderZip();
   }
 
   @Override
@@ -77,37 +80,31 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
   public boolean isAvailable(StoreSource storeSource) {
     EventSource source = from(storeSource);
 
-    return Files.isDirectory(source.getRootPath());
+    return storeSource.isArchive()
+        ? Files.isRegularFile(source.getPath())
+        : Files.isDirectory(source.getPath());
   }
 
   @Override
   public Stream<EntityEvent> load(StoreSource storeSource) {
     EventSource source = from(storeSource);
 
-    if (!Files.exists(source.getRootPath()) && !source.getRootPath().startsWith(dataDirectory)) {
-      LOGGER.warn("Store source {} not found.", source.getSource().getShortLabel());
+    if (!Files.exists(source.getPath()) && !source.getPath().startsWith(dataDirectory)) {
+      LOGGER.warn("Store source {} not found.", source.getSource().getLabel());
       return Stream.empty();
     }
-    if (!Files.isDirectory(source.getRootPath())) {
-      LOGGER.warn("Store source {} is not a directory.", source.getSource().getShortLabel());
+    if (!storeSource.isArchive() && !Files.isDirectory(source.getPath())) {
+      LOGGER.warn("Store source {} is not a directory.", source.getSource().getLabel());
+      return Stream.empty();
+    }
+    if (storeSource.isArchive() && !Files.isRegularFile(source.getPath())) {
+      LOGGER.warn("Store source {} is not an archive.", source.getSource().getLabel());
       return Stream.empty();
     }
 
-    return source
-        .getPathPatternStream()
-        .flatMap(
-            pathPattern -> {
-              try {
-                return loadPathStream(source.getRootPath())
-                    .map(path -> source.pathToEvent(pathPattern, path, this::readPayload))
-                    .filter(Objects::nonNull);
-              } catch (Throwable e) {
-                LogContext.error(
-                    LOGGER, e, "Loading {} failed.", source.getSource().getShortLabel());
-              }
-              return Stream.empty();
-            })
-        .sorted(Comparator.naturalOrder());
+    EventReader eventReader = storeSource.isArchive() ? eventReaderZip : eventReaderDir;
+
+    return source.load(eventReader);
   }
 
   // TODO: stopWatching, move watchService to class, watch new directories, file extension filter
@@ -115,8 +112,8 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
   public void listen(StoreSource storeSource, Consumer<List<Path>> watchEventConsumer) {
     EventSource source = from(storeSource);
 
-    if (!source.getSource().isWatchable()) {
-      LOGGER.warn("Watching is disabled for source {}.", source.getSource().getShortLabel());
+    if (!source.getSource().isWatchable() || source.getSource().isArchive()) {
+      LOGGER.warn("Watching is disabled for source {}.", source.getSource().getLabel());
       return;
     }
 
@@ -125,13 +122,13 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
       final Map<WatchKey, List<Path>> keys = new HashMap<>();
 
       try {
-        keys.putAll(watchDirectory(watchService, source.getRootPath()));
+        keys.putAll(watchDirectory(watchService, source.getPath()));
 
         if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Watching source {}.", source.getSource().getShortLabel());
+          LOGGER.debug("Watching source {}.", source.getSource().getLabel());
         }
       } catch (IOException e) {
-        LogContext.error(LOGGER, e, "Cannot watch source {}", source.getSource().getShortLabel());
+        LogContext.error(LOGGER, e, "Cannot watch source {}", source.getSource().getLabel());
       }
 
       WatchKey key;
@@ -193,29 +190,12 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
     return keys;
   }
 
-  private Stream<Path> loadPathStream(Path directory) {
-    try {
-      return Files.find(
-          directory, 32, (path, basicFileAttributes) -> basicFileAttributes.isRegularFile());
-    } catch (IOException e) {
-      throw new IllegalStateException("Reading event from store path failed", e);
-    }
-  }
-
-  private byte[] readPayload(Path path) {
-    try {
-      return Files.readAllBytes(path);
-    } catch (IOException e) {
-      throw new IllegalStateException("Reading event from file failed", e);
-    }
-  }
-
   @Override
   public void push(StoreSource storeSource, EntityEvent event) throws IOException {
     EventSource source = from(storeSource);
 
     if (source.getSource().getMode() == Mode.RO) {
-      LOGGER.warn("Writing is disabled for source {}.", source.getSource().getShortLabel());
+      LOGGER.warn("Writing is disabled for source {}.", source.getSource().getLabel());
       return;
     }
 
@@ -240,7 +220,7 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
     EventSource source = from(storeSource);
 
     if (source.getSource().getMode() == Mode.RO) {
-      LOGGER.warn("Writing is disabled for source {}.", source.getSource().getShortLabel());
+      LOGGER.warn("Writing is disabled for source {}.", source.getSource().getLabel());
       return;
     }
 
@@ -293,15 +273,14 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
   }
 
   private EventSource from(StoreSource source) {
-    return new EventSource(
-        getRootDirectory(dataDirectory, source), source, this::adjustPathPattern);
+    return new EventSource(getAbsolutePath(dataDirectory, source), source, this::adjustPathPattern);
   }
 
   private String adjustPathPattern(String pattern) {
     return pattern.replaceAll("\\/", "\\" + FileSystems.getDefault().getSeparator());
   }
 
-  private static Path getRootDirectory(Path dataDir, StoreSource storeSource) {
+  private static Path getAbsolutePath(Path dataDir, StoreSource storeSource) {
     Path src = Path.of(storeSource.getSrc());
     return src.isAbsolute() ? src : dataDir.resolve(src);
   }

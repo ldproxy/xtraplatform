@@ -307,7 +307,6 @@ import org.immutables.value.Value;
 public interface StoreConfiguration {
 
   String DEFAULT_LOCATION = "store";
-  String MAIN_REF = "main";
 
   enum StoreMode {
     READ_WRITE,
@@ -381,18 +380,17 @@ public interface StoreConfiguration {
       return new ImmutableStoreConfiguration.Builder()
           .from(this)
           .addSources(
-              new ImmutableStoreSource.Builder()
-                  .type(Type.FS)
+              new ImmutableStoreSourceFs.Builder()
+                  .typeString(Type.FS.key())
                   .content(Content.ALL)
                   .src(getLocation())
-                  .id(MAIN_REF)
                   .build())
           .addAllSources(
               getAdditionalLocations().stream()
                   .map(
                       location ->
-                          new ImmutableStoreSource.Builder()
-                              .type(Type.FS)
+                          new ImmutableStoreSourceFs.Builder()
+                              .typeString(Type.FS.key())
                               .content(Content.ALL)
                               .src(location)
                               .build())

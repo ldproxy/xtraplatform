@@ -17,6 +17,7 @@ import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Mode;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
+import de.ii.xtraplatform.base.domain.StoreSourceFs;
 import de.ii.xtraplatform.store.domain.Store;
 import java.nio.file.Path;
 import java.util.List;
@@ -54,7 +55,6 @@ public class StoreImpl implements Store, AppLifeCycle {
     return 10;
   }
 
-  // TODO: sources have to replayed in order, so trigger from here?
   @Override
   public void onStart() {
     LOGGER.info(
@@ -65,7 +65,15 @@ public class StoreImpl implements Store, AppLifeCycle {
             ? String.format(", filtered by %s", storeConfiguration.getFilter().get().getAsLabel())
             : "");
 
-    sources.forEach(s -> LOGGER.info("  {}", s.getLabel(dataDirectory)));
+    sources.forEach(
+        s -> {
+          String src =
+              s.getType() == Type.FS
+                  ? ((StoreSourceFs) s).getAbsolutePath(dataDirectory).toString()
+                  : s.getSrc();
+          String mode = storeConfiguration.isReadOnly() ? "" : String.format(" [%s]", s.getMode());
+          LOGGER.info("  {} {} [{}]{}", s.getType(), src, s.getContent(), mode);
+        });
   }
 
   @Override
