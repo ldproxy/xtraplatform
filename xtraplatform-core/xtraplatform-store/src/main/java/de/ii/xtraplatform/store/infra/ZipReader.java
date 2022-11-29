@@ -7,19 +7,26 @@
  */
 package de.ii.xtraplatform.store.infra;
 
+import de.ii.xtraplatform.base.domain.util.LambdaWithException;
 import de.ii.xtraplatform.base.domain.util.Tuple;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class EventReaderZip implements EventReader {
+public class ZipReader implements EventReader, BlobExtractor {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ZipReader.class);
 
   @Override
   public Stream<Tuple<Path, Supplier<byte[]>>> load(Path sourcePath) throws IOException {
@@ -28,6 +35,39 @@ public class EventReaderZip implements EventReader {
     walkEntries(sourcePath, (zipEntry, payload) -> entries.add(Tuple.of(zipEntry, () -> payload)));
 
     return entries.stream();
+  }
+
+  @Override
+  public void extract(
+      Path archiveFile,
+      Path archiveRoot,
+      Predicate<Path> includeEntry,
+      Path targetRoot,
+      boolean overwrite)
+      throws IOException {
+    if (overwrite) {
+      // TODO: delete target directory
+    }
+
+    walkEntries(
+        archiveFile,
+        LambdaWithException.biConsumerMayThrow(
+            (zipEntry, payload) -> {
+              Path entry = archiveRoot.relativize(zipEntry);
+              Path target = targetRoot.resolve(entry);
+
+              if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Extracting to {} {}", target, includeEntry.test(entry));
+              }
+
+              if (includeEntry.test(entry) && (overwrite || !Files.exists(target))) {
+                Files.createDirectories(target.getParent());
+
+                try (OutputStream out = Files.newOutputStream(target)) {
+                  out.write(payload);
+                }
+              }
+            }));
   }
 
   private void walkEntries(Path pkg, BiConsumer<Path, byte[]> entryHandler) throws IOException {

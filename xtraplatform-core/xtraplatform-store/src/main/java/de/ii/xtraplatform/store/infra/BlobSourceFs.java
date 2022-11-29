@@ -18,25 +18,44 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(BlobSourceFs.class);
+
   private final Path root;
+  @Nullable private final Path prefix;
 
   public BlobSourceFs(Path root) {
+    this(root, null);
+  }
+
+  public BlobSourceFs(Path root, Path prefix) {
     this.root = root;
+    this.prefix = prefix;
   }
 
   @Override
   public boolean has(Path path) throws IOException {
+    if (!hasPrefix(path)) {
+      return false;
+    }
+
     return Files.exists(full(path));
   }
 
   @Override
   public Optional<InputStream> get(Path path) throws IOException {
+    if (!hasPrefix(path)) {
+      return Optional.empty();
+    }
+
     Path filePath = full(path);
 
-    if (Files.notExists(filePath)) {
+    if (!Files.exists(filePath)) {
       return Optional.empty();
     }
 
@@ -45,6 +64,10 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public long size(Path path) throws IOException {
+    if (!hasPrefix(path)) {
+      return -1;
+    }
+
     Path filePath = full(path);
 
     if (!Files.isRegularFile(filePath)) {
@@ -57,6 +80,10 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
   @Override
   public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException {
+    if (!hasPrefix(path)) {
+      return Stream.empty();
+    }
+
     Path dir = root.resolve(path);
     return Files.find(
         dir,
@@ -67,9 +94,17 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public void put(Path path, InputStream content) throws IOException {
+    if (!hasPrefix(path)) {
+      return;
+    }
+
     Path filePath = full(path);
 
-    if (Files.notExists(filePath) || Files.isWritable(filePath)) {
+    if (!Files.exists(filePath) || Files.isWritable(filePath)) {
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Writing blob at {}", filePath);
+      }
+
       Files.createDirectories(filePath.getParent());
 
       try (OutputStream file = Files.newOutputStream(filePath)) {
@@ -80,11 +115,25 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public void delete(Path path) throws IOException {
-    Files.delete(full(path));
+    if (!hasPrefix(path)) {
+      return;
+    }
+
+    Path filePath = full(path);
+
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Deleting blob at {}", filePath);
+    }
+
+    Files.delete(filePath);
   }
 
   @Override
   public Optional<Path> path(Path path) throws IOException {
+    if (!hasPrefix(path)) {
+      return Optional.empty();
+    }
+
     if (has(path)) {
       return Optional.of(full(path));
     }
@@ -94,5 +143,9 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   private Path full(Path path) {
     return root.resolve(path);
+  }
+
+  private boolean hasPrefix(Path path) {
+    return prefix == null || path.startsWith(prefix);
   }
 }

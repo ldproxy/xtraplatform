@@ -11,6 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.Lists;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.store.domain.BlobLocals;
@@ -68,12 +69,31 @@ public class BlobStoreImpl implements BlobStore, BlobLocals, AppLifeCycle {
 
               blobStoreDriver.ifPresent(
                   driver -> {
-                    BlobSource blobSource = driver.init(source);
+                    try {
+                      BlobSource blobSource = driver.init(source);
 
-                    blobReaders.add(blobSource);
+                      blobReaders.add(blobSource);
 
-                    if (blobWriter.isEmpty() && source.isWritable() && blobSource.canWrite()) {
-                      this.blobWriter = Optional.of(blobSource.writer());
+                      boolean writable = false;
+                      if (blobWriter.isEmpty() && source.isWritable() && blobSource.canWrite()) {
+                        this.blobWriter = Optional.of(blobSource.writer());
+                        writable = true;
+                      }
+
+                      if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(
+                            "{} for {} ready{}",
+                            Content.RESOURCES.getLabel(),
+                            source.getLabel(),
+                            writable ? " and writable" : "");
+                      }
+                    } catch (Throwable e) {
+                      LogContext.error(
+                          LOGGER,
+                          e,
+                          "{} for {} could not be loaded",
+                          Content.RESOURCES.getLabel(),
+                          source.getLabel());
                     }
                   });
             });
@@ -98,7 +118,10 @@ public class BlobStoreImpl implements BlobStore, BlobLocals, AppLifeCycle {
                 d -> {
                   if (!d.isAvailable(storeSource)) {
                     if (warn) {
-                      LOGGER.warn("Blob source {} is not available.", storeSource.getLabel());
+                      LOGGER.warn(
+                          "{} for {} are not available.",
+                          Content.RESOURCES.getLabel(),
+                          storeSource.getLabel());
                     }
                     foundUnavailable[0] = true;
                     return false;
@@ -168,11 +191,14 @@ public class BlobStoreImpl implements BlobStore, BlobLocals, AppLifeCycle {
   @Override
   public void put(Path path, InputStream content) throws IOException {
     if (isReadOnly) {
-      LOGGER.warn("Store is operating in read-only mode, write operations are not allowed.");
+      LOGGER.error("Store is operating in read-only mode, write operations are not allowed.");
       return;
     }
     if (blobWriter.isEmpty()) {
-      LOGGER.warn("Cannot write blob to '{}', no writable source found.", path);
+      LOGGER.error(
+          "Cannot write {} at '{}', no writable source found.",
+          Content.RESOURCES.getPrefix(),
+          path);
       return;
     }
 
@@ -182,11 +208,14 @@ public class BlobStoreImpl implements BlobStore, BlobLocals, AppLifeCycle {
   @Override
   public void delete(Path path) throws IOException {
     if (isReadOnly) {
-      LOGGER.warn("Store is operating in read-only mode, write operations are not allowed.");
+      LOGGER.error("Store is operating in read-only mode, write operations are not allowed.");
       return;
     }
     if (blobWriter.isEmpty()) {
-      LOGGER.warn("Cannot delete blob at '{}', no writable source found.", path);
+      LOGGER.error(
+          "Cannot delete {} at '{}', no writable source found.",
+          Content.RESOURCES.getPrefix(),
+          path);
       return;
     }
 

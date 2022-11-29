@@ -10,6 +10,7 @@ package de.ii.xtraplatform.store.domain;
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
+import java.io.IOException;
 
 @AutoMultiBind
 public interface BlobStoreDriver {
@@ -18,5 +19,5 @@ public interface BlobStoreDriver {
 
   boolean isAvailable(StoreSource storeSource);
 
-  BlobSource init(StoreSource storeSource);
+  BlobSource init(StoreSource storeSource) throws IOException;
 }

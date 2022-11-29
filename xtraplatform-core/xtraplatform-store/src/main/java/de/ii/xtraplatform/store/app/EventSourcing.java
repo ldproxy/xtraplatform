@@ -153,13 +153,13 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     } else if (event instanceof StateChangeEvent) {
       switch (((StateChangeEvent) event).state()) {
         case REPLAYING:
-          LOGGER.debug("Replaying events for {}", ((StateChangeEvent) event).type());
+          LOGGER.debug("Loading {}", ((StateChangeEvent) event).type());
           break;
         case LISTENING:
           started.add(((StateChangeEvent) event).type());
 
           if (started.containsAll(getEventTypes())) {
-            onStart.get().thenRun(() -> LOGGER.debug("Listening for events for {}", started));
+            onStart.get().thenRun(() -> LOGGER.debug("Loaded {}", String.join(" and ", started)));
           }
           break;
       }

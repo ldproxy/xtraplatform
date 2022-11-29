@@ -364,7 +364,7 @@ public interface StoreConfiguration {
   @JsonIgnore
   @Value.Derived
   default boolean isReadWrite() {
-    return getMode() == StoreMode.READ_ONLY;
+    return getMode() == StoreMode.READ_WRITE;
   }
 
   @JsonIgnore

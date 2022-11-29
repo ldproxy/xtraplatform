@@ -60,6 +60,10 @@ public interface StoreSource {
     public String getPrefix() {
       return Objects.equals(this, ALL) ? "" : this.name().toLowerCase(Locale.ROOT);
     }
+
+    public String getLabel() {
+      return this.name().charAt(0) + this.name().substring(1).toLowerCase(Locale.ROOT);
+    }
   }
 
   enum Mode {
@@ -100,6 +104,11 @@ public interface StoreSource {
   @Value.Default
   default String getArchiveRoot() {
     return "/";
+  }
+
+  @Value.Default
+  default boolean getArchiveCache() {
+    return true;
   }
 
   boolean isWatchable();
