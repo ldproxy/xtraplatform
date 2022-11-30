@@ -40,7 +40,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public boolean has(Path path) throws IOException {
-    if (!hasPrefix(path)) {
+    if (!canHandle(path)) {
       return false;
     }
 
@@ -49,7 +49,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public Optional<InputStream> get(Path path) throws IOException {
-    if (!hasPrefix(path)) {
+    if (!canHandle(path)) {
       return Optional.empty();
     }
 
@@ -64,7 +64,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public long size(Path path) throws IOException {
-    if (!hasPrefix(path)) {
+    if (!canHandle(path)) {
       return -1;
     }
 
@@ -80,7 +80,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
   @Override
   public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException {
-    if (!hasPrefix(path)) {
+    if (!canHandle(path)) {
       return Stream.empty();
     }
 
@@ -94,7 +94,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public void put(Path path, InputStream content) throws IOException {
-    if (!hasPrefix(path)) {
+    if (!canHandle(path)) {
       return;
     }
 
@@ -115,7 +115,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public void delete(Path path) throws IOException {
-    if (!hasPrefix(path)) {
+    if (!canHandle(path)) {
       return;
     }
 
@@ -128,14 +128,21 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
     Files.delete(filePath);
   }
 
+  // TODO: remote sources might provide readable locals, but never writable ones
   @Override
-  public Optional<Path> path(Path path) throws IOException {
-    if (!hasPrefix(path)) {
+  public Optional<Path> path(Path path, boolean writable) throws IOException {
+    if (!canHandle(path)) {
       return Optional.empty();
     }
 
-    if (has(path)) {
-      return Optional.of(full(path));
+    if (writable || has(path)) {
+      Path filePath = full(path);
+
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Providing writable local blob at {}", filePath);
+      }
+
+      return Optional.of(filePath);
     }
 
     return Optional.empty();
@@ -145,7 +152,8 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
     return root.resolve(path);
   }
 
-  private boolean hasPrefix(Path path) {
+  @Override
+  public boolean canHandle(Path path) {
     return prefix == null || path.startsWith(prefix);
   }
 }

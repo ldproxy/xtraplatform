@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
-public interface BlobStore extends BlobReader, BlobWriter {
+public interface BlobStore extends BlobReader, BlobWriter, BlobLocals {
 
   default BlobStore with(String type, String... path) {
     BlobStore delegate = this;
@@ -50,6 +50,11 @@ public interface BlobStore extends BlobReader, BlobWriter {
       @Override
       public void delete(Path path) throws IOException {
         delegate.delete(prefix.resolve(path));
+      }
+
+      @Override
+      public Optional<Path> path(Path path, boolean writable) throws IOException {
+        return delegate.path(prefix.resolve(path), writable);
       }
     };
   }

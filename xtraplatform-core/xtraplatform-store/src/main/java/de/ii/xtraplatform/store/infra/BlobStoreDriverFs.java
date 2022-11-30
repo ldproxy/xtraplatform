@@ -12,6 +12,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
+import de.ii.xtraplatform.base.domain.StoreSourceFs;
 import de.ii.xtraplatform.store.domain.BlobSource;
 import de.ii.xtraplatform.store.domain.BlobStoreDriver;
 import java.io.IOException;
@@ -46,9 +47,23 @@ public class BlobStoreDriverFs implements BlobStoreDriver {
 
   @Override
   public boolean isAvailable(StoreSource storeSource) {
+    Path absolutePath = getAbsolutePath(dataDirectory, storeSource);
+
+    if (!storeSource.isArchive() && ((StoreSourceFs) storeSource).isCreate()) {
+      try {
+        Files.createDirectories(absolutePath);
+
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Created directory {} for {}", absolutePath, storeSource.getLabel());
+        }
+      } catch (IOException e) {
+        LOGGER.error("Could not create directory {} for {}", absolutePath, storeSource.getLabel());
+      }
+    }
+
     return storeSource.isArchive()
-        ? Files.isRegularFile(getAbsolutePath(dataDirectory, storeSource))
-        : Files.isDirectory(getAbsolutePath(dataDirectory, storeSource));
+        ? Files.isRegularFile(absolutePath)
+        : Files.isDirectory(absolutePath);
   }
 
   @Override

@@ -28,6 +28,11 @@ public interface StoreSourceFs extends StoreSource {
     return !isArchive();
   }
 
+  @Value.Default
+  default boolean isCreate() {
+    return !isArchive() && !Path.of(getSrc()).isAbsolute();
+  }
+
   default Path getAbsolutePath(Path root) {
     Path src = Path.of(getSrc());
     return src.isAbsolute() ? src : root.resolve(src);

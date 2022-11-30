@@ -14,12 +14,10 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
-import de.ii.xtraplatform.store.domain.BlobLocals;
 import de.ii.xtraplatform.store.domain.BlobReader;
 import de.ii.xtraplatform.store.domain.BlobSource;
 import de.ii.xtraplatform.store.domain.BlobStore;
 import de.ii.xtraplatform.store.domain.BlobStoreDriver;
-import de.ii.xtraplatform.store.domain.BlobWriter;
 import de.ii.xtraplatform.store.domain.Store;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class BlobStoreImpl implements BlobStore, BlobLocals, AppLifeCycle {
+public class BlobStoreImpl implements BlobStore, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BlobStoreImpl.class);
 
@@ -46,7 +44,7 @@ public class BlobStoreImpl implements BlobStore, BlobLocals, AppLifeCycle {
   private final Lazy<Set<BlobStoreDriver>> drivers;
 
   private final List<BlobSource> blobReaders;
-  private Optional<BlobWriter> blobWriter;
+  private final List<BlobSource> blobWriters;
   private final boolean isReadOnly;
 
   @Inject
@@ -54,7 +52,7 @@ public class BlobStoreImpl implements BlobStore, BlobLocals, AppLifeCycle {
     this.store = store;
     this.drivers = drivers;
     this.blobReaders = new ArrayList<>();
-    this.blobWriter = Optional.empty();
+    this.blobWriters = new ArrayList<>();
     this.isReadOnly = !store.isWritable();
   }
 
@@ -75,8 +73,8 @@ public class BlobStoreImpl implements BlobStore, BlobLocals, AppLifeCycle {
                       blobReaders.add(blobSource);
 
                       boolean writable = false;
-                      if (blobWriter.isEmpty() && source.isWritable() && blobSource.canWrite()) {
-                        this.blobWriter = Optional.of(blobSource.writer());
+                      if (source.isWritable() && blobSource.canWrite()) {
+                        blobWriters.add(blobSource);
                         writable = true;
                       }
 
@@ -194,15 +192,16 @@ public class BlobStoreImpl implements BlobStore, BlobLocals, AppLifeCycle {
       LOGGER.error("Store is operating in read-only mode, write operations are not allowed.");
       return;
     }
-    if (blobWriter.isEmpty()) {
-      LOGGER.error(
-          "Cannot write {} at '{}', no writable source found.",
-          Content.RESOURCES.getPrefix(),
-          path);
-      return;
+
+    for (BlobSource source : blobWriters) {
+      if (source.canHandle(path)) {
+        source.writer().put(path, content);
+        return;
+      }
     }
 
-    blobWriter.get().put(path, content);
+    LOGGER.error(
+        "Cannot write {} at '{}', no writable source found.", Content.RESOURCES.getPrefix(), path);
   }
 
   @Override
@@ -211,23 +210,36 @@ public class BlobStoreImpl implements BlobStore, BlobLocals, AppLifeCycle {
       LOGGER.error("Store is operating in read-only mode, write operations are not allowed.");
       return;
     }
-    if (blobWriter.isEmpty()) {
-      LOGGER.error(
-          "Cannot delete {} at '{}', no writable source found.",
-          Content.RESOURCES.getPrefix(),
-          path);
-      return;
+
+    for (BlobSource source : blobWriters) {
+      if (source.canHandle(path)) {
+        source.writer().delete(path);
+        return;
+      }
     }
 
-    blobWriter.get().delete(path);
+    LOGGER.error(
+        "Cannot delete {} at '{}', no writable source found.", Content.RESOURCES.getPrefix(), path);
   }
 
   @Override
-  public Optional<Path> path(Path path) throws IOException {
+  public Optional<Path> path(Path path, boolean writable) throws IOException {
+
+    if (writable) {
+      for (BlobSource writer : blobWriters) {
+        if (writer.canHandle(path) && writer.canLocals()) {
+          return writer.local().path(path, true);
+        }
+      }
+
+      LOGGER.error("Cannot provide local path for '{}', no local writable source found.", path);
+
+      return Optional.empty();
+    }
 
     for (BlobSource source : blobReaders) {
       if (source.has(path) && source.canLocals()) {
-        return source.local().path(path);
+        return source.local().path(path, false);
       }
     }
 
