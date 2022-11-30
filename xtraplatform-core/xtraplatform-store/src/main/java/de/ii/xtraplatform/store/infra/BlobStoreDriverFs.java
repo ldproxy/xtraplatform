@@ -49,7 +49,9 @@ public class BlobStoreDriverFs implements BlobStoreDriver {
   public boolean isAvailable(StoreSource storeSource) {
     Path absolutePath = getAbsolutePath(dataDirectory, storeSource);
 
-    if (!storeSource.isArchive() && ((StoreSourceFs) storeSource).isCreate()) {
+    if (!storeSource.isArchive()
+        && ((StoreSourceFs) storeSource).isCreate()
+        && !Files.exists(absolutePath)) {
       try {
         Files.createDirectories(absolutePath);
 

@@ -58,6 +58,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -189,6 +190,15 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       return ImmutableList.of();
     }
 
+    if (event.type().equals(EVENT_TYPES.get(0))
+        && eventSourcing.isInCache(isDuplicate(event.identifier()))) {
+      LOGGER.warn(
+          "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single group.",
+          event.asPathNoType(),
+          event.source().orElse("UNKNOWN"));
+      return ImmutableList.of();
+    }
+
     if (!event.type().equals(EVENT_TYPES.get(1))) {
       return ImmutableList.of(event);
     }
@@ -290,6 +300,13 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         .from(identifier)
         .path(identifier.path().subList(distance, identifier.path().size()))
         .build();
+  }
+
+  private static Predicate<Identifier> isDuplicate(Identifier identifier) {
+    return other ->
+        Objects.equals(identifier.id(), other.id())
+            && Objects.equals(entityType(identifier), entityType(other))
+            && !Objects.equals(identifier.path(), other.path());
   }
 
   @Override

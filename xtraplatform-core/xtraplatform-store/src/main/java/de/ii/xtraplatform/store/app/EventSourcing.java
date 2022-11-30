@@ -40,6 +40,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -183,6 +184,10 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   @Override
   public boolean isInCache(Identifier identifier) {
     return cache.containsKey(identifier);
+  }
+
+  public boolean isInCache(Predicate<Identifier> keyMatcher) {
+    return cache.keySet().stream().anyMatch(keyMatcher);
   }
 
   @Override
