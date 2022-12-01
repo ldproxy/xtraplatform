@@ -30,6 +30,8 @@ public interface TaskContext extends TaskProgress {
 
   String getThreadName();
 
+  String getTaskLabel();
+
   void pauseIfRequested();
 
   boolean isStopped();

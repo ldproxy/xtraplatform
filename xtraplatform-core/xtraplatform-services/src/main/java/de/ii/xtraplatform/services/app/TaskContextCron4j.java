@@ -18,13 +18,19 @@ public class TaskContextCron4j implements TaskContext {
   private final int maxPartials;
   private final int partial;
   private final String threadName;
+  private final String taskLabel;
 
   public TaskContextCron4j(
-      TaskExecutionContext taskExecutionContext, int maxPartials, int partial, String threadName) {
+      TaskExecutionContext taskExecutionContext,
+      int maxPartials,
+      int partial,
+      String threadName,
+      String taskLabel) {
     this.taskExecutionContext = taskExecutionContext;
     this.maxPartials = maxPartials;
     this.partial = partial;
     this.threadName = threadName;
+    this.taskLabel = taskLabel;
   }
 
   @Override
@@ -50,6 +56,11 @@ public class TaskContextCron4j implements TaskContext {
   @Override
   public String getThreadName() {
     return threadName;
+  }
+
+  @Override
+  public String getTaskLabel() {
+    return taskLabel;
   }
 
   @Override

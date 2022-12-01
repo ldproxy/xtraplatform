@@ -59,7 +59,8 @@ public class TaskCron4j extends Task {
   @Override
   public void execute(TaskExecutionContext taskExecutionContext) throws RuntimeException {
     final TaskContext taskContext =
-        new TaskContextCron4j(taskExecutionContext, maxPartials, partial, threadName);
+        new TaskContextCron4j(
+            taskExecutionContext, maxPartials, partial, threadName, task.getLabel());
     task.run(taskContext);
   }
 
