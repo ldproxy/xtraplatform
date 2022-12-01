@@ -245,4 +245,9 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
 
     return Optional.empty();
   }
+
+  @Override
+  public Path getPrefix() {
+    return Path.of("");
+  }
 }

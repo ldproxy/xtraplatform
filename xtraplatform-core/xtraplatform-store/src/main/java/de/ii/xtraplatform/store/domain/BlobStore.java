@@ -16,11 +16,18 @@ import java.util.stream.Stream;
 
 public interface BlobStore extends BlobReader, BlobWriter, BlobLocals {
 
+  Path getPrefix();
+
   default BlobStore with(String type, String... path) {
     BlobStore delegate = this;
     Path prefix = Path.of(type, path);
 
     return new BlobStore() {
+      @Override
+      public Path getPrefix() {
+        return prefix;
+      }
+
       @Override
       public boolean has(Path path) throws IOException {
         return delegate.has(prefix.resolve(path));
