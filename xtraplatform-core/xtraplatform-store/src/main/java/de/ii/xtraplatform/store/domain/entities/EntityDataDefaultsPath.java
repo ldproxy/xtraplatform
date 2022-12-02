@@ -27,7 +27,22 @@ public interface EntityDataDefaultsPath {
     ModifiableEntityDataDefaultsPath defaultsPath = ModifiableEntityDataDefaultsPath.create();
     List<String> pathSegments = ImmutableList.of();
 
-    if (identifier.path().isEmpty()) {
+    boolean found = false;
+
+    for (int i = 0; i < identifier.path().size(); i++) {
+      if (entityTypes.contains(identifier.path().get(i))) {
+        found = true;
+        defaultsPath.setEntityType(identifier.path().get(i));
+        if (i > 0) {
+          defaultsPath.setGroups(identifier.path().subList(0, i));
+        }
+        if (identifier.path().size() > i + 1) {
+          pathSegments = identifier.path().subList(i + 1, identifier.path().size());
+        }
+      }
+    }
+
+    if (!found) {
       if (identifier.id().contains(".")) {
         int firstDot = identifier.id().indexOf(".");
         defaultsPath.setEntityType(identifier.id().substring(0, firstDot));
@@ -35,18 +50,7 @@ public interface EntityDataDefaultsPath {
       } else {
         defaultsPath.setEntityType(identifier.id());
       }
-    } else {
-      for (int i = 0; i < identifier.path().size(); i++) {
-        if (entityTypes.contains(identifier.path().get(i))) {
-          defaultsPath.setEntityType(identifier.path().get(i));
-          if (i > 0) {
-            defaultsPath.setGroups(identifier.path().subList(0, i));
-          }
-          if (identifier.path().size() > i + 1) {
-            pathSegments = identifier.path().subList(i + 1, identifier.path().size());
-          }
-        }
-      }
+      defaultsPath.setGroups(identifier.path());
     }
 
     // TODO: describe cases, how would catch happen?
