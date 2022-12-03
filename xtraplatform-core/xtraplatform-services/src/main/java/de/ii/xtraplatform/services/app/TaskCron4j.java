@@ -10,6 +10,7 @@ package de.ii.xtraplatform.services.app;
 import de.ii.xtraplatform.services.domain.TaskContext;
 import it.sauronsoftware.cron4j.Task;
 import it.sauronsoftware.cron4j.TaskExecutionContext;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author zahnen
@@ -20,20 +21,23 @@ public class TaskCron4j extends Task {
   private final int maxPartials;
   private final int partial;
   private final String threadName;
+  private final AtomicInteger activePartials;
 
   public TaskCron4j(de.ii.xtraplatform.services.domain.Task task, int threadNumber) {
-    this(task, 1, 1, threadNumber);
+    this(task, 1, 1, threadNumber, new AtomicInteger(1));
   }
 
   public TaskCron4j(
       de.ii.xtraplatform.services.domain.Task task,
       int maxPartials,
       int partial,
-      int threadNumber) {
+      int threadNumber,
+      AtomicInteger activePartials) {
     this.task = task;
     this.maxPartials = maxPartials;
     this.partial = partial;
     this.threadName = "bg-task-" + threadNumber;
+    this.activePartials = activePartials;
   }
 
   public de.ii.xtraplatform.services.domain.Task getTask() {
@@ -60,7 +64,12 @@ public class TaskCron4j extends Task {
   public void execute(TaskExecutionContext taskExecutionContext) throws RuntimeException {
     final TaskContext taskContext =
         new TaskContextCron4j(
-            taskExecutionContext, maxPartials, partial, threadName, task.getLabel());
+            taskExecutionContext,
+            maxPartials,
+            partial,
+            threadName,
+            task.getLabel(),
+            activePartials);
     task.run(taskContext);
   }
 

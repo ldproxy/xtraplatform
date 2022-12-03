@@ -9,6 +9,7 @@ package de.ii.xtraplatform.services.app;
 
 import de.ii.xtraplatform.services.domain.TaskContext;
 import it.sauronsoftware.cron4j.TaskExecutionContext;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author zahnen
@@ -19,18 +20,21 @@ public class TaskContextCron4j implements TaskContext {
   private final int partial;
   private final String threadName;
   private final String taskLabel;
+  private final AtomicInteger activePartials;
 
   public TaskContextCron4j(
       TaskExecutionContext taskExecutionContext,
       int maxPartials,
       int partial,
       String threadName,
-      String taskLabel) {
+      String taskLabel,
+      AtomicInteger activePartials) {
     this.taskExecutionContext = taskExecutionContext;
     this.maxPartials = maxPartials;
     this.partial = partial;
     this.threadName = threadName;
     this.taskLabel = taskLabel;
+    this.activePartials = activePartials;
   }
 
   @Override
@@ -51,6 +55,11 @@ public class TaskContextCron4j implements TaskContext {
   @Override
   public int getCurrentPartial() {
     return partial;
+  }
+
+  @Override
+  public int getActivePartials() {
+    return activePartials.get();
   }
 
   @Override

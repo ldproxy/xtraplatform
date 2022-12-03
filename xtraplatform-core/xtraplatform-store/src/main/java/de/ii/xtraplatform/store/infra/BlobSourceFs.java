@@ -86,10 +86,11 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
     Path dir = root.resolve(path);
     return Files.find(
-        dir,
-        maxDepth,
-        ((path1, basicFileAttributes) ->
-            matcher.test(dir.relativize(path1), basicFileAttributes::isRegularFile)));
+            dir,
+            maxDepth,
+            ((path1, basicFileAttributes) ->
+                matcher.test(dir.relativize(path1), basicFileAttributes::isRegularFile)))
+        .map(dir::relativize);
   }
 
   @Override

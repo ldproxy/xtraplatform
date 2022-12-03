@@ -26,6 +26,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Inject;
@@ -199,17 +200,20 @@ public class SchedulerCron4j implements Scheduler, AppLifeCycle {
             if (task.getLeft().getMaxPartials() > 1 && currentTasks.remainingCapacity() > 1) {
               int maxPartials =
                   Math.min(currentTasks.remainingCapacity(), task.getLeft().getMaxPartials());
+              AtomicInteger activePartials = new AtomicInteger(maxPartials);
 
               for (int i = 1; i <= maxPartials; i++) {
                 int threadNumber = Objects.requireNonNullElse(threadNumbers.poll(), 1);
                 TaskCron4j taskCron4j =
-                    new TaskCron4j(task.getLeft(), maxPartials, i, threadNumber);
+                    new TaskCron4j(task.getLeft(), maxPartials, i, threadNumber, activePartials);
                 final TaskExecutor taskExecutor = scheduler.launch(taskCron4j);
                 TaskStatus currentTask = new TaskStatusCron4j(taskCron4j, taskExecutor);
 
                 addLogging(taskCron4j, currentTask, threadNumber);
                 currentTask.onDone(
                     throwable -> {
+                      int left = activePartials.decrementAndGet();
+                      LOGGER.info("LEFT {}", left);
                       threadNumbers.offer(threadNumber);
                       checkQueue();
                     });
