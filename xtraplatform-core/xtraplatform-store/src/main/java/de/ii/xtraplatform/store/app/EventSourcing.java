@@ -40,6 +40,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -153,13 +154,13 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     } else if (event instanceof StateChangeEvent) {
       switch (((StateChangeEvent) event).state()) {
         case REPLAYING:
-          LOGGER.debug("Replaying events for {}", ((StateChangeEvent) event).type());
+          LOGGER.debug("Loading {}", ((StateChangeEvent) event).type());
           break;
         case LISTENING:
           started.add(((StateChangeEvent) event).type());
 
           if (started.containsAll(getEventTypes())) {
-            onStart.get().thenRun(() -> LOGGER.debug("Listening for events for {}", started));
+            onStart.get().thenRun(() -> LOGGER.debug("Loaded {}", String.join(" and ", started)));
           }
           break;
       }
@@ -183,6 +184,10 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   @Override
   public boolean isInCache(Identifier identifier) {
     return cache.containsKey(identifier);
+  }
+
+  public boolean isInCache(Predicate<Identifier> keyMatcher) {
+    return cache.keySet().stream().anyMatch(keyMatcher);
   }
 
   @Override

@@ -18,6 +18,7 @@ import org.immutables.value.Value;
 public interface JacksonSubTypeIds {
 
   @Value.Immutable
+  @Value.Style(builder = "builder")
   interface JacksonSubType {
     Class<?> getSuperType();
 

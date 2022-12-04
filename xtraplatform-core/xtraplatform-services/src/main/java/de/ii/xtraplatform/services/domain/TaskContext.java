@@ -28,7 +28,11 @@ public interface TaskContext extends TaskProgress {
     return (number % getMaxPartials()) == (getCurrentPartial() - 1);
   }
 
+  int getActivePartials();
+
   String getThreadName();
+
+  String getTaskLabel();
 
   void pauseIfRequested();
 

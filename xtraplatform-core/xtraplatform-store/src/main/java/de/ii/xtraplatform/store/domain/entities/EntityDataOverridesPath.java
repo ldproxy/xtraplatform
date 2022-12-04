@@ -9,8 +9,10 @@ package de.ii.xtraplatform.store.domain.entities;
 
 import com.google.common.base.Splitter;
 import de.ii.xtraplatform.store.domain.Identifier;
+import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.immutables.value.Value;
 
 // TODO: unit tests for all cases
@@ -19,7 +21,7 @@ public interface EntityDataOverridesPath {
 
   Splitter DOT_SPLITTER = Splitter.on('.');
 
-  static EntityDataOverridesPath from(Identifier identifier) {
+  static EntityDataOverridesPath from(Identifier identifier, Set<String> entityTypes) {
     ModifiableEntityDataOverridesPath overridesPath = ModifiableEntityDataOverridesPath.create();
 
     List<String> pathSegments = new ArrayList<>();
@@ -30,18 +32,42 @@ public interface EntityDataOverridesPath {
       throw new IllegalArgumentException("Not a valid override path: " + identifier);
     }
 
-    overridesPath.setEntityType(pathSegments.get(0));
+    for (int i = 0; i < identifier.path().size(); i++) {
+      if (entityTypes.contains(identifier.path().get(i))) {
+        overridesPath.setEntityType(pathSegments.get(i));
+        overridesPath.setEntityId(pathSegments.get(i + 1));
+        if (i > 0) {
+          overridesPath.setGroups(identifier.path().subList(0, i));
+        }
+        if (identifier.path().size() > i + 1) {
+          overridesPath.setKeyPath(pathSegments.subList(i + 2, pathSegments.size()));
+        }
+      }
+    }
+
+    /*overridesPath.setEntityType(pathSegments.get(0));
     overridesPath.setEntityId(pathSegments.get(1));
     if (pathSegments.size() > 2) {
       overridesPath.setKeyPath(pathSegments.subList(2, pathSegments.size()));
-    }
+    }*/
 
     return overridesPath;
   }
+
+  List<String> getGroups();
 
   String getEntityType();
 
   String getEntityId();
 
   List<String> getKeyPath();
+
+  @Value.Lazy
+  default Identifier asIdentifier() {
+    return ImmutableIdentifier.builder()
+        .addAllPath(getGroups())
+        .addPath(getEntityType())
+        .id(getEntityId())
+        .build();
+  }
 }

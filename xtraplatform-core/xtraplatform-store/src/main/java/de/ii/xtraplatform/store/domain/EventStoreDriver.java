@@ -7,27 +7,55 @@
  */
 package de.ii.xtraplatform.store.domain;
 
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
+import de.ii.xtraplatform.base.domain.StoreSource;
+import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+@AutoMultiBind
 public interface EventStoreDriver {
 
-  void start();
+  interface Writer {
 
-  Stream<EntityEvent> loadEventStream();
+    void push(StoreSource storeSource, EntityEvent event) throws IOException;
 
-  void saveEvent(EntityEvent event) throws IOException;
-
-  void deleteAllEvents(String type, Identifier identifier, String format) throws IOException;
-
-  default boolean supportsWatch() {
-    return false;
+    void deleteAll(StoreSource storeSource, String type, Identifier identifier, String format)
+        throws IOException;
   }
 
-  default void startWatching(Consumer<List<Path>> watchEventConsumer) {
-    throw new UnsupportedOperationException();
+  interface Watcher {
+    void listen(StoreSource storeSource, Consumer<List<Path>> watchEventConsumer);
+  }
+
+  Type getType();
+
+  boolean isAvailable(StoreSource storeSource);
+
+  Stream<EntityEvent> load(StoreSource storeSource);
+
+  default boolean canWrite() {
+    return this instanceof Writer;
+  }
+
+  default Writer writer() {
+    if (!canWrite()) {
+      throw new UnsupportedOperationException("Writer not supported");
+    }
+    return (Writer) this;
+  }
+
+  default boolean canWatch() {
+    return this instanceof Watcher;
+  }
+
+  default Watcher watcher() {
+    if (!canWatch()) {
+      throw new UnsupportedOperationException("Watcher not supported");
+    }
+    return (Watcher) this;
   }
 }

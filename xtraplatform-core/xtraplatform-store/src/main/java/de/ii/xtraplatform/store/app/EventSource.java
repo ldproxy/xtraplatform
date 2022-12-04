@@ -11,17 +11,22 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.store.domain.ImmutableReplayEvent;
+import de.ii.xtraplatform.store.infra.EventReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -29,9 +34,11 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EventPaths {
+public class EventSource {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(EventPaths.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(EventSource.class);
+
+  private static final String KEY_PATTERN = "{type}/{path:**}/{id}";
   private static final Pattern PATH_PATTERN =
       Pattern.compile("(?<separator>\\/(?:[^\\/{}]+\\/)*|^)\\{(?<name>[\\w]+)(?::(?<glob>\\*+))?}");
   private static final Splitter PATH_SPLITTER = Splitter.on('/').omitEmptyStrings();
@@ -40,49 +47,49 @@ public class EventPaths {
   private static final String ID_GROUP = "id";
   private static final String FORMAT_GROUP = "format";
 
+  private final Path path;
+
   private final Path rootPath;
+
+  private final StoreSource source;
   private final Pattern mainPathPatternRead;
   private final String mainPathPatternWrite;
-  private final List<Pattern> overridePathPatternsRead;
-  private final List<String> overridePathPatternsWrite;
-  private final String savePathPattern;
 
-  public EventPaths(
-      Path rootPath,
-      String mainPathPattern,
-      List<String> overridePathPatterns,
-      Function<String, String> pathAdjuster) {
-    this.rootPath = rootPath;
-    this.mainPathPatternRead = pathToPattern(mainPathPattern, pathAdjuster);
+  public EventSource(Path path, StoreSource source, Function<String, String> pathAdjuster) {
+    this.path = path;
+    this.rootPath = source.isArchive() ? Path.of(source.getArchiveRoot()) : path;
+    this.source = source;
+    this.mainPathPatternRead = pathToPattern(KEY_PATTERN, pathAdjuster);
     this.mainPathPatternWrite =
-        mainPathPattern.replace("{type}", "%s").replace("{path:**}", "%s").replace("{id}", "%s");
-    this.overridePathPatternsRead =
-        overridePathPatterns.stream()
-            .map((String path) -> pathToPattern(path, pathAdjuster))
-            .collect(Collectors.toList());
-    this.overridePathPatternsWrite =
-        overridePathPatterns.stream()
-            .map(
-                pattern ->
-                    pattern
-                        .replace("{type}", "%s")
-                        .replace("{path:**}", "%s")
-                        .replace("{id}", "%s"))
-            .collect(Collectors.toList());
-    ;
-    this.savePathPattern = overridePathPatternsWrite.get(overridePathPatternsWrite.size() - 1);
-
-    if (LOGGER.isTraceEnabled()) {
-      LOGGER.trace(
-          "STORE PATH PATTERNS: {}, {}, {}",
-          this.mainPathPatternRead,
-          this.overridePathPatternsRead,
-          savePathPattern);
-    }
+        KEY_PATTERN.replace("{type}", "%s").replace("{path:**}", "%s").replace("{id}", "%s");
   }
 
-  public Path getRootPath() {
-    return rootPath;
+  public Path getPath() {
+    return path;
+  }
+
+  public StoreSource getSource() {
+    return source;
+  }
+
+  public Stream<EntityEvent> load(EventReader reader) {
+    return getPathPatternStream()
+        .flatMap(
+            pathPattern -> {
+              try {
+                return reader
+                    .load(getPath())
+                    .map(
+                        pathAndPayload ->
+                            pathToEvent(
+                                pathPattern, pathAndPayload.first(), pathAndPayload.second()))
+                    .filter(Objects::nonNull);
+              } catch (Throwable e) {
+                LogContext.error(LOGGER, e, "Loading {} failed.", getSource().getLabel());
+              }
+              return Stream.empty();
+            })
+        .sorted(Comparator.naturalOrder());
   }
 
   public Path getSavePath(EntityEvent event) {
@@ -90,10 +97,7 @@ public class EventPaths {
   }
 
   public List<Path> getDeletePaths(String type, Identifier identifier, String format) {
-    return Stream.concat(
-            overridePathPatternsWrite.stream()
-                .map(pattern -> getEventPath(type, identifier, null, pattern)),
-            Stream.of(getEventPath(type, identifier, null, mainPathPatternWrite)))
+    return Stream.of(getEventPath(type, identifier, null, mainPathPatternWrite))
         .collect(Collectors.toList());
   }
 
@@ -105,11 +109,10 @@ public class EventPaths {
                 + (Objects.nonNull(format) ? "." + format.toLowerCase() : "")));
   }
 
-  public EntityEvent pathToEvent(
-      Pattern pathPattern, Path path, Function<Path, byte[]> readPayload, boolean isAdditional) {
-    int parentCount = rootPath.getNameCount();
-    Matcher pathMatcher =
-        pathPattern.matcher(path.subpath(parentCount, path.getNameCount()).toString());
+  public EntityEvent pathToEvent(Pattern pathPattern, Path path, Supplier<byte[]> readPayload) {
+    Path relPath = rootPath.relativize(path);
+    Path fullRelPath = applyPrefixes(relPath);
+    Matcher pathMatcher = pathPattern.matcher(fullRelPath.toString());
 
     if (pathMatcher.find()) {
       String eventType = pathMatcher.group(TYPE_GROUP);
@@ -129,7 +132,7 @@ public class EventPaths {
           LOGGER.trace("Reading event {type: {}, path: {}, id: {}}", eventType, eventPath, eventId);
         }
 
-        byte[] bytes = readPayload.apply(path);
+        byte[] bytes = readPayload.get();
 
         Iterable<String> eventPathSegments =
             Strings.isNullOrEmpty(eventPath) ? ImmutableList.of() : PATH_SPLITTER.split(eventPath);
@@ -139,7 +142,7 @@ public class EventPaths {
             .identifier(ImmutableIdentifier.builder().id(eventId).path(eventPathSegments).build())
             .payload(bytes)
             .format(eventPayloadFormat.orElse(null))
-            .additionalLocation(isAdditional ? rootPath.toString() : null)
+            .source(source.getLabel())
             .build();
       }
     }
@@ -147,8 +150,18 @@ public class EventPaths {
     return null;
   }
 
+  private Path applyPrefixes(Path path) {
+    if (source.isSingleContent()) {
+      return Path.of(source.getContent().getPrefix())
+          .resolve(source.getPrefix().orElse(""))
+          .resolve(path);
+    }
+
+    return path;
+  }
+
   public Stream<Pattern> getPathPatternStream() {
-    return Stream.concat(Stream.of(mainPathPatternRead), overridePathPatternsRead.stream());
+    return Stream.of(mainPathPatternRead);
   }
 
   private Pattern pathToPattern(String path, Function<String, String> pathAdjuster) {

@@ -7,17 +7,19 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.docs.DocFile;
 import de.ii.xtraplatform.docs.DocStep;
 import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.NotEmpty;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import org.immutables.value.Value;
 
 /**
  * @langEn # Store
@@ -300,9 +302,13 @@ import org.hibernate.validator.constraints.NotEmpty;
           rows = {@DocStep(type = Step.JSON_PROPERTIES)},
           columnSet = ColumnSet.JSON_PROPERTIES)
     })
-public class StoreConfiguration {
+@Value.Immutable
+@JsonDeserialize(builder = ImmutableStoreConfiguration.Builder.class)
+public interface StoreConfiguration {
 
-  public enum StoreMode {
+  String DEFAULT_LOCATION = "store";
+
+  enum StoreMode {
     READ_WRITE,
     READ_ONLY,
     DISTRIBUTED,
@@ -314,31 +320,84 @@ public class StoreConfiguration {
    *     darf.
    * @default `READ_WRITE`
    */
-  @JsonProperty public StoreMode mode = StoreMode.READ_WRITE;
+  @Value.Default
+  default StoreMode getMode() {
+    return StoreMode.READ_WRITE;
+  }
 
-  @Valid @NotNull @JsonProperty public String location = "store";
+  // TODO: test merging
+  @Deprecated(since = "3.3")
+  @Value.Default
+  default String getLocation() {
+    return DEFAULT_LOCATION;
+  }
 
   /**
    * @langEn List of paths with [additional directories](#additional-locations).
    * @langDe Liste von Pfaden mit [zusätzlichen Verzeichnissnen](#additional-locations).
    * @default `[]`
    */
-  @Valid @NotNull @JsonProperty public List<String> additionalLocations = ImmutableList.of();
+  @Deprecated(since = "3.3")
+  List<String> getAdditionalLocations();
 
-  @Valid @NotNull @JsonProperty public boolean watch = false;
+  @Value.Default
+  default boolean isWatch() {
+    return false;
+  }
 
-  @Valid @NotNull @JsonProperty public boolean secured = false;
+  // TODO
+  @Value.Default
+  default boolean isFailOnUnknownProperties() {
+    return false;
+  }
 
-  @Valid @NotNull @JsonProperty public boolean failOnUnknownProperties = false;
+  List<StoreSource> getSources();
 
-  // defaultValuesPathPattern
-  @Valid @NotNull @JsonProperty
-  public List<String> defaultValuesPathPatterns =
-      ImmutableList.of("{type}/{path:**}/{id}", "{type}/{path:**}/{id}");
+  Optional<StoreFilters> getFilter();
 
-  // keyValuePathPattern
-  @Valid @NotEmpty @JsonProperty public String instancePathPattern = "{type}/{path:**}/{id}";
+  @JsonIgnore
+  @Value.Derived
+  default boolean isReadOnly() {
+    return getMode() == StoreMode.READ_ONLY;
+  }
 
-  @Valid @NotNull @JsonProperty
-  public List<String> overridesPathPatterns = ImmutableList.of("{type}/{path:**}/#overrides#/{id}");
+  @JsonIgnore
+  @Value.Derived
+  default boolean isReadWrite() {
+    return getMode() == StoreMode.READ_WRITE;
+  }
+
+  @JsonIgnore
+  @Value.Derived
+  default boolean isFiltered() {
+    return getFilter().isPresent();
+  }
+
+  @Deprecated(since = "3.3")
+  @Value.Check
+  default StoreConfiguration backwardsCompatibility() {
+    if (getSources().isEmpty()) {
+      return new ImmutableStoreConfiguration.Builder()
+          .from(this)
+          .addSources(
+              new ImmutableStoreSourceFs.Builder()
+                  .typeString(Type.FS.key())
+                  .content(Content.ALL)
+                  .src(getLocation())
+                  .build())
+          .addAllSources(
+              getAdditionalLocations().stream()
+                  .map(
+                      location ->
+                          new ImmutableStoreSourceFs.Builder()
+                              .typeString(Type.FS.key())
+                              .content(Content.ALL)
+                              .src(location)
+                              .build())
+                  .collect(Collectors.toList()))
+          .build();
+    }
+
+    return this;
+  }
 }

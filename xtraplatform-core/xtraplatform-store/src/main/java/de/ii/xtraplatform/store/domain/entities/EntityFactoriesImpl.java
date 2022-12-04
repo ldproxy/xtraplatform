@@ -10,6 +10,7 @@ package de.ii.xtraplatform.store.domain.entities;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import dagger.Lazy;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -103,6 +104,13 @@ public class EntityFactoriesImpl implements EntityFactories {
         .map(Optional::get)
         // .map(subType -> Splitter.on('/').splitToList(subType))
         .collect(ImmutableList.toImmutableList());
+  }
+
+  @Override
+  public Set<String> getTypes() {
+    return entityFactories.get().stream()
+        .map(EntityFactory::type)
+        .collect(ImmutableSet.toImmutableSet());
   }
 
   private String getSpecificEntityType(String entityType, Optional<String> entitySubType) {
