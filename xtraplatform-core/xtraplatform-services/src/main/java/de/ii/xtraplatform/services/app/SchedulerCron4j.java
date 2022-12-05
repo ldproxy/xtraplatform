@@ -212,8 +212,7 @@ public class SchedulerCron4j implements Scheduler, AppLifeCycle {
                 addLogging(taskCron4j, currentTask, threadNumber);
                 currentTask.onDone(
                     throwable -> {
-                      int left = activePartials.decrementAndGet();
-                      LOGGER.info("LEFT {}", left);
+                      activePartials.decrementAndGet();
                       threadNumbers.offer(threadNumber);
                       checkQueue();
                     });

@@ -325,13 +325,6 @@ public interface StoreConfiguration {
     return StoreMode.READ_WRITE;
   }
 
-  // TODO: test merging
-  @Deprecated(since = "3.3")
-  @Value.Default
-  default String getLocation() {
-    return DEFAULT_LOCATION;
-  }
-
   /**
    * @langEn List of paths with [additional directories](#additional-locations).
    * @langDe Liste von Pfaden mit [zusätzlichen Verzeichnissnen](#additional-locations).
@@ -379,12 +372,8 @@ public interface StoreConfiguration {
     if (getSources().isEmpty()) {
       return new ImmutableStoreConfiguration.Builder()
           .from(this)
-          .addSources(
-              new ImmutableStoreSourceFs.Builder()
-                  .typeString(Type.FS.key())
-                  .content(Content.ALL)
-                  .src(getLocation())
-                  .build())
+          .addSources(new ImmutableStoreSourceDefault32.Builder().build())
+          .addSources(new ImmutableStoreSourceCache32.Builder().build())
           .addAllSources(
               getAdditionalLocations().stream()
                   .map(
