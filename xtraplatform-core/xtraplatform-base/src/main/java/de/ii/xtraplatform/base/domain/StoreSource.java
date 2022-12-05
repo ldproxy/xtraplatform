@@ -24,7 +24,8 @@ import org.immutables.value.Value;
     visible = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = StoreSourceFs.class, name = Type.FS_KEY),
-  @JsonSubTypes.Type(value = StoreSourceBuiltin.class, name = StoreSourceBuiltin.KEY)
+  @JsonSubTypes.Type(value = StoreSourceDefault32.class, name = StoreSourceDefault32.KEY),
+  @JsonSubTypes.Type(value = StoreSourceCache32.class, name = StoreSourceCache32.KEY),
 })
 public interface StoreSource {
 

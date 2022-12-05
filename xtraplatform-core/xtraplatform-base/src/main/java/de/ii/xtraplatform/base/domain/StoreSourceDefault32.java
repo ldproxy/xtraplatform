@@ -9,30 +9,28 @@ package de.ii.xtraplatform.base.domain;
 
 import static de.ii.xtraplatform.base.domain.StoreConfiguration.DEFAULT_LOCATION;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceBuiltin.Builder.class)
-public interface StoreSourceBuiltin extends StoreSourceFs {
+@JsonDeserialize(builder = ImmutableStoreSourceDefault32.Builder.class)
+public interface StoreSourceDefault32 extends StoreSourceFs {
 
-  String KEY = "FS_DEFAULT";
+  String KEY = "FS_STORE_32";
 
-  @JsonIgnore
+  @JsonProperty(StoreSource.TYPE_PROP)
   @Value.Derived
-  default Type getType() {
-    return Type.FS;
+  default String getTypeString() {
+    return Type.FS.name();
   }
 
-  @JsonIgnore
   @Value.Derived
   @Override
   default Content getContent() {
     return Content.ALL;
   }
 
-  @JsonIgnore
   @Value.Derived
   @Override
   default String getSrc() {
