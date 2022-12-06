@@ -166,6 +166,10 @@ public class ConfigurationReader {
     return appConfiguration;
   }
 
+  public InputStream asInputStream(AppConfiguration cfg) throws IOException {
+    return new ByteArrayInputStream(mapper.writeValueAsBytes(cfg));
+  }
+
   public void loadMergedLogging(Path userConfig, Constants.ENV env) {
     LoggingConfiguration loggingFactory;
 

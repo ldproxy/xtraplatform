@@ -13,6 +13,7 @@ import com.google.common.base.Strings;
 import com.google.common.io.ByteSource;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import java.io.IOException;
@@ -22,9 +23,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,11 +81,6 @@ public class AppLauncher implements AppContext {
   }
 
   @Override
-  public Path getConfigurationFile() {
-    return cfgFile;
-  }
-
-  @Override
   public AppConfiguration getConfiguration() {
     return cfg;
   }
@@ -114,6 +112,11 @@ public class AppLauncher implements AppContext {
 
     String cfgString = configurationReader.loadMergedConfigAsString(cfgFile, env);
     this.cfg = configurationReader.configFromString(cfgString, env);
+
+    List<StoreSource> cfgSources =
+        cfg.store.getSources().stream()
+            .filter(source -> source.getContent() == Content.ALL)
+            .collect(Collectors.toList());
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Base configurations: {}", configurationReader.getBaseConfigs(env).keySet());

@@ -9,6 +9,7 @@ package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
+import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 
 @AutoMultiBind
@@ -17,6 +18,8 @@ public interface DropwizardPlugin {
   default int getPriority() {
     return 1000;
   }
+
+  default void initBootstrap(Bootstrap<AppConfiguration> bootstrap) {}
 
   void init(AppConfiguration configuration, Environment environment);
 }

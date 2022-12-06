@@ -23,8 +23,6 @@ public interface AppContext {
 
   Path getTmpDir();
 
-  Path getConfigurationFile();
-
   AppConfiguration getConfiguration();
 
   URI getUri();
