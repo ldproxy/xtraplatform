@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.store.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -51,5 +52,12 @@ public interface EntityEvent extends TypedEvent, Comparable<EntityEvent> {
   @Value.Auxiliary
   default String asPathNoType() {
     return String.format("%s.%s", identifier().asPath(), format());
+  }
+
+  @JsonIgnore
+  @Value.Derived
+  @Value.Auxiliary
+  default boolean isDelete() {
+    return Objects.equals(deleted(), true);
   }
 }

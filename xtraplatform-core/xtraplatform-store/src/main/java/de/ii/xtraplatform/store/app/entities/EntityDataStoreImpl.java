@@ -182,18 +182,21 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       return ImmutableList.of();
     }
 
-    if (event.type().equals(EVENT_TYPES.get(0)) && eventSourcing.isInCache(event.identifier())) {
+    if (!event.isDelete()
+        && event.type().equals(EVENT_TYPES.get(0))
+        && eventSourcing.isInCache(isDuplicate(event.identifier()))) {
       LOGGER.warn(
-          "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single source, use overrides to update it from another source.",
+          "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single group.",
           event.asPathNoType(),
           event.source().orElse("UNKNOWN"));
       return ImmutableList.of();
     }
 
-    if (event.type().equals(EVENT_TYPES.get(0))
-        && eventSourcing.isInCache(isDuplicate(event.identifier()))) {
+    if (!event.isDelete()
+        && event.type().equals(EVENT_TYPES.get(0))
+        && eventSourcing.isInCache(event.identifier())) {
       LOGGER.warn(
-          "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single group.",
+          "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single source, use overrides to update it from another source.",
           event.asPathNoType(),
           event.source().orElse("UNKNOWN"));
       return ImmutableList.of();
@@ -270,7 +273,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     additionalEvents.add(new AbstractMap.SimpleImmutableEntry<>(identifier, entityData));
   }
 
-  private static String entityType(Identifier identifier) {
+  public static String entityType(Identifier identifier) {
     if (identifier.path().isEmpty()) {
       throw new IllegalArgumentException("Invalid path, no entity type found.");
     }

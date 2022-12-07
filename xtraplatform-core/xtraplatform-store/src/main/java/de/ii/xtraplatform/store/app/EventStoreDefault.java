@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.store.app;
 
+import static de.ii.xtraplatform.store.app.entities.EntityDataStoreImpl.entityType;
+
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.Lists;
 import dagger.Lazy;
@@ -20,7 +22,6 @@ import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
 import de.ii.xtraplatform.store.domain.EventStoreSubscriber;
-import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableEventFilter;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.store.domain.ImmutableReloadEvent;
@@ -267,20 +268,19 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                     }
                     if (Objects.equals(event.type(), "entities")
                         || Objects.equals(event.type(), "overrides")) {
-                      String id =
-                          event.identifier().path().size() > 1
-                              ? event.identifier().path().get(1)
-                              : event.identifier().id();
                       boolean deleted =
                           deleteEvents.add(
                               ImmutableReplayEvent.builder()
                                   .type("entities")
                                   .deleted(true)
-                                  .identifier(Identifier.from(id, event.identifier().path().get(0)))
+                                  .identifier(event.identifier())
                                   .payload(ValueEncodingJackson.YAML_NULL)
                                   .build());
                       if (deleted && LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("DELETING {} {}", event.identifier().path().get(0), id);
+                        LOGGER.trace(
+                            "DELETING {} {}",
+                            entityType(event.identifier()),
+                            event.identifier().id());
                       }
                     } else {
                       String id = EntityDataDefaultsStore.EVENT_TYPE;
