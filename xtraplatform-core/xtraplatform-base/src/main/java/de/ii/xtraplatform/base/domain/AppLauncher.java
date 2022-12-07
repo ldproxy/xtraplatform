@@ -114,11 +114,6 @@ public class AppLauncher implements AppContext {
     LOGGER.info("--------------------------------------------------");
     LOGGER.info("Starting {} v{}", name, version);
 
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Data directory: {}", dataDir);
-      LOGGER.debug("Environment: {}", env);
-    }
-
     // String cfgString = configurationReader.loadMergedConfigAsString(cfgFile, env);
     // AppConfiguration appConfiguration = configurationReader.configFromString(cfgString, env);
 
@@ -132,6 +127,11 @@ public class AppLauncher implements AppContext {
 
     cfg.getLoggingFactory().configure(new MetricRegistry(), "xtraplatform");
 
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Data directory: {}", dataDir);
+      LOGGER.debug("Environment: {}", env);
+    }
+
     /*Path old = dataDir.resolve("cfg_old.yml");
     try (Writer w =Files.newBufferedWriter(old)) {
       w.write(configurationReader.asString(appConfiguration));
@@ -144,7 +144,7 @@ public class AppLauncher implements AppContext {
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Base configurations: {}", configurationReader.getBaseConfigs(env).keySet());
-      LOGGER.debug("User configurations: [{}]", cfgs.keySet());
+      LOGGER.debug("User configurations: {}", cfgs.keySet());
     }
     if (LOGGER.isDebugEnabled(LogContext.MARKER.DUMP)) {
       LOGGER.debug(
