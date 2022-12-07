@@ -131,7 +131,7 @@ public class AppConfiguration extends Configuration {
     this.logging = new LoggingConfiguration();
     this.server = new ServerConfiguration();
     this.httpClient = new HttpClientConfiguration();
-    this.store = new ImmutableStoreConfiguration.Builder().build();
+    this.store = new StoreConfiguration.Builder().build();
     this.auth = new AuthConfig();
     this.manager = new ManagerConfiguration();
     this.backgroundTasks = new BackgroundTasksConfiguration();

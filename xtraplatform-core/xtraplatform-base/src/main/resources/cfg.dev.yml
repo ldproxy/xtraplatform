@@ -1,7 +1,7 @@
 ---
 logging:
   level: ERROR
-  showThirdPartyLoggers: ON
-  stackTraces: ON
+  showThirdPartyLoggers: ${LOG_THIRD_PARTY:-ON}
+  stackTraces: ${LOG_STACK_TRACES:-ON}
   loggers:
-    de.ii: DEBUG
+    de.ii: ${LOG_LEVEL:-DEBUG}

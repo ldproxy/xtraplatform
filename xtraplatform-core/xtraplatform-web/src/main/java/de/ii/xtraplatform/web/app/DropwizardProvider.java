@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 public class DropwizardProvider implements AppLifeCycle {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
-  private static final String[] DW_ARGS = {XtraplatformCommand.CMD, "IGNORED_BUT_NEEDED"};
+  private static final String[] DW_ARGS = {XtraplatformCommand.CMD, "cfg.yml"};
   static final String JERSEY_ENDPOINT = "/rest/*";
 
   private final AppContext appContext;

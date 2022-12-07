@@ -26,6 +26,7 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(value = StoreSourceFs.class, name = Type.FS_KEY),
   @JsonSubTypes.Type(value = StoreSourceDefault32.class, name = StoreSourceDefault32.KEY),
   @JsonSubTypes.Type(value = StoreSourceCache32.class, name = StoreSourceCache32.KEY),
+  @JsonSubTypes.Type(value = StoreSourceEmpty.class, name = Type.EMPTY_KEY),
 })
 public interface StoreSource {
 
@@ -35,10 +36,10 @@ public interface StoreSource {
 
   enum Type {
     FS(Type.FS_KEY),
-    REF(Type.REF_KEY);
+    EMPTY(Type.EMPTY_KEY);
 
     public static final String FS_KEY = "FS";
-    public static final String REF_KEY = "REF";
+    public static final String EMPTY_KEY = "EMPTY";
 
     private final String key;
 
@@ -53,6 +54,8 @@ public interface StoreSource {
 
   enum Content {
     ALL,
+    NONE,
+    CFG,
     DEFAULTS,
     ENTITIES,
     OVERRIDES,

@@ -8,8 +8,8 @@
 package de.ii.xtraplatform.store.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
+import de.ii.xtraplatform.base.domain.StoreDriver;
 import de.ii.xtraplatform.base.domain.StoreSource;
-import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 @AutoMultiBind
-public interface EventStoreDriver {
+public interface EventStoreDriver extends StoreDriver {
 
   interface Writer {
 
@@ -30,10 +30,6 @@ public interface EventStoreDriver {
   interface Watcher {
     void listen(StoreSource storeSource, Consumer<List<Path>> watchEventConsumer);
   }
-
-  Type getType();
-
-  boolean isAvailable(StoreSource storeSource);
 
   Stream<EntityEvent> load(StoreSource storeSource);
 

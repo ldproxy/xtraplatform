@@ -47,7 +47,10 @@ public class StoreImpl implements Store, AppLifeCycle {
   public StoreImpl(Path dataDirectory, StoreConfiguration storeConfiguration) {
     this.dataDirectory = dataDirectory;
     this.storeConfiguration = storeConfiguration;
-    this.sources = storeConfiguration.getSources();
+    this.sources =
+        storeConfiguration.getSources().stream()
+            .filter(source -> source.getContent() != Content.NONE)
+            .collect(Collectors.toUnmodifiableList());
   }
 
   @Override

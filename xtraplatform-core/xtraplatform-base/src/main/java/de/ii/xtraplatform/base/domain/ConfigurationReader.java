@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
@@ -23,13 +22,13 @@ import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.logging.AbstractAppenderFactory;
 import io.dropwizard.logging.ConsoleAppenderFactory;
-import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.util.DataSize;
 import io.dropwizard.util.Duration;
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
@@ -47,7 +46,6 @@ public class ConfigurationReader {
   }
 
   public static final String CFG_FILE_NAME = "cfg.yml";
-  public static final String CFG_FILE_NAME_LEGACY = "xtraplatform.json";
 
   private static final String CFG_FILE_BASE = "/cfg.base.yml";
   private static final String CFG_FILE_CONSOLE = "/cfg.console.yml";
@@ -80,6 +78,7 @@ public class ConfigurationReader {
   private final Map<String, ByteSource> configsToMergeAfterBase;
   private final ObjectMapper mapper;
   private final ObjectMapper mergeMapper;
+  private final EnvironmentVariableSubstitutor envSubstitutor;
 
   public ConfigurationReader(Map<String, ByteSource> configsToMergeAfterBase) {
     this.configsToMergeAfterBase = configsToMergeAfterBase;
@@ -93,16 +92,15 @@ public class ConfigurationReader {
             .disable(MapperFeature.AUTO_DETECT_SETTERS);
 
     this.mergeMapper = getMergeMapper(mapper);
+
+    this.envSubstitutor = new EnvironmentVariableSubstitutor(false);
   }
 
   public Path getConfigurationFile(Path dataDir, Constants.ENV environment) {
     Path defaultPath = dataDir.resolve(CFG_FILE_NAME).toAbsolutePath();
-    Path legacyPath = dataDir.resolve(CFG_FILE_NAME_LEGACY).toAbsolutePath();
 
     if (Files.exists(defaultPath)) {
       return defaultPath;
-    } else if (Files.exists(legacyPath)) {
-      return legacyPath;
     } else {
       // TODO
       Optional<ByteSource> configurationFileTemplate =
@@ -120,42 +118,41 @@ public class ConfigurationReader {
     }
   }
 
-  public InputStream loadMergedConfig(Optional<InputStream> userConfig, Constants.ENV env)
+  private String read(ByteSource byteSource) throws IOException {
+    return envSubstitutor.replace(byteSource.asCharSource(StandardCharsets.UTF_8).read());
+  }
+
+  public AppConfiguration loadMergedConfig(Map<String, InputStream> userCfgs, Constants.ENV env)
       throws IOException {
-    AppConfiguration base = mapper.readValue(getBaseConfig().openStream(), AppConfiguration.class);
+    AppConfiguration cfg = mapper.readValue(read(getBaseConfig()), AppConfiguration.class);
 
-    for (ByteSource byteSource : getEnvConfigs(env).values()) {
-      mergeMapper.readerForUpdating(base).readValue(byteSource.openStream());
+    for (ByteSource envCfg : getEnvConfigs(env).values()) {
+      mergeMapper.readerForUpdating(cfg).readValue(read(envCfg));
     }
 
-    if (userConfig.isPresent()) {
-      mergeMapper.readerForUpdating(base).readValue(userConfig.get());
+    // TODO: error message with entry.getKey()
+    for (Map.Entry<String, InputStream> userCfg : userCfgs.entrySet()) {
+      mergeMapper
+          .readerForUpdating(cfg)
+          .readValue(read(ByteSource.wrap(userCfg.getValue().readAllBytes())));
     }
 
-    applyLogFormat(base.getLoggingConfiguration(), env);
+    applyLogFormat(cfg.getLoggingConfiguration(), env);
 
-    applyForcedDefaults(base, env);
+    applyForcedDefaults(cfg, env);
 
-    return new ByteArrayInputStream(mapper.writeValueAsBytes(base));
+    return cfg;
   }
 
   public String loadMergedConfigAsString(Path userConfig, Constants.ENV env) throws IOException {
-    Optional<InputStream> inputStream =
+    Map<String, InputStream> userCfgs =
         userConfig.toFile().exists()
-            ? Optional.of(Files.newInputStream(userConfig))
-            : Optional.empty();
-    String cfg =
-        new ByteSource() {
-          @Override
-          public InputStream openStream() throws IOException {
-            return loadMergedConfig(inputStream, env);
-          }
-        }.asCharSource(Charsets.UTF_8).read();
+            ? Map.of("default", Files.newInputStream(userConfig))
+            : Map.of();
 
-    EnvironmentVariableSubstitutor environmentVariableSubstitutor =
-        new EnvironmentVariableSubstitutor(false);
+    AppConfiguration cfg = loadMergedConfig(userCfgs, env);
 
-    return environmentVariableSubstitutor.replace(cfg);
+    return mapper.writeValueAsString(cfg);
   }
 
   public AppConfiguration configFromString(String cfg, Constants.ENV env) throws IOException {
@@ -170,23 +167,28 @@ public class ConfigurationReader {
     return new ByteArrayInputStream(mapper.writeValueAsBytes(cfg));
   }
 
-  public void loadMergedLogging(Path userConfig, Constants.ENV env) {
+  public String asString(AppConfiguration cfg) throws IOException {
+    return mapper.writeValueAsString(cfg);
+  }
+
+  public void loadMergedLogging(Optional<Path> userCfg, Constants.ENV env) {
     LoggingConfiguration loggingFactory;
 
     try {
-      JsonNode jsonNodeBase = mapper.readTree(getBaseConfig().openStream());
+      JsonNode jsonNodeBase = mapper.readTree(read(getBaseConfig()));
 
       loggingFactory =
           mapper.readerFor(LoggingConfiguration.class).readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
 
-      for (ByteSource byteSource : getEnvConfigs(env).values()) {
-        JsonNode jsonNodeMerge = mapper.readTree(byteSource.openStream());
+      for (ByteSource envCfg : getEnvConfigs(env).values()) {
+        JsonNode jsonNodeMerge = mapper.readTree(read(envCfg));
 
         mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNodeMerge.at(LOGGING_CFG_KEY));
       }
 
-      if (userConfig.toFile().exists()) {
-        JsonNode jsonNodeUser = mapper.readTree(userConfig.toFile());
+      if (userCfg.isPresent() && Files.exists(userCfg.get())) {
+        JsonNode jsonNodeUser =
+            mapper.readTree(read(ByteSource.wrap(Files.readAllBytes(userCfg.get()))));
 
         mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNodeUser.at(LOGGING_CFG_KEY));
       }
@@ -230,25 +232,6 @@ public class ConfigurationReader {
                                 Resources.getResource(ConfigurationReader.class, cfgPath)))),
             configsToMergeAfterBase.entrySet().stream())
         .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
-  }
-
-  @Deprecated
-  public void loadLegacyLogging(Path userConfig) {
-    ObjectMapper jsonMapper = Jackson.newObjectMapper();
-
-    DefaultLoggingFactory loggingFactory;
-
-    try {
-      JsonNode jsonNode = jsonMapper.readTree(userConfig.toFile());
-
-      loggingFactory =
-          jsonMapper.readerFor(DefaultLoggingFactory.class).readValue(jsonNode.at(LOGGING_CFG_KEY));
-    } catch (Throwable e) {
-      // use defaults
-      loggingFactory = new DefaultLoggingFactory();
-    }
-
-    loggingFactory.configure(new MetricRegistry(), "xtraplatform");
   }
 
   // TODO: special console pattern
