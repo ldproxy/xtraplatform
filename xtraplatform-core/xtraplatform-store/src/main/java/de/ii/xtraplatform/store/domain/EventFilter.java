@@ -39,6 +39,22 @@ public interface EventFilter {
     return true;
   }
 
+  default boolean matches(Identifier identifier) {
+    if (!getEntityTypes().contains("*")) {
+      if (identifier.path().isEmpty() || !containsEntityType(identifier.path())) {
+        if (!getEntityTypes().contains(identifier.id())) {
+          return false;
+        }
+      }
+    }
+
+    if (!getIds().isEmpty()) {
+      return getIds().contains(identifier.id()) || getIds().contains("*");
+    }
+
+    return true;
+  }
+
   default boolean isDefault(EntityEvent event) {
     return Objects.equals(event.type(), "defaults");
   }

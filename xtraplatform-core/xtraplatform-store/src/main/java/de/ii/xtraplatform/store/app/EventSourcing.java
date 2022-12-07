@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.store.app.entities.EntityDataStoreImpl;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
@@ -170,7 +171,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       identifiers.stream()
           // TODO: set priority per entity type (for now alphabetic works:
           //  codelists < providers < services)
-          .sorted(Comparator.comparing(identifier -> identifier.path().get(0)))
+          .sorted(Comparator.comparing(EntityDataStoreImpl::entityType))
           .reduce(
               CompletableFuture.completedFuture((Void) null),
               (completableFuture, identifier) ->
@@ -305,18 +306,6 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   }
 
   private List<Identifier> getIdentifiers(EventFilter filter) {
-
-    return getIdentifiers().stream()
-        .filter(
-            identifier -> {
-              if (filter.getEntityTypes().contains("*")
-                  || (!identifier.path().isEmpty()
-                      && filter.getEntityTypes().contains(identifier.path().get(0)))) {
-                return filter.getIds().contains("*") || filter.getIds().contains(identifier.id());
-              }
-
-              return false;
-            })
-        .collect(Collectors.toList());
+    return getIdentifiers().stream().filter(filter::matches).collect(Collectors.toList());
   }
 }
