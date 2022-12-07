@@ -1,4 +1,8 @@
 ---
+#store:
+#  sources:
+#    - ${STORE_SOURCE_BASE:-{type: 'FS_STORE_32'}}
+
 server:
   applicationConnectors:
     - type: http
@@ -28,4 +32,13 @@ httpClient:
 
 logging:
   level: ${LOG_LEVEL:-INFO}
+  apiRequests: ${LOG_API_REQUESTS:-OFF}
+  apiRequestUsers: ${LOG_API_REQUESTS_USERS:-OFF}
+  apiRequestHeaders: ${LOG_API_REQUESTS_HEADERS:-OFF}
+  apiRequestBodies: ${LOG_API_REQUESTS_BODIES:-OFF}
+  sqlQueries: ${LOG_SQL_QUERIES:-OFF}
+  sqlResults: ${LOG_SQL_RESULTS:-OFF}
+  configDumps: ${LOG_CONFIG_DUMPS:-OFF}
+  stackTraces: ${LOG_STACK_TRACES:-OFF}
+  wiring: ${LOG_WIRING:-OFF}
   appenders: []

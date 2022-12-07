@@ -9,22 +9,33 @@ package de.ii.xtraplatform.base.domain;
 
 import static de.ii.xtraplatform.base.domain.Constants.TMP_DIR_PROP;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,16 +51,17 @@ public class AppLauncher implements AppContext {
 
   private final String name;
   private final String version;
+  private final Set<CfgStoreDriver> drivers;
   private Constants.ENV env;
   private Path dataDir;
   private Path tmpDir;
-  private Path cfgFile;
   private AppConfiguration cfg;
   private URI uri;
 
   public AppLauncher(String name, String version) {
     this.name = name;
     this.version = version;
+    this.drivers = new HashSet<>();
   }
 
   @Override
@@ -78,11 +90,6 @@ public class AppLauncher implements AppContext {
   }
 
   @Override
-  public Path getConfigurationFile() {
-    return cfgFile;
-  }
-
-  @Override
   public AppConfiguration getConfiguration() {
     return cfg;
   }
@@ -100,27 +107,50 @@ public class AppLauncher implements AppContext {
 
     this.env = parseEnvironment();
     ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
-    this.cfgFile = configurationReader.getConfigurationFile(dataDir, env);
+    // this.cfgFile = configurationReader.getConfigurationFile(dataDir, env);
 
-    configurationReader.loadMergedLogging(cfgFile, env);
+    configurationReader.loadMergedLogging(Optional.empty(), env);
 
     LOGGER.info("--------------------------------------------------");
     LOGGER.info("Starting {} v{}", name, version);
+
+    // String cfgString = configurationReader.loadMergedConfigAsString(cfgFile, env);
+    // AppConfiguration appConfiguration = configurationReader.configFromString(cfgString, env);
+
+    this.cfg = configurationReader.loadMergedConfig(Map.of(), env);
+
+    this.drivers.add(new CfgStoreDriverFs(dataDir));
+
+    Map<String, InputStream> cfgs = getCfgs(cfg.store.getSources());
+
+    this.cfg = configurationReader.loadMergedConfig(cfgs, env);
+
+    cfg.getLoggingFactory().configure(new MetricRegistry(), "xtraplatform");
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Data directory: {}", dataDir);
       LOGGER.debug("Environment: {}", env);
     }
 
-    String cfgString = configurationReader.loadMergedConfigAsString(cfgFile, env);
-    this.cfg = configurationReader.configFromString(cfgString, env);
+    /*Path old = dataDir.resolve("cfg_old.yml");
+    try (Writer w =Files.newBufferedWriter(old)) {
+      w.write(configurationReader.asString(appConfiguration));
+    }*/
+
+    Path newy = dataDir.resolve("cfg_new.yml");
+    try (Writer w = Files.newBufferedWriter(newy)) {
+      w.write(configurationReader.asString(cfg));
+    }
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Base configurations: {}", configurationReader.getBaseConfigs(env).keySet());
-      LOGGER.debug("User configurations: [{}]", cfgFile.toFile().exists() ? cfgFile : "");
+      LOGGER.debug("User configurations: {}", cfgs.keySet());
     }
     if (LOGGER.isDebugEnabled(LogContext.MARKER.DUMP)) {
-      LOGGER.debug(LogContext.MARKER.DUMP, "Application configuration: \n{}", cfgString);
+      LOGGER.debug(
+          LogContext.MARKER.DUMP,
+          "Application configuration: \n{}",
+          configurationReader.asString(cfg));
     }
 
     String externalUrl = getConfiguration().getServerFactory().getExternalUrl();
@@ -205,6 +235,72 @@ public class AppLauncher implements AppContext {
                     .anyMatch(v -> Objects.equals(e, v)))
         .map(Constants.ENV::valueOf)
         .orElse(Constants.ENV.NATIVE);
+  }
+
+  private Map<String, InputStream> getCfgs(List<StoreSource> sources) {
+    List<StoreSource> cfgSources = findSources(sources);
+
+    return cfgSources.stream()
+        .flatMap(
+            source -> {
+              Optional<CfgStoreDriver> driver = findDriver(source, true);
+
+              if (driver.isPresent()) {
+                try {
+                  Optional<InputStream> cfg = driver.get().load(source);
+
+                  if (cfg.isPresent()) {
+                    return Stream.of(new SimpleImmutableEntry<>(source.getLabel(), cfg.get()));
+                  }
+                } catch (Throwable e) {
+                  LogContext.error(
+                      LOGGER,
+                      e,
+                      "{} for {} could not be loaded",
+                      Content.RESOURCES.getLabel(),
+                      source.getLabel());
+                }
+              }
+
+              return Stream.empty();
+            })
+        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private List<StoreSource> findSources(List<StoreSource> sources) {
+    return sources.stream()
+        .filter(source -> source.getContent() == Content.ALL || source.getContent() == Content.CFG)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private Optional<CfgStoreDriver> findDriver(StoreSource storeSource, boolean warn) {
+    final boolean[] foundUnavailable = {false};
+
+    // TODO: driver content types, s3 only supports resources
+    Optional<CfgStoreDriver> driver =
+        drivers.stream()
+            .filter(d -> d.getType() == storeSource.getType())
+            .filter(
+                d -> {
+                  if (!d.isAvailable(storeSource)) {
+                    if (warn) {
+                      LOGGER.warn(
+                          "{} for {} is not available.",
+                          Content.CFG.getLabel(),
+                          storeSource.getLabel());
+                    }
+                    foundUnavailable[0] = true;
+                    return false;
+                  }
+                  return true;
+                })
+            .findFirst();
+
+    if (driver.isEmpty() && !foundUnavailable[0]) {
+      LOGGER.error("No cfg driver found for source {}.", storeSource.getLabel());
+    }
+
+    return driver;
   }
 
   private String getScheme() {

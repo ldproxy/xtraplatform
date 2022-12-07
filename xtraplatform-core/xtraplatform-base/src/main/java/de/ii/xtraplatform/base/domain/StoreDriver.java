@@ -5,15 +5,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.store.domain;
+package de.ii.xtraplatform.base.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
-import de.ii.xtraplatform.base.domain.StoreDriver;
-import de.ii.xtraplatform.base.domain.StoreSource;
-import java.io.IOException;
+import de.ii.xtraplatform.base.domain.StoreSource.Type;
 
 @AutoMultiBind
-public interface BlobStoreDriver extends StoreDriver {
+public interface StoreDriver {
+  Type getType();
 
-  BlobSource init(StoreSource storeSource) throws IOException;
+  boolean isAvailable(StoreSource storeSource);
 }

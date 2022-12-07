@@ -14,31 +14,27 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
 import com.github.azahnen.dagger.annotations.AutoBind;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
-import de.ii.xtraplatform.base.domain.Constants.ENV;
+import de.ii.xtraplatform.base.domain.ConfigurationReader;
 import de.ii.xtraplatform.base.domain.LogContext;
-import de.ii.xtraplatform.web.domain.ApplicationProvider;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
-import de.ii.xtraplatform.web.domain.MustacheRenderer;
+import io.dropwizard.Application;
+import io.dropwizard.cli.Cli;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import io.dropwizard.views.ViewBundle;
-import java.nio.file.Path;
+import io.dropwizard.util.JarLocation;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import org.apache.commons.lang3.tuple.Pair;
-import org.eclipse.jetty.server.Server;
 import org.slf4j.LoggerFactory;
 
-// TODO: merge into AppLauncher
 /**
  * @author zahnen
  */
@@ -47,24 +43,14 @@ import org.slf4j.LoggerFactory;
 public class DropwizardProvider implements AppLifeCycle {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
+  private static final String[] DW_ARGS = {XtraplatformCommand.CMD, "cfg.yml"};
   static final String JERSEY_ENDPOINT = "/rest/*";
 
-  private final ApplicationProvider applicationProvider;
   private final AppContext appContext;
-  private final MustacheRenderer mustacheRenderer;
   private final Lazy<Set<DropwizardPlugin>> plugins;
 
-  private AppConfiguration configuration;
-  private Environment environment;
-
   @Inject
-  public DropwizardProvider(
-      ApplicationProvider applicationProvider,
-      MustacheRenderer mustacheRenderer,
-      AppContext appContext,
-      Lazy<Set<DropwizardPlugin>> plugins) {
-    this.applicationProvider = applicationProvider;
-    this.mustacheRenderer = mustacheRenderer;
+  public DropwizardProvider(AppContext appContext, Lazy<Set<DropwizardPlugin>> plugins) {
     this.appContext = appContext;
     this.plugins = plugins;
   }
@@ -79,17 +65,10 @@ public class DropwizardProvider implements AppLifeCycle {
   public void onStart() {
     Thread.currentThread().setName("startup");
 
-    Path cfgFile = appContext.getConfigurationFile();
-
     try {
-      init(cfgFile, appContext.getEnvironment());
+      init();
     } catch (Throwable ex) {
-      LogContext.error(
-          LOGGER,
-          ex,
-          "Error initializing {} with configuration file {}",
-          appContext.getName(),
-          cfgFile);
+      LogContext.error(LOGGER, ex, "Error during initializing of {}", appContext.getName());
       System.exit(1);
     }
   }
@@ -97,16 +76,12 @@ public class DropwizardProvider implements AppLifeCycle {
   @Override
   public void onStop() {}
 
-  private void init(Path cfgFilePath, ENV env) {
-    Pair<AppConfiguration, Environment> configurationEnvironmentPair =
-        applicationProvider.startWithFile(cfgFilePath, env, this::initBootstrap);
+  private void init() {
+    Environment environment = initEnvironment();
 
-    this.configuration = configurationEnvironmentPair.getLeft();
-    this.environment = configurationEnvironmentPair.getRight();
+    environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
-    this.environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-
-    this.environment
+    environment
         .healthChecks()
         .register(
             "store",
@@ -137,26 +112,55 @@ public class DropwizardProvider implements AppLifeCycle {
 
     environment.jersey().register(new JacksonJaxbXMLProvider());
 
-    Server server = configuration.getServerFactory().build(environment);
+    // TODO: starts the web server, move to WebServer???
+    appContext.getConfiguration().getServerFactory().build(environment);
 
     plugins.get().stream()
         .sorted(Comparator.comparingInt(DropwizardPlugin::getPriority))
-        .forEach(plugin -> plugin.init(configuration, environment));
+        .forEach(plugin -> plugin.init(appContext.getConfiguration(), environment));
   }
 
-  // TODO: to plugin
-  private void initBootstrap(Bootstrap<AppConfiguration> bootstrap) {
-    boolean cacheTemplates = !appContext.isDevEnv();
+  private Environment initEnvironment() {
+    CompletableFuture<Environment> environment = new CompletableFuture<>();
+    Bootstrap<AppConfiguration> bootstrap = initBootstrap(environment);
 
-    bootstrap.addBundle(
-        new ViewBundle<>(ImmutableSet.of(mustacheRenderer)) {
+    final Cli cli = new Cli(new JarLocation(getClass()), bootstrap, System.out, System.err);
+
+    try {
+      if (cli.run(DW_ARGS).isEmpty()) {
+        return environment.get(30, TimeUnit.SECONDS);
+      }
+    } catch (Throwable e) {
+      // continue
+    }
+
+    throw new IllegalStateException();
+  }
+
+  private Bootstrap<AppConfiguration> initBootstrap(
+      CompletableFuture<Environment> futureEnvironment) {
+    Application<AppConfiguration> application =
+        new Application<>() {
           @Override
-          public Map<String, Map<String, String>> getViewConfiguration(
-              AppConfiguration configuration) {
-            return ImmutableMap.of(
-                mustacheRenderer.getConfigurationKey(),
-                ImmutableMap.of("cache", Boolean.toString(cacheTemplates)));
+          public void run(AppConfiguration configuration, Environment environment)
+              throws Exception {
+            futureEnvironment.complete(environment);
           }
-        });
+        };
+
+    Bootstrap<AppConfiguration> bootstrap = new Bootstrap<>(application);
+    bootstrap.addCommand(new XtraplatformCommand<>(application));
+
+    ConfigurationReader configurationReader = new ConfigurationReader(Map.of());
+    bootstrap.setConfigurationSourceProvider(
+        ignore -> configurationReader.asInputStream(appContext.getConfiguration()));
+
+    plugins.get().stream()
+        .sorted(Comparator.comparingInt(DropwizardPlugin::getPriority))
+        .forEach(plugin -> plugin.initBootstrap(bootstrap));
+
+    bootstrap.registerMetrics();
+
+    return bootstrap;
   }
 }

@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
+import static de.ii.xtraplatform.store.app.entities.EntityDataStoreImpl.entityType;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
@@ -81,10 +83,9 @@ public class AdminEndpointEntities implements AdminSubEndpoint {
       LinkedHashMap<String, List<Map<String, String>>> entities =
           entityDataStore.identifiers().stream()
               .sorted(Comparator.naturalOrder())
-              .peek(identifier -> LOGGER.debug("{}", identifier))
               .collect(
                   Collectors.groupingBy(
-                      identifier -> identifier.path().get(0),
+                      EntityDataStoreImpl::entityType,
                       LinkedHashMap::new,
                       Collectors.mapping(this::getEntityInfo, Collectors.toList())));
 
@@ -95,7 +96,7 @@ public class AdminEndpointEntities implements AdminSubEndpoint {
 
     private ImmutableMap<String, String> getEntityInfo(Identifier identifier) {
       Optional<EntityState.STATE> state =
-          entityRegistry.getEntityState(identifier.path().get(0), identifier.id());
+          entityRegistry.getEntityState(entityType(identifier), identifier.id());
       return ImmutableMap.of("id", identifier.id(), "status", state.orElse(STATE.UNKNOWN).name());
     }
   }

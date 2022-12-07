@@ -103,10 +103,6 @@ class InternalUserAuthenticatorSpec extends Specification {
                 return null
             }
 
-            @Override
-            Path getConfigurationFile() {
-                return null
-            }
 
             @Override
             AppConfiguration getConfiguration() {
