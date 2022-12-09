@@ -11,6 +11,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.health.HealthCheck;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
 import com.github.azahnen.dagger.annotations.AutoBind;
@@ -23,6 +24,8 @@ import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import io.dropwizard.Application;
 import io.dropwizard.cli.Cli;
+import io.dropwizard.configuration.ConfigurationFactory;
+import io.dropwizard.configuration.DefaultConfigurationFactoryFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.JarLocation;
@@ -33,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.Validator;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -154,7 +158,20 @@ public class DropwizardProvider implements AppLifeCycle {
     ConfigurationReader configurationReader = new ConfigurationReader(Map.of());
     bootstrap.setConfigurationSourceProvider(
         ignore -> configurationReader.asInputStream(appContext.getConfiguration()));
-    bootstrap.setObjectMapper(configurationReader.getMapper());
+
+    // NOTE: using bootstrap.setObjectMapper would change the ObjectMapper in environment, this just
+    // uses our ObjectMapper to load cfg.yml
+    bootstrap.setConfigurationFactoryFactory(
+        new DefaultConfigurationFactoryFactory<>() {
+          @Override
+          public ConfigurationFactory<AppConfiguration> create(
+              Class<AppConfiguration> klass,
+              Validator validator,
+              ObjectMapper objectMapper,
+              String propertyPrefix) {
+            return super.create(klass, validator, configurationReader.getMapper(), propertyPrefix);
+          }
+        });
 
     plugins.get().stream()
         .sorted(Comparator.comparingInt(DropwizardPlugin::getPriority))
