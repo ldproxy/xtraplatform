@@ -4,7 +4,7 @@ import { createFeature, fassetValidations } from 'feature-u';
 import { validatePropTypes } from '@xtraplatform/core';
 import { routes } from '@xtraplatform/manager';
 
-import CodelistIndex from './Index';
+import CodelistIndex from './Listing';
 import CodelistDetails from './Details';
 
 const codelistsFeature = 'codelists';

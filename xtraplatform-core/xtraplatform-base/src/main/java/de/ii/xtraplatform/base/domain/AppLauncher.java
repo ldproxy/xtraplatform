@@ -20,7 +20,6 @@ import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Writer;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -107,15 +106,11 @@ public class AppLauncher implements AppContext {
 
     this.env = parseEnvironment();
     ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
-    // this.cfgFile = configurationReader.getConfigurationFile(dataDir, env);
 
     configurationReader.loadMergedLogging(Optional.empty(), env);
 
     LOGGER.info("--------------------------------------------------");
     LOGGER.info("Starting {} v{}", name, version);
-
-    // String cfgString = configurationReader.loadMergedConfigAsString(cfgFile, env);
-    // AppConfiguration appConfiguration = configurationReader.configFromString(cfgString, env);
 
     this.cfg = configurationReader.loadMergedConfig(Map.of(), env);
 
@@ -130,19 +125,6 @@ public class AppLauncher implements AppContext {
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Data directory: {}", dataDir);
       LOGGER.debug("Environment: {}", env);
-    }
-
-    /*Path old = dataDir.resolve("cfg_old.yml");
-    try (Writer w =Files.newBufferedWriter(old)) {
-      w.write(configurationReader.asString(appConfiguration));
-    }*/
-
-    Path newy = dataDir.resolve("cfg_new.yml");
-    try (Writer w = Files.newBufferedWriter(newy)) {
-      w.write(configurationReader.asString(cfg));
-    }
-
-    if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Base configurations: {}", configurationReader.getBaseConfigs(env).keySet());
       LOGGER.debug("User configurations: {}", cfgs.keySet());
     }

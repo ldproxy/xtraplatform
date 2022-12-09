@@ -5,7 +5,7 @@ import { validatePropTypes } from '@xtraplatform/core';
 import { routes } from '@xtraplatform/manager';
 
 import { servicesFeature, serviceViewActions, serviceEditTabs } from './constants';
-import ServiceIndex from './Index';
+import ServiceIndex from './Listing';
 import ServiceEdit from './Edit';
 import ServiceEditGeneral from './Edit/Main/General';
 import ServiceDefaults from './Defaults';

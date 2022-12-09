@@ -28,7 +28,6 @@ import io.dropwizard.logging.ConsoleAppenderFactory;
 import io.dropwizard.util.DataSize;
 import io.dropwizard.util.Duration;
 import java.io.ByteArrayInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -105,28 +104,6 @@ public class ConfigurationReader {
     return mapper;
   }
 
-  public Path getConfigurationFile(Path dataDir, Constants.ENV environment) {
-    Path defaultPath = dataDir.resolve(CFG_FILE_NAME).toAbsolutePath();
-
-    if (Files.exists(defaultPath)) {
-      return defaultPath;
-    } else {
-      // TODO
-      Optional<ByteSource> configurationFileTemplate =
-          getConfigurationFileTemplate(environment.name().toLowerCase());
-
-      if (configurationFileTemplate.isPresent()) {
-        try {
-          configurationFileTemplate.get().copyTo(new FileOutputStream(defaultPath.toFile()));
-        } catch (IOException e) {
-          // ignore
-        }
-      }
-
-      return defaultPath;
-    }
-  }
-
   private String read(ByteSource byteSource) throws IOException {
     String read = byteSource.asCharSource(StandardCharsets.UTF_8).read();
     String replace = envSubstitutor.replace(read);
@@ -154,25 +131,6 @@ public class ConfigurationReader {
     applyForcedDefaults(builder, env);
 
     return builder.toImmutable();
-  }
-
-  public String loadMergedConfigAsString(Path userConfig, Constants.ENV env) throws IOException {
-    Map<String, InputStream> userCfgs =
-        userConfig.toFile().exists()
-            ? Map.of("default", Files.newInputStream(userConfig))
-            : Map.of();
-
-    AppConfiguration cfg = loadMergedConfig(userCfgs, env);
-
-    return mapper.writeValueAsString(cfg);
-  }
-
-  public AppConfiguration configFromString(String cfg, Constants.ENV env) throws IOException {
-    AppConfiguration appConfiguration = mapper.readValue(cfg, AppConfiguration.class);
-
-    applyForcedDefaults(appConfiguration, env);
-
-    return appConfiguration;
   }
 
   public InputStream asInputStream(AppConfiguration cfg) throws IOException {
