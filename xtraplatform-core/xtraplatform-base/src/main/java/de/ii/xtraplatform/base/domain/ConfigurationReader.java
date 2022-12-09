@@ -7,7 +7,10 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import static de.ii.xtraplatform.base.domain.util.JacksonModules.DESERIALIZE_IMMUTABLE_BUILDER_NESTED;
+
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -89,11 +92,17 @@ public class ConfigurationReader {
             .disable(MapperFeature.AUTO_DETECT_FIELDS)
             .disable(MapperFeature.AUTO_DETECT_GETTERS)
             .disable(MapperFeature.AUTO_DETECT_IS_GETTERS)
-            .disable(MapperFeature.AUTO_DETECT_SETTERS);
+            .disable(MapperFeature.AUTO_DETECT_SETTERS)
+            .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
+            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
     this.mergeMapper = getMergeMapper(mapper);
 
     this.envSubstitutor = new EnvironmentVariableSubstitutor(false);
+  }
+
+  public ObjectMapper getMapper() {
+    return mapper;
   }
 
   public Path getConfigurationFile(Path dataDir, Constants.ENV environment) {
@@ -119,29 +128,32 @@ public class ConfigurationReader {
   }
 
   private String read(ByteSource byteSource) throws IOException {
-    return envSubstitutor.replace(byteSource.asCharSource(StandardCharsets.UTF_8).read());
+    String read = byteSource.asCharSource(StandardCharsets.UTF_8).read();
+    String replace = envSubstitutor.replace(read);
+    return replace;
   }
 
   public AppConfiguration loadMergedConfig(Map<String, InputStream> userCfgs, Constants.ENV env)
       throws IOException {
-    AppConfiguration cfg = mapper.readValue(read(getBaseConfig()), AppConfiguration.class);
+    ModifiableAppConfiguration builder =
+        mapper.readValue(read(getBaseConfig()), ModifiableAppConfiguration.class);
 
     for (ByteSource envCfg : getEnvConfigs(env).values()) {
-      mergeMapper.readerForUpdating(cfg).readValue(read(envCfg));
+      mergeMapper.readerForUpdating(builder).readValue(read(envCfg));
     }
 
     // TODO: error message with entry.getKey()
     for (Map.Entry<String, InputStream> userCfg : userCfgs.entrySet()) {
       mergeMapper
-          .readerForUpdating(cfg)
+          .readerForUpdating(builder)
           .readValue(read(ByteSource.wrap(userCfg.getValue().readAllBytes())));
     }
 
-    applyLogFormat(cfg.getLoggingConfiguration(), env);
+    applyLogFormat(builder.getLoggingFactory(), env);
 
-    applyForcedDefaults(cfg, env);
+    applyForcedDefaults(builder, env);
 
-    return cfg;
+    return builder.toImmutable();
   }
 
   public String loadMergedConfigAsString(Path userConfig, Constants.ENV env) throws IOException {

@@ -55,7 +55,7 @@ public class ServiceBackgroundTasksImpl implements ServiceBackgroundTasks, AppLi
     this.commonQueue =
         scheduler.createQueue(
             ServiceBackgroundTasks.COMMON_QUEUE,
-            appContext.getConfiguration().backgroundTasks.maxThreads);
+            appContext.getConfiguration().getBackgroundTasks().getMaxThreads());
     this.taskQueues = new ConcurrentHashMap<>();
     this.cronJobs = new ConcurrentHashMap<>();
     taskQueues.put(COMMON_QUEUE, commonQueue);

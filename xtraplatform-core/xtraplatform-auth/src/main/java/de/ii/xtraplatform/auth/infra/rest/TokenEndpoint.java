@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.auth.infra.rest;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.app.SplitCookie;
 import de.ii.xtraplatform.auth.domain.ImmutableTokenResponse;
@@ -14,7 +15,7 @@ import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthenticator;
 import de.ii.xtraplatform.base.domain.AppContext;
-import de.ii.xtraplatform.base.domain.AuthConfig;
+import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -45,17 +46,17 @@ public class TokenEndpoint implements Endpoint {
   private static final int DEFAULT_EXPIRY = 2592000;
 
   public static class Credentials {
-    public String user;
-    public String password;
-    public int expiration = DEFAULT_EXPIRY;
-    public boolean rememberMe = false;
-    public boolean noCookie = false;
+    @JsonProperty public String user;
+    @JsonProperty public String password;
+    @JsonProperty public int expiration = DEFAULT_EXPIRY;
+    @JsonProperty public boolean rememberMe = false;
+    @JsonProperty public boolean noCookie = false;
   }
 
   private final UserAuthenticator authenticator;
   private final TokenHandler tokenGenerator;
   private final URI servicesUri;
-  private final AuthConfig authConfig;
+  private final AuthConfiguration authConfig;
 
   @Inject
   public TokenEndpoint(
@@ -66,7 +67,7 @@ public class TokenEndpoint implements Endpoint {
     this.authenticator = authenticator;
     this.tokenGenerator = tokenGenerator;
     this.servicesUri = servicesContext.getUri();
-    this.authConfig = appContext.getConfiguration().auth;
+    this.authConfig = appContext.getConfiguration().getAuth();
   }
 
   @RequestBody(

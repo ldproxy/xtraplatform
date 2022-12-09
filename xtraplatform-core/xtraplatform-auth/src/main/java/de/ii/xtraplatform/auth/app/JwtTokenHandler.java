@@ -14,18 +14,26 @@ import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.base.domain.AppContext;
-import de.ii.xtraplatform.base.domain.AuthConfig;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
+import de.ii.xtraplatform.base.domain.AuthConfiguration;
+import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.store.domain.BlobStore;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.DefaultJwtBuilder;
 import io.jsonwebtoken.impl.DefaultJwtParser;
 import io.jsonwebtoken.security.Keys;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
@@ -35,15 +43,25 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class JwtTokenHandler implements TokenHandler {
+public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenHandler.class);
+  private static final String RESOURCES_JWT = "jwt";
+  private static final Path SIGNING_KEY_PATH = Path.of("signingKey");
 
-  private final AuthConfig authConfig;
+  private final BlobStore keyStore;
+  private final AuthConfiguration authConfig;
+  private Key signingKey;
 
   @Inject
-  public JwtTokenHandler(AppContext appContext) {
-    this.authConfig = appContext.getConfiguration().auth;
+  public JwtTokenHandler(AppContext appContext, BlobStore blobStore) {
+    this.authConfig = appContext.getConfiguration().getAuth();
+    this.keyStore = blobStore.with(RESOURCES_JWT);
+  }
+
+  @Override
+  public void onStart() {
+    this.signingKey = getKey();
   }
 
   @Override
@@ -57,31 +75,29 @@ public class JwtTokenHandler implements TokenHandler {
     JwtBuilder jwtBuilder =
         new DefaultJwtBuilder()
             .setSubject(user.getName())
-            .claim(authConfig.userRoleKey, user.getRole().toString())
+            .claim(authConfig.getUserRoleKey(), user.getRole().toString())
             .claim("rememberMe", rememberMe)
             .setExpiration(expiration);
     if (user.getForceChangePassword()) {
       jwtBuilder.claim("forceChangePassword", true);
     }
-    return jwtBuilder.signWith(getKey()).compact();
+    return jwtBuilder.signWith(signingKey).compact();
   }
 
   @Override
   public Optional<User> parseToken(String token) {
-    if (authConfig.isActive() && authConfig.isJwt()) {
+    if (Objects.nonNull(signingKey)) {
       try {
         Claims claimsJws =
-            new DefaultJwtParser()
-                .setSigningKey(authConfig.jwtSigningKey)
-                .parseClaimsJws(token)
-                .getBody();
+            new DefaultJwtParser().setSigningKey(signingKey).parseClaimsJws(token).getBody();
 
         return Optional.of(
             ImmutableUser.builder()
                 .name(claimsJws.getSubject())
                 .role(
                     Role.fromString(
-                        Optional.ofNullable(claimsJws.get(authConfig.userRoleKey, String.class))
+                        Optional.ofNullable(
+                                claimsJws.get(authConfig.getUserRoleKey(), String.class))
                             .orElse("USER")))
                 .build());
       } catch (Throwable e) {
@@ -96,13 +112,10 @@ public class JwtTokenHandler implements TokenHandler {
 
   @Override
   public <T> Optional<T> parseTokenClaim(String token, String name, Class<T> type) {
-    if (authConfig.isActive() && authConfig.isJwt()) {
+    if (Objects.nonNull(signingKey)) {
       try {
         Claims claimsJws =
-            new DefaultJwtParser()
-                .setSigningKey(authConfig.jwtSigningKey)
-                .parseClaimsJws(token)
-                .getBody();
+            new DefaultJwtParser().setSigningKey(signingKey).parseClaimsJws(token).getBody();
 
         return Optional.ofNullable(claimsJws.get(name, type));
 
@@ -117,21 +130,37 @@ public class JwtTokenHandler implements TokenHandler {
   }
 
   private Key getKey() {
-    return Optional.ofNullable(Strings.emptyToNull(authConfig.jwtSigningKey))
+    return Optional.ofNullable(Strings.emptyToNull(authConfig.getJwtSigningKey()))
         .map(Base64.getDecoder()::decode)
+        .or(this::loadKey)
         .map(Keys::hmacShaKeyFor)
         .orElseGet(this::generateKey);
+  }
+
+  private Optional<byte[]> loadKey() {
+    try {
+      Optional<InputStream> signingKey = keyStore.get(SIGNING_KEY_PATH);
+
+      if (signingKey.isPresent()) {
+        byte[] bytes = signingKey.get().readAllBytes();
+
+        return Optional.of(bytes);
+      }
+    } catch (IOException e) {
+      LogContext.error(LOGGER, e, "Could not load JWT signing key");
+    }
+
+    return Optional.empty();
   }
 
   private SecretKey generateKey() {
     SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    authConfig.jwtSigningKey = Base64.getEncoder().encodeToString(key.getEncoded());
-
-    // TODO
-    LOGGER.warn(
-        "No valid 'jwtSigningKey' found in 'cfg.yml', using '{}'. If you do not set 'jwtSigningKey', it will change on every restart.",
-        authConfig.jwtSigningKey);
+    try {
+      keyStore.put(SIGNING_KEY_PATH, new ByteArrayInputStream(key.getEncoded()));
+    } catch (IOException e) {
+      LogContext.error(LOGGER, e, "Could not save JWT signing key");
+    }
 
     return key;
   }

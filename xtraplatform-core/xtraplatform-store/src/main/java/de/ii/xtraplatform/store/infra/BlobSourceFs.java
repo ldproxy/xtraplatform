@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
@@ -131,7 +132,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   // TODO: remote sources might provide readable locals, but never writable ones
   @Override
-  public Optional<Path> path(Path path, boolean writable) throws IOException {
+  public Optional<Path> asLocalPath(Path path, boolean writable) throws IOException {
     if (!canHandle(path)) {
       return Optional.empty();
     }
@@ -150,11 +151,11 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
   }
 
   private Path full(Path path) {
-    return root.resolve(path);
+    return Objects.isNull(prefix) ? root.resolve(path) : root.resolve(prefix.relativize(path));
   }
 
   @Override
   public boolean canHandle(Path path) {
-    return prefix == null || path.startsWith(prefix);
+    return Objects.isNull(prefix) || path.startsWith(prefix);
   }
 }

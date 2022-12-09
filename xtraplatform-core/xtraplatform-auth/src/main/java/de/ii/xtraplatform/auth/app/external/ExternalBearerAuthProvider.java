@@ -14,7 +14,7 @@ import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthorizer;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.base.domain.AppContext;
-import de.ii.xtraplatform.base.domain.AuthConfig;
+import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.web.domain.AuthProvider;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.Http;
@@ -35,13 +35,13 @@ import javax.inject.Singleton;
 public class ExternalBearerAuthProvider implements AuthProvider<User>, DropwizardPlugin {
 
   private final HttpClient httpClient;
-  private final AuthConfig authConfig;
+  private final AuthConfiguration authConfig;
   private MetricRegistry metricRegistry;
 
   @Inject
   public ExternalBearerAuthProvider(AppContext appContext, Http http) {
     this.httpClient = http.getDefaultClient();
-    this.authConfig = appContext.getConfiguration().auth;
+    this.authConfig = appContext.getConfiguration().getAuth();
   }
 
   @Override
@@ -74,10 +74,10 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
             .setPrefix("Bearer")
             .buildAuthFilter();
 
-    if (!authConfig.externalDynamicAuthorizationEndpoint.isEmpty()) {
+    if (authConfig.getExternalDynamicAuthorizationEndpoint().isPresent()) {
       return new ExternalDynamicAuthFilter<>(
-          authConfig.externalDynamicAuthorizationEndpoint,
-          authConfig.postProcessingEndpoint,
+          authConfig.getExternalDynamicAuthorizationEndpoint().get(),
+          authConfig.getPostProcessingEndpoint().orElse(""),
           httpClient,
           authFilter);
     }

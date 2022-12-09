@@ -154,6 +154,7 @@ public class DropwizardProvider implements AppLifeCycle {
     ConfigurationReader configurationReader = new ConfigurationReader(Map.of());
     bootstrap.setConfigurationSourceProvider(
         ignore -> configurationReader.asInputStream(appContext.getConfiguration()));
+    bootstrap.setObjectMapper(configurationReader.getMapper());
 
     plugins.get().stream()
         .sorted(Comparator.comparingInt(DropwizardPlugin::getPriority))

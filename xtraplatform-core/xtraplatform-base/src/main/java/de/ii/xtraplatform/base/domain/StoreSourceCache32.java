@@ -33,7 +33,7 @@ public interface StoreSourceCache32 extends StoreSourceFs {
   @Value.Derived
   @Override
   default String getSrc() {
-    return "cache";
+    return "cache/tiles";
   }
 
   @Value.Derived

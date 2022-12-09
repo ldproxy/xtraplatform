@@ -60,8 +60,8 @@ public interface BlobStore extends BlobReader, BlobWriter, BlobLocals {
       }
 
       @Override
-      public Optional<Path> path(Path path, boolean writable) throws IOException {
-        return delegate.path(prefix.resolve(path), writable);
+      public Optional<Path> asLocalPath(Path path, boolean writable) throws IOException {
+        return delegate.asLocalPath(prefix.resolve(path), writable);
       }
     };
   }

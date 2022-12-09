@@ -86,7 +86,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     this.eventStore = eventStore;
     this.valueEncoding =
         new ValueEncodingJackson<>(
-            jackson, appContext.getConfiguration().store.isFailOnUnknownProperties());
+            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
@@ -104,7 +104,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     this.valueEncodingBuilder =
         new ValueEncodingJackson<>(
-            jackson, appContext.getConfiguration().store.isFailOnUnknownProperties());
+            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     valueEncodingBuilder.addDecoderMiddleware(
         new ValueDecoderBase<>(
             this::getNewBuilder,
@@ -122,7 +122,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     this.valueEncodingMap =
         new ValueEncodingJackson<>(
-            jackson, appContext.getConfiguration().store.isFailOnUnknownProperties());
+            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
             identifier -> new LinkedHashMap<>(),
@@ -140,7 +140,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     this.valueEncodingEntity =
         new ValueEncodingJackson<>(
-            jackson, appContext.getConfiguration().store.isFailOnUnknownProperties());
+            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     valueEncodingEntity.addDecoderMiddleware(
         new ValueDecoderWithBuilder<>(
             this::getBuilder,

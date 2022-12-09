@@ -63,7 +63,7 @@ public class InternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
 
     AuthFilter<String, User> authFilter =
         new SplitCookieCredentialAuthFilter.Builder<User>()
-            .setAuthenticator(cachingAuthenticator)
+            .setAuthenticator(tokenAuthenticator)
             .setAuthorizer(new UserAuthorizer())
             .setPrefix("Bearer")
             .setRealm("xtraplatform")

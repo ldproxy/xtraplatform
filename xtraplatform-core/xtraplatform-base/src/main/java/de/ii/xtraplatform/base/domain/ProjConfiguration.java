@@ -7,19 +7,22 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.Optional;
+import org.immutables.value.Value;
 
 /**
  * @title PROJ Coordinate transformations
  */
-public class ProjConfiguration {
+@Value.Immutable
+@Value.Modifiable
+@JsonDeserialize(as = ModifiableProjConfiguration.class)
+public interface ProjConfiguration {
 
   /**
    * @en The path to the PROJ directory, either absolute or relative to the data directory.
    * @de Der Pfad zum PROJ-Verzeichnis, entweder absolut oder relativ zum Daten-Verzeichnis.
    * @default `proj`
    */
-  @Valid @NotNull @JsonProperty public String location = "proj";
+  Optional<String> getLocation();
 }

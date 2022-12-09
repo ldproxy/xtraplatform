@@ -7,8 +7,8 @@
  */
 package de.ii.xtraplatform.store.app;
 
+import static de.ii.xtraplatform.base.domain.util.JacksonModules.DESERIALIZE_IMMUTABLE_BUILDER_NESTED;
 import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_API_BUILDINGBLOCK_MIGRATION;
-import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_IMMUTABLE_BUILDER_NESTED;
 import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER;
 
 import com.fasterxml.jackson.annotation.JsonInclude;

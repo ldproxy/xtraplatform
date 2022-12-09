@@ -57,6 +57,11 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
   }
 
   @Override
+  public int getPriority() {
+    return 50;
+  }
+
+  @Override
   public void onStart() {
     List<StoreSource> sources = findSources();
 
@@ -80,8 +85,11 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
 
                       if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(
-                            "{} for {} ready{}",
+                            "{}{} for {} ready{}",
                             Content.RESOURCES.getLabel(),
+                            source.getPrefix().isPresent()
+                                ? " of type " + source.getPrefix().get()
+                                : "",
                             source.getLabel(),
                             writable ? " and writable" : "");
                       }
@@ -223,12 +231,12 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
   }
 
   @Override
-  public Optional<Path> path(Path path, boolean writable) throws IOException {
+  public Optional<Path> asLocalPath(Path path, boolean writable) throws IOException {
 
     if (writable) {
       for (BlobSource writer : blobWriters) {
         if (writer.canHandle(path) && writer.canLocals()) {
-          return writer.local().path(path, true);
+          return writer.local().asLocalPath(path, true);
         }
       }
 
@@ -239,7 +247,7 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
 
     for (BlobSource source : blobReaders) {
       if (source.has(path) && source.canLocals()) {
-        return source.local().path(path, false);
+        return source.local().asLocalPath(path, false);
       }
     }
 

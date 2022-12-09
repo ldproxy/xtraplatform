@@ -7,15 +7,17 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import javax.validation.Valid;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import org.immutables.value.Value;
 
 /**
  * @title BackgroundTasks
  */
-public class BackgroundTasksConfiguration {
+@Value.Immutable
+@Value.Modifiable
+@JsonDeserialize(as = ModifiableBackgroundTasksConfiguration.class)
+public interface BackgroundTasksConfiguration {
 
   /**
    * @en The maximum number of threads available for background processes. If requests are to be
@@ -25,9 +27,9 @@ public class BackgroundTasksConfiguration {
    *     der CPU-Kerne nicht überschreiten.
    * @default `1`
    */
-  @Valid
-  @NotNull
   @Min(1)
-  @JsonProperty
-  public int maxThreads = 1;
+  @Value.Default
+  default int getMaxThreads() {
+    return 1;
+  }
 }
