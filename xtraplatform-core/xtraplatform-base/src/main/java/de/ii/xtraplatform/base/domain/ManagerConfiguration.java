@@ -7,14 +7,16 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.immutables.value.Value;
 
 /**
  * @title Manager
  */
-public class ManagerConfiguration {
+@Value.Immutable
+@Value.Modifiable
+@JsonDeserialize(as = ModifiableManagerConfiguration.class)
+public interface ManagerConfiguration {
 
   /**
    * @en Should the Manager app be enabled to manage the configuration (see
@@ -23,5 +25,8 @@ public class ManagerConfiguration {
    *     [Manager](README.md#manager))?
    * @default `true`
    */
-  @Valid @NotNull @JsonProperty public boolean enabled = true;
+  @Value.Default
+  default boolean getEnabled() {
+    return true;
+  }
 }

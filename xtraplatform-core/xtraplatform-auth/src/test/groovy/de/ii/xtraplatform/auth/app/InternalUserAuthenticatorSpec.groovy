@@ -12,7 +12,8 @@ import de.ii.xtraplatform.auth.domain.Role
 import de.ii.xtraplatform.base.domain.AppContext
 import de.ii.xtraplatform.auth.domain.User
 import de.ii.xtraplatform.base.domain.AppConfiguration
-import de.ii.xtraplatform.base.domain.Constants
+import de.ii.xtraplatform.base.domain.AuthConfiguration
+import de.ii.xtraplatform.base.domain.ModifiableAuthConfiguration
 import de.ii.xtraplatform.store.domain.Identifier
 import de.ii.xtraplatform.store.domain.ValueEncoding
 import de.ii.xtraplatform.store.domain.entities.EntityData
@@ -20,7 +21,6 @@ import de.ii.xtraplatform.store.domain.entities.EntityDataStore
 import spock.lang.Shared
 import spock.lang.Specification
 
-import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 
 class InternalUserAuthenticatorSpec extends Specification {
@@ -77,45 +77,15 @@ class InternalUserAuthenticatorSpec extends Specification {
     }
 
     InternalUserAuthenticator getinternalUserAuthenticatorMock() {
-        AppContext configurationProvider = new AppContext() {
-            @Override
-            String getName() {
-                return null
-            }
-
-            @Override
-            String getVersion() {
-                return null
-            }
-
-            @Override
-            Constants.ENV getEnvironment() {
-                return null
-            }
-
-            @Override
-            Path getDataDir() {
-                return null
-            }
-
-            @Override
-            Path getTmpDir() {
-                return null
-            }
-
-
-            @Override
-            AppConfiguration getConfiguration() {
-                return new AppConfiguration()
-            }
-
-            @Override
-            URI getUri() {
-                return null
-            }
+        def auth = ModifiableAuthConfiguration.create()
+        AppConfiguration config = Stub(AppConfiguration) {
+            getAuth() >> auth
+        }
+        AppContext ac = Stub(AppContext) {
+            getConfiguration() >> config
         }
         EntityDataStore<?> entityDataStore = new EntityDataStoreTest()
-        return new InternalUserAuthenticator(configurationProvider, entityDataStore)
+        return new InternalUserAuthenticator(ac, entityDataStore)
     }
 
     class EntityDataStoreTest implements EntityDataStore<EntityData>{

@@ -9,8 +9,6 @@ package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonMerge;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
@@ -299,14 +297,14 @@ import org.immutables.value.Value;
     path = "application",
     name = "40-store.md",
     tables = {
-      // TODO: needs annotated methods, use immutables
       @DocTable(
           name = "properties",
           rows = {@DocStep(type = Step.JSON_PROPERTIES)},
           columnSet = ColumnSet.JSON_PROPERTIES)
     })
 @Value.Immutable
-@JsonDeserialize(builder = StoreConfiguration.Builder.class)
+@Value.Modifiable
+@JsonDeserialize(as = ModifiableStoreConfiguration.class)
 public interface StoreConfiguration {
 
   String DEFAULT_LOCATION = "store";
@@ -341,15 +339,12 @@ public interface StoreConfiguration {
     return false;
   }
 
-  // TODO
   @Value.Default
   default boolean isFailOnUnknownProperties() {
     return false;
   }
 
-  // TODO: I think AppConfiguration needs a builder getter for storeConfiguration
   @JsonMerge
-  @JsonProperty(value = "sources", access = Access.READ_ONLY)
   List<StoreSource> getSources();
 
   Optional<StoreFilters> getFilter();
@@ -375,12 +370,10 @@ public interface StoreConfiguration {
   @Deprecated(since = "3.3")
   @Value.Check
   default StoreConfiguration backwardsCompatibility() {
-    if (getSources().isEmpty()) {
-      return new StoreConfiguration.Builder()
+    if (!getAdditionalLocations().isEmpty()) {
+      return new ImmutableStoreConfiguration.Builder()
           .from(this)
-          .addSources(new ImmutableStoreSourceCfg32.Builder().build())
-          .addSources(new ImmutableStoreSourceDefault32.Builder().build())
-          .addSources(new ImmutableStoreSourceCache32.Builder().build())
+          .additionalLocations(List.of())
           .addAllSources(
               getAdditionalLocations().stream()
                   .map(
@@ -395,14 +388,5 @@ public interface StoreConfiguration {
     }
 
     return this;
-  }
-
-  class Builder extends ImmutableStoreConfiguration.Builder {
-
-    @JsonProperty(value = "sources", access = Access.WRITE_ONLY)
-    public Builder mergeSources(Iterable<? extends StoreSource> elements) {
-      addAllSources(elements);
-      return this;
-    }
   }
 }

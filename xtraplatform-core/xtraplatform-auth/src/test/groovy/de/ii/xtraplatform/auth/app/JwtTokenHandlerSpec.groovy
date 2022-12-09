@@ -3,27 +3,41 @@ package de.ii.xtraplatform.auth.app
 import de.ii.xtraplatform.auth.domain.ImmutableUser
 import de.ii.xtraplatform.auth.domain.Role
 import de.ii.xtraplatform.auth.domain.User
-import de.ii.xtraplatform.base.domain.AppContext
-import de.ii.xtraplatform.base.domain.Constants
 import de.ii.xtraplatform.base.domain.AppConfiguration
+import de.ii.xtraplatform.base.domain.AppContext
+import de.ii.xtraplatform.base.domain.AuthConfiguration
+import de.ii.xtraplatform.base.domain.ModifiableAuthConfiguration
+import de.ii.xtraplatform.store.domain.BlobStore
 import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Specification
 
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import java.nio.file.Path
 
 class JwtTokenHandlerSpec extends Specification {
 
-    @Shared JwtTokenHandler jwtTokenHandler
-    @Shared byte[] secretKey = "bWjviO9eI9/i/ft15U49dbqAJiGyuHAXcP1na2QZZyo=".getBytes()
+    @Shared
+    JwtTokenHandler jwtTokenHandler
+    @Shared
+    byte[] secretKey = "bWjviO9eI9/i/ft15U49dbqAJiGyuHAXcP1na2QZZyo=".getBytes()
 
     def setupSpec() {
-        jwtTokenHandler = getTokenHandlerMock()
+        def auth = ModifiableAuthConfiguration.create()
+        auth.setJwtSigningKey(Base64.getEncoder().encodeToString(secretKey))
+        AppConfiguration config = Stub(AppConfiguration) {
+            getAuth() >> auth
+        }
+        AppContext ac = Stub(AppContext) {
+            getConfiguration() >> config
+        }
+
+        jwtTokenHandler = new JwtTokenHandler(ac, Stub(BlobStore))
+        jwtTokenHandler.onStart()
     }
 
-    @Ignore //TODO
+    @Ignore
+    //TODO
     def 'Test token generation'() {
         given:
         ImmutableUser user = ImmutableUser.builder().name("foobar").role(Role.ADMIN).build()
@@ -58,7 +72,8 @@ class JwtTokenHandlerSpec extends Specification {
         !user.get().getForceChangePassword()
     }
 
-    @Ignore //TODO
+    @Ignore
+    //TODO
     def 'Test token parsing on incorrect inputs'() {
         when:
         Optional<User> user = jwtTokenHandler.parseToken(token)
@@ -67,11 +82,11 @@ class JwtTokenHandlerSpec extends Specification {
         user.isEmpty()
 
         where:
-        token                                   |   _
-        null                                    |   _
-        ""                                      |   _
+        token                                                                                                                                                                       | _
+        null                                                                                                                                                                        | _
+        ""                                                                                                                                                                          | _
         // incomplete token:
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"  |   _
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"                                                                                                                                      | _
         // expired JWT token:
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmb29iYXIiLCJyb2xlIjoiQURNSU4iLCJyZW1lbWJlck1lIjp0cnVlLCJleHAiOjE2MTA2MzI4MDB9.7GwogdWyig1CeyiiYs-4gLOOPbPVAd95k1ifN7qY3PE" | _
         // token with a signature generated using a different secret key
@@ -106,47 +121,5 @@ class JwtTokenHandlerSpec extends Specification {
 
     String decodeBase64Url(String input) {
         return new String(Base64.getUrlDecoder().decode(input))
-    }
-
-    JwtTokenHandler getTokenHandlerMock() {
-        return new JwtTokenHandler(new AppContext() {
-            @Override
-            String getName() {
-                return null
-            }
-
-            @Override
-            String getVersion() {
-                return null
-            }
-
-            @Override
-            Constants.ENV getEnvironment() {
-                return null
-            }
-
-            @Override
-            Path getDataDir() {
-                return null
-            }
-
-            @Override
-            Path getTmpDir() {
-                return null
-            }
-
-
-            @Override
-            AppConfiguration getConfiguration() {
-                def config = new AppConfiguration()
-                config.auth.jwtSigningKey = Base64.getEncoder().encodeToString(secretKey)
-                return config
-            }
-
-            @Override
-            URI getUri() {
-                return null
-            }
-        })
     }
 }

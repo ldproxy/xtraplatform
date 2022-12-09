@@ -98,10 +98,10 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.additionalEvents = new ConcurrentLinkedQueue<>();
     this.valueEncoding =
         new ValueEncodingJackson<>(
-            jackson, appContext.getConfiguration().store.isFailOnUnknownProperties());
+            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     this.valueEncodingMap =
         new ValueEncodingJackson<>(
-            jackson, appContext.getConfiguration().store.isFailOnUnknownProperties());
+            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,

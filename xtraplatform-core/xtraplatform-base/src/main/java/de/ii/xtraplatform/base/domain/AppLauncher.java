@@ -121,7 +121,7 @@ public class AppLauncher implements AppContext {
 
     this.drivers.add(new CfgStoreDriverFs(dataDir));
 
-    Map<String, InputStream> cfgs = getCfgs(cfg.store.getSources());
+    Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources());
 
     this.cfg = configurationReader.loadMergedConfig(cfgs, env);
 

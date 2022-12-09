@@ -1,7 +1,20 @@
 ---
-#store:
-#  sources:
-#    - ${STORE_SOURCE_BASE:-{type: 'FS_STORE_32'}}
+
+store:
+  sources:
+    - ${STORE_SOURCE_BASE:-type: FS_CFG_32
+    - type: FS_STORE_32
+    - type: FS_CACHE_32
+    - type: FS_PROJ_32}
+    - ${STORE_SOURCE_ADD_1:-type: EMPTY}
+    - ${STORE_SOURCE_ADD_2:-type: EMPTY}
+    - ${STORE_SOURCE_ADD_3:-type: EMPTY}
+
+backgroundTasks: {}
+manager:
+  enabled: ${MANAGER:-ON}
+auth: {}
+proj: {}
 
 server:
   applicationConnectors:

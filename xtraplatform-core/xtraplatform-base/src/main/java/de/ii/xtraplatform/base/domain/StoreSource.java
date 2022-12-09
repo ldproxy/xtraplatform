@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,8 +25,10 @@ import org.immutables.value.Value;
     visible = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = StoreSourceFs.class, name = Type.FS_KEY),
+  @JsonSubTypes.Type(value = StoreSourceCfg32.class, name = StoreSourceCfg32.KEY),
   @JsonSubTypes.Type(value = StoreSourceDefault32.class, name = StoreSourceDefault32.KEY),
   @JsonSubTypes.Type(value = StoreSourceCache32.class, name = StoreSourceCache32.KEY),
+  @JsonSubTypes.Type(value = StoreSourceProj32.class, name = StoreSourceProj32.KEY),
   @JsonSubTypes.Type(value = StoreSourceEmpty.class, name = Type.EMPTY_KEY),
 })
 public interface StoreSource {
@@ -142,6 +145,6 @@ public interface StoreSource {
   @Value.Derived
   @Value.Auxiliary
   default String getLabel() {
-    return String.format("%s(%s)", getType(), getSrc());
+    return String.format("%s(%s)", getType(), Path.of(getSrc()));
   }
 }

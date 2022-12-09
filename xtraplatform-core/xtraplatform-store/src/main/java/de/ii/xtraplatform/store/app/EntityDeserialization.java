@@ -19,16 +19,13 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.PropertyName;
-import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.deser.BeanDeserializer;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
 import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
 import com.fasterxml.jackson.databind.deser.impl.BeanPropertyMap;
 import com.fasterxml.jackson.databind.deser.impl.UnwrappedPropertyHandler;
-import com.fasterxml.jackson.databind.introspect.AnnotatedMethod;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
-import com.fasterxml.jackson.databind.introspect.NopAnnotationIntrospector;
 import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.util.NameTransformer;
@@ -127,53 +124,6 @@ public class EntityDeserialization {
       }
     }
   }
-
-  public static final Module DESERIALIZE_IMMUTABLE_BUILDER_NESTED =
-      new Module() {
-
-        @Override
-        public String getModuleName() {
-          return "DESERIALIZE_MODIFIABLE_MODULE";
-        }
-
-        @Override
-        public Version version() {
-          return Version.unknownVersion();
-        }
-
-        @Override
-        public void setupModule(SetupContext context) {
-          context.appendAnnotationIntrospector(
-              new NopAnnotationIntrospector() {
-                @Override
-                public AnnotatedMethod resolveSetterConflict(
-                    MapperConfig<?> config, AnnotatedMethod setter1, AnnotatedMethod setter2) {
-                  if (isImmutableBuilder(setter1.getDeclaringClass())) {
-                    if (LOGGER.isTraceEnabled()) {
-                      LOGGER.trace(
-                          "resolving setter conflict for Immutables Builder {} {}",
-                          setter1,
-                          setter2);
-                    }
-                    if (isImmutableBuilder(setter1.getRawParameterType(0))) {
-                      return setter1;
-                    }
-                    if (isImmutableBuilder(setter2.getRawParameterType(0))) {
-                      return setter2;
-                    }
-                  }
-                  return super.resolveSetterConflict(config, setter1, setter2);
-                }
-              });
-        }
-
-        private boolean isImmutableBuilder(Class<?> clazz) {
-          return clazz.getSimpleName().equals("Builder");
-          // TODO: annotations not retained
-          // && Objects.nonNull(clazz.getAnnotation(Generated.class))
-          // && clazz.getAnnotation(Generated.class).generator().equals("Immutables");
-        }
-      };
 
   public static final Module DESERIALIZE_API_BUILDINGBLOCK_MIGRATION =
       new Module() {

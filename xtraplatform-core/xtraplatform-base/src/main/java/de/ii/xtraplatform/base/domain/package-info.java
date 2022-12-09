@@ -2,6 +2,7 @@
 @Value.Style(
     builder = "new",
     deepImmutablesDetection = true,
+    attributeBuilderDetection = true,
     get = {"is*", "get*"})
 package de.ii.xtraplatform.base.domain;
 

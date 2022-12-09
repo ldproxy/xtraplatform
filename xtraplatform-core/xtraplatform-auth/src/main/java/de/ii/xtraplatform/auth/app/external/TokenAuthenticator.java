@@ -13,7 +13,7 @@ import com.google.common.base.Splitter;
 import de.ii.xtraplatform.auth.domain.ImmutableUser;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.base.domain.AuthConfig;
+import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
@@ -35,19 +35,19 @@ public class TokenAuthenticator implements Authenticator<String, User> {
   private static final TypeReference<Map<String, Object>> TYPE_REF =
       new TypeReference<Map<String, Object>>() {};
 
-  private final AuthConfig authConfig;
+  private final AuthConfiguration authConfig;
   private final HttpClient httpClient;
 
-  TokenAuthenticator(AuthConfig authConfig, HttpClient httpClient) {
+  TokenAuthenticator(AuthConfiguration authConfig, HttpClient httpClient) {
     this.authConfig = authConfig;
     this.httpClient = httpClient;
   }
 
   @Override
   public Optional<User> authenticate(String token) throws AuthenticationException {
-    if (authConfig.isActive() && !authConfig.isJwt()) {
+    if (authConfig.isActive() && authConfig.getUserInfoEndpoint().isPresent()) {
       try {
-        String url = authConfig.userInfoEndpoint.replace("{{token}}", token);
+        String url = authConfig.getUserInfoEndpoint().get().replace("{{token}}", token);
         InputStream response =
             httpClient.getAsInputStream(url, Map.of("Authorization", "Bearer " + token));
 
@@ -55,14 +55,15 @@ public class TokenAuthenticator implements Authenticator<String, User> {
 
         LOGGER.debug("USERINFO {}", userInfo);
 
-        String name = (String) userInfo.get(authConfig.userNameKey);
+        String name = (String) userInfo.get(authConfig.getUserNameKey());
         Role role =
             Role.fromString(
-                Optional.ofNullable((String) userInfo.get(authConfig.userRoleKey)).orElse("USER"));
+                Optional.ofNullable((String) userInfo.get(authConfig.getUserRoleKey()))
+                    .orElse("USER"));
         List<String> scopes =
-            userInfo.get(authConfig.userScopesKey) instanceof String
-                ? SPLITTER.splitToList((String) userInfo.get(authConfig.userScopesKey))
-                : Optional.ofNullable((List<String>) userInfo.get(authConfig.userScopesKey))
+            userInfo.get(authConfig.getUserScopesKey()) instanceof String
+                ? SPLITTER.splitToList((String) userInfo.get(authConfig.getUserScopesKey()))
+                : Optional.ofNullable((List<String>) userInfo.get(authConfig.getUserScopesKey()))
                     .orElse(List.of());
 
         return Optional.of(ImmutableUser.builder().name(name).role(role).scopes(scopes).build());

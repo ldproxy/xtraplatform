@@ -9,13 +9,17 @@ package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.docs.DocFile;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.logging.LoggingFactory;
 import io.dropwizard.server.ServerFactory;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import org.apache.commons.lang3.NotImplementedException;
+import org.immutables.value.Value;
 
 /**
  * # Global configuration
@@ -107,81 +111,77 @@ import javax.validation.constraints.NotNull;
  * @see LoggingConfiguration
  * @see io.dropwizard.client.HttpClientConfiguration
  * @see ManagerConfiguration
- * @see ProjConfiguration
  * @see BackgroundTasksConfiguration
- * @see AuthConfig
+ * @see AuthConfiguration
  */
 @DocFile(path = "application/todo", name = "README.md")
-public class AppConfiguration extends Configuration {
+@Value.Immutable
+@Value.Modifiable
+@JsonDeserialize(as = ModifiableAppConfiguration.class)
+public abstract class AppConfiguration extends Configuration {
 
-  @Valid @NotNull private ServerConfiguration server;
-  @Valid @NotNull private LoggingConfiguration logging;
-  // TODO: not used anymore, but removing breaks backwards compatibility
-  @Deprecated @JsonProperty public boolean useFormattedJsonOutput;
-  @Deprecated @JsonProperty public boolean allowServiceReAdding;
-  @Valid @NotNull private HttpClientConfiguration httpClient;
-  @Valid @NotNull @JsonProperty public StoreConfiguration store;
-  @Valid @NotNull @JsonProperty public AuthConfig auth;
-  @Valid @NotNull @JsonProperty public ManagerConfiguration manager;
-  @Valid @NotNull @JsonProperty public BackgroundTasksConfiguration backgroundTasks;
-  @Valid @NotNull @JsonProperty public ProjConfiguration proj;
-  @Valid @JsonProperty public ClusterConfiguration cluster;
+  @Valid
+  public abstract StoreConfiguration getStore();
 
-  public AppConfiguration() {
-    this.logging = new LoggingConfiguration();
-    this.server = new ServerConfiguration();
-    this.httpClient = new HttpClientConfiguration();
-    this.store = new StoreConfiguration.Builder().build();
-    this.auth = new AuthConfig();
-    this.manager = new ManagerConfiguration();
-    this.backgroundTasks = new BackgroundTasksConfiguration();
-    this.proj = new ProjConfiguration();
-  }
+  @Valid
+  public abstract AuthConfiguration getAuth();
 
-  public AppConfiguration(boolean noInit) {}
+  @Valid
+  public abstract ManagerConfiguration getManager();
 
-  @Override
-  @JsonProperty("server")
-  public ServerConfiguration getServerFactory() {
-    return server;
-  }
+  @Valid
+  public abstract BackgroundTasksConfiguration getBackgroundTasks();
 
-  @Override
-  @JsonIgnore
-  public void setServerFactory(ServerFactory factory) {}
+  @Deprecated(since = "3.3")
+  @Valid
+  public abstract ProjConfiguration getProj();
+
+  @Valid
+  public abstract HttpClientConfiguration getHttpClient();
 
   @JsonProperty("server")
-  public void setServerFactory(ServerConfiguration factory) {
-    this.server = factory;
-  }
-
+  @Valid
   @Override
-  @JsonIgnore
-  public synchronized LoggingFactory getLoggingFactory() {
-    return logging;
-  }
+  public abstract ServerConfiguration getServerFactory();
 
   @JsonProperty("logging")
-  public synchronized LoggingConfiguration getLoggingConfiguration() {
-    return logging;
-  }
-
+  @Valid
   @Override
+  public abstract LoggingConfiguration getLoggingFactory();
+
   @JsonIgnore
-  public synchronized void setLoggingFactory(LoggingFactory factory) {}
-
-  @JsonProperty("logging")
-  public synchronized void setLoggingFactory(LoggingConfiguration factory) {
-    this.logging = factory;
+  @Override
+  public void setServerFactory(ServerFactory factory) {
+    throw new NotImplementedException();
   }
 
-  @JsonProperty("httpClient")
-  public HttpClientConfiguration getHttpClient() {
-    return httpClient;
+  @JsonIgnore
+  @Override
+  public synchronized void setLoggingFactory(LoggingFactory factory) {
+    throw new NotImplementedException();
   }
 
-  @JsonProperty("httpClient")
-  public void setHttpClient(HttpClientConfiguration httpClient) {
-    this.httpClient = httpClient;
+  @Deprecated(since = "3.3")
+  @Value.Check
+  public AppConfiguration backwardsCompatibility() {
+    if (getProj().getLocation().isPresent()) {
+      return new ImmutableAppConfiguration.Builder()
+          .from(this)
+          .proj(ModifiableProjConfiguration.create())
+          .store(
+              new ImmutableStoreConfiguration.Builder()
+                  .from(getStore())
+                  .addSources(
+                      new ImmutableStoreSourceFs.Builder()
+                          .typeString(Type.FS.key())
+                          .content(Content.RESOURCES)
+                          .src(getProj().getLocation().get())
+                          .prefix("proj")
+                          .build())
+                  .build())
+          .build();
+    }
+
+    return this;
   }
 }

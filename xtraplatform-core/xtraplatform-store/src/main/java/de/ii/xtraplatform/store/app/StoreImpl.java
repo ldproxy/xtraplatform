@@ -41,7 +41,7 @@ public class StoreImpl implements Store, AppLifeCycle {
 
   @Inject
   StoreImpl(AppContext appContext) {
-    this(appContext.getDataDir(), appContext.getConfiguration().store);
+    this(appContext.getDataDir(), appContext.getConfiguration().getStore());
   }
 
   public StoreImpl(Path dataDirectory, StoreConfiguration storeConfiguration) {
@@ -75,7 +75,12 @@ public class StoreImpl implements Store, AppLifeCycle {
                   ? ((StoreSourceFs) s).getAbsolutePath(dataDirectory).toString()
                   : s.getSrc();
           String mode = storeConfiguration.isReadOnly() ? "" : String.format(" [%s]", s.getMode());
-          LOGGER.info("  {} {} [{}]{}", s.getType(), src, s.getContent(), mode);
+          String subType =
+              s.getContent() == Content.RESOURCES && s.getPrefix().isPresent()
+                  ? String.format(" [%s]", s.getPrefix().get())
+                  : "";
+
+          LOGGER.info("  {} {} [{}]{}{}", s.getType(), src, s.getContent(), subType, mode);
         });
   }
 
