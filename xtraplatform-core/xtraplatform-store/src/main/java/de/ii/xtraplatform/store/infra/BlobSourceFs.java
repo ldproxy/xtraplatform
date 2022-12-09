@@ -85,7 +85,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
       return Stream.empty();
     }
 
-    Path dir = root.resolve(prefix.relativize(path));
+    Path dir = full(path);
     return Files.find(
             dir,
             maxDepth,
