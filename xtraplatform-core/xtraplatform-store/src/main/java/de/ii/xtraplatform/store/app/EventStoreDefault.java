@@ -293,12 +293,25 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                                       ImmutableIdentifier.builder()
                                           .id(id)
                                           .path(event.identifier().path())
+                                          .addPath(event.identifier().id())
                                           .build())
                                   .payload(ValueEncodingJackson.YAML_NULL)
                                   .build());
                       if (deleted && LOGGER.isTraceEnabled()) {
                         LOGGER.trace("DELETING {} {}", event.identifier().path(), id);
                       }
+                      // also without id for cases where it is keyPathAlias
+                      deleteEvents.add(
+                          ImmutableReplayEvent.builder()
+                              .type(EntityDataDefaultsStore.EVENT_TYPE)
+                              .deleted(true)
+                              .identifier(
+                                  ImmutableIdentifier.builder()
+                                      .id(id)
+                                      .path(event.identifier().path())
+                                      .build())
+                              .payload(ValueEncodingJackson.YAML_NULL)
+                              .build());
                     }
                     return true;
                   }
