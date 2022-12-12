@@ -17,6 +17,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.StoreSourceDefault32;
 import de.ii.xtraplatform.store.domain.BlobStore;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
@@ -51,12 +52,16 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
 
   private final BlobStore keyStore;
   private final AuthConfiguration authConfig;
+  private final boolean isOldStoreAndReadOnly;
   private Key signingKey;
 
   @Inject
   public JwtTokenHandler(AppContext appContext, BlobStore blobStore) {
     this.authConfig = appContext.getConfiguration().getAuth();
     this.keyStore = blobStore.with(RESOURCES_JWT);
+    this.isOldStoreAndReadOnly =
+        appContext.getConfiguration().getStore().getSources().stream()
+            .anyMatch(source -> source instanceof StoreSourceDefault32 && !source.isWritable());
   }
 
   @Override
@@ -156,10 +161,14 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private SecretKey generateKey() {
     SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    try {
-      keyStore.put(SIGNING_KEY_PATH, new ByteArrayInputStream(key.getEncoded()));
-    } catch (IOException e) {
-      LogContext.error(LOGGER, e, "Could not save JWT signing key");
+    // TODO: either throw in put when no writable source or return true if written
+    if (!isOldStoreAndReadOnly) {
+      try {
+        keyStore.put(SIGNING_KEY_PATH, new ByteArrayInputStream(key.getEncoded()));
+      } catch (IOException e) {
+        LogContext.error(
+            LOGGER, e, "Could not save JWT signing key, tokens will be invalidated on restart");
+      }
     }
 
     return key;
