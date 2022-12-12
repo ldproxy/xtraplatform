@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonMerge;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.base.domain.StoreSource.Mode;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.docs.DocFile;
 import de.ii.xtraplatform.docs.DocStep;
@@ -383,6 +384,25 @@ public interface StoreConfiguration {
                               .content(Content.ALL)
                               .src(location)
                               .build())
+                  .collect(Collectors.toList()))
+          .build();
+    }
+
+    if (getMode() == StoreMode.READ_ONLY) {
+      return new ImmutableStoreConfiguration.Builder()
+          .from(this)
+          .mode(StoreMode.READ_WRITE)
+          .sources(
+              getSources().stream()
+                  .map(
+                      source -> {
+                        if (source instanceof StoreSourceDefault32) {
+                          return new ImmutableStoreSourceDefault32.Builder()
+                              .desiredMode(Mode.RO)
+                              .build();
+                        }
+                        return source;
+                      })
                   .collect(Collectors.toList()))
           .build();
     }
