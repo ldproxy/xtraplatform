@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.store.domain;
 
+import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
+import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -33,7 +35,13 @@ public interface EventFilter {
     }
 
     if (!getIds().isEmpty() && !isDefault(event)) {
-      return getIds().contains(identifier.id()) || getIds().contains("*");
+      boolean allow = getIds().contains(identifier.id()) || getIds().contains("*");
+
+      if (!allow && isOverride(event)) {
+        return getIds().contains(identifier.path().get(identifier.path().size() - 1));
+      }
+
+      return allow;
     }
 
     return true;
@@ -56,7 +64,11 @@ public interface EventFilter {
   }
 
   default boolean isDefault(EntityEvent event) {
-    return Objects.equals(event.type(), "defaults");
+    return Objects.equals(event.type(), EntityDataDefaultsStore.EVENT_TYPE);
+  }
+
+  default boolean isOverride(EntityEvent event) {
+    return Objects.equals(event.type(), EntityDataStore.EVENT_TYPE_OVERRIDES);
   }
 
   default boolean containsEntityType(List<String> path) {

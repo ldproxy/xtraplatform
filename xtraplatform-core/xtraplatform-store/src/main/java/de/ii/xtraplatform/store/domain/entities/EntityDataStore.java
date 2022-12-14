@@ -7,10 +7,12 @@
  */
 package de.ii.xtraplatform.store.domain.entities;
 
+import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.MergeableKeyValueStore;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -21,6 +23,10 @@ import java.util.concurrent.CompletableFuture;
  * @author zahnen
  */
 public interface EntityDataStore<T extends EntityData> extends MergeableKeyValueStore<T> {
+
+  String EVENT_TYPE_ENTITIES = "entities";
+  String EVENT_TYPE_OVERRIDES = "overrides";
+  List<String> EVENT_TYPES = ImmutableList.of(EVENT_TYPE_ENTITIES, EVENT_TYPE_OVERRIDES);
 
   EntityData fromMap(Identifier identifier, Map<String, Object> entityData) throws IOException;
 
