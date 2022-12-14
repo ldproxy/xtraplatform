@@ -76,7 +76,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     implements EntityDataStore<EntityData>, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityDataStoreImpl.class);
-  private static final List<String> EVENT_TYPES = ImmutableList.of("entities", "overrides");
 
   private final boolean isEventStoreReadOnly;
   private final EntityFactoriesImpl entityFactories;
@@ -105,7 +104,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
-            EVENT_TYPES,
+            EntityDataStore.EVENT_TYPES,
             valueEncoding,
             this::onListenStart,
             Optional.of(this::processEvent),
@@ -183,7 +182,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     }
 
     if (!event.isDelete()
-        && event.type().equals(EVENT_TYPES.get(0))
+        && event.type().equals(EntityDataStore.EVENT_TYPE_ENTITIES)
         && eventSourcing.isInCache(isDuplicate(event.identifier()))) {
       LOGGER.warn(
           "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single group.",
@@ -193,7 +192,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     }
 
     if (!event.isDelete()
-        && event.type().equals(EVENT_TYPES.get(0))
+        && event.type().equals(EntityDataStore.EVENT_TYPE_ENTITIES)
         && eventSourcing.isInCache(event.identifier())) {
       LOGGER.warn(
           "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single source, use overrides to update it from another source.",
@@ -202,7 +201,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       return ImmutableList.of();
     }
 
-    if (!event.type().equals(EVENT_TYPES.get(1))) {
+    if (!event.type().equals(EntityDataStore.EVENT_TYPE_OVERRIDES)) {
       return ImmutableList.of(event);
     }
 
@@ -353,7 +352,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                   getEventSourcing()
                       .onEmit(
                           ImmutableReplayEvent.builder()
-                              .type(EVENT_TYPES.get(0))
+                              .type(EntityDataStore.EVENT_TYPE_ENTITIES)
                               .identifier(entry.getKey())
                               .payload(valueEncoding.serialize(entry.getValue()))
                               .format(valueEncoding.getDefaultFormat().toString())
