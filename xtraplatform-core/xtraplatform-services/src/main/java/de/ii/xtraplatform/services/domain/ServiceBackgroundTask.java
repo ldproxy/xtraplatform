@@ -11,6 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.base.domain.LogContext;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 @AutoMultiBind
 public interface ServiceBackgroundTask<T extends Service> {
@@ -40,6 +41,8 @@ public interface ServiceBackgroundTask<T extends Service> {
   default Task getTask(T service, String label) {
     return new BoundTask<>(service, label, getMaxPartials(service), this::run);
   }
+
+  default void setTrigger(Consumer<T> trigger) {}
 
   class BoundTask<T extends Service> implements Task {
 
