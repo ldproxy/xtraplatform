@@ -70,6 +70,11 @@ public class ServiceBackgroundTasksImpl implements ServiceBackgroundTasks, AppLi
   }
 
   @Override
+  public void onStart() {
+    tasks.get().forEach(task -> task.setTrigger(this::onServiceReload));
+  }
+
+  @Override
   public void onStop() {
     commonQueue.getFutureTasks().forEach(commonQueue::remove);
     commonQueue.getCurrentTask().ifPresent(TaskStatus::stop);
