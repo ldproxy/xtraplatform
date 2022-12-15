@@ -1,5 +1,5 @@
 
-maturity = 'EXPERIMENTAL'
+maturity = 'MATURE'
 
 dependencies {
     embeddedExport group: 'org.reactivestreams', name: 'reactive-streams', version: '1.0.4'

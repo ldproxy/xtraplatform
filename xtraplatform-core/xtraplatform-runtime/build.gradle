@@ -1,4 +1,4 @@
-maturity = 'EXPERIMENTAL'
+maturity = 'MATURE'
 
 ext {
     dropwizardVersion = '2.0.34'
