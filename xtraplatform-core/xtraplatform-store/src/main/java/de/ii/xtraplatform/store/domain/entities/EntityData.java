@@ -8,38 +8,41 @@
 package de.ii.xtraplatform.store.domain.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.ii.xtraplatform.docs.DocIgnore;
 import java.time.Instant;
 import java.util.Optional;
 import org.immutables.value.Value;
 
-/**
- * @author zahnen
- */
 public interface EntityData extends de.ii.xtraplatform.store.domain.Value {
 
   String getId();
 
+  @DocIgnore
   @Value.Default
   default long getCreatedAt() {
     return Instant.now().toEpochMilli();
   }
 
+  @DocIgnore
   @Value.Default
   default long getLastModified() {
     return Instant.now().toEpochMilli();
   }
 
+  @DocIgnore
   @Value.Default
   default long getEntityStorageVersion() {
     return 1;
   }
 
+  @DocIgnore
   @JsonIgnore
   @Value.Derived
   default long getEntitySchemaVersion() {
     return 1;
   }
 
+  @DocIgnore
   @JsonIgnore
   Optional<String> getEntitySubType();
 }

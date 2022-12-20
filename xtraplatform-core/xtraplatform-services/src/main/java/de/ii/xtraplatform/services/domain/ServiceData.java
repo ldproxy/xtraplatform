@@ -19,9 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
 
-/**
- * @author zahnen
- */
 @JsonDeserialize(builder = ImmutableServiceDataCommon.Builder.class)
 public interface ServiceData extends EntityData, AutoEntity {
 
@@ -33,23 +30,35 @@ public interface ServiceData extends EntityData, AutoEntity {
   String getServiceType();
 
   /**
-   * @return label for service
+   * @langEn Human readable label.
+   * @langDe Menschenlesbare Bezeichnung.
+   * @default {id}
    */
   @Value.Default
   default String getLabel() {
     return getId();
   }
 
+  /**
+   * @langEn Human readable description.
+   * @langDe Menschenlesbare Beschreibung.
+   * @default ""
+   */
   Optional<String> getDescription();
 
+  /**
+   * @langEn Option to disable the service, which means its REST API will not be available and
+   *     background tasks will not be running.
+   * @langDe Option um den Dienst zu deaktivieren, was bedeutet, dass seine REST API nicht
+   *     erreichbar ist und Hintergrundprozesse nicht laufen.
+   * @default true
+   */
   @JsonProperty("enabled")
   @JsonAlias("shouldStart")
   @Value.Default
   default boolean getEnabled() {
     return true;
   }
-
-  List<Notification> getNotifications();
 
   @DocIgnore
   @JsonProperty("secured")
@@ -58,13 +67,28 @@ public interface ServiceData extends EntityData, AutoEntity {
     return true;
   }
 
+  /**
+   * @langEn Adds a version to the URL path, instead of `/{id}` it will be `/{id}/v{apiVersion}`.
+   * @langDe Fügt dem URL-Pfad eine Version hinzu , anstatt von `/{id}` ist dieser dann
+   *     `/{id}/v{apiVersion}`.
+   * @default null
+   */
   Optional<Integer> getApiVersion();
 
-  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+  /**
+   * @langEn Automatically generate missing configuration options on startup if possible.
+   * @langDe Automatische fehlende Konfigurationsoptionen beim Start generieren.
+   */
+  @JsonProperty(value = "auto", access = JsonProperty.Access.WRITE_ONLY)
   @Override
   Optional<Boolean> getAuto();
 
-  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+  /**
+   * @langEn When `auto: true`, this will persist the generated options to the configuration file.
+   * @langDe Wenn `auto: true` ist, die generierten Optionen in die Konfigurationsdatei
+   *     persistieren.
+   */
+  @JsonProperty(value = "autoPersist", access = JsonProperty.Access.WRITE_ONLY)
   @Override
   Optional<Boolean> getAutoPersist();
 
