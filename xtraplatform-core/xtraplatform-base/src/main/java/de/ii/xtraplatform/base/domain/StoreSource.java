@@ -71,6 +71,12 @@ public interface StoreSource {
     public String getLabel() {
       return this.name().charAt(0) + this.name().substring(1).toLowerCase(Locale.ROOT);
     }
+
+    public static boolean isEvent(String prefix) {
+      return Objects.equals(prefix, DEFAULTS.getPrefix())
+          || Objects.equals(prefix, ENTITIES.getPrefix())
+          || Objects.equals(prefix, OVERRIDES.getPrefix());
+    }
   }
 
   enum Mode {
