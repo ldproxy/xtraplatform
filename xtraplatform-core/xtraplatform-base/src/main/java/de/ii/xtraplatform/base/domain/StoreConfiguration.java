@@ -382,6 +382,7 @@ public interface StoreConfiguration {
                           new ImmutableStoreSourceFs.Builder()
                               .typeString(Type.FS.key())
                               .content(Content.ALL)
+                              .desiredMode(Mode.RO)
                               .src(location)
                               .build())
                   .collect(Collectors.toList()))
