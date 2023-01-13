@@ -13,6 +13,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
@@ -127,6 +128,14 @@ public class EventSource {
 
       if (Objects.nonNull(eventType)
           && /*Objects.nonNull(eventPath) &&*/ Objects.nonNull(eventId)) {
+
+        if (!Content.isEvent(eventType)) {
+          if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(
+                "Skipping non-event {type: {}, path: {}, id: {}}", eventType, eventPath, eventId);
+          }
+          return null;
+        }
 
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("Reading event {type: {}, path: {}, id: {}}", eventType, eventPath, eventId);
