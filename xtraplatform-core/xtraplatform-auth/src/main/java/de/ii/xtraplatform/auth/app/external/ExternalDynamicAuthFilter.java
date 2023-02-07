@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.auth.app.external;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
@@ -15,6 +16,7 @@ import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.auth.domain.ImmutableUser;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.User.PolicyDecision;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.DefaultUnauthorizedHandler;
@@ -26,6 +28,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.PreMatching;
@@ -42,27 +45,47 @@ import org.slf4j.LoggerFactory;
 public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<String, P> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDynamicAuthFilter.class);
 
-  private static final MediaType XACML = new MediaType("application", "xacml+json", "utf-8");
-  private static final MediaType GEOJSON = new MediaType("application", "geo+json", "utf-8");
+  private static final MediaType XACML = new MediaType("application", "xacml+json");
+  private static final MediaType GEOJSON = new MediaType("application", "geo+json");
   private static final ObjectMapper JSON =
       new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
   private final String edaUrl;
+  private final boolean xacmlJson10;
+  private final MediaType mediaType;
+  private final MediaType mediaTypeAccept;
   private final String ppUrl;
   private final HttpClient httpClient;
   private final OAuthCredentialAuthFilter<P> delegate;
 
   ExternalDynamicAuthFilter(
-      String edaUrl, String ppUrl, HttpClient httpClient, OAuthCredentialAuthFilter<P> delegate) {
+      String edaUrl,
+      String xacmlJsonVersion,
+      String xacmlJsonMediaType,
+      String ppUrl,
+      HttpClient httpClient,
+      OAuthCredentialAuthFilter<P> delegate) {
     super();
     this.realm = "ldproxy";
     this.prefix = "Bearer";
     this.unauthorizedHandler = new DefaultUnauthorizedHandler();
 
     this.edaUrl = edaUrl;
+    this.xacmlJson10 = "1.0".equals(xacmlJsonVersion);
+    this.mediaType = parse(xacmlJsonMediaType);
+    this.mediaTypeAccept = new MediaType(mediaType.getType(), mediaType.getSubtype());
     this.ppUrl = ppUrl;
     this.httpClient = httpClient;
     this.delegate = delegate;
+  }
+
+  private MediaType parse(String xacmlJsonMediaType) {
+    try {
+      return MediaType.valueOf(xacmlJsonMediaType);
+    } catch (Throwable e) {
+      LOGGER.error("Could not parse xacmlJsonMediaType: {}", xacmlJsonMediaType);
+      return XACML.withCharset("utf-8");
+    }
   }
 
   // TODO
@@ -134,7 +157,9 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     if (requestContext.getMethod().equals("POST") || requestContext.getMethod().equals("PUT")) {
       try {
 
-        InputStream processedBody = httpClient.postAsInputStream(ppUrl, body, GEOJSON);
+        InputStream processedBody =
+            httpClient.postAsInputStream(
+                ppUrl, body, GEOJSON.withCharset("utf-8"), Map.of("Accept", GEOJSON.toString()));
 
         putEntityBody(requestContext, processedBody);
 
@@ -150,20 +175,13 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     LOGGER.debug("EDA {} {} {} {}", user, method, path, new String(body, Charset.forName("utf-8")));
 
     try {
-
-      XacmlRequest xacmlRequest1 = new XacmlRequest(user, method, path, body);
-      byte[] xacmlRequest = JSON.writeValueAsBytes(xacmlRequest1);
-
-      LOGGER.debug(
-          "XACML {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlRequest1));
+      byte[] xacmlRequest = getXacmlRequest(user, method, path, body);
 
       InputStream response =
-          httpClient.postAsInputStream(edaUrl, xacmlRequest, MediaType.APPLICATION_JSON_TYPE);
+          httpClient.postAsInputStream(
+              edaUrl, xacmlRequest, mediaType, Map.of("Accept", mediaTypeAccept.toString()));
 
-      XacmlResponse xacmlResponse = JSON.readValue(response, XacmlResponse.class);
-
-      LOGGER.debug(
-          "XACML R {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlResponse));
+      XacmlResponse xacmlResponse = getXacmlResponse(response);
 
       return xacmlResponse.isAllowed()
           ? PolicyDecision.PERMIT
@@ -171,9 +189,32 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
 
     } catch (Throwable e) {
       // ignore
+      LogContext.errorAsDebug(LOGGER, e, "Error requesting a policy decision");
     }
 
     return PolicyDecision.DENY;
+  }
+
+  private byte[] getXacmlRequest(String user, String method, String path, byte[] body)
+      throws JsonProcessingException {
+    Object xacmlRequest =
+        xacmlJson10
+            ? new XacmlRequest10(user, method, path, body)
+            : new XacmlRequest(user, method, path, body);
+
+    LOGGER.debug(
+        "XACML {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlRequest));
+
+    return JSON.writeValueAsBytes(xacmlRequest);
+  }
+
+  private XacmlResponse getXacmlResponse(InputStream response) throws IOException {
+    XacmlResponse xacmlResponse = JSON.readValue(response, XacmlResponse.class);
+
+    LOGGER.debug(
+        "XACML R {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlResponse));
+
+    return xacmlResponse;
   }
 
   private byte[] getEntityBody(ContainerRequestContext requestContext) {
