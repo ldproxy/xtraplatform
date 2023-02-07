@@ -65,8 +65,10 @@ public class HttpClientApache implements HttpClient {
   }
 
   @Override
-  public InputStream postAsInputStream(String url, byte[] body, MediaType mediaType) {
+  public InputStream postAsInputStream(
+      String url, byte[] body, MediaType mediaType, Map<String, String> headers) {
     HttpPost httpPost = new HttpPost(url);
+    headers.forEach(httpPost::addHeader);
     httpPost.setEntity(new ByteArrayEntity(body, ContentType.parse(mediaType.toString())));
 
     if (Objects.nonNull(httpPost.getURI().getUserInfo())) {
