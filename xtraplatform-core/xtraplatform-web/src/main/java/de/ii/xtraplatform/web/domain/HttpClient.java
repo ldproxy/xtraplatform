@@ -8,12 +8,15 @@
 package de.ii.xtraplatform.web.domain;
 
 import de.ii.xtraplatform.streams.domain.Reactive;
+import de.ii.xtraplatform.streams.domain.Reactive.Source;
 import java.io.InputStream;
 import java.util.Map;
 import javax.ws.rs.core.MediaType;
 
 public interface HttpClient {
   Reactive.Source<byte[]> get(String url);
+
+  Source<byte[]> getAsSource(InputStream inputStream);
 
   InputStream getAsInputStream(String url);
 

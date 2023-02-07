@@ -52,6 +52,14 @@ public class HttpClientApache implements HttpClient {
   }
 
   @Override
+  public Source<byte[]> getAsSource(InputStream inputStream) {
+    return Source.iterable(ImmutableList.of(httpClient))
+        .via(
+            Transformer.flatMap(
+                LambdaWithException.mayThrow(client -> Source.inputStream(inputStream))));
+  }
+
+  @Override
   public InputStream getAsInputStream(String url) {
     return getAsInputStream(httpClient, new HttpGet(url));
   }
@@ -67,6 +75,8 @@ public class HttpClientApache implements HttpClient {
   @Override
   public InputStream postAsInputStream(String url, byte[] body, MediaType mediaType) {
     HttpPost httpPost = new HttpPost(url);
+    httpPost.addHeader("Content-Type", mediaType.toString());
+    httpPost.addHeader("Accept", mediaType.toString());
     httpPost.setEntity(new ByteArrayEntity(body, ContentType.parse(mediaType.toString())));
 
     if (Objects.nonNull(httpPost.getURI().getUserInfo())) {
@@ -83,6 +93,16 @@ public class HttpClientApache implements HttpClient {
   private static InputStream getAsInputStream(CloseableHttpClient client, HttpUriRequest request) {
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("HTTP {} request: {}", request.getMethod(), request.getURI());
+      LOGGER.debug("HTTP Headers: {}", (Object) request.getAllHeaders());
+
+      if (request instanceof HttpPost) {
+        try {
+          byte[] bytes = ((HttpPost) request).getEntity().getContent().readAllBytes();
+          LOGGER.debug("HTTP Body:\n{}", new String(bytes, StandardCharsets.UTF_8));
+        } catch (Throwable e) {
+          // ignore
+        }
+      }
     }
 
     try {
