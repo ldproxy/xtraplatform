@@ -77,4 +77,14 @@ public interface AuthConfiguration {
   Optional<String> getExternalDynamicAuthorizationEndpoint();
 
   Optional<String> getPostProcessingEndpoint();
+
+  @Value.Default
+  default String getXacmlJsonVersion() {
+    return "1.1";
+  }
+
+  @Value.Default
+  default String getXacmlJsonMediaType() {
+    return "application/xacml+json;charset=UTF-8";
+  }
 }

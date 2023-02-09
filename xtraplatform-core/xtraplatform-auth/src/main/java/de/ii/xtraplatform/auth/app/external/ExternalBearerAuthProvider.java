@@ -77,6 +77,8 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
     if (authConfig.getExternalDynamicAuthorizationEndpoint().isPresent()) {
       return new ExternalDynamicAuthFilter<>(
           authConfig.getExternalDynamicAuthorizationEndpoint().get(),
+          authConfig.getXacmlJsonVersion(),
+          authConfig.getXacmlJsonMediaType(),
           authConfig.getPostProcessingEndpoint().orElse(""),
           httpClient,
           authFilter);

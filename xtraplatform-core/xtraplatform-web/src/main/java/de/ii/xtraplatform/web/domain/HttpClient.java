@@ -22,5 +22,6 @@ public interface HttpClient {
 
   InputStream getAsInputStream(String url, Map<String, String> headers);
 
-  InputStream postAsInputStream(String url, byte[] body, MediaType mediaType);
+  InputStream postAsInputStream(
+      String url, byte[] body, MediaType mediaType, Map<String, String> headers);
 }
