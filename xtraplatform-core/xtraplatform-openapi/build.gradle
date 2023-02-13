@@ -2,7 +2,7 @@
 maturity = 'MATURE'
 
 ext {
-    swaggerVersion = '2.1.13'
+    swaggerVersion = '2.2.8'
 }
 
 dependencies {
