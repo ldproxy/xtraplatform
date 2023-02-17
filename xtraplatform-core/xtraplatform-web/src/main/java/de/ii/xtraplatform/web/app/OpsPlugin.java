@@ -10,7 +10,6 @@ package de.ii.xtraplatform.web.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
-import io.dropwizard.jetty.NonblockingServletHolder;
 import io.dropwizard.setup.Environment;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -39,7 +38,7 @@ public class OpsPlugin implements DropwizardPlugin {
     }
     if (ai >= 0) {
       String name = admin[ai].getName();
-      admin[ai] = new NonblockingServletHolder(adminEndpoint);
+      admin[ai] = new ServletHolder(adminEndpoint);
       admin[ai].setName(name);
 
       environment.getAdminContext().getServletHandler().setServlets(admin);

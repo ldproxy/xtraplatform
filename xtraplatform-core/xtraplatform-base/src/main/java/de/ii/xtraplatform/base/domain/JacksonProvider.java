@@ -80,9 +80,8 @@ public class JacksonProvider implements Jackson {
             .registerModule(new Jdk8Module())
             .registerModule(new GuavaModule())
             .registerModule(new CaffeineModule())
-            .registerModule(
-                new AfterburnerModule()) // TODO: suppresses reflections warnings, but does not work
-            // with osgi .setUseValueClassLoader(false))
+            // TODO: use new default blackbird instead, does not work with modules out of the box
+            .registerModule(new AfterburnerModule())
             .registerModule(new FuzzyEnumModule())
             .registerModule(new JavaTimeModule())
             .setDefaultMergeable(false)

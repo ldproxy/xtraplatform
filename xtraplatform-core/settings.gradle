@@ -14,6 +14,14 @@ plugins {
     id "org.danilopianini.gradle-pre-commit-git-hooks" version "1.0.12"
 }
 
+dependencyResolutionManagement {
+    versionCatalogs {
+        catalog {
+            from(files("../catalog.versions.toml"))
+        }
+    }
+}
+
 rootDir.listFiles().each { file ->
     if (file.isDirectory() && file.name.startsWith('xtraplatform-')) {
         include file.name

@@ -1,8 +1,8 @@
 maturity = 'MATURE'
 
 ext {
-    dropwizardVersion = '2.0.34'
-    jacksonVersion = '2.10.5'
+    dropwizardVersion = '2.1.4'
+    jacksonVersion = '2.13.4'
 }
 
 dependencies {
@@ -11,6 +11,10 @@ dependencies {
     embeddedExport(group: 'io.dropwizard', name: 'dropwizard-client', version: dropwizardVersion)
     embeddedExport(group: 'io.dropwizard', name: 'dropwizard-auth', version: dropwizardVersion)
     embeddedExport(group: 'io.dropwizard', name: 'dropwizard-json-logging', version: dropwizardVersion)
+
+    //TODO: use new default blackbird instead, does not work with modules out of the box
+    embeddedExport group: 'com.fasterxml.jackson.module', name: 'jackson-module-afterburner', version: jacksonVersion
+
     embeddedExport group: 'org.threeten', name: 'threeten-extra', version: '1.5.0'
     embeddedExport group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '2.3.3'
     embeddedExport group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-xml-provider', version: jacksonVersion
@@ -22,6 +26,15 @@ dependencies {
     embeddedExport group: 'org.immutables', name: 'value', version: '2.8.8', classifier: 'annotations'
     embeddedExport group: 'org.immutables', name: 'encode', version: '2.8.8'
 
+    //NOTE: define newer versions of transitive deps here if required
+    constraints {
+        embeddedExport('com.fasterxml.woodstox:woodstox-core:6.4.0') {
+            because 'critical/high vulnerabilities'
+        }
+        embeddedExport('org.yaml:snakeyaml:1.33') {
+            because 'critical/high vulnerabilities'
+        }
+    }
 }
 
 moduleInfo {
