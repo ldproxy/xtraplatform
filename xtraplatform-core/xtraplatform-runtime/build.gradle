@@ -31,7 +31,7 @@ dependencies {
         embeddedExport('com.fasterxml.woodstox:woodstox-core:6.4.0') {
             because 'critical/high vulnerabilities'
         }
-        embeddedExport('org.yaml:snakeyaml:1.32') {
+        embeddedExport('org.yaml:snakeyaml:1.33') {
             because 'critical/high vulnerabilities'
         }
     }
