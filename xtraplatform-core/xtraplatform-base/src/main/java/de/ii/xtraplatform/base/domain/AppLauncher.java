@@ -9,6 +9,7 @@ package de.ii.xtraplatform.base.domain;
 
 import static de.ii.xtraplatform.base.domain.Constants.TMP_DIR_PROP;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -107,7 +108,7 @@ public class AppLauncher implements AppContext {
     this.env = parseEnvironment();
     ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
 
-    configurationReader.loadMergedLogging(Optional.empty(), env);
+    List<ILoggingEvent> buffer = configurationReader.loadMergedLogging(Optional.empty(), env);
 
     LOGGER.info("--------------------------------------------------");
     LOGGER.info("Starting {} v{}", name, version);
@@ -120,7 +121,7 @@ public class AppLauncher implements AppContext {
 
     this.cfg = configurationReader.loadMergedConfig(cfgs, env);
 
-    cfg.getLoggingFactory().configure(new MetricRegistry(), "xtraplatform");
+    cfg.getLoggingFactory().configure(new MetricRegistry(), "xtraplatform", Optional.of(buffer));
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Data directory: {}", dataDir);
