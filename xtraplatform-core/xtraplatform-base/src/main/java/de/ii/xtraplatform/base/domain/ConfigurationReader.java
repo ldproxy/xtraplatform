@@ -9,6 +9,7 @@ package de.ii.xtraplatform.base.domain;
 
 import static de.ii.xtraplatform.base.domain.util.JacksonModules.DESERIALIZE_IMMUTABLE_BUILDER_NESTED;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -20,6 +21,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
+import de.ii.xtraplatform.base.domain.Constants.ENV;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jetty.HttpConnectorFactory;
@@ -141,7 +143,7 @@ public class ConfigurationReader {
     return mapper.writeValueAsString(cfg);
   }
 
-  public void loadMergedLogging(Optional<Path> userCfg, Constants.ENV env) {
+  public List<ILoggingEvent> loadMergedLogging(Optional<Path> userCfg, ENV env) {
     LoggingConfiguration loggingFactory;
 
     try {
@@ -169,7 +171,7 @@ public class ConfigurationReader {
 
     applyLogFormat(loggingFactory, env);
 
-    loggingFactory.configure(new MetricRegistry(), "xtraplatform");
+    return loggingFactory.configure(new MetricRegistry(), "xtraplatform", Optional.empty());
   }
 
   public Map<String, ByteSource> getBaseConfigs(Constants.ENV env) {

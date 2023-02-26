@@ -7,12 +7,24 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Appender;
+import ch.qos.logback.core.read.ListAppender;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.docs.DocFile;
+import io.dropwizard.logging.AbstractAppenderFactory;
 import io.dropwizard.logging.DefaultLoggingFactory;
 import io.dropwizard.logging.LoggingUtil;
+import io.dropwizard.logging.async.AsyncAppenderFactory;
+import io.dropwizard.logging.filter.LevelFilterFactory;
+import io.dropwizard.logging.layout.LayoutFactory;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @langEn # Logging
@@ -98,6 +110,33 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
     this.configDumps = false;
     this.stackTraces = false;
     this.wiring = false;
+  }
+
+  public List<ILoggingEvent> configure(
+      MetricRegistry metricRegistry, String name, Optional<List<ILoggingEvent>> record) {
+    List<ILoggingEvent> buffer = null;
+
+    if (record.isEmpty()) {
+      BufferAppenderFactory appenderFactory = new BufferAppenderFactory();
+      buffer = appenderFactory.appender.list;
+      getAppenders().add(appenderFactory);
+    }
+
+    configure(metricRegistry, name);
+
+    if (record.isPresent()) {
+      ImmutableList<Appender<ILoggingEvent>> appenders =
+          ImmutableList.copyOf(
+              LoggingUtil.getLoggerContext().getLogger("ROOT").iteratorForAppenders());
+
+      for (int j = 1; j < appenders.size() - 1; j++) {
+        for (ILoggingEvent iLoggingEvent : record.get()) {
+          appenders.get(j).doAppend(iLoggingEvent);
+        }
+      }
+    }
+
+    return Objects.requireNonNullElse(buffer, List.of());
   }
 
   @Override
@@ -223,4 +262,28 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
 
   @JsonProperty("type")
   public void setType(String type) {}
+
+  private static class BufferAppenderFactory extends AbstractAppenderFactory<ILoggingEvent> {
+    private final ListAppender<ILoggingEvent> appender;
+
+    public BufferAppenderFactory() {
+      super();
+
+      this.appender = new ListAppender<>();
+      appender.setName("buffer");
+    }
+
+    @Override
+    public Appender<ILoggingEvent> build(
+        LoggerContext loggerContext,
+        String s,
+        LayoutFactory<ILoggingEvent> layoutFactory,
+        LevelFilterFactory<ILoggingEvent> levelFilterFactory,
+        AsyncAppenderFactory<ILoggingEvent> asyncAppenderFactory) {
+      // LOGGER.info("APPENDER ADD {} {}", appender.getName(), appender.getClass());
+      appender.start();
+      // return wrapAsync(appender, asyncAppenderFactory, loggerContext);
+      return appender;
+    }
+  }
 }
