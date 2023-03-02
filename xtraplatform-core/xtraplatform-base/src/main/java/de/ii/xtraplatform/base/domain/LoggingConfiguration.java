@@ -129,9 +129,11 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
           ImmutableList.copyOf(
               LoggingUtil.getLoggerContext().getLogger("ROOT").iteratorForAppenders());
 
-      for (int j = 1; j < appenders.size() - 1; j++) {
-        for (ILoggingEvent iLoggingEvent : record.get()) {
-          appenders.get(j).doAppend(iLoggingEvent);
+      for (int j = 0; j < appenders.size() - 1; j++) {
+        if (!appenders.get(j).getName().endsWith("console-appender")) {
+          for (ILoggingEvent iLoggingEvent : record.get()) {
+            appenders.get(j).doAppend(iLoggingEvent);
+          }
         }
       }
     }
