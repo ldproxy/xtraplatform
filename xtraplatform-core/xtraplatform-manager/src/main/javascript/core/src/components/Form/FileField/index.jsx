@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
 import { FileInput } from 'grommet';
@@ -10,7 +11,17 @@ const StyledFileInput = styled(FileInput)`
     ${(props) => props.inheritedFrom && `color: ${props.theme.global.colors['dark-6']};`}
 `;
 
-const FileField = ({ help, label, inheritedFrom, color, error }) => {
+const FileField = ({
+    help,
+    label,
+    inheritedFrom,
+    color,
+    error,
+    maxSize,
+    name,
+    multiple,
+    accept,
+}) => {
     const File = StyledFileInput;
 
     // TODO: maybe move to AutoForm
@@ -18,13 +29,14 @@ const FileField = ({ help, label, inheritedFrom, color, error }) => {
     return (
         <Field label={label} help={help} inheritedFrom={inheritedFrom} color={color} error={error}>
             <File
-                name='file'
-                accept='.gpkg'
-                multiple={false}
+                name={name}
+                accept={accept}
+                multiple={multiple}
                 messages={{
                     browse: 'click to browse',
                     dropPrompt: 'Drop file here or ',
                 }}
+                maxSize={maxSize}
             />
         </Field>
     );
@@ -32,12 +44,17 @@ const FileField = ({ help, label, inheritedFrom, color, error }) => {
 
 FileField.propTypes = {
     ...InfoLabel.propTypes,
+    maxSize: PropTypes.number,
+    accept: PropTypes.string,
+    multiple: PropTypes.bool,
+    name: PropTypes.string,
 };
 
 FileField.defaultProps = {
     ...InfoLabel.defaultProps,
     value: null,
     readOnly: false,
+    multiple: false,
 };
 
 FileField.displayName = 'FileField';

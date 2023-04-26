@@ -16,6 +16,7 @@ import {
 } from '@xtraplatform/core';
 import FileField from '../../../../../../../../../../xtraplatform-manager/src/main/javascript/core/src/components/Form/FileField';
 
+const maxSize = 104857600;
 export const fieldsInitial = {
     featureProviderType: 'SQL',
 };
@@ -28,6 +29,11 @@ export const fieldsValidation = {
     url: ifEqualsThen('featureProviderType', 'WFS', url()),
     schemas: allowedChars('A-Za-z0-9-_,'),
     autoTypes: allowedChars('A-Za-z0-9-_,\\[\\]\\(\\)\\|\\*\\.\\{\\}'),
+    file: (files) => {
+        if (files && files[0] && files[0].size > maxSize) {
+            return 'File is too large. Select file which is not larger than 100 MB.';
+        }
+    },
 };
 
 //TODO: providers from fassets
@@ -46,7 +52,7 @@ const ServiceAddOgcApi = ({
                 label={t('services/ogc_api:services.add.type._label')}
                 options={[
                     { value: 'SQL', label: 'PostgreSQL' },
-                    { value: 'GPKG', label: 'geoPackage' },
+                    { value: 'GPKG', label: 'GeoPackage' },
                     { value: 'WFS', label: 'WFS' },
                 ]}
                 disabled={loading}
@@ -140,7 +146,11 @@ const ServiceAddOgcApi = ({
                     <FileField
                         label={t('services/ogc_api:services.add.geoPackage._label')}
                         help={t('services/ogc_api:services.add.geoPackage._description')}
-                        error={errors['geoPackage']}
+                        maxSize={maxSize}
+                        error={errors['file']}
+                        name='file'
+                        accept='.gpkg'
+                        multiple={false}
                     />
                     <Box
                         border={{ side: 'bottom', size: 'xsmall' }}

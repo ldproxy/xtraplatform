@@ -43,9 +43,7 @@
         "react-is": "^16",
         "react-router-dom": "^5",
         "styled-components": "^5",
+        "use-deep-compare-effect": "^1.8.1",
         "webpack": "^4"
-    },
-    "dependencies": {
-        "use-deep-compare-effect": "^1.8.1"
     }
 }
