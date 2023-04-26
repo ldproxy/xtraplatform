@@ -55,6 +55,7 @@ FileField.defaultProps = {
     value: null,
     readOnly: false,
     multiple: false,
+    label: 'GeoPackage-Datei',
 };
 
 FileField.displayName = 'FileField';
