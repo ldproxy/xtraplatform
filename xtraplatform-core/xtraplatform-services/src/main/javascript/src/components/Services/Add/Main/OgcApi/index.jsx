@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import { Box, Form } from 'grommet';
+import { Box, Heading, FileInput } from 'grommet';
 import {
     AutoForm,
     TextField,
+    FormField,
     ToggleField,
     RadioField,
     required,
@@ -13,6 +14,7 @@ import {
     ifEqualsThen,
     allowedChars,
 } from '@xtraplatform/core';
+import FileField from '../../../../../../../../../../xtraplatform-manager/src/main/javascript/core/src/components/Form/FileField';
 
 export const fieldsInitial = {
     featureProviderType: 'SQL',
@@ -29,17 +31,27 @@ export const fieldsValidation = {
 };
 
 //TODO: providers from fassets
-const ServiceAddOgcApi = ({ isBasicAuth, loading, errors, featureProviderType }) => {
+const ServiceAddOgcApi = ({
+    isBasicAuth,
+    loading,
+    errors,
+    featureProviderType,
+    handleFileUpload,
+}) => {
     const { t } = useTranslation();
-
     return (
         <>
             <RadioField
                 name='featureProviderType'
                 label={t('services/ogc_api:services.add.type._label')}
-                options={['SQL', 'WFS']}
+                options={[
+                    { value: 'SQL', label: 'PostgreSQL' },
+                    { value: 'GPKG', label: 'geoPackage' },
+                    { value: 'WFS', label: 'WFS' },
+                ]}
                 disabled={loading}
             />
+
             {featureProviderType === 'SQL' && (
                 <>
                     <TextField
@@ -120,6 +132,34 @@ const ServiceAddOgcApi = ({ isBasicAuth, loading, errors, featureProviderType })
                             disabled={loading}
                         />
                     )}
+                </>
+            )}
+
+            {featureProviderType === 'GPKG' && (
+                <>
+                    <FileField
+                        label={t('services/ogc_api:services.add.geoPackage._label')}
+                        help={t('services/ogc_api:services.add.geoPackage._description')}
+                        error={errors['geoPackage']}
+                    />
+                    <Box
+                        border={{ side: 'bottom', size: 'xsmall' }}
+                        margin={{ vertical: 'small' }}
+                    />
+                    <TextField
+                        name='schemas'
+                        label={t('services/ogc_api:services.add.schemas._label')}
+                        help={t('services/ogc_api:services.add.schemas._description')}
+                        disabled={loading}
+                        error={errors['schemas']}
+                    />
+                    <TextField
+                        name='autoTypes'
+                        label={t('services/ogc_api:services.add.autoTypes._label')}
+                        help={t('services/ogc_api:services.add.autoTypes._description')}
+                        disabled={loading}
+                        error={errors['autoTypes']}
+                    />
                 </>
             )}
         </>
