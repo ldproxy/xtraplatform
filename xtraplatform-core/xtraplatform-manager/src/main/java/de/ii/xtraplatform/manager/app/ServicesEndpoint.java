@@ -45,7 +45,10 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
+import java.nio.file.Files;
+// import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,14 +80,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.nio.file.Files;
-// import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Base64;
-import java.util.stream.Stream;
-import java.nio.file.FileAlreadyExistsException;
-
-
 
 @Singleton
 @AutoBind
@@ -188,36 +183,37 @@ public class ServicesEndpoint implements Endpoint {
       cleanRequest.remove("autoTypes");
       cleanRequest.remove("filecontent");
 
-
       Map<String, Object> autoProvider;
 
       java.nio.file.Path filePath = null;
 
       if (Objects.equals(request.get("featureProviderType"), "WFS")) {
-        autoProvider = new ImmutableMap.Builder<String, Object>()
-            .putAll(request)
-            .put("auto", "true")
-            .put("autoPersist", "true")
-            .put("entityStorageVersion", "2")
-            .put(
-                "connectionInfo",
-                new ImmutableMap.Builder<String, Object>()
-                    .put("connectorType", "HTTP")
-                    .put("uri", request.get("url"))
-                    .put("user", Optional.ofNullable(request.get("user")))
-                    .put("password", Optional.ofNullable(request.get("password")))
-                    .build())
-            .build();
+        autoProvider =
+            new ImmutableMap.Builder<String, Object>()
+                .putAll(request)
+                .put("auto", "true")
+                .put("autoPersist", "true")
+                .put("entityStorageVersion", "2")
+                .put(
+                    "connectionInfo",
+                    new ImmutableMap.Builder<String, Object>()
+                        .put("connectorType", "HTTP")
+                        .put("uri", request.get("url"))
+                        .put("user", Optional.ofNullable(request.get("user")))
+                        .put("password", Optional.ofNullable(request.get("password")))
+                        .build())
+                .build();
       } else if (request.get("filename") != null && request.get("filecontent") != null) {
         try {
           byte[] decodedContent = Base64.getDecoder().decode(request.get("filecontent"));
-          java.nio.file.Path directoryPath2 = dataDirectory.resolve("api-resources").resolve("features");
+          java.nio.file.Path directoryPath2 =
+              dataDirectory.resolve("api-resources").resolve("features");
           Files.createDirectories(directoryPath2);
 
           String fileName = request.get("filename");
           filePath = directoryPath2.resolve(fileName);
 
-          if(Files.exists(filePath)) {
+          if (Files.exists(filePath)) {
             String extension = "";
             String name = "";
 
@@ -238,36 +234,37 @@ public class ServicesEndpoint implements Endpoint {
         } catch (IOException e) {
           e.printStackTrace();
         }
-        autoProvider = new ImmutableMap.Builder<String, Object>()
-            .putAll(cleanRequest)
-            .put("auto", "true")
-            .put("autoPersist", "true")
-            .put(
-                "autoTypes",
-                Optional.ofNullable(request.get("autoTypes"))
-                    .map(
-                        schemas ->
-                            Splitter.on(',').trimResults().omitEmptyStrings().split(schemas))
-                    .orElse(ImmutableList.of()))
-            .put("entityStorageVersion", "2")
-            .put(
-                "connectionInfo",
-                new ImmutableMap.Builder<String, Object>()
-                    .put("connectorType", "SLICK")
-                    .put("database", filePath.toString())
-                    .put("dialect", "GPKG")
-                   .put(
-                        "schemas",
-                        Optional.ofNullable(request.get("schemas"))
-                            .map(
-                                schemas ->
-                                    Splitter.on(',')
-                                        .trimResults()
-                                        .omitEmptyStrings()
-                                        .split(schemas))
-                            .orElse(ImmutableList.of()))
-                    .build())
-            .build();
+        autoProvider =
+            new ImmutableMap.Builder<String, Object>()
+                .putAll(cleanRequest)
+                .put("auto", "true")
+                .put("autoPersist", "true")
+                .put(
+                    "autoTypes",
+                    Optional.ofNullable(request.get("autoTypes"))
+                        .map(
+                            schemas ->
+                                Splitter.on(',').trimResults().omitEmptyStrings().split(schemas))
+                        .orElse(ImmutableList.of()))
+                .put("entityStorageVersion", "2")
+                .put(
+                    "connectionInfo",
+                    new ImmutableMap.Builder<String, Object>()
+                        .put("connectorType", "SLICK")
+                        .put("database", filePath.toString())
+                        .put("dialect", "GPKG")
+                        .put(
+                            "schemas",
+                            Optional.ofNullable(request.get("schemas"))
+                                .map(
+                                    schemas ->
+                                        Splitter.on(',')
+                                            .trimResults()
+                                            .omitEmptyStrings()
+                                            .split(schemas))
+                                .orElse(ImmutableList.of()))
+                        .build())
+                .build();
       } else {
         autoProvider =
             new ImmutableMap.Builder<String, Object>()
@@ -290,7 +287,7 @@ public class ServicesEndpoint implements Endpoint {
                         .put("database", request.get("database"))
                         .put("user", request.get("user"))
                         .put("password", request.get("password"))
-                       .put(
+                        .put(
                             "schemas",
                             Optional.ofNullable(request.get("schemas"))
                                 .map(

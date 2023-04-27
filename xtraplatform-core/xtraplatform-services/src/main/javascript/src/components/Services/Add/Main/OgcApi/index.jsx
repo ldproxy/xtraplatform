@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import { Box, Heading, FileInput } from 'grommet';
+import { Box } from 'grommet';
 import {
-    AutoForm,
     TextField,
-    FormField,
     ToggleField,
     RadioField,
     required,
@@ -37,13 +35,7 @@ export const fieldsValidation = {
 };
 
 //TODO: providers from fassets
-const ServiceAddOgcApi = ({
-    isBasicAuth,
-    loading,
-    errors,
-    featureProviderType,
-    handleFileUpload,
-}) => {
+const ServiceAddOgcApi = ({ isBasicAuth, loading, errors, featureProviderType }) => {
     const { t } = useTranslation();
     return (
         <>
