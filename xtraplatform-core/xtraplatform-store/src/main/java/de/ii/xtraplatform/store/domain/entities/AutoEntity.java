@@ -15,10 +15,24 @@ import org.immutables.value.Value;
 
 public interface AutoEntity {
 
-  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+  /**
+   * @langEn Option to generate missing definitions automatically from the data source.
+   * @langDe Steuert ob fehlende Definitionen beim Start automatisch aus der Datenquelle bestimmt
+   *     werden sollen (Auto-Modus).
+   * @default false
+   */
+  @JsonProperty(value = "auto", access = JsonProperty.Access.WRITE_ONLY)
   Optional<Boolean> getAuto();
 
-  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+  /**
+   * @langEn Option to persist definitions generated with `auto` to the configuration file. The
+   *     [Store](/application/40-store.md) must not be `READ_ONLY` for this to take effect.
+   * @langDe Steuert ob mit `auto` generierte Definitionen in die Konfigurationsdatei geschrieben
+   *     werden sollen. Setzt voraus, dass der [Store](/de/application/40-store.md) nicht
+   *     `READ_ONLY` ist.
+   * @default false
+   */
+  @JsonProperty(value = "autoPersist", access = JsonProperty.Access.WRITE_ONLY)
   Optional<Boolean> getAutoPersist();
 
   @JsonIgnore
