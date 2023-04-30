@@ -105,8 +105,19 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
             dir,
             maxDepth,
             ((path1, basicFileAttributes) ->
-                matcher.test(dir.relativize(path1), basicFileAttributes::isRegularFile)
-                    && !path1.toFile().isHidden()))
+                matcher.test(
+                    dir.relativize(path1),
+                    new PathAttributes() {
+                      @Override
+                      public boolean isValue() {
+                        return basicFileAttributes.isRegularFile();
+                      }
+
+                      @Override
+                      public boolean isHidden() {
+                        return path1.getFileName().toString().startsWith(".");
+                      }
+                    })))
         .map(dir::relativize);
   }
 

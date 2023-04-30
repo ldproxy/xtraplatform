@@ -29,5 +29,7 @@ public interface BlobReader {
 
   interface PathAttributes {
     boolean isValue();
+
+    boolean isHidden();
   }
 }
