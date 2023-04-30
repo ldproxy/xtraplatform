@@ -4,6 +4,8 @@ store:
   sources:
     - ${STORE_SOURCE_BASE:-type: FS_CFG_32
     - type: FS_STORE_32
+    - type: FS_API_RESOURCES_V3
+    - type: FS_API_RESOURCES_RESOURCES_V3
     - type: FS_CACHE_32
     - type: FS_PROJ_32}
     - ${STORE_SOURCE_ADD_1:-type: EMPTY}
