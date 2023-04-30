@@ -183,6 +183,19 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
   }
 
   @Override
+  public long lastModified(Path path) throws IOException {
+    for (BlobReader source : blobReaders) {
+      long size = source.lastModified(path);
+
+      if (size > -1) {
+        return size;
+      }
+    }
+
+    return -1;
+  }
+
+  @Override
   public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException {
     for (BlobReader source : blobReaders) {

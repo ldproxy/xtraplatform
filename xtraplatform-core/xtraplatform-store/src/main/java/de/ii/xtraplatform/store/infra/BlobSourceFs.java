@@ -79,6 +79,21 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
   }
 
   @Override
+  public long lastModified(Path path) throws IOException {
+    if (!canHandle(path)) {
+      return -1;
+    }
+
+    Path filePath = full(path);
+
+    if (!Files.isRegularFile(filePath)) {
+      return -1;
+    }
+
+    return Files.getLastModifiedTime(full(path)).toMillis();
+  }
+
+  @Override
   public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException {
     if (!canHandle(path)) {
@@ -90,7 +105,8 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
             dir,
             maxDepth,
             ((path1, basicFileAttributes) ->
-                matcher.test(dir.relativize(path1), basicFileAttributes::isRegularFile)))
+                matcher.test(dir.relativize(path1), basicFileAttributes::isRegularFile)
+                    && !path1.toFile().isHidden()))
         .map(dir::relativize);
   }
 

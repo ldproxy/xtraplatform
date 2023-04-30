@@ -44,6 +44,11 @@ public interface BlobStore extends BlobReader, BlobWriter, BlobLocals {
       }
 
       @Override
+      public long lastModified(Path path) throws IOException {
+        return delegate.lastModified(prefix.resolve(path));
+      }
+
+      @Override
       public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
           throws IOException {
         return delegate.walk(prefix.resolve(path), maxDepth, matcher);

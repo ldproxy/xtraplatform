@@ -22,6 +22,8 @@ public interface BlobReader {
 
   long size(Path path) throws IOException;
 
+  long lastModified(Path path) throws IOException;
+
   Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException;
 

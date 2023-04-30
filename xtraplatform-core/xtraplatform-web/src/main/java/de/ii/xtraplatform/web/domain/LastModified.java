@@ -14,6 +14,10 @@ import java.util.Date;
 public interface LastModified {
 
   static Date from(Path path) {
-    return Date.from(Instant.ofEpochMilli(path.toFile().lastModified()));
+    return from(path.toFile().lastModified());
+  }
+
+  static Date from(long lastModified) {
+    return Date.from(Instant.ofEpochMilli(lastModified));
   }
 }
