@@ -397,8 +397,8 @@ public interface StoreConfiguration {
               getSources().stream()
                   .map(
                       source -> {
-                        if (source instanceof StoreSourceDefault32) {
-                          return new ImmutableStoreSourceDefault32.Builder()
+                        if (source instanceof StoreSourceDefaultV3) {
+                          return new ImmutableStoreSourceDefaultV3.Builder()
                               .desiredMode(Mode.RO)
                               .build();
                         }

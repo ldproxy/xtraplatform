@@ -7,17 +7,16 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import static de.ii.xtraplatform.base.domain.StoreConfiguration.DEFAULT_LOCATION;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceDefault32.Builder.class)
-public interface StoreSourceDefault32 extends StoreSourceFs {
+@JsonDeserialize(builder = ImmutableStoreSourceCacheV3.Builder.class)
+public interface StoreSourceCacheV3 extends StoreSourceFs {
 
-  String KEY = "FS_STORE_32";
+  String KEY = "FS_CACHE_V3";
 
   @JsonProperty(StoreSource.TYPE_PROP)
   @Value.Derived
@@ -28,12 +27,18 @@ public interface StoreSourceDefault32 extends StoreSourceFs {
   @Value.Derived
   @Override
   default Content getContent() {
-    return Content.ALL;
+    return Content.RESOURCES;
   }
 
   @Value.Derived
   @Override
   default String getSrc() {
-    return DEFAULT_LOCATION;
+    return "cache/tiles";
+  }
+
+  @Value.Derived
+  @Override
+  default Optional<String> getPrefix() {
+    return Optional.of("tiles");
   }
 }

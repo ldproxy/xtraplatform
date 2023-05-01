@@ -14,39 +14,42 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceCfg32.Builder.class)
-public interface StoreSourceCfg32 extends StoreSourceFs {
+@JsonDeserialize(builder = ImmutableStoreSourceProjV3.Builder.class)
+public interface StoreSourceProjV3 extends StoreSourceFs {
 
-  String KEY = "FS_CFG_32";
+  String KEY = "FS_PROJ_V3";
 
   @JsonProperty(StoreSource.TYPE_PROP)
-  @Value.Derived
+  @Value.Default
   default String getTypeString() {
-    return Type.FS.name();
-  }
-
-  @Value.Derived
-  @Override
-  default Content getContent() {
-    return Content.CFG;
+    return KEY;
   }
 
   @JsonIgnore
   @Value.Derived
   @Override
-  default Mode getMode() {
-    return Mode.RO;
+  default Type getType() {
+    return Type.FS;
   }
 
+  @JsonIgnore
+  @Value.Derived
+  @Override
+  default Content getContent() {
+    return Content.RESOURCES;
+  }
+
+  @JsonIgnore
   @Value.Derived
   @Override
   default String getSrc() {
-    return "cfg.yml";
+    return "proj";
   }
 
+  @JsonIgnore
   @Value.Derived
   @Override
   default Optional<String> getPrefix() {
-    return Optional.empty();
+    return Optional.of("proj");
   }
 }
