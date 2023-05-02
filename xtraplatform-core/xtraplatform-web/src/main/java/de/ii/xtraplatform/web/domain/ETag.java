@@ -11,9 +11,6 @@ import com.google.common.hash.Funnel;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
-import com.google.common.io.Files;
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -54,17 +51,6 @@ public interface ETag {
 
   static EntityTag from(byte[] byteArray) {
     String eTag = Hashing.murmur3_128().hashBytes(byteArray).toString();
-
-    return new EntityTag(eTag, false);
-  }
-
-  static EntityTag from(File file) {
-    String eTag;
-    try {
-      eTag = Files.asByteSource(file).hash(Hashing.murmur3_128()).toString();
-    } catch (IOException e) {
-      return null;
-    }
 
     return new EntityTag(eTag, false);
   }
