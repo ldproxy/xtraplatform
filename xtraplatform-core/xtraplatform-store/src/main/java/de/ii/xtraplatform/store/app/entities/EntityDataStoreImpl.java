@@ -393,6 +393,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 })
             .thenAccept(ignore -> CompletableFuture.completedFuture(null));
       } catch (Throwable e) {
+        LogContext.error(LOGGER, e, "Failed to create entity {}", identifier);
         return CompletableFuture.completedFuture(null);
       }
     }
