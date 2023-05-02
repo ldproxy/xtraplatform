@@ -29,7 +29,7 @@ const ServiceEditProvider = ({ id, api, debounce, onPending, onChange }) => {
 
     const connectionInfo = (data && data.provider && data.provider.connectionInfo) || {};
 
-    const type = data && data.provider && data.provider.featureProviderType;
+    const type = data && data.provider && data.provider.providerSubType;
     const nativeCrs = (data && data.provider && data.provider.nativeCrs) || {};
 
     const { t } = useTranslation();
@@ -46,24 +46,28 @@ const ServiceEditProvider = ({ id, api, debounce, onPending, onChange }) => {
                     />
                     {type === 'SQL' && (
                         <>
-                            <TextField
-                                name='host'
-                                label={t('services/ogc_api:services.datasource.host')}
-                                value={connectionInfo.host}
-                                readOnly
-                            />
+                            {connectionInfo.host && (
+                                <TextField
+                                    name='host'
+                                    label={t('services/ogc_api:services.datasource.host')}
+                                    value={connectionInfo.host}
+                                    readOnly
+                                />
+                            )}
                             <TextField
                                 name='database'
                                 label={t('services/ogc_api:services.datasource.database')}
                                 value={connectionInfo.database}
                                 readOnly
                             />
-                            <TextField
-                                name='user'
-                                label={t('services/ogc_api:services.datasource.user')}
-                                value={connectionInfo.user}
-                                readOnly
-                            />
+                            {connectionInfo.user && (
+                                <TextField
+                                    name='user'
+                                    label={t('services/ogc_api:services.datasource.user')}
+                                    value={connectionInfo.user}
+                                    readOnly
+                                />
+                            )}
                             <TextField
                                 name='schemas'
                                 label={t('services/ogc_api:services.datasource.schemas')}
