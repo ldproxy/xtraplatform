@@ -35,6 +35,7 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(value = StoreSourceCacheV3.class, name = StoreSourceCacheV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceCache3dV3.class, name = StoreSourceCache3dV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceProjV3.class, name = StoreSourceProjV3.KEY),
+  @JsonSubTypes.Type(value = StoreSourceTemplatesV3.class, name = StoreSourceTemplatesV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceEmpty.class, name = Type.EMPTY_KEY),
 })
 public interface StoreSource {

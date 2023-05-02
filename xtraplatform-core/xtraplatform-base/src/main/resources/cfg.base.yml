@@ -8,7 +8,8 @@ store:
     - type: FS_API_RESOURCES_RESOURCES_V3
     - type: FS_CACHE_V3
     - type: FS_CACHE_3D_V3
-    - type: FS_PROJ_V3}
+    - type: FS_PROJ_V3
+    - type: FS_TEMPLATES_V3}
     - ${STORE_SOURCE_ADD_1:-type: EMPTY}
     - ${STORE_SOURCE_ADD_2:-type: EMPTY}
     - ${STORE_SOURCE_ADD_3:-type: EMPTY}
