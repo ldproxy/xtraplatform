@@ -112,7 +112,7 @@ const PROVIDER = gql`
         provider(id: $id) @rest(type: "Provider", path: "/entities/providers/{args.id}") {
             id
             lastModified
-            featureProviderType
+            providerSubType
             connectionInfo
             nativeCrs
             defaultLanguage
