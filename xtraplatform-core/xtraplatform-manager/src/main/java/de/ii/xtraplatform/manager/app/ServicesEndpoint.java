@@ -17,7 +17,6 @@ import com.google.common.collect.ObjectArrays;
 import dagger.Lazy;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.services.domain.ImmutableServiceStatus;
 import de.ii.xtraplatform.services.domain.Service;
@@ -25,6 +24,7 @@ import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceStatus;
 import de.ii.xtraplatform.services.domain.TaskStatus;
+import de.ii.xtraplatform.store.domain.BlobStore;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
@@ -44,8 +44,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 // import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -100,7 +100,7 @@ public class ServicesEndpoint implements Endpoint {
   private final List<Consumer<EntityStateEvent>> entityStateSubscriber;
   private final EventStream<EntityStateEvent> eventStream;
 
-  private final java.nio.file.Path dataDirectory;
+  private final BlobStore featuresStore;
 
   @Inject
   ServicesEndpoint(
@@ -110,7 +110,7 @@ public class ServicesEndpoint implements Endpoint {
       EntityDataDefaultsStore defaultsStore,
       ServiceBackgroundTasks serviceBackgroundTasks,
       Reactive reactive,
-      AppContext appContext) {
+      BlobStore blobStore) {
     this.entityRepository = (EntityDataStore<EntityData>) entityRepository;
     this.serviceRepository = getServiceRepository(this.entityRepository);
     this.entityRegistry = entityRegistry;
@@ -120,7 +120,7 @@ public class ServicesEndpoint implements Endpoint {
     this.objectMapper = entityRepository.getValueEncoding().getMapper(ValueEncoding.FORMAT.JSON);
     this.entityStateSubscriber = new ArrayList<>();
     this.eventStream = new EventStream<>(reactive.runner("sse", 1, 1024), "state");
-    this.dataDirectory = appContext.getDataDir();
+    this.featuresStore = blobStore.with("features");
 
     // TODO: sse, see /_events below
     /*eventStream.foreach(
@@ -205,15 +205,12 @@ public class ServicesEndpoint implements Endpoint {
                 .build();
       } else if (request.get("filename") != null && request.get("filecontent") != null) {
         try {
-          byte[] decodedContent = Base64.getDecoder().decode(request.get("filecontent"));
-          java.nio.file.Path directoryPath2 =
-              dataDirectory.resolve("api-resources").resolve("features");
-          Files.createDirectories(directoryPath2);
-
+          ByteArrayInputStream decodedContent =
+              new ByteArrayInputStream(Base64.getDecoder().decode(request.get("filecontent")));
           String fileName = request.get("filename");
-          filePath = directoryPath2.resolve(fileName);
+          filePath = java.nio.file.Path.of(fileName);
 
-          if (Files.exists(filePath)) {
+          if (featuresStore.has(filePath)) {
             String extension = "";
             String name = "";
 
@@ -222,17 +219,17 @@ public class ServicesEndpoint implements Endpoint {
             name = fileName.substring(0, idxOfDot);
             int counter = 1;
 
-            while (Files.exists(filePath)) {
+            while (featuresStore.has(filePath)) {
               fileName = name + "_" + counter + "." + extension;
               counter++;
-              filePath = directoryPath2.resolve(fileName);
+              filePath = java.nio.file.Path.of(fileName);
             }
-            Files.write(filePath, decodedContent);
+            featuresStore.put(filePath, decodedContent);
           } else {
-            Files.write(filePath, decodedContent);
+            featuresStore.put(filePath, decodedContent);
           }
         } catch (IOException e) {
-          e.printStackTrace();
+          throw new InternalServerErrorException(e.getMessage());
         }
         autoProvider =
             new ImmutableMap.Builder<String, Object>()
