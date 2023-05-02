@@ -7,12 +7,12 @@ import {
     TextField,
     ToggleField,
     RadioField,
+    FileField,
     required,
     url,
     ifEqualsThen,
     allowedChars,
 } from '@xtraplatform/core';
-import FileField from '../../../../../../../../../../xtraplatform-manager/src/main/javascript/core/src/components/Form/FileField';
 
 const maxSize = 104857600;
 export const fieldsInitial = {
