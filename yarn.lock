@@ -3980,7 +3980,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@xtraplatform/core@^2.0.0, @xtraplatform/core@^2.1.0, @xtraplatform/core@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/core":
+"@xtraplatform/core@^2.0.0, @xtraplatform/core@^2.1.1, @xtraplatform/core@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/core":
   version: 0.0.0-use.local
   resolution: "@xtraplatform/core@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/core"
   dependencies:
@@ -4120,7 +4120,7 @@ __metadata:
     "@apollo/client": ^3
     "@neutrinojs/airbnb": ^9.5.0
     "@neutrinojs/mocha": ^9.5.0
-    "@xtraplatform/core": ^2.1.0
+    "@xtraplatform/core": ^2.1.1
     "@xtraplatform/manager": ^2.0.0
     "@xtraplatform/neutrino": ^2.0.0
     apollo-link-rest: ^0.8.0-beta.0
@@ -4150,7 +4150,7 @@ __metadata:
     styled-components: ^5
   peerDependencies:
     "@apollo/client": ^3
-    "@xtraplatform/core": ^2.1.0
+    "@xtraplatform/core": ^2.1.1
     "@xtraplatform/manager": ^2.0.0
     feature-u: ^3
     grommet: ^2
