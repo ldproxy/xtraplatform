@@ -13,10 +13,10 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceCache32.Builder.class)
-public interface StoreSourceCache32 extends StoreSourceFs {
+@JsonDeserialize(builder = ImmutableStoreSourceApiResourcesResourcesV3.Builder.class)
+public interface StoreSourceApiResourcesResourcesV3 extends StoreSourceFs {
 
-  String KEY = "FS_CACHE_32";
+  String KEY = "FS_API_RESOURCES_RESOURCES_V3";
 
   @JsonProperty(StoreSource.TYPE_PROP)
   @Value.Derived
@@ -33,12 +33,12 @@ public interface StoreSourceCache32 extends StoreSourceFs {
   @Value.Derived
   @Override
   default String getSrc() {
-    return "cache/tiles";
+    return "api-resources/resources";
   }
 
   @Value.Derived
   @Override
   default Optional<String> getPrefix() {
-    return Optional.of("tiles");
+    return Optional.of("api-resources");
   }
 }

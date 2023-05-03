@@ -7,49 +7,38 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceProj32.Builder.class)
-public interface StoreSourceProj32 extends StoreSourceFs {
+@JsonDeserialize(builder = ImmutableStoreSourceCache3dV3.Builder.class)
+public interface StoreSourceCache3dV3 extends StoreSourceFs {
 
-  String KEY = "FS_PROJ_32";
+  String KEY = "FS_CACHE_3D_V3";
 
   @JsonProperty(StoreSource.TYPE_PROP)
-  @Value.Default
-  default String getTypeString() {
-    return KEY;
-  }
-
-  @JsonIgnore
   @Value.Derived
-  @Override
-  default Type getType() {
-    return Type.FS;
+  default String getTypeString() {
+    return Type.FS.name();
   }
 
-  @JsonIgnore
   @Value.Derived
   @Override
   default Content getContent() {
     return Content.RESOURCES;
   }
 
-  @JsonIgnore
   @Value.Derived
   @Override
   default String getSrc() {
-    return "proj";
+    return "cache/tiles3d";
   }
 
-  @JsonIgnore
   @Value.Derived
   @Override
   default Optional<String> getPrefix() {
-    return Optional.of("proj");
+    return Optional.of("tiles3d");
   }
 }
