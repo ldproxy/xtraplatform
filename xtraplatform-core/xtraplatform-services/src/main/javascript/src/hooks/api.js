@@ -22,7 +22,7 @@ const SERVICES = gql`
 `;
 
 const SERVICE_STATUS = gql`
-    query($id: String!) {
+    query ($id: String!) {
         status(id: $id) @rest(type: "ServiceStatus", path: "/services/{args.id}/status") {
             id
             createtAt
@@ -41,7 +41,7 @@ const SERVICE_STATUS = gql`
 `;
 
 const SERVICE = gql`
-    query($id: String!) {
+    query ($id: String!) {
         service(id: $id) @rest(type: "Service", path: "/services/{args.id}") {
             id
             createtAt
@@ -61,7 +61,7 @@ const SERVICE = gql`
 `;
 
 const ADD_SERVICE = gql`
-    mutation($input: any!) {
+    mutation ($input: any!) {
         patchService(input: $input)
             @rest(type: "ServiceStatus", path: "/services", method: "POST", bodyKey: "input") {
             id
@@ -80,7 +80,7 @@ const ADD_SERVICE = gql`
 `;
 
 const PATCH_SERVICE = gql`
-    mutation($id: String!, $input: any!) {
+    mutation ($id: String!, $input: any!) {
         patchService(id: $id, input: $input)
             @rest(type: "Service", path: "/services/{args.id}", method: "POST", bodyKey: "input") {
             id
@@ -99,7 +99,7 @@ const PATCH_SERVICE = gql`
 `;
 
 const DELETE_SERVICE = gql`
-    mutation($id: String!) {
+    mutation ($id: String!) {
         deleteService(id: $id)
             @rest(type: "Service", path: "/services/{args.id}", method: "DELETE") {
             NoResponse
@@ -108,11 +108,11 @@ const DELETE_SERVICE = gql`
 `;
 
 const PROVIDER = gql`
-    query($id: String!) {
+    query ($id: String!) {
         provider(id: $id) @rest(type: "Provider", path: "/entities/providers/{args.id}") {
             id
             lastModified
-            featureProviderType
+            providerSubType
             connectionInfo
             nativeCrs
             defaultLanguage
@@ -131,7 +131,7 @@ const CODELISTS = gql`
 `;
 
 const CODELIST = gql`
-    query($id: String!) {
+    query ($id: String!) {
         codelist(id: $id) @rest(type: "Codelist", path: "/entities/codelists/{args.id}") {
             id
             createtAt
@@ -143,7 +143,7 @@ const CODELIST = gql`
 `;
 
 const SERVICE_DEFAULTS = gql`
-    query($id: String!) {
+    query ($id: String!) {
         defaults(id: $id) @rest(type: "Defaults", path: "/defaults/services/{args.id}") {
             enabled
             secured
@@ -156,7 +156,7 @@ const SERVICE_DEFAULTS = gql`
 `;
 
 const PATCH_SERVICE_DEFAULTS = gql`
-    mutation($id: String!, $input: any!) {
+    mutation ($id: String!, $input: any!) {
         defaults(id: $id, input: $input)
             @rest(
                 type: "Defaults"

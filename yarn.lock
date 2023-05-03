@@ -3980,7 +3980,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@xtraplatform/core@^2.0.0, @xtraplatform/core@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/core":
+"@xtraplatform/core@^2.0.0, @xtraplatform/core@^2.1.1, @xtraplatform/core@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/core":
   version: 0.0.0-use.local
   resolution: "@xtraplatform/core@workspace:xtraplatform-core/xtraplatform-manager/src/main/javascript/core"
   dependencies:
@@ -4055,7 +4055,7 @@ __metadata:
     "@apollo/client": ^3
     "@neutrinojs/airbnb": ^9.5.0
     "@neutrinojs/mocha": ^9.5.0
-    "@xtraplatform/core": ^2.0.0
+    "@xtraplatform/core": ^2.1.1
     "@xtraplatform/neutrino": ^2.0.0
     apollo-link-rest: ^0.8.0-beta.0
     core-js: ^3
@@ -4087,7 +4087,7 @@ __metadata:
     styled-components: ^5
   peerDependencies:
     "@apollo/client": ^3
-    "@xtraplatform/core": ^2.0.0
+    "@xtraplatform/core": ^2.1.1
     feature-u: ^3
     grommet: ^2
     grommet-icons: ^4
@@ -4120,7 +4120,7 @@ __metadata:
     "@apollo/client": ^3
     "@neutrinojs/airbnb": ^9.5.0
     "@neutrinojs/mocha": ^9.5.0
-    "@xtraplatform/core": ^2.0.0
+    "@xtraplatform/core": ^2.1.1
     "@xtraplatform/manager": ^2.0.0
     "@xtraplatform/neutrino": ^2.0.0
     apollo-link-rest: ^0.8.0-beta.0
@@ -4150,7 +4150,7 @@ __metadata:
     styled-components: ^5
   peerDependencies:
     "@apollo/client": ^3
-    "@xtraplatform/core": ^2.0.0
+    "@xtraplatform/core": ^2.1.1
     "@xtraplatform/manager": ^2.0.0
     feature-u: ^3
     grommet: ^2
@@ -14622,6 +14622,7 @@ resolve@^2.0.0-next.3:
     react-is: ^16
     react-router-dom: ^5
     styled-components: ^5
+    use-deep-compare-effect: ^1.8.1
     webpack: ^4
   languageName: unknown
   linkType: soft
@@ -16614,6 +16615,18 @@ resolve@^2.0.0-next.3:
   peerDependencies:
     react: ">=16.13"
   checksum: 8620cb09bd40051a512cdb9ad3840d6ec5d183fc2d9b00a58206e15cb3b3b6aa7cdbccfa587177e6876121ac9d459d0babe094563a1492bbbe7bbc74e05670e7
+  languageName: node
+  linkType: hard
+
+"use-deep-compare-effect@npm:^1.8.1":
+  version: 1.8.1
+  resolution: "use-deep-compare-effect@npm:1.8.1"
+  dependencies:
+    "@babel/runtime": ^7.12.5
+    dequal: ^2.0.2
+  peerDependencies:
+    react: ">=16.13"
+  checksum: b4b54a2fba4557db6fc9df937a247e5c0c86a68136eb6d1f40d2aad7f2586aa5b416837873678ccf5ebefaba0cd2ffddf7bf38bb5bf1b9a0951c3539b783dddf
   languageName: node
   linkType: hard
 

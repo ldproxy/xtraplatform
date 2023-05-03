@@ -53,6 +53,33 @@ const ServiceAddMain = ({ loading, error, addService }) => {
         }
     };
 
+    const onSubmitGPKG = async () => {
+        if (type) {
+            if (valid) {
+                const { file, ...params } = values;
+                file[0].arrayBuffer().then((buffer) => {
+                    const base64String = btoa(
+                        [].reduce.call(
+                            new Uint8Array(buffer),
+                            function (p, c) {
+                                return p + String.fromCharCode(c);
+                            },
+                            ''
+                        )
+                    );
+                    addService({
+                        ...params,
+                        serviceType: type.toUpperCase(),
+                        providerType: 'FEATURE',
+                        featureProviderType: 'SQL',
+                        filename: file[0].name,
+                        filecontent: base64String,
+                    });
+                });
+            }
+        }
+    };
+
     return (
         <Box
             pad={{ horizontal: 'small', vertical: 'medium' }}
@@ -74,7 +101,9 @@ const ServiceAddMain = ({ loading, error, addService }) => {
                     <Button
                         label={t('services/ogc_api:services.add._short')}
                         primary={true}
-                        onClick={onSubmit}
+                        onClick={() =>
+                            values.featureProviderType === 'GPKG' ? onSubmitGPKG() : onSubmit()
+                        }
                         disabled={loading}
                     />
                 </Box>

@@ -1,6 +1,6 @@
 {
     "name": "@xtraplatform/core",
-    "version": "2.0.0",
+    "version": "2.1.1",
     "author": "interactive instruments GmbH",
     "license": "MPL-2.0",
     "module": "src/index.js",
