@@ -8,17 +8,31 @@
 package de.ii.xtraplatform.store.domain.entities;
 
 import de.ii.xtraplatform.store.domain.Identifier;
+import de.ii.xtraplatform.store.domain.Migration;
+import de.ii.xtraplatform.store.domain.Migration.MigrationContext;
+import de.ii.xtraplatform.store.domain.entities.EntityMigration.EntityMigrationContext;
+import java.util.List;
 import java.util.Map;
 
-public interface EntityMigration<T extends EntityData, U extends EntityData> {
+public interface EntityMigration<T extends EntityData, U extends EntityData>
+    extends Migration<EntityMigrationContext<T>> {
 
-  long getSourceVersion();
+  interface EntityMigrationContext<T extends EntityData> extends MigrationContext {
+    List<T> getAll();
 
-  long getTargetVersion();
+    boolean exists(Identifier identifier);
+  }
 
-  EntityDataBuilder<T> getDataBuilder();
+  @Override
+  default boolean isApplicable(EntityMigrationContext<T> context) {
+    return context.getAll().stream().anyMatch(entityData -> isApplicable(context, entityData));
+  }
+
+  boolean isApplicable(EntityMigrationContext<T> context, T entityData);
 
   U migrate(T entityData);
 
-  Map<Identifier, EntityData> getAdditionalEntities(Identifier identifier, T entityData);
+  default Map<Identifier, ? extends EntityData> getAdditionalEntities(T entityData) {
+    return Map.of();
+  }
 }
