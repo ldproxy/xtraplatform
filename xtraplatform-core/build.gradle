@@ -8,7 +8,7 @@ allprojects {
 }
 
 
-version = '5.2.0' + versionSuffix
+version = '5.3.0' + versionSuffix
 
 dependencies {
     modules subprojects
