@@ -136,7 +136,8 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
       Files.createDirectories(filePath.getParent());
 
-      try (OutputStream file = Files.newOutputStream(filePath)) {
+      try (content;
+          OutputStream file = Files.newOutputStream(filePath)) {
         content.transferTo(file);
       }
     }

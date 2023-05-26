@@ -147,9 +147,11 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
       Optional<InputStream> signingKey = keyStore.get(SIGNING_KEY_PATH);
 
       if (signingKey.isPresent()) {
-        byte[] bytes = signingKey.get().readAllBytes();
+        try (InputStream inputStream = signingKey.get()) {
+          byte[] bytes = inputStream.readAllBytes();
 
-        return Optional.of(bytes);
+          return Optional.of(bytes);
+        }
       }
     } catch (IOException e) {
       LogContext.error(LOGGER, e, "Could not load JWT signing key");

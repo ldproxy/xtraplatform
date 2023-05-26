@@ -80,7 +80,7 @@ public class StoreImpl implements Store, AppLifeCycle {
                   ? String.format(" [%s]", s.getPrefix().get())
                   : "";
 
-          LOGGER.info("  {} {} [{}]{}{}", s.getType(), src, s.getContent(), subType, mode);
+          LOGGER.info("  {} [{}]{}{}", s.getLabelSpaces(), s.getContent(), subType, mode);
         });
   }
 

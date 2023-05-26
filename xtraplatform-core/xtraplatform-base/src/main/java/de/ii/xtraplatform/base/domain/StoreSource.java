@@ -11,8 +11,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,10 +24,16 @@ import org.immutables.value.Value;
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,
     property = StoreSource.TYPE_PROP,
+    defaultImpl = StoreSourcePartial.class,
     visible = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = StoreSourceFs.class, name = Type.FS_KEY),
+  @JsonSubTypes.Type(value = StoreSourceHttp.class, name = Type.HTTP_KEY),
   @JsonSubTypes.Type(value = StoreSourceDefault.class, name = StoreSourceDefault.KEY),
+  @JsonSubTypes.Type(value = StoreSourceEmpty.class, name = Type.EMPTY_KEY),
+  @JsonSubTypes.Type(value = StoreSourceFsV3.class, name = StoreSourceFsV3.KEY),
+  @JsonSubTypes.Type(value = StoreSourceHttpV3.class, name = StoreSourceHttpV3.KEY),
+  @JsonSubTypes.Type(value = StoreSourceGithubV3.class, name = StoreSourceGithubV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceCfgV3.class, name = StoreSourceCfgV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceDefaultV3.class, name = StoreSourceDefaultV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceApiResourcesV3.class, name = StoreSourceApiResourcesV3.KEY),
@@ -36,7 +44,6 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(value = StoreSourceCache3dV3.class, name = StoreSourceCache3dV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceProjV3.class, name = StoreSourceProjV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceTemplatesV3.class, name = StoreSourceTemplatesV3.KEY),
-  @JsonSubTypes.Type(value = StoreSourceEmpty.class, name = Type.EMPTY_KEY),
 })
 public interface StoreSource {
 
@@ -45,11 +52,13 @@ public interface StoreSource {
   String ZIP_SUFFIX = ".zip";
 
   enum Type {
+    EMPTY(Type.EMPTY_KEY),
     FS(Type.FS_KEY),
-    EMPTY(Type.EMPTY_KEY);
+    HTTP(Type.HTTP_KEY);
 
-    public static final String FS_KEY = "FS";
     public static final String EMPTY_KEY = "EMPTY";
+    public static final String FS_KEY = "FS";
+    public static final String HTTP_KEY = "HTTP";
 
     private final String key;
 
@@ -69,7 +78,8 @@ public interface StoreSource {
     DEFAULTS,
     ENTITIES,
     OVERRIDES,
-    RESOURCES;
+    RESOURCES,
+    MULTI;
 
     public String getPrefix() {
       return Objects.equals(this, ALL) ? "" : this.name().toLowerCase(Locale.ROOT);
@@ -133,6 +143,8 @@ public interface StoreSource {
 
   boolean isWatchable();
 
+  List<StoreSourcePartial> getParts();
+
   @JsonIgnore
   @Value.Derived
   @Value.Auxiliary
@@ -144,7 +156,7 @@ public interface StoreSource {
   @Value.Derived
   @Value.Auxiliary
   default boolean isSingleContent() {
-    return getContent() != Content.ALL;
+    return getContent() != Content.ALL && getContent() != Content.MULTI;
   }
 
   @JsonIgnore
@@ -155,9 +167,21 @@ public interface StoreSource {
   }
 
   @JsonIgnore
-  @Value.Derived
+  @Value.Default
   @Value.Auxiliary
   default String getLabel() {
-    return String.format("%s(%s)", getType(), Path.of(getSrc()));
+    return String.format("%s[%s]", getType(), Path.of(getSrc()));
+  }
+
+  @JsonIgnore
+  @Value.Lazy
+  @Value.Auxiliary
+  default String getLabelSpaces() {
+    return getLabel().replace('[', ' ').replace("]", "");
+  }
+
+  @JsonDeserialize(builder = ImmutableStoreSourcePartial.Builder.class)
+  default List<StoreSource> explode() {
+    return List.of(this);
   }
 }

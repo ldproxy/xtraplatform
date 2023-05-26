@@ -7,37 +7,33 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceFs.Builder.class)
-public interface StoreSourceFs extends StoreSource {
+@JsonDeserialize(builder = ImmutableStoreSourceHttp.Builder.class)
+public interface StoreSourceHttp extends StoreSource {
 
-  @JsonProperty(StoreSource.MODE_PROP)
-  @Value.Default
+  @JsonIgnore
+  @Value.Derived
   @Override
   default Mode getDesiredMode() {
-    return Mode.RW;
+    return Mode.RO;
   }
 
-  @Value.Default
+  @JsonIgnore
+  @Value.Derived
   default boolean isWatchable() {
-    return !isArchive();
+    return false;
   }
 
-  @Value.Default
+  @JsonIgnore
+  @Value.Derived
   default boolean isCreate() {
-    return !isArchive() && !Path.of(getSrc()).isAbsolute();
-  }
-
-  default Path getAbsolutePath(Path root) {
-    Path src = Path.of(getSrc());
-    return src.isAbsolute() ? src : root.resolve(src);
+    return false;
   }
 
   @Override
@@ -46,14 +42,19 @@ public interface StoreSourceFs extends StoreSource {
       return getParts().stream()
           .map(
               part ->
-                  new ImmutableStoreSourceFs.Builder()
+                  new ImmutableStoreSourceHttp.Builder()
                       .from(this)
                       .from(part)
-                      .typeString(getTypeString())
-                      .src(
-                          getSrc()
-                              + (getSrc().endsWith("/") || part.getSrc().startsWith("/") ? "" : "/")
-                              + part.getSrc())
+                      .typeString(this.getTypeString())
+                      .src(this.getSrc())
+                      .archiveRoot(
+                          getArchiveRoot()
+                              + (getArchiveRoot().endsWith("/")
+                                      || part.getArchiveRoot().startsWith("/")
+                                  ? ""
+                                  : "/")
+                              + part.getArchiveRoot())
+                      .label(this.getLabel())
                       .parts(List.of())
                       .build())
           .collect(Collectors.toList());

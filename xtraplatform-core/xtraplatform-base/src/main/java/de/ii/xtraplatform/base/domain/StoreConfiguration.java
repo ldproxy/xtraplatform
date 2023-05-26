@@ -21,6 +21,7 @@ import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.immutables.value.Value;
 
 /**
@@ -403,6 +404,27 @@ public interface StoreConfiguration {
                               .build();
                         }
                         return source;
+                      })
+                  .collect(Collectors.toList()))
+          .build();
+    }
+
+    return this;
+  }
+
+  @Value.Check
+  default StoreConfiguration explodeMultiParts() {
+    if (getSources().stream().anyMatch(storeSource -> storeSource.getContent() == Content.MULTI)) {
+      return new ImmutableStoreConfiguration.Builder()
+          .from(this)
+          .sources(
+              getSources().stream()
+                  .flatMap(
+                      storeSource -> {
+                        if (storeSource.getContent() == Content.MULTI) {
+                          return storeSource.explode().stream();
+                        }
+                        return Stream.of(storeSource);
                       })
                   .collect(Collectors.toList()))
           .build();
