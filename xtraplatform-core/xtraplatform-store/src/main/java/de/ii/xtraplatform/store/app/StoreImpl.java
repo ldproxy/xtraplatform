@@ -99,7 +99,11 @@ public class StoreImpl implements Store, AppLifeCycle {
   @Override
   public List<StoreSource> get(Content content) {
     return sources.stream()
-        .filter(source -> source.getContent() == content || source.getContent() == Content.ALL)
+        .filter(
+            source ->
+                source.getContent() == content
+                    || source.getContent() == Content.ALL
+                    || (content.isEvent() && source.getContent() == Content.ENTITIES))
         .collect(Collectors.toUnmodifiableList());
   }
 

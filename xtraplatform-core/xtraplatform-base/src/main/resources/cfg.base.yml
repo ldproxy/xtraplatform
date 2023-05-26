@@ -2,14 +2,7 @@
 
 store:
   sources:
-    - ${STORE_SOURCE:-type: FS_CFG_V3
-    - type: FS_STORE_V3
-    - type: FS_API_RESOURCES_V3
-    - type: FS_API_RESOURCES_RESOURCES_V3
-    - type: FS_CACHE_V3
-    - type: FS_CACHE_3D_V3
-    - type: FS_PROJ_V3
-    - type: FS_TEMPLATES_V3}
+    - ${STORE_SOURCE:-type: FS_V3}
     - ${STORE_SOURCE_1:-type: EMPTY}
     - ${STORE_SOURCE_2:-type: EMPTY}
     - ${STORE_SOURCE_3:-type: EMPTY}

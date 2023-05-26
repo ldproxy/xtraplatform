@@ -7,9 +7,12 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import static de.ii.xtraplatform.base.domain.StoreConfiguration.OLD_DEFAULT_LOCATION;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.immutables.value.Value;
@@ -20,16 +23,61 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
 
   String KEY = "FS_V3";
 
+  static boolean isOldDefaultStore(StoreSource storeSource) {
+    return storeSource instanceof StoreSourceFs
+        && storeSource.getContent() == Content.ALL
+        && Objects.equals(storeSource.getSrc(), OLD_DEFAULT_LOCATION);
+  }
+
   List<StoreSource> V3_SOURCES =
       List.of(
-          new ImmutableStoreSourceCfgV3.Builder().build(),
-          new ImmutableStoreSourceDefaultV3.Builder().build(),
-          new ImmutableStoreSourceApiResourcesV3.Builder().build(),
-          new ImmutableStoreSourceApiResourcesResourcesV3.Builder().build(),
-          new ImmutableStoreSourceCacheV3.Builder().build(),
-          new ImmutableStoreSourceCache3dV3.Builder().build(),
-          new ImmutableStoreSourceProjV3.Builder().build(),
-          new ImmutableStoreSourceTemplatesV3.Builder().build());
+          new ImmutableStoreSourceFs.Builder()
+              .typeString(Type.FS_KEY)
+              .content(Content.CFG)
+              .src("cfg.yml")
+              .desiredMode(Mode.RO)
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .typeString(Type.FS_KEY)
+              .content(Content.ALL)
+              .src(OLD_DEFAULT_LOCATION)
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .typeString(Type.FS_KEY)
+              .content(Content.RESOURCES)
+              .src("api-resources")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .typeString(Type.FS_KEY)
+              .content(Content.RESOURCES)
+              .src("api-resources/resources")
+              .prefix("api-resources")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .typeString(Type.FS_KEY)
+              .content(Content.RESOURCES)
+              .src("cache/tiles")
+              .prefix("tiles")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .typeString(Type.FS_KEY)
+              .content(Content.RESOURCES)
+              .src("cache/tiles3d")
+              .prefix("tiles3d")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .typeString(Type.FS_KEY)
+              .content(Content.RESOURCES)
+              .src("proj")
+              .prefix("proj")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .typeString(Type.FS_KEY)
+              .content(Content.RESOURCES)
+              .src("templates/html")
+              .prefix("html/templates")
+              .desiredMode(Mode.RO)
+              .build());
 
   List<StoreSourcePartial> V3_PARTIALS =
       V3_SOURCES.stream()
@@ -46,6 +94,12 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
   @Override
   default Content getContent() {
     return Content.MULTI;
+  }
+
+  @Value.Default
+  @Override
+  default String getSrc() {
+    return ".";
   }
 
   @Value.Derived

@@ -184,8 +184,10 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
         .filter(
             source ->
                 source.getContent() == Content.ALL
-                    || source.getContent() == Content.DEFAULTS
                     || source.getContent() == Content.ENTITIES
+                    || source.getContent() == Content.DEFAULTS
+                    || source.getContent() == Content.INSTANCES
+                    || source.getContent() == Content.INSTANCES_OLD
                     || source.getContent() == Content.OVERRIDES)
         .collect(Collectors.toUnmodifiableList());
   }

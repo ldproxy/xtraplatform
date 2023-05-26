@@ -309,7 +309,7 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ModifiableStoreConfiguration.class)
 public interface StoreConfiguration {
 
-  String DEFAULT_LOCATION = "store";
+  String OLD_DEFAULT_LOCATION = "store";
 
   enum StoreMode {
     READ_WRITE,
@@ -398,8 +398,9 @@ public interface StoreConfiguration {
               getSources().stream()
                   .map(
                       source -> {
-                        if (source instanceof StoreSourceDefaultV3) {
-                          return new ImmutableStoreSourceDefaultV3.Builder()
+                        if (StoreSourceFsV3.isOldDefaultStore(source)) {
+                          return new ImmutableStoreSourceFs.Builder()
+                              .from(source)
                               .desiredMode(Mode.RO)
                               .build();
                         }

@@ -17,7 +17,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.base.domain.LogContext;
-import de.ii.xtraplatform.base.domain.StoreSourceDefaultV3;
+import de.ii.xtraplatform.base.domain.StoreSourceFsV3;
 import de.ii.xtraplatform.store.domain.BlobStore;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
@@ -61,7 +61,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     this.keyStore = blobStore.with(RESOURCES_JWT);
     this.isOldStoreAndReadOnly =
         appContext.getConfiguration().getStore().getSources().stream()
-            .anyMatch(source -> source instanceof StoreSourceDefaultV3 && !source.isWritable());
+            .anyMatch(source -> StoreSourceFsV3.isOldDefaultStore(source) && !source.isWritable());
   }
 
   @Override

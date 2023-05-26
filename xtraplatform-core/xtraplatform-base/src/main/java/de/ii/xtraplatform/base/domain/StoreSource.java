@@ -34,16 +34,6 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(value = StoreSourceFsV3.class, name = StoreSourceFsV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceHttpV3.class, name = StoreSourceHttpV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceGithubV3.class, name = StoreSourceGithubV3.KEY),
-  @JsonSubTypes.Type(value = StoreSourceCfgV3.class, name = StoreSourceCfgV3.KEY),
-  @JsonSubTypes.Type(value = StoreSourceDefaultV3.class, name = StoreSourceDefaultV3.KEY),
-  @JsonSubTypes.Type(value = StoreSourceApiResourcesV3.class, name = StoreSourceApiResourcesV3.KEY),
-  @JsonSubTypes.Type(
-      value = StoreSourceApiResourcesResourcesV3.class,
-      name = StoreSourceApiResourcesResourcesV3.KEY),
-  @JsonSubTypes.Type(value = StoreSourceCacheV3.class, name = StoreSourceCacheV3.KEY),
-  @JsonSubTypes.Type(value = StoreSourceCache3dV3.class, name = StoreSourceCache3dV3.KEY),
-  @JsonSubTypes.Type(value = StoreSourceProjV3.class, name = StoreSourceProjV3.KEY),
-  @JsonSubTypes.Type(value = StoreSourceTemplatesV3.class, name = StoreSourceTemplatesV3.KEY),
 })
 public interface StoreSource {
 
@@ -75,23 +65,35 @@ public interface StoreSource {
     ALL,
     NONE,
     CFG,
-    DEFAULTS,
     ENTITIES,
+    DEFAULTS,
+    INSTANCES_OLD,
+    INSTANCES,
     OVERRIDES,
     RESOURCES,
     MULTI;
 
     public String getPrefix() {
-      return Objects.equals(this, ALL) ? "" : this.name().toLowerCase(Locale.ROOT);
+      return Objects.equals(this, ALL)
+          ? ""
+          : Objects.equals(this, INSTANCES_OLD) ? "entities" : this.name().toLowerCase(Locale.ROOT);
     }
 
     public String getLabel() {
       return this.name().charAt(0) + this.name().substring(1).toLowerCase(Locale.ROOT);
     }
 
+    public boolean isEvent() {
+      return Objects.equals(this, DEFAULTS)
+          || Objects.equals(this, INSTANCES_OLD)
+          || Objects.equals(this, INSTANCES)
+          || Objects.equals(this, OVERRIDES);
+    }
+
     public static boolean isEvent(String prefix) {
       return Objects.equals(prefix, DEFAULTS.getPrefix())
-          || Objects.equals(prefix, ENTITIES.getPrefix())
+          || Objects.equals(prefix, INSTANCES_OLD.getPrefix())
+          || Objects.equals(prefix, INSTANCES.getPrefix())
           || Objects.equals(prefix, OVERRIDES.getPrefix());
     }
   }
