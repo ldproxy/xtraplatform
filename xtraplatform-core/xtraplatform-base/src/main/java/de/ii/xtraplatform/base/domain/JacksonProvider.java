@@ -61,31 +61,38 @@ public class JacksonProvider implements Jackson {
   private final Lazy<Set<JacksonSubTypeIds>> subTypeIds;
   private final Multimap<Class<?>, JacksonSubType> classMapping;
   private final Multimap<String, JacksonSubType> idMapping;
+  private final boolean optimize;
 
   @Inject
   public JacksonProvider(Lazy<Set<JacksonSubTypeIds>> subTypeIds) {
+    this(subTypeIds, true);
+  }
+
+  public JacksonProvider(Lazy<Set<JacksonSubTypeIds>> subTypeIds, boolean optimize) {
     this.dynamicHandlerInstantiator = new DynamicHandlerInstantiator();
     this.jsonMapper = configureMapper(new ObjectMapper());
     this.subTypeIds = subTypeIds;
     this.classMapping = HashMultimap.create();
     this.idMapping = HashMultimap.create();
+    this.optimize = optimize;
   }
 
   private ObjectMapper configureMapper(ObjectMapper mapper) {
-    return (ObjectMapper)
-        mapper
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
-            .registerModule(new Jdk8Module())
-            .registerModule(new GuavaModule())
-            .registerModule(new CaffeineModule())
-            // TODO: use new default blackbird instead, does not work with modules out of the box
-            .registerModule(new AfterburnerModule())
-            .registerModule(new FuzzyEnumModule())
-            .registerModule(new JavaTimeModule())
-            .setDefaultMergeable(false)
-            .setHandlerInstantiator(dynamicHandlerInstantiator);
+    ObjectMapper configured =
+        (ObjectMapper)
+            mapper
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
+                .registerModule(new Jdk8Module())
+                .registerModule(new GuavaModule())
+                .registerModule(new CaffeineModule())
+                .registerModule(new FuzzyEnumModule())
+                .registerModule(new JavaTimeModule())
+                .setDefaultMergeable(false)
+                .setHandlerInstantiator(dynamicHandlerInstantiator);
+    // TODO: use new default blackbird instead, does not work with modules out of the box
+    return optimize ? configured.registerModule(new AfterburnerModule()) : configured;
   }
 
   @Override
