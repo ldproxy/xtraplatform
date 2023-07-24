@@ -12,7 +12,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableList;
-import de.ii.xtraplatform.docs.DocIgnore;
 import de.ii.xtraplatform.store.domain.entities.AutoEntity;
 import de.ii.xtraplatform.store.domain.entities.EntityData;
 import java.util.List;
@@ -57,13 +56,6 @@ public interface ServiceData extends EntityData, AutoEntity {
   @JsonAlias("shouldStart")
   @Value.Default
   default boolean getEnabled() {
-    return true;
-  }
-
-  @DocIgnore
-  @JsonProperty("secured")
-  @Value.Default
-  default boolean getSecured() {
     return true;
   }
 
