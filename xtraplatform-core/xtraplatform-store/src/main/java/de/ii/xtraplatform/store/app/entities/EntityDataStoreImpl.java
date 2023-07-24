@@ -79,6 +79,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
   private final EventSourcing<EntityData> eventSourcing;
   private final EntityDataDefaultsStore defaultsStore;
+  private final boolean noDefaults;
 
   @Inject
   public EntityDataStoreImpl(
@@ -87,6 +88,17 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Jackson jackson,
       Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore) {
+    this(appContext, eventStore, jackson, entityFactories, defaultsStore, false);
+  }
+
+  // for ldproxy-cfg
+  public EntityDataStoreImpl(
+      AppContext appContext,
+      EventStore eventStore,
+      Jackson jackson,
+      Lazy<Set<EntityFactory>> entityFactories,
+      EntityDataDefaultsStore defaultsStore,
+      boolean noDefaults) {
     this.isEventStoreReadOnly = eventStore.isReadOnly();
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.additionalEvents = new ConcurrentLinkedQueue<>();
@@ -106,6 +118,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             Optional.empty(),
             Optional.of(this::onUpdate));
     this.defaultsStore = defaultsStore;
+    this.noDefaults = noDefaults;
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
     valueEncoding.addDecoderMiddleware(
@@ -234,11 +247,21 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
+    if (noDefaults) {
+      return (EntityDataBuilder<EntityData>)
+          entityFactories.get(entityType(identifier)).emptySuperDataBuilder();
+    }
+
     return (EntityDataBuilder<EntityData>)
         entityFactories.get(entityType(identifier)).superDataBuilder();
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, String entitySubtype) {
+    if (noDefaults) {
+      return (EntityDataBuilder<EntityData>)
+          entityFactories.get(entityType(identifier), entitySubtype).emptyDataBuilder();
+    }
+
     Identifier defaultsIdentifier = defaults(identifier, entitySubtype);
 
     if (defaultsStore.has(defaultsIdentifier)) {

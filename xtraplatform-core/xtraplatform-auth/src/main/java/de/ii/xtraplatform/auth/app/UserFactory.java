@@ -43,6 +43,11 @@ public class UserFactory extends AbstractEntityFactory<UserData, User> implement
   }
 
   @Override
+  public EntityDataBuilder<UserData> emptyDataBuilder() {
+    return new ImmutableUserData.Builder();
+  }
+
+  @Override
   public Class<? extends EntityData> dataClass() {
     return UserData.class;
   }

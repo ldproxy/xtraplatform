@@ -40,6 +40,12 @@ public interface EntityFactory {
     return dataBuilder();
   }
 
+  EntityDataBuilder<? extends EntityData> emptyDataBuilder();
+
+  default EntityDataBuilder<? extends EntityData> emptySuperDataBuilder() {
+    return emptyDataBuilder();
+  }
+
   Class<? extends EntityData> dataClass();
 
   Optional<? extends PersistentEntity> instance(String id);
