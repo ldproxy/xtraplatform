@@ -279,18 +279,26 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     return identifier.path().get(identifier.path().size() - 1);
   }
 
-  private static List<String> entityGroup(Identifier identifier) {
+  static List<String> entityGroup(Identifier identifier) {
     return identifier.path().size() > 1
         ? Lists.reverse(identifier.path().subList(0, identifier.path().size() - 1))
         : List.of();
   }
 
-  private static Identifier defaults(Identifier identifier, String subType) {
+  static Identifier defaults(Identifier identifier, String subType) {
     return ImmutableIdentifier.builder()
         .id(EntityDataDefaultsStore.EVENT_TYPE)
         .path(entityGroup(identifier))
         .addPath(entityType(identifier))
         .addPath(subType.toLowerCase())
+        .build();
+  }
+
+  static Identifier defaults(Identifier identifier) {
+    return ImmutableIdentifier.builder()
+        .id(EntityDataDefaultsStore.EVENT_TYPE)
+        .path(entityGroup(identifier))
+        .addPath(entityType(identifier))
         .build();
   }
 

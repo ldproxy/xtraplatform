@@ -253,15 +253,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     Identifier defaultsIdentifier =
         subType.isPresent()
-            ? ImmutableIdentifier.builder()
-                .id(EntityDataDefaultsStore.EVENT_TYPE)
-                .addAllPath(identifier.path())
-                .addPath(subType.get().toLowerCase())
-                .build()
-            : ImmutableIdentifier.builder()
-                .id(EntityDataDefaultsStore.EVENT_TYPE)
-                .addAllPath(identifier.path())
-                .build();
+            ? EntityDataStoreImpl.defaults(identifier, subType.get())
+            : EntityDataStoreImpl.defaults(identifier);
 
     EntityDataBuilder<EntityData> newBuilder =
         getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders();
