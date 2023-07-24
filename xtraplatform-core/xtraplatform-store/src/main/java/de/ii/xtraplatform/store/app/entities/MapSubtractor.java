@@ -24,7 +24,7 @@ import java.util.Optional;
 
 public class MapSubtractor {
 
-  public Map<String, Object> subtract(
+  public static Map<String, Object> subtract(
       Map<String, Object> data, Map<String, Object> defaults, List<String> ignoreKeys) {
 
     if (Objects.equals(data, defaults)) {
@@ -78,7 +78,7 @@ public class MapSubtractor {
     return result;
   }
 
-  private Collection<Object> subtract(Collection<Object> left, Collection<Object> right) {
+  private static Collection<Object> subtract(Collection<Object> left, Collection<Object> right) {
     ArrayList<Object> diff = Lists.newArrayList(left);
 
     for (Object item : right) {

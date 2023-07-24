@@ -9,7 +9,6 @@ package de.ii.xtraplatform.store.app.entities;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
@@ -30,7 +29,6 @@ import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.store.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
-import de.ii.xtraplatform.store.domain.KeyPathAliasUnwrap;
 import de.ii.xtraplatform.store.domain.ReplayEvent;
 import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
@@ -47,7 +45,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,8 +56,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
@@ -294,7 +289,11 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         .build();
   }
 
-  static Identifier defaults(Identifier identifier) {
+  static Identifier defaults(Identifier identifier, Optional<String> subType) {
+    if (subType.isPresent()) {
+      return defaults(identifier, subType.get());
+    }
+
     return ImmutableIdentifier.builder()
         .id(EntityDataDefaultsStore.EVENT_TYPE)
         .path(entityGroup(identifier))
@@ -536,9 +535,10 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
               identifier, merged.getEntitySubType(), map, ImmutableList.of("enabled"));
 
       Map<String, Object> withoutResetted =
-          subtractResetted(
+          MapAligner.align(
               withoutDefaults,
               partialData,
+              Objects::isNull,
               entityFactories.get(entityType(identifier), merged.getEntitySubType()));
 
       return getEventSourcing()
@@ -556,113 +556,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       return CompletableFuture.failedFuture(e);
     }
   }
-
-  private Map<String, Object> subtractResetted(
-      Map<String, Object> source, Map<String, Object> potentialNulls, EntityFactory entityFactory) {
-    Map<String, Object> result = new LinkedHashMap<>();
-
-    source.forEach(
-        (key, value) -> {
-          if (potentialNulls.containsKey(key) && Objects.isNull(potentialNulls.get(key))) {
-            return;
-          }
-
-          Object newValue =
-              value instanceof Map && potentialNulls.get(key) instanceof Map
-                  ? subtractResetted(
-                      (Map<String, Object>) value,
-                      (Map<String, Object>) potentialNulls.get(key),
-                      entityFactory)
-                  : value instanceof List && potentialNulls.get(key) instanceof List
-                      ? subtractResetted(
-                          (List<Object>) value,
-                          (List<Object>) potentialNulls.get(key),
-                          entityFactory,
-                          key)
-                      : value instanceof List && potentialNulls.get(key) instanceof Map
-                          ? subtractResetted(
-                              (List<Object>) value, (Map<String, Object>) potentialNulls.get(key))
-                          : value;
-
-          result.put(key, newValue);
-        });
-
-    return result;
-  }
-
-  private List<Object> subtractResetted(
-      List<Object> source,
-      List<Object> potentialNulls,
-      EntityFactory entityFactory,
-      String parentKey) {
-    if (!reverseAliases.containsKey(parentKey)) {
-      return source;
-    }
-
-    List<Object> result = new ArrayList<>();
-    KeyPathAliasUnwrap aliasUnwrap = reverseAliases.get(parentKey);
-
-    Map<String, Object> resetted =
-        subtractResetted(
-            aliasUnwrap.wrapMap(source), aliasUnwrap.wrapMap(potentialNulls), entityFactory);
-    resetted.forEach(
-        (s, o) -> {
-          ((Map<String, Object>) o).remove("buildingBlock");
-        });
-
-    List<Object> collect =
-        resetted.entrySet().stream()
-            .flatMap(
-                entry -> {
-                  return entityFactory
-                      .getKeyPathAlias(entry.getKey())
-                      .map(
-                          keyPathAlias1 -> {
-                            return keyPathAlias1
-                                .wrapMap((Map<String, Object>) entry.getValue())
-                                .values()
-                                .stream()
-                                .flatMap(
-                                    coll -> {
-                                      return ((List<Object>) coll).stream();
-                                    });
-                          })
-                      .orElse(Stream.empty());
-                })
-            .collect(Collectors.toList());
-
-    return collect;
-  }
-
-  private List<Object> subtractResetted(List<Object> source, Map<String, Object> potentialNulls) {
-    List<Object> result = new ArrayList<>();
-
-    source.forEach(
-        item -> {
-          if (potentialNulls.containsKey(item) && Objects.isNull(potentialNulls.get(item))) {
-            return;
-          }
-
-          result.add(item);
-        });
-
-    return result;
-  }
-
-  // TODO: get from entityFactory
-  private static Map<String, KeyPathAliasUnwrap> reverseAliases =
-      ImmutableMap.of(
-          "api",
-          value ->
-              ((List<Map<String, Object>>) value)
-                  .stream()
-                      .map(
-                          buildingBlock ->
-                              new AbstractMap.SimpleImmutableEntry<String, Object>(
-                                  ((String) buildingBlock.get("buildingBlock")).toLowerCase(),
-                                  buildingBlock))
-                      .collect(
-                          ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue)));
 
   private EntityData hydrateData(Identifier identifier, EntityData entityData) {
     EntityData hydratedData = entityData;

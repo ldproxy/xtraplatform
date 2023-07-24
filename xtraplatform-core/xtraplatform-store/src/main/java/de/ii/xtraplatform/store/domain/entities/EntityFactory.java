@@ -9,6 +9,7 @@ package de.ii.xtraplatform.store.domain.entities;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
+import de.ii.xtraplatform.store.domain.KeyPathAliasUnwrap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -56,6 +57,10 @@ public interface EntityFactory {
   }
 
   default Optional<KeyPathAlias> getKeyPathAlias(String keyPath) {
+    return Optional.empty();
+  }
+
+  default Optional<KeyPathAliasUnwrap> getKeyPathAliasReverse(String parentPath) {
     return Optional.empty();
   }
 

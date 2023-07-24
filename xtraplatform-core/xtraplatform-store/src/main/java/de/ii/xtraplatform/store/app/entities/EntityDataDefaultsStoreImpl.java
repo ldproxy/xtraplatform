@@ -251,10 +251,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       Map<String, Object> data,
       List<String> ignoreKeys) {
 
-    Identifier defaultsIdentifier =
-        subType.isPresent()
-            ? EntityDataStoreImpl.defaults(identifier, subType.get())
-            : EntityDataStoreImpl.defaults(identifier);
+    Identifier defaultsIdentifier = EntityDataStoreImpl.defaults(identifier, subType);
 
     EntityDataBuilder<EntityData> newBuilder =
         getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders();
@@ -266,7 +263,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
           valueEncodingMap.deserialize(
               defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
-      return new MapSubtractor().subtract(data, defaults, ignoreKeys);
+      return MapSubtractor.subtract(data, defaults, ignoreKeys);
 
     } catch (Throwable e) {
       boolean br = true;
@@ -279,17 +276,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   public Map<String, Object> asMap(Identifier identifier, EntityData entityData)
       throws IOException {
     Optional<String> subType = entityData.getEntitySubType();
-    Identifier defaultsIdentifier =
-        subType.isPresent()
-            ? ImmutableIdentifier.builder()
-                .id(EntityDataDefaultsStore.EVENT_TYPE)
-                .addAllPath(identifier.path())
-                .addPath(subType.get().toLowerCase())
-                .build()
-            : ImmutableIdentifier.builder()
-                .id(EntityDataDefaultsStore.EVENT_TYPE)
-                .addAllPath(identifier.path())
-                .build();
+    Identifier defaultsIdentifier = EntityDataStoreImpl.defaults(identifier, subType);
 
     return valueEncodingMap.deserialize(
         defaultsIdentifier,
@@ -302,17 +289,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   public Optional<Map<String, Object>> getAllDefaults(
       Identifier identifier, Optional<String> subType) {
 
-    Identifier defaultsIdentifier =
-        subType.isPresent()
-            ? ImmutableIdentifier.builder()
-                .id(EntityDataDefaultsStore.EVENT_TYPE)
-                .addAllPath(identifier.path())
-                .addPath(subType.get().toLowerCase())
-                .build()
-            : ImmutableIdentifier.builder()
-                .id(EntityDataDefaultsStore.EVENT_TYPE)
-                .addAllPath(identifier.path())
-                .build();
+    Identifier defaultsIdentifier = EntityDataStoreImpl.defaults(identifier, subType);
 
     Optional<EntityDataBuilder<EntityData>> newBuilder =
         Optional.ofNullable(getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders());
