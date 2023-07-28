@@ -26,6 +26,14 @@ public class MapSubtractor {
 
   public static Map<String, Object> subtract(
       Map<String, Object> data, Map<String, Object> defaults, List<String> ignoreKeys) {
+    return subtract(data, defaults, ignoreKeys, false);
+  }
+
+  public static Map<String, Object> subtract(
+      Map<String, Object> data,
+      Map<String, Object> defaults,
+      List<String> ignoreKeys,
+      boolean keepIndexes) {
 
     if (Objects.equals(data, defaults)) {
       return new LinkedHashMap<>();
@@ -53,20 +61,47 @@ public class MapSubtractor {
         ValueDifference<Object> diff = differingEntries.get(key);
 
         if (diff.leftValue() instanceof Map) {
+          if (!(diff.rightValue() instanceof Map)) {
+            // handle yaml single element list as value
+            if (diff.rightValue() instanceof List) {
+              result.put(
+                  key,
+                  subtract(
+                      List.of(diff.leftValue()),
+                      (Collection<Object>) diff.rightValue(),
+                      keepIndexes));
+            }
+            continue;
+          }
           result.put(
               key,
               subtract(
                   (Map<String, Object>) diff.leftValue(),
                   (Map<String, Object>) diff.rightValue(),
-                  ignoreKeys));
+                  ignoreKeys,
+                  keepIndexes));
 
           continue;
         }
         if (diff.leftValue() instanceof Collection) {
+          if (!(diff.rightValue() instanceof Collection)) {
+            // handle yaml single element list as value
+            if (diff.rightValue() instanceof Map) {
+              result.put(
+                  key,
+                  subtract(
+                      (Collection<Object>) diff.leftValue(),
+                      List.of(diff.rightValue()),
+                      keepIndexes));
+            }
+            continue;
+          }
           result.put(
               key,
               subtract(
-                  (Collection<Object>) diff.leftValue(), (Collection<Object>) diff.rightValue()));
+                  (Collection<Object>) diff.leftValue(),
+                  (Collection<Object>) diff.rightValue(),
+                  keepIndexes));
 
           continue;
         }
@@ -78,11 +113,23 @@ public class MapSubtractor {
     return result;
   }
 
-  private static Collection<Object> subtract(Collection<Object> left, Collection<Object> right) {
+  private static Collection<Object> subtract(
+      Collection<Object> left, Collection<Object> right, boolean keepIndexes) {
     ArrayList<Object> diff = Lists.newArrayList(left);
 
     for (Object item : right) {
-      boolean removed = diff.remove(item);
+      boolean removed = false;
+
+      if (keepIndexes && diff.size() > 1) {
+        int i = diff.indexOf(item);
+        if (i > -1) {
+          removed = true;
+          diff.set(i, null);
+        }
+      } else {
+        removed = diff.remove(item);
+      }
+
       // TODO: listEntryIdentifiers
       if (!removed) {
         if (item instanceof Map && ((Map<String, Object>) item).containsKey("buildingBlock")) {
@@ -103,7 +150,8 @@ public class MapSubtractor {
                 subtract(
                     (Map<String, Object>) leftMatch.get(),
                     (Map<String, Object>) item,
-                    ImmutableList.of("buildingBlock", "type"));
+                    ImmutableList.of("buildingBlock", "type"),
+                    keepIndexes);
             diff.set(diff.indexOf(leftMatch.get()), subtracted);
           }
         }

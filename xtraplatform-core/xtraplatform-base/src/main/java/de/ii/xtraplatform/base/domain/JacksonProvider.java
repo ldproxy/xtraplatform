@@ -39,6 +39,7 @@ import io.dropwizard.jackson.CaffeineModule;
 import io.dropwizard.jackson.FuzzyEnumModule;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -177,6 +178,14 @@ public class JacksonProvider implements Jackson {
       if (getIdMapping().containsKey(id)) {
         // TODO: compare baseType with getSuperType to allow the same id for different super classes
         Class<?> clazz = getIdMapping().get(id).iterator().next().getSubType();
+        JavaType javaType =
+            TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
+        return javaType;
+      }
+      Optional<String> patternId = getIdMapping().keySet().stream().filter(id::matches).findFirst();
+      if (patternId.isPresent()) {
+        // TODO: compare baseType with getSuperType to allow the same id for different super classes
+        Class<?> clazz = getIdMapping().get(patternId.get()).iterator().next().getSubType();
         JavaType javaType =
             TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
         return javaType;
