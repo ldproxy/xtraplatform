@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-public interface StoreMigration extends Migration<StoreMigrationContext> {
+public interface StoreMigration extends Migration<StoreMigrationContext, Store> {
   enum Type {
     BLOB,
     EVENT
@@ -31,12 +31,12 @@ public interface StoreMigration extends Migration<StoreMigrationContext> {
   List<StoreSourceFs> getCleanups();
 
   @Override
-  default boolean isApplicable(StoreMigrationContext context) {
+  default boolean isApplicable(Store store) {
     return getMoves().stream()
         .anyMatch(
             move -> {
               try {
-                return context.asReader(move.first()).has(Path.of(""));
+                return getContext().asReader(move.first()).has(Path.of(""));
               } catch (IOException e) {
                 return false;
               }

@@ -9,30 +9,35 @@ package de.ii.xtraplatform.store.domain.entities;
 
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.Migration;
-import de.ii.xtraplatform.store.domain.Migration.MigrationContext;
 import de.ii.xtraplatform.store.domain.entities.EntityMigration.EntityMigrationContext;
-import java.util.List;
 import java.util.Map;
 
-public interface EntityMigration<T extends EntityData, U extends EntityData>
-    extends Migration<EntityMigrationContext<T>> {
+public abstract class EntityMigration<T extends EntityData, U extends EntityData>
+    implements Migration<EntityMigrationContext, EntityData> {
 
-  interface EntityMigrationContext<T extends EntityData> extends MigrationContext {
-    List<T> getAll();
+  private final EntityMigrationContext context;
 
+  public EntityMigration(EntityMigrationContext context) {
+    this.context = context;
+  }
+
+  public interface EntityMigrationContext extends MigrationContext {
     boolean exists(Identifier identifier);
   }
 
-  @Override
-  default boolean isApplicable(EntityMigrationContext<T> context) {
-    return context.getAll().stream().anyMatch(entityData -> isApplicable(context, entityData));
+  public final EntityMigrationContext getContext() {
+    return context;
   }
 
-  boolean isApplicable(EntityMigrationContext<T> context, T entityData);
+  public abstract boolean isApplicable(EntityData entityData);
 
-  U migrate(T entityData);
+  public abstract U migrate(T entityData);
 
-  default Map<Identifier, ? extends EntityData> getAdditionalEntities(T entityData) {
+  public EntityData migrateRaw(EntityData entityData) {
+    return migrate((T) entityData);
+  }
+
+  public Map<Identifier, ? extends EntityData> getAdditionalEntities(EntityData entityData) {
     return Map.of();
   }
 }

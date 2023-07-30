@@ -8,17 +8,16 @@
 package de.ii.xtraplatform.store.domain;
 
 import de.ii.xtraplatform.store.domain.Migration.MigrationContext;
-import java.util.Optional;
 
-public interface Migration<T extends MigrationContext> {
+public interface Migration<T extends MigrationContext, U> {
 
   interface MigrationContext {}
 
+  String getSubject();
+
   String getDescription();
 
-  default Optional<String> getDescriptionDetails() {
-    return Optional.empty();
-  }
+  T getContext();
 
-  boolean isApplicable(T context);
+  boolean isApplicable(U subject);
 }
