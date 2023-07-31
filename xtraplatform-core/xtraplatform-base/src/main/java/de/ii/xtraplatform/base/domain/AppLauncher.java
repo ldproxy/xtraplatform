@@ -18,6 +18,7 @@ import de.ii.xtraplatform.base.domain.Constants.ENV;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import io.dropwizard.core.server.DefaultServerFactory;
+import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import java.io.IOException;
 import java.io.InputStream;
@@ -253,7 +254,10 @@ public class AppLauncher implements AppContext {
 
   private List<StoreSource> findSources(List<StoreSource> sources) {
     return sources.stream()
-        .filter(source -> source.getContent() == Content.ALL || source.getContent() == Content.CFG)
+        .filter(
+            source ->
+                source.getType() != Type.EMPTY
+                    && (source.getContent() == Content.ALL || source.getContent() == Content.CFG))
         .collect(Collectors.toUnmodifiableList());
   }
 

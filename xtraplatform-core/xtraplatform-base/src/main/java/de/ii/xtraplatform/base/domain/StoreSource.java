@@ -29,6 +29,7 @@ import org.immutables.value.Value;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = StoreSourceFs.class, name = Type.FS_KEY),
   @JsonSubTypes.Type(value = StoreSourceHttp.class, name = Type.HTTP_KEY),
+  @JsonSubTypes.Type(value = StoreSourceGithub.class, name = StoreSourceGithub.KEY),
   @JsonSubTypes.Type(value = StoreSourceDefault.class, name = StoreSourceDefault.KEY),
   @JsonSubTypes.Type(value = StoreSourceEmpty.class, name = Type.EMPTY_KEY),
   @JsonSubTypes.Type(value = StoreSourceFsV3.class, name = StoreSourceFsV3.KEY),
@@ -158,7 +159,9 @@ public interface StoreSource {
   @Value.Derived
   @Value.Auxiliary
   default boolean isSingleContent() {
-    return getContent() != Content.ALL && getContent() != Content.MULTI;
+    return getContent() != Content.ALL
+        && getContent() != Content.MULTI
+        && getContent() != Content.ENTITIES;
   }
 
   @JsonIgnore

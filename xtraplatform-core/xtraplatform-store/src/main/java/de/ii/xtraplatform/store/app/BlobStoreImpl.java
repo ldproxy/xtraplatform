@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,6 +47,7 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
   private final List<BlobSource> blobReaders;
   private final List<BlobSource> blobWriters;
   private final boolean isReadOnly;
+  private final CompletableFuture<Void> ready;
 
   @Inject
   BlobStoreImpl(Store store, Lazy<Set<BlobStoreDriver>> drivers) {
@@ -54,6 +56,7 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
     this.blobReaders = new ArrayList<>();
     this.blobWriters = new ArrayList<>();
     this.isReadOnly = !store.isWritable();
+    this.ready = new CompletableFuture<>();
   }
 
   @Override
@@ -103,6 +106,12 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
                     }
                   });
             });
+    ready.complete(null);
+  }
+
+  @Override
+  public CompletableFuture<Void> onReady() {
+    return ready;
   }
 
   private List<StoreSource> findSources() {

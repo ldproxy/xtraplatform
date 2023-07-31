@@ -66,14 +66,17 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
     Path root = getDirectory(archivePath.get());
     Path extractRoot =
         storeSource.isSingleContent() ? root.resolve(storeSource.getPrefix().orElse("")) : root;
-
+    // TODO
+    LOGGER.debug("EXTRACT {}", storeSource.getLabel());
+    // if (!storeSource.getArchiveCache() || !Files.exists(root)) {
     blobExtractor.extract(
         archivePath.get(),
         Path.of(storeSource.getArchiveRoot()),
         entry -> storeSource.isSingleContent() || entry.startsWith(Content.RESOURCES.getPrefix()),
         extractRoot,
         !storeSource.getArchiveCache());
-
+    // }
+    LOGGER.debug("EXTRACTED {}", storeSource.getLabel());
     if (!storeSource.isSingleContent()) {
       root = root.resolve(Content.RESOURCES.getPrefix());
     }

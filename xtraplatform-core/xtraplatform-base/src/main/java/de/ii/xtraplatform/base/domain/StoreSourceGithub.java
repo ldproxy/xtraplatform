@@ -15,13 +15,13 @@ import java.util.regex.Pattern;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceGithubV3.Builder.class)
-public interface StoreSourceGithubV3 extends StoreSourceHttpV3 {
+@JsonDeserialize(builder = ImmutableStoreSourceGithub.Builder.class)
+public interface StoreSourceGithub extends StoreSourceHttp {
 
-  String KEY = "GITHUB_V3";
+  String KEY = "GITHUB";
 
   @Value.Check
-  default StoreSourceGithubV3 apply() {
+  default StoreSourceGithub apply() {
     Pattern pattern = Pattern.compile("^([\\w\\-\\.]+)\\/([\\w\\-\\.]+)(:([\\w\\-\\.]+))?$");
     Matcher matcher = pattern.matcher(getSrc());
 
@@ -35,7 +35,7 @@ public interface StoreSourceGithubV3 extends StoreSourceHttpV3 {
               ? ""
               : getArchiveRoot().startsWith("/") ? getArchiveRoot() : "/" + getArchiveRoot();
 
-      return new ImmutableStoreSourceGithubV3.Builder()
+      return new ImmutableStoreSourceGithub.Builder()
           .from(this)
           .src(
               String.format(

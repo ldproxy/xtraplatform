@@ -86,7 +86,8 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
 
     sources.forEach(
         source -> {
-          Optional<EventStoreDriver> driver = findDriver(source, true);
+          Optional<EventStoreDriver> driver =
+              findDriver(source, source.getContent() != Content.ALL);
 
           driver.ifPresent(eventStoreDriver -> load(source, eventStoreDriver, startupFilter));
         });

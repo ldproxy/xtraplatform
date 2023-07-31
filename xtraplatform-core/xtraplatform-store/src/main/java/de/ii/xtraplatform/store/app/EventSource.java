@@ -57,8 +57,16 @@ public class EventSource {
   private final String mainPathPatternWrite;
 
   public EventSource(Path path, StoreSource source, Function<String, String> pathAdjuster) {
-    this.path = path;
-    this.rootPath = source.isArchive() ? Path.of(source.getArchiveRoot()) : path;
+    this.path =
+        source.getContent() == Content.ALL && !source.isArchive()
+            ? path.resolve(Content.ENTITIES.getPrefix())
+            : path;
+    this.rootPath =
+        source.isArchive()
+            ? source.getContent() == Content.ALL
+                ? Path.of(source.getArchiveRoot()).resolve(Content.ENTITIES.getPrefix())
+                : Path.of(source.getArchiveRoot())
+            : path;
     this.source = source;
     this.mainPathPatternRead = pathToPattern(KEY_PATTERN, pathAdjuster);
     this.mainPathPatternWrite =
@@ -160,13 +168,26 @@ public class EventSource {
   }
 
   private Path applyPrefixes(Path path) {
+    Path entitiesPath = Path.of(Content.ENTITIES.getPrefix());
+
     if (source.isSingleContent()) {
-      return Path.of(source.getContent().getPrefix())
-          .resolve(source.getPrefix().orElse(""))
-          .resolve(path);
+      Path contentPath =
+          source.getContent() == Content.INSTANCES
+              ? entitiesPath
+              : Path.of(source.getContent().getPrefix());
+
+      return contentPath.resolve(source.getPrefix().orElse("")).resolve(path);
     }
 
-    return path;
+    Path resolve = path;
+    if (source.getContent() == Content.ALL && path.startsWith(entitiesPath)) {
+      resolve = entitiesPath.relativize(path);
+    }
+    if (resolve.startsWith(Content.INSTANCES.getPrefix())) {
+      resolve = entitiesPath.resolve(resolve.subpath(1, resolve.getNameCount()));
+    }
+
+    return resolve;
   }
 
   public Stream<Pattern> getPathPatternStream() {

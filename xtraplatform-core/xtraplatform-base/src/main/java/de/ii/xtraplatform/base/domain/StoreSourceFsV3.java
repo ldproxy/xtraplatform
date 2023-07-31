@@ -25,7 +25,7 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
 
   static boolean isOldDefaultStore(StoreSource storeSource) {
     return storeSource instanceof StoreSourceFs
-        && storeSource.getContent() == Content.ALL
+        && storeSource.getContent() == Content.ENTITIES
         && Objects.equals(storeSource.getSrc(), OLD_DEFAULT_LOCATION);
   }
 
@@ -39,8 +39,14 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
               .build(),
           new ImmutableStoreSourceFs.Builder()
               .typeString(Type.FS_KEY)
-              .content(Content.ALL)
+              .content(Content.ENTITIES)
               .src(OLD_DEFAULT_LOCATION)
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .typeString(Type.FS_KEY)
+              .content(Content.RESOURCES)
+              .src(OLD_DEFAULT_LOCATION + "/resources")
+              .desiredMode(Mode.RO)
               .build(),
           new ImmutableStoreSourceFs.Builder()
               .typeString(Type.FS_KEY)

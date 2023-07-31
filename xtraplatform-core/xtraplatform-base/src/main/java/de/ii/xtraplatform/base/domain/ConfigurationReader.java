@@ -161,7 +161,7 @@ public class ConfigurationReader {
 
       loggingFactory =
           mapper.readerFor(LoggingConfiguration.class).readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
-
+      // TODO: System.out.println(env + "  " + getEnvConfigs(env).keySet());
       for (ByteSource envCfg : getEnvConfigs(env).values()) {
         JsonNode jsonNodeMerge = mapper.readTree(read(envCfg));
 
@@ -176,7 +176,9 @@ public class ConfigurationReader {
       }
     } catch (Throwable e) {
       // use defaults
-      loggingFactory = new LoggingConfiguration();
+      // loggingFactory = new LoggingConfiguration();
+      // TODO: defaults lead to error in loggingFactory.configure
+      throw new IllegalStateException("Error parsing base and env configs", e);
     }
 
     applyLogFormat(loggingFactory, env);
