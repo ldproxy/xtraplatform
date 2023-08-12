@@ -23,7 +23,7 @@ import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.setup.Environment;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

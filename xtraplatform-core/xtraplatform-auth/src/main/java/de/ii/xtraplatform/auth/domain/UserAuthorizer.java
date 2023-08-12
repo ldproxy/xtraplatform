@@ -8,6 +8,8 @@
 package de.ii.xtraplatform.auth.domain;
 
 import io.dropwizard.auth.Authorizer;
+import javax.ws.rs.container.ContainerRequestContext;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +21,8 @@ public class UserAuthorizer implements Authorizer<User> {
   private static final Logger LOGGER = LoggerFactory.getLogger(UserAuthorizer.class);
 
   @Override
-  public boolean authorize(User user, String role) {
+  public boolean authorize(
+      User user, String role, @Nullable ContainerRequestContext containerRequestContext) {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("Authorizing {} for role {}", user, role);
     }

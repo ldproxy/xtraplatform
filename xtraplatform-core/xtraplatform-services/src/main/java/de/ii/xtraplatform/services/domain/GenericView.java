@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-import io.dropwizard.views.View;
+import io.dropwizard.views.common.View;
 import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

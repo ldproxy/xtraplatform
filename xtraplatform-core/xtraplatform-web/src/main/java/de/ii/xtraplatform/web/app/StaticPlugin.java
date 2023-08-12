@@ -15,7 +15,7 @@ import de.ii.xtraplatform.web.domain.ServletRegistration;
 import de.ii.xtraplatform.web.domain.StaticResourceHandler;
 import de.ii.xtraplatform.web.domain.StaticResourceServlet;
 import de.ii.xtraplatform.web.domain.StaticResources;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.setup.Environment;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;

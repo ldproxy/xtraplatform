@@ -10,7 +10,7 @@ package de.ii.xtraplatform.base.domain;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import de.ii.xtraplatform.docs.DocFile;
-import io.dropwizard.server.DefaultServerFactory;
+import io.dropwizard.core.server.DefaultServerFactory;
 
 /**
  * @langEn # Web Server

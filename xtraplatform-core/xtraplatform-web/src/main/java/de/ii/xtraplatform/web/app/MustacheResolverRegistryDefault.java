@@ -11,7 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.github.mustachejava.MustacheResolver;
 import de.ii.xtraplatform.web.domain.MustacheResolverRegistry;
 import de.ii.xtraplatform.web.domain.PartialMustacheResolver;
-import io.dropwizard.views.View;
+import io.dropwizard.views.common.View;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.Set;
