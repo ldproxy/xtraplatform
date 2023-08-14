@@ -20,15 +20,15 @@ import java.util.Map;
 import java.util.Objects;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.net.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,16 +76,16 @@ public class HttpClientApache implements HttpClient {
   public InputStream postAsInputStream(
       String url, byte[] body, MediaType mediaType, Map<String, String> headers) {
     HttpPost httpPost = new HttpPost(url);
+    URI uri = URI.create(url);
     httpPost.addHeader("Content-Type", mediaType.toString());
     headers.forEach(httpPost::addHeader);
     httpPost.setEntity(new ByteArrayEntity(body, ContentType.parse(mediaType.toString())));
 
-    if (Objects.nonNull(httpPost.getURI().getUserInfo())) {
+    if (Objects.nonNull(uri.getUserInfo())) {
       byte[] encodedAuth =
-          Base64.encodeBase64(
-              httpPost.getURI().getUserInfo().getBytes(StandardCharsets.ISO_8859_1));
-      httpPost.addHeader(HttpHeaders.AUTHORIZATION, "Basic " + new String(encodedAuth));
-      httpPost.setURI(URI.create(new URIBuilder(httpPost.getURI()).setUserInfo(null).toString()));
+          Base64.encodeBase64(uri.getUserInfo().getBytes(StandardCharsets.ISO_8859_1));
+      httpPost.addHeader("Authorization", "Basic " + new String(encodedAuth));
+      httpPost.setUri(URI.create(new URIBuilder(uri).setUserInfo(null).toString()));
     }
 
     return getAsInputStream(httpClient, httpPost);
@@ -93,12 +93,12 @@ public class HttpClientApache implements HttpClient {
 
   private static InputStream getAsInputStream(CloseableHttpClient client, HttpUriRequest request) {
     if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("HTTP {} request: {}", request.getMethod(), request.getURI());
-      LOGGER.debug("HTTP Headers: {}", (Object) request.getAllHeaders());
+      LOGGER.debug("HTTP {} request: {}", request.getMethod(), request.getRequestUri());
+      LOGGER.debug("HTTP Headers: {}", (Object) request.getHeaders());
 
       if (request instanceof HttpPost) {
         try {
-          byte[] bytes = ((HttpPost) request).getEntity().getContent().readAllBytes();
+          byte[] bytes = EntityUtils.toByteArray(((HttpPost) request).getEntity());
           LOGGER.debug("HTTP Body:\n{}", new String(bytes, StandardCharsets.UTF_8));
         } catch (Throwable e) {
           // ignore

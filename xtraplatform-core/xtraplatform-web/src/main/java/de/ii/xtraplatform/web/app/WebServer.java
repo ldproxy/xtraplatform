@@ -13,7 +13,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.setup.Environment;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.eclipse.jetty.server.Server;

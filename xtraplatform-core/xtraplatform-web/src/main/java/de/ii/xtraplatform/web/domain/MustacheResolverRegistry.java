@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.github.mustachejava.MustacheResolver;
-import io.dropwizard.views.View;
+import io.dropwizard.views.common.View;
 
 public interface MustacheResolverRegistry {
   MustacheResolver getResolverForClass(Class<? extends View> viewClass);

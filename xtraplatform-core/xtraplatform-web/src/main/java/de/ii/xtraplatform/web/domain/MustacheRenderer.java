@@ -7,8 +7,8 @@
  */
 package de.ii.xtraplatform.web.domain;
 
-import io.dropwizard.views.View;
-import io.dropwizard.views.ViewRenderer;
+import io.dropwizard.views.common.View;
+import io.dropwizard.views.common.ViewRenderer;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 

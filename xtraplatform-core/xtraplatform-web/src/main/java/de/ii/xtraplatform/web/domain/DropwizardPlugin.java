@@ -9,8 +9,8 @@ package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 
 @AutoMultiBind
 public interface DropwizardPlugin {

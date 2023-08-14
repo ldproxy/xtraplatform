@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ext.Java7Support;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.collect.ImmutableMap;
@@ -25,8 +26,8 @@ import de.ii.xtraplatform.base.domain.Constants.ENV;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jetty.HttpConnectorFactory;
-import io.dropwizard.logging.AbstractAppenderFactory;
-import io.dropwizard.logging.ConsoleAppenderFactory;
+import io.dropwizard.logging.common.AbstractAppenderFactory;
+import io.dropwizard.logging.common.ConsoleAppenderFactory;
 import io.dropwizard.util.DataSize;
 import io.dropwizard.util.Duration;
 import java.io.ByteArrayInputStream;
@@ -83,6 +84,15 @@ public class ConfigurationReader {
   private final ObjectMapper mapper;
   private final ObjectMapper mergeMapper;
   private final EnvironmentVariableSubstitutor envSubstitutor;
+
+  // workaround for https://github.com/FasterXML/jackson-databind/issues/4078
+  static {
+    try {
+      Java7Support java7Support = Java7Support.instance();
+    } catch (Throwable e) {
+      // ignore
+    }
+  }
 
   public ConfigurationReader(Map<String, ByteSource> configsToMergeAfterBase) {
     this.configsToMergeAfterBase = configsToMergeAfterBase;

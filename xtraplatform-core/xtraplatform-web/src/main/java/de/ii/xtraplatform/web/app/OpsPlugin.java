@@ -10,7 +10,7 @@ package de.ii.xtraplatform.web.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.setup.Environment;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.eclipse.jetty.servlet.ServletHolder;
