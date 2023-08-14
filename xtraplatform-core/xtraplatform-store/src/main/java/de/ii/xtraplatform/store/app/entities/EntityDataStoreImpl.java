@@ -146,6 +146,11 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
               }
 
               @Override
+              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+                return false;
+              }
+
+              @Override
               public Map<String, Object> getFromCache(Identifier identifier) {
                 return null;
               }

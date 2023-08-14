@@ -7,8 +7,12 @@
  */
 package de.ii.xtraplatform.store.domain;
 
+import java.util.function.Predicate;
+
 public interface ValueCache<T> {
   boolean isInCache(Identifier identifier);
+
+  boolean isInCache(Predicate<Identifier> keyMatcher);
 
   T getFromCache(Identifier identifier);
 }

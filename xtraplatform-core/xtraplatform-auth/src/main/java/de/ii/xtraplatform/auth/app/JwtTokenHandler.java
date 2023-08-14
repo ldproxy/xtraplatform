@@ -60,7 +60,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     this.authConfig = appContext.getConfiguration().getAuth();
     this.keyStore = blobStore.with(RESOURCES_JWT);
     this.isOldStoreAndReadOnly =
-        appContext.getConfiguration().getStore().getSources().stream()
+        appContext.getConfiguration().getStore().getSources(appContext.getDataDir()).stream()
             .anyMatch(source -> StoreSourceFsV3.isOldDefaultStore(source) && !source.isWritable());
   }
 

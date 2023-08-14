@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public class CfgStoreDriverFs implements CfgStoreDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CfgStoreDriverFs.class);
-  private static final Path CFG_YML = Path.of("cfg.yml");
+  static final Path CFG_YML = Path.of("cfg.yml");
   private final Path dataDirectory;
 
   public CfgStoreDriverFs(Path dataDirectory) {

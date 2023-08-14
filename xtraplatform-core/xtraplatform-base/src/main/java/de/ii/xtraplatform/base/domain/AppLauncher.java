@@ -119,7 +119,7 @@ public class AppLauncher implements AppContext {
     this.drivers.add(new CfgStoreDriverFs(dataDir));
     this.drivers.add(new CfgStoreDriverHttp(tmpDir));
 
-    Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources());
+    Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources(dataDir));
 
     this.cfg = configurationReader.loadMergedConfig(cfgs, env);
 
@@ -235,7 +235,11 @@ public class AppLauncher implements AppContext {
                   Optional<InputStream> cfg = driver.get().load(source);
 
                   if (cfg.isPresent()) {
-                    return Stream.of(new SimpleImmutableEntry<>(source.getLabel(), cfg.get()));
+                    String label =
+                        source.getContent() == Content.CFG
+                            ? source.getLabel()
+                            : source.getLabel() + "/" + CfgStoreDriverFs.CFG_YML;
+                    return Stream.of(new SimpleImmutableEntry<>(label, cfg.get()));
                   }
                 } catch (Throwable e) {
                   LogContext.error(

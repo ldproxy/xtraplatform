@@ -11,6 +11,7 @@ import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.Migration;
 import de.ii.xtraplatform.store.domain.entities.EntityMigration.EntityMigrationContext;
 import java.util.Map;
+import java.util.function.Predicate;
 
 public abstract class EntityMigration<T extends EntityData, U extends EntityData>
     implements Migration<EntityMigrationContext, EntityData> {
@@ -22,7 +23,7 @@ public abstract class EntityMigration<T extends EntityData, U extends EntityData
   }
 
   public interface EntityMigrationContext extends MigrationContext {
-    boolean exists(Identifier identifier);
+    boolean exists(Predicate<Identifier> matcher);
   }
 
   public final EntityMigrationContext getContext() {

@@ -18,6 +18,8 @@ import de.ii.xtraplatform.docs.DocStep;
 import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -367,6 +369,23 @@ public interface StoreConfiguration {
   @Value.Derived
   default boolean isFiltered() {
     return getFilter().isPresent();
+  }
+
+  @Deprecated(since = "3.5")
+  default List<StoreSource> getSources(Path dataDir) {
+    return getSources().stream()
+        .filter(source -> source.getContent() != Content.NONE)
+        .flatMap(
+            source -> {
+              if (source instanceof StoreSourceFsV3Auto) {
+                if (Files.exists(dataDir.resolve("entities").resolve("instances"))) {
+                  return Stream.of(new ImmutableStoreSourceDefault.Builder().build());
+                }
+                return new ImmutableStoreSourceFsV3.Builder().build().explode().stream();
+              }
+              return Stream.of(source);
+            })
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Deprecated(since = "3.3")

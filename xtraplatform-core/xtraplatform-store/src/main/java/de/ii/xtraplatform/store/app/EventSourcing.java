@@ -187,6 +187,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     return cache.containsKey(identifier);
   }
 
+  @Override
   public boolean isInCache(Predicate<Identifier> keyMatcher) {
     return cache.keySet().stream().anyMatch(keyMatcher);
   }

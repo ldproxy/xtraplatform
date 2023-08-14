@@ -34,7 +34,7 @@ public class BlobStoreDriverFs implements BlobStoreDriver {
   private final Path tmpDirectory;
 
   @Inject
-  BlobStoreDriverFs(AppContext appContext) {
+  public BlobStoreDriverFs(AppContext appContext) {
     this.blobExtractor = new ZipReader();
     this.dataDirectory = appContext.getDataDir();
     this.tmpDirectory = appContext.getTmpDir();

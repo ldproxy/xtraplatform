@@ -48,7 +48,7 @@ public class StoreImpl implements Store, AppLifeCycle {
     this.dataDirectory = dataDirectory;
     this.storeConfiguration = storeConfiguration;
     this.sources =
-        storeConfiguration.getSources().stream()
+        storeConfiguration.getSources(dataDirectory).stream()
             .filter(source -> source.getContent() != Content.NONE)
             .collect(Collectors.toUnmodifiableList());
   }

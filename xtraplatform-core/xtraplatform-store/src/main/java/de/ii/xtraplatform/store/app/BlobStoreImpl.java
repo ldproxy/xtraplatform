@@ -50,7 +50,7 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
   private final CompletableFuture<Void> ready;
 
   @Inject
-  BlobStoreImpl(Store store, Lazy<Set<BlobStoreDriver>> drivers) {
+  public BlobStoreImpl(Store store, Lazy<Set<BlobStoreDriver>> drivers) {
     this.store = store;
     this.drivers = drivers;
     this.blobReaders = new ArrayList<>();

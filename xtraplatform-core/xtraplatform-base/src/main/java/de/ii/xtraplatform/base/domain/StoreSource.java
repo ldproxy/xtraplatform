@@ -33,6 +33,7 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(value = StoreSourceDefault.class, name = StoreSourceDefault.KEY),
   @JsonSubTypes.Type(value = StoreSourceEmpty.class, name = Type.EMPTY_KEY),
   @JsonSubTypes.Type(value = StoreSourceFsV3.class, name = StoreSourceFsV3.KEY),
+  @JsonSubTypes.Type(value = StoreSourceFsV3Auto.class, name = StoreSourceFsV3Auto.KEY),
   @JsonSubTypes.Type(value = StoreSourceHttpV3.class, name = StoreSourceHttpV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceGithubV3.class, name = StoreSourceGithubV3.KEY),
 })
@@ -188,5 +189,19 @@ public interface StoreSource {
   @JsonDeserialize(builder = ImmutableStoreSourcePartial.Builder.class)
   default List<StoreSource> explode() {
     return List.of(this);
+  }
+
+  default Path getPath(Content content) {
+    Path path = Path.of(getSrc());
+
+    if (isSingleContent()) {
+      return path;
+    }
+
+    if (content.isEvent() && getContent() == Content.ALL) {
+      return path.resolve(Content.ENTITIES.getPrefix()).resolve(content.getPrefix());
+    }
+
+    return path.resolve(content.getPrefix());
   }
 }

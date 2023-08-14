@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 public interface EntityStoreDecorator<T extends EntityData, U extends T>
     extends EntityDataStore<U> {
@@ -67,6 +68,11 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
   @Override
   default boolean has(Identifier identifier) {
     return getDecorated().has(identifier);
+  }
+
+  @Override
+  default boolean has(Predicate<Identifier> matcher) {
+    return getDecorated().has(matcher);
   }
 
   // TODO

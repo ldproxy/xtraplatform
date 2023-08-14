@@ -9,6 +9,7 @@ package de.ii.xtraplatform.store.domain;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 // no de/serialization, no merging, just crd with ids/paths, basically what we have in kvstore-api
 // does it need transactions???
@@ -27,6 +28,8 @@ public interface KeyValueStore<T> {
   List<Identifier> identifiers(String... path);
 
   boolean has(Identifier identifier);
+
+  boolean has(Predicate<Identifier> matcher);
 
   T get(Identifier identifier);
 

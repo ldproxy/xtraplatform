@@ -54,6 +54,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -115,6 +116,11 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               }
 
               @Override
+              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+                return false;
+              }
+
+              @Override
               public EntityDataBuilder<EntityData> getFromCache(Identifier identifier) {
                 return null;
               }
@@ -133,6 +139,11 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               }
 
               @Override
+              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+                return false;
+              }
+
+              @Override
               public Map<String, Object> getFromCache(Identifier identifier) {
                 return null;
               }
@@ -147,6 +158,11 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             new ValueCache<EntityData>() {
               @Override
               public boolean isInCache(Identifier identifier) {
+                return false;
+              }
+
+              @Override
+              public boolean isInCache(Predicate<Identifier> keyMatcher) {
                 return false;
               }
 

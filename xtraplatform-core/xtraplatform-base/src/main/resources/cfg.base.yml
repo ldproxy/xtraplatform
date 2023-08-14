@@ -2,7 +2,7 @@
 
 store:
   sources:
-    - ${STORE_SOURCE:-type: FS_V3}
+    - ${STORE_SOURCE:-type: FS_V3_AUTO}
     - ${STORE_SOURCE_1:-type: EMPTY}
     - ${STORE_SOURCE_2:-type: EMPTY}
     - ${STORE_SOURCE_3:-type: EMPTY}

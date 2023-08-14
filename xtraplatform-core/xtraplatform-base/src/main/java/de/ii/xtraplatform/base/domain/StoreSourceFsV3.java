@@ -45,12 +45,6 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
           new ImmutableStoreSourceFs.Builder()
               .typeString(Type.FS_KEY)
               .content(Content.RESOURCES)
-              .src(OLD_DEFAULT_LOCATION + "/resources")
-              .desiredMode(Mode.RO)
-              .build(),
-          new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
-              .content(Content.RESOURCES)
               .src("api-resources")
               .build(),
           new ImmutableStoreSourceFs.Builder()
@@ -58,6 +52,12 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
               .content(Content.RESOURCES)
               .src("api-resources/resources")
               .prefix("api-resources")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .typeString(Type.FS_KEY)
+              .content(Content.RESOURCES)
+              .src(OLD_DEFAULT_LOCATION + "/resources")
+              .desiredMode(Mode.RO)
               .build(),
           new ImmutableStoreSourceFs.Builder()
               .typeString(Type.FS_KEY)
