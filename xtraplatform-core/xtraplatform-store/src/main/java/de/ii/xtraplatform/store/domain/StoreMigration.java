@@ -55,6 +55,19 @@ public interface StoreMigration extends Migration<StoreMigrationContext, StoreSo
             });
   }
 
+  default List<Tuple<Path, Boolean>> getActualCleanups() {
+    return getCleanups().stream()
+        .filter(
+            cleanup -> {
+              try {
+                return getContext().reader().has(cleanup.first());
+              } catch (IOException e) {
+                return false;
+              }
+            })
+        .collect(Collectors.toList());
+  }
+
   default List<Map.Entry<Path, Path>> migrate() {
     return getMoves().stream()
         .flatMap(

@@ -169,6 +169,11 @@ public class JacksonProvider implements Jackson {
         }
         aClass = aClass.getSuperclass();
       }
+      for (Class<?> candidate : value.getClass().getInterfaces()) {
+        if (getClassMapping().containsKey(candidate)) {
+          return getClassMapping().get(candidate).iterator().next().getId();
+        }
+      }
 
       return null;
     }
@@ -238,8 +243,7 @@ public class JacksonProvider implements Jackson {
       if (resolverClass.equals(DynamicTypeIdResolver.class)) {
         typeIdResolvers.putIfAbsent(
             annotated.getName(), new DynamicTypeIdResolver(annotated.getType()));
-        // LOGGER.debug("DynamicHandlerInstantiator typeIdResolverInstance {} {}",
-        // annotated.getName(), typeIdResolvers.get(annotated.getName()));
+
         return typeIdResolvers.get(annotated.getName());
       }
       return null;

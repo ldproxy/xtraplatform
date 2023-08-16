@@ -29,7 +29,7 @@ public interface StoreSourceDefault extends StoreSourceFs {
     return Content.ALL;
   }
 
-  @Value.Derived
+  @Value.Default
   @Override
   default String getSrc() {
     return ".";
