@@ -25,14 +25,18 @@ import java.util.Optional;
 public class MapSubtractor {
 
   public static Map<String, Object> subtract(
-      Map<String, Object> data, Map<String, Object> defaults, List<String> ignoreKeys) {
-    return subtract(data, defaults, ignoreKeys, false);
+      Map<String, Object> data,
+      Map<String, Object> defaults,
+      List<String> ignoreKeys,
+      Map<String, String> listEntryKeys) {
+    return subtract(data, defaults, ignoreKeys, listEntryKeys, false);
   }
 
   public static Map<String, Object> subtract(
       Map<String, Object> data,
       Map<String, Object> defaults,
       List<String> ignoreKeys,
+      Map<String, String> listEntryKeys,
       boolean keepIndexes) {
 
     if (Objects.equals(data, defaults)) {
@@ -69,7 +73,9 @@ public class MapSubtractor {
                   subtract(
                       List.of(diff.leftValue()),
                       (Collection<Object>) diff.rightValue(),
-                      keepIndexes));
+                      listEntryKeys,
+                      keepIndexes,
+                      key));
             }
             continue;
           }
@@ -79,6 +85,7 @@ public class MapSubtractor {
                   (Map<String, Object>) diff.leftValue(),
                   (Map<String, Object>) diff.rightValue(),
                   ignoreKeys,
+                  listEntryKeys,
                   keepIndexes));
 
           continue;
@@ -92,7 +99,9 @@ public class MapSubtractor {
                   subtract(
                       (Collection<Object>) diff.leftValue(),
                       List.of(diff.rightValue()),
-                      keepIndexes));
+                      listEntryKeys,
+                      keepIndexes,
+                      key));
             }
             continue;
           }
@@ -101,7 +110,9 @@ public class MapSubtractor {
               subtract(
                   (Collection<Object>) diff.leftValue(),
                   (Collection<Object>) diff.rightValue(),
-                  keepIndexes));
+                  listEntryKeys,
+                  keepIndexes,
+                  key));
 
           continue;
         }
@@ -114,7 +125,11 @@ public class MapSubtractor {
   }
 
   private static Collection<Object> subtract(
-      Collection<Object> left, Collection<Object> right, boolean keepIndexes) {
+      Collection<Object> left,
+      Collection<Object> right,
+      Map<String, String> listEntryKeys,
+      boolean keepIndexes,
+      String parentKey) {
     ArrayList<Object> diff = Lists.newArrayList(left);
 
     for (Object item : right) {
@@ -130,27 +145,30 @@ public class MapSubtractor {
         removed = diff.remove(item);
       }
 
-      // TODO: listEntryIdentifiers
       if (!removed) {
-        if (item instanceof Map && ((Map<String, Object>) item).containsKey("buildingBlock")) {
+        if (item instanceof Map
+            && listEntryKeys.containsKey(parentKey)
+            && ((Map<String, Object>) item).containsKey(listEntryKeys.get(parentKey))) {
+          String listEntryKey = listEntryKeys.get(parentKey);
+          System.out.println("PARENT " + parentKey + " - " + listEntryKey);
           Optional<Object> leftMatch =
               left.stream()
                   .filter(
                       leftItem ->
                           leftItem instanceof Map
-                              && ((Map<String, Object>) leftItem).containsKey("buildingBlock")
+                              && ((Map<String, Object>) leftItem).containsKey(listEntryKey)
                               && Objects.equals(
-                                  ((Map<String, Object>) leftItem).get("buildingBlock"),
-                                  ((Map<String, Object>) item).get("buildingBlock")))
+                                  ((Map<String, Object>) leftItem).get(listEntryKey),
+                                  ((Map<String, Object>) item).get(listEntryKey)))
                   .findFirst();
 
-          // TODO: I guess the correct way to define ignoreKeys would be in EntityFactory
           if (leftMatch.isPresent()) {
             Map<String, Object> subtracted =
                 subtract(
                     (Map<String, Object>) leftMatch.get(),
                     (Map<String, Object>) item,
-                    ImmutableList.of("buildingBlock", "type"),
+                    ImmutableList.of(listEntryKey),
+                    Map.of(),
                     keepIndexes);
             diff.set(diff.indexOf(leftMatch.get()), subtracted);
           }

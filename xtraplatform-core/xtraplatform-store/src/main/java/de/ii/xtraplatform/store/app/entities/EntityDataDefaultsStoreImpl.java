@@ -279,13 +279,23 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
           valueEncodingMap.deserialize(
               defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
-      return MapSubtractor.subtract(data, defaults, ignoreKeys);
+      return MapSubtractor.subtract(
+          data, defaults, ignoreKeys, getFactory(defaultsIdentifier).getListEntryKeys());
 
     } catch (Throwable e) {
       boolean br = true;
     }
 
     return data;
+  }
+
+  public EntityFactory getFactory(Identifier identifier) {
+    EntityDataDefaultsPath defaultsPath =
+        EntityDataDefaultsPath.from(identifier, entityFactories.getTypes());
+
+    Optional<String> subtype = entityFactories.getTypeAsString(defaultsPath.getEntitySubtype());
+
+    return entityFactories.get(defaultsPath.getEntityType(), subtype);
   }
 
   @Override

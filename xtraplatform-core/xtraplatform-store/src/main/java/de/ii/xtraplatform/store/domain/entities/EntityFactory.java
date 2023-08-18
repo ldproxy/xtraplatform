@@ -10,6 +10,7 @@ package de.ii.xtraplatform.store.domain.entities;
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.KeyPathAliasUnwrap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -68,6 +69,10 @@ public interface EntityFactory {
 
   default Optional<KeyPathAliasUnwrap> getKeyPathAliasReverse(String parentPath) {
     return Optional.empty();
+  }
+
+  default Map<String, String> getListEntryKeys() {
+    return Map.of();
   }
 
   void addEntityListener(Consumer<PersistentEntity> listener, boolean existing);
