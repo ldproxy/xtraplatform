@@ -73,6 +73,7 @@ public class MapSubtractor {
                   subtract(
                       List.of(diff.leftValue()),
                       (Collection<Object>) diff.rightValue(),
+                      ignoreKeys,
                       listEntryKeys,
                       keepIndexes,
                       key));
@@ -99,6 +100,7 @@ public class MapSubtractor {
                   subtract(
                       (Collection<Object>) diff.leftValue(),
                       List.of(diff.rightValue()),
+                      ignoreKeys,
                       listEntryKeys,
                       keepIndexes,
                       key));
@@ -110,6 +112,7 @@ public class MapSubtractor {
               subtract(
                   (Collection<Object>) diff.leftValue(),
                   (Collection<Object>) diff.rightValue(),
+                  ignoreKeys,
                   listEntryKeys,
                   keepIndexes,
                   key));
@@ -127,6 +130,7 @@ public class MapSubtractor {
   private static Collection<Object> subtract(
       Collection<Object> left,
       Collection<Object> right,
+      List<String> ignoreKeys,
       Map<String, String> listEntryKeys,
       boolean keepIndexes,
       String parentKey) {
@@ -166,7 +170,7 @@ public class MapSubtractor {
                 subtract(
                     (Map<String, Object>) leftMatch.get(),
                     (Map<String, Object>) item,
-                    ImmutableList.of(listEntryKey),
+                    ImmutableList.<String>builder().addAll(ignoreKeys).add(listEntryKey).build(),
                     Map.of(),
                     keepIndexes);
             diff.set(diff.indexOf(leftMatch.get()), subtracted);
