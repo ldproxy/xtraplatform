@@ -150,7 +150,6 @@ public class MapSubtractor {
             && listEntryKeys.containsKey(parentKey)
             && ((Map<String, Object>) item).containsKey(listEntryKeys.get(parentKey))) {
           String listEntryKey = listEntryKeys.get(parentKey);
-          System.out.println("PARENT " + parentKey + " - " + listEntryKey);
           Optional<Object> leftMatch =
               left.stream()
                   .filter(
