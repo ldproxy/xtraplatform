@@ -11,7 +11,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.base.domain.LogContext;
-import de.ii.xtraplatform.store.app.entities.EntityDataStoreImpl;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventFilter;
 import de.ii.xtraplatform.store.domain.EventStore;
@@ -24,6 +23,7 @@ import de.ii.xtraplatform.store.domain.ReplayEvent;
 import de.ii.xtraplatform.store.domain.StateChangeEvent;
 import de.ii.xtraplatform.store.domain.ValueCache;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
+import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import de.ii.xtraplatform.streams.domain.Event;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -171,7 +171,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       identifiers.stream()
           // TODO: set priority per entity type (for now alphabetic works:
           //  codelists < providers < services)
-          .sorted(Comparator.comparing(EntityDataStoreImpl::entityType))
+          .sorted(Comparator.comparing(EntityDataStore::entityType))
           .reduce(
               CompletableFuture.completedFuture((Void) null),
               (completableFuture, identifier) ->

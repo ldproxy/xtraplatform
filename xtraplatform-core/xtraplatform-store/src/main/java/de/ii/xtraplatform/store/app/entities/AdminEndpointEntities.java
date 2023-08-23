@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.store.app.entities;
 
-import static de.ii.xtraplatform.store.app.entities.EntityDataStoreImpl.entityType;
+import static de.ii.xtraplatform.store.domain.entities.EntityDataStore.entityType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
@@ -85,7 +85,7 @@ public class AdminEndpointEntities implements AdminSubEndpoint {
               .sorted(Comparator.naturalOrder())
               .collect(
                   Collectors.groupingBy(
-                      EntityDataStoreImpl::entityType,
+                      EntityDataStore::entityType,
                       LinkedHashMap::new,
                       Collectors.mapping(this::getEntityInfo, Collectors.toList())));
 

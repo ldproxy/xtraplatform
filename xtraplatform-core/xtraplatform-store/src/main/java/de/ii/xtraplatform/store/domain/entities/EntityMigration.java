@@ -11,6 +11,7 @@ import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.Migration;
 import de.ii.xtraplatform.store.domain.entities.EntityMigration.EntityMigrationContext;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 public abstract class EntityMigration<T extends EntityData, U extends EntityData>
@@ -30,15 +31,32 @@ public abstract class EntityMigration<T extends EntityData, U extends EntityData
     return context;
   }
 
-  public abstract boolean isApplicable(EntityData entityData);
+  public boolean isApplicable(EntityData entityData) {
+    return isApplicable(entityData, Optional.empty());
+  }
 
-  public abstract U migrate(T entityData);
+  public abstract boolean isApplicable(EntityData entityData, Optional<EntityData> defaults);
+
+  public U migrate(T entityData) {
+    return migrate(entityData, Optional.empty());
+  }
+
+  public abstract U migrate(T entityData, Optional<T> defaults);
 
   public EntityData migrateRaw(EntityData entityData) {
-    return migrate((T) entityData);
+    return migrateRaw((T) entityData, Optional.empty());
+  }
+
+  public EntityData migrateRaw(EntityData entityData, Optional<EntityData> defaults) {
+    return migrate((T) entityData, defaults.map(d -> (T) d));
   }
 
   public Map<Identifier, ? extends EntityData> getAdditionalEntities(EntityData entityData) {
+    return getAdditionalEntities(entityData, Optional.empty());
+  }
+
+  public Map<Identifier, ? extends EntityData> getAdditionalEntities(
+      EntityData entityData, Optional<EntityData> defaults) {
     return Map.of();
   }
 }

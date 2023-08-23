@@ -43,6 +43,7 @@ import de.ii.xtraplatform.store.domain.entities.EntityData;
 import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsPath;
 import de.ii.xtraplatform.store.domain.entities.EntityDataDefaultsStore;
+import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
 import de.ii.xtraplatform.store.domain.entities.EntityFactoriesImpl;
 import de.ii.xtraplatform.store.domain.entities.EntityFactory;
 import java.io.IOException;
@@ -267,7 +268,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       Map<String, Object> data,
       List<String> ignoreKeys) {
 
-    Identifier defaultsIdentifier = EntityDataStoreImpl.defaults(identifier, subType);
+    Identifier defaultsIdentifier = EntityDataStore.defaults(identifier, subType);
 
     EntityDataBuilder<EntityData> newBuilder =
         getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders();
@@ -302,7 +303,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   public Map<String, Object> asMap(Identifier identifier, EntityData entityData)
       throws IOException {
     Optional<String> subType = entityData.getEntitySubType();
-    Identifier defaultsIdentifier = EntityDataStoreImpl.defaults(identifier, subType);
+    Identifier defaultsIdentifier = EntityDataStore.defaults(identifier, subType);
 
     return valueEncodingMap.deserialize(
         defaultsIdentifier,
@@ -315,7 +316,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   public Optional<Map<String, Object>> getAllDefaults(
       Identifier identifier, Optional<String> subType) {
 
-    Identifier defaultsIdentifier = EntityDataStoreImpl.defaults(identifier, subType);
+    Identifier defaultsIdentifier = EntityDataStore.defaults(identifier, subType);
 
     Optional<EntityDataBuilder<EntityData>> newBuilder =
         Optional.ofNullable(getBuilder(defaultsIdentifier).fillRequiredFieldsWithPlaceholders());

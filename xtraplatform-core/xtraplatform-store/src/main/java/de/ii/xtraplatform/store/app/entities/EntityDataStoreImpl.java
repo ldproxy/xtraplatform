@@ -9,7 +9,6 @@ package de.ii.xtraplatform.store.app.entities;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
 import dagger.Lazy;
@@ -260,20 +259,22 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
     if (noDefaults) {
       return (EntityDataBuilder<EntityData>)
-          entityFactories.get(entityType(identifier)).emptySuperDataBuilder();
+          entityFactories.get(EntityDataStore.entityType(identifier)).emptySuperDataBuilder();
     }
 
     return (EntityDataBuilder<EntityData>)
-        entityFactories.get(entityType(identifier)).superDataBuilder();
+        entityFactories.get(EntityDataStore.entityType(identifier)).superDataBuilder();
   }
 
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier, String entitySubtype) {
     if (noDefaults) {
       return (EntityDataBuilder<EntityData>)
-          entityFactories.get(entityType(identifier), entitySubtype).emptyDataBuilder();
+          entityFactories
+              .get(EntityDataStore.entityType(identifier), entitySubtype)
+              .emptyDataBuilder();
     }
 
-    Identifier defaultsIdentifier = defaults(identifier, entitySubtype);
+    Identifier defaultsIdentifier = EntityDataStore.defaults(identifier, entitySubtype);
 
     if (defaultsStore.has(defaultsIdentifier)) {
       return defaultsStore.getBuilder(defaultsIdentifier);
@@ -288,51 +289,17 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     }
 
     return (EntityDataBuilder<EntityData>)
-        entityFactories.get(entityType(identifier), entitySubtype).dataBuilder();
+        entityFactories.get(EntityDataStore.entityType(identifier), entitySubtype).dataBuilder();
   }
 
   protected EntityData hydrate(Identifier identifier, EntityData entityData) {
     return entityFactories
-        .get(entityType(identifier), entityData.getEntitySubType())
+        .get(EntityDataStore.entityType(identifier), entityData.getEntitySubType())
         .hydrateData(entityData);
   }
 
   protected void addAdditionalEvent(Identifier identifier, EntityData entityData) {
     additionalEvents.add(new AbstractMap.SimpleImmutableEntry<>(identifier, entityData));
-  }
-
-  public static String entityType(Identifier identifier) {
-    if (identifier.path().isEmpty()) {
-      throw new IllegalArgumentException("Invalid path, no entity type found.");
-    }
-    return identifier.path().get(identifier.path().size() - 1);
-  }
-
-  static List<String> entityGroup(Identifier identifier) {
-    return identifier.path().size() > 1
-        ? Lists.reverse(identifier.path().subList(0, identifier.path().size() - 1))
-        : List.of();
-  }
-
-  static Identifier defaults(Identifier identifier, String subType) {
-    return ImmutableIdentifier.builder()
-        .id(EntityDataDefaultsStore.EVENT_TYPE)
-        .path(entityGroup(identifier))
-        .addPath(entityType(identifier))
-        .addPath(subType.toLowerCase())
-        .build();
-  }
-
-  static Identifier defaults(Identifier identifier, Optional<String> subType) {
-    if (subType.isPresent()) {
-      return defaults(identifier, subType.get());
-    }
-
-    return ImmutableIdentifier.builder()
-        .id(EntityDataDefaultsStore.EVENT_TYPE)
-        .path(entityGroup(identifier))
-        .addPath(entityType(identifier))
-        .build();
   }
 
   private static Identifier parent(Identifier identifier, int distance) {
@@ -348,15 +315,16 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private static Predicate<Identifier> isDuplicate(Identifier identifier) {
     return other ->
         Objects.equals(identifier.id(), other.id())
-            && Objects.equals(entityType(identifier), entityType(other))
+            && Objects.equals(
+                EntityDataStore.entityType(identifier), EntityDataStore.entityType(other))
             && !Objects.equals(identifier.path(), other.path());
   }
 
   @Override
   protected CompletableFuture<Void> onListenStart() {
-    LOGGER.debug("WAIT FOR BLOBS");
+    // LOGGER.debug("WAIT FOR BLOBS");
     blobStoreReady.get();
-    LOGGER.debug("CONTINUE");
+    // LOGGER.debug("CONTINUE");
     // TODO: getAllPaths
     return playAdditionalEvents()
         .thenCompose(
@@ -372,7 +340,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 identifiers().stream()
                     // TODO: set priority per entity type (for now alphabetic works:
                     //  codelists < providers < services)
-                    .sorted(Comparator.comparing(EntityDataStoreImpl::entityType))
+                    .sorted(Comparator.comparing(EntityDataStore::entityType))
                     .reduce(
                         CompletableFuture.completedFuture((Void) null),
                         (completableFuture, identifier) ->
@@ -425,7 +393,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         EntityData hydratedData = hydrateData(identifier, entityData);
 
         return entityFactories
-            .get(entityType(identifier), entityData.getEntitySubType())
+            .get(EntityDataStore.entityType(identifier), entityData.getEntitySubType())
             .createInstance(hydratedData)
             .whenComplete(
                 (entity, throwable) -> {
@@ -455,7 +423,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         EntityData hydratedData = hydrateData(identifier, entityData);
 
         return entityFactories
-            .get(entityType(identifier), entityData.getEntitySubType())
+            .get(EntityDataStore.entityType(identifier), entityData.getEntitySubType())
             .updateInstance(hydratedData)
             .thenAccept(ignore -> CompletableFuture.completedFuture(null));
       } catch (Throwable e) {
@@ -467,7 +435,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   @Override
   protected void onDelete(Identifier identifier) {
     entityFactories
-        .getAll(entityType(identifier))
+        .getAll(EntityDataStore.entityType(identifier))
         .forEach(factory -> factory.deleteInstance(identifier.id()));
   }
 
@@ -576,7 +544,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
               withoutDefaults,
               partialData,
               Objects::isNull,
-              entityFactories.get(entityType(identifier), merged.getEntitySubType()));
+              entityFactories.get(
+                  EntityDataStore.entityType(identifier), merged.getEntitySubType()));
 
       return getEventSourcing()
           .pushPartialMutationEvent(identifier, withoutResetted)
@@ -625,21 +594,21 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             putPartialWithoutTrigger(identifier, withoutDefaults).join();
             LOGGER.info(
                 "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-                entityType(identifier),
+                EntityDataStore.entityType(identifier),
                 entityData.getId());
           } catch (IOException e) {
             LogContext.error(
                 LOGGER,
                 e,
                 "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved",
-                entityType(identifier),
+                EntityDataStore.entityType(identifier),
                 entityData.getId());
           }
 
         } else {
           LOGGER.warn(
               "Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
-              entityType(identifier),
+              EntityDataStore.entityType(identifier),
               entityData.getId());
         }
       }

@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.store.app;
 
-import static de.ii.xtraplatform.store.app.entities.EntityDataStoreImpl.entityType;
+import static de.ii.xtraplatform.store.domain.entities.EntityDataStore.entityType;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.Lists;
