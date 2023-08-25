@@ -43,7 +43,18 @@ public class User extends AbstractPersistentEntity<User.UserData> {
   @JsonDeserialize(builder = ImmutableUserData.Builder.class)
   public interface UserData extends EntityData {
 
-    abstract class Builder implements EntityDataBuilder<UserData> {}
+    abstract class Builder implements EntityDataBuilder<UserData> {
+      public abstract Builder id(String id);
+
+      public abstract Builder password(String id);
+
+      public abstract Builder role(Role role);
+
+      public ImmutableUserData.Builder fillRequiredFieldsWithPlaceholders() {
+        return ((ImmutableUserData.Builder)
+            this.id("__DEFAULT__").password("__DEFAULT__").role(Role.NONE));
+      }
+    }
 
     String getPassword();
 
