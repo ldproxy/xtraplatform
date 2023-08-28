@@ -45,9 +45,10 @@ public class TokenAuthenticator implements Authenticator<String, User> {
 
   @Override
   public Optional<User> authenticate(String token) throws AuthenticationException {
-    if (authConfig.isActive() && authConfig.getUserInfoEndpoint().isPresent()) {
+    if (authConfig.isUserInfo()) {
       try {
-        String url = authConfig.getUserInfoEndpoint().get().replace("{{token}}", token);
+        String url =
+            authConfig.getSimple().get().getUserInfoEndpoint().get().replace("{{token}}", token);
         InputStream response =
             httpClient.getAsInputStream(url, Map.of("Authorization", "Bearer " + token));
 
@@ -55,15 +56,17 @@ public class TokenAuthenticator implements Authenticator<String, User> {
 
         LOGGER.debug("USERINFO {}", userInfo);
 
-        String name = (String) userInfo.get(authConfig.getUserNameKey());
+        String name = (String) userInfo.get(authConfig.getClaims().getUserName());
         Role role =
             Role.fromString(
                 Optional.ofNullable((String) userInfo.get(authConfig.getUserRoleKey()))
                     .orElse("USER"));
         List<String> scopes =
-            userInfo.get(authConfig.getUserScopesKey()) instanceof String
-                ? SPLITTER.splitToList((String) userInfo.get(authConfig.getUserScopesKey()))
-                : Optional.ofNullable((List<String>) userInfo.get(authConfig.getUserScopesKey()))
+            userInfo.get(authConfig.getClaims().getPermissions()) instanceof String
+                ? SPLITTER.splitToList(
+                    (String) userInfo.get(authConfig.getClaims().getPermissions()))
+                : Optional.ofNullable(
+                        (List<String>) userInfo.get(authConfig.getClaims().getPermissions()))
                     .orElse(List.of());
 
         return Optional.of(ImmutableUser.builder().name(name).role(role).scopes(scopes).build());

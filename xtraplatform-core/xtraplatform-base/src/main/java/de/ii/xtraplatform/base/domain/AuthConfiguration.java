@@ -7,10 +7,12 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -23,22 +25,17 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ModifiableAuthConfiguration.class)
 public interface AuthConfiguration {
 
-  @JsonIgnore
-  @Value.Derived
-  default boolean isActive() {
-    try {
-      return (getUserInfoEndpoint().isPresent()
-          && new URI(getUserInfoEndpoint().get().replace("{{token}}", "token")).isAbsolute());
-    } catch (URISyntaxException e) {
-      return false;
-    }
-  }
-
   // TODO
   @JsonIgnore
   @Value.Derived
-  default boolean getAllowAnonymousAccess() {
-    return false;
+  default boolean isUserInfo() {
+    Optional<String> userInfoEndpoint = getSimple().flatMap(Simple::getUserInfoEndpoint);
+    try {
+      return (userInfoEndpoint.isPresent()
+          && new URI(userInfoEndpoint.get().replace("{{token}}", "token")).isAbsolute());
+    } catch (URISyntaxException e) {
+      return false;
+    }
   }
 
   /**
@@ -51,40 +48,179 @@ public interface AuthConfiguration {
    *     Konfiguration kopiert werden.
    * @default Generated at startup
    */
+  @Deprecated(since = "3.5")
   @Nullable
   String getJwtSigningKey();
 
-  @Value.Default
-  default String getUserNameKey() {
-    return "name";
-  }
+  @Deprecated(since = "3.5")
+  @Nullable
+  String getUserNameKey();
 
+  @Deprecated(since = "3.5")
   @JsonIgnore
   @Value.Derived
   default String getUserRoleKey() {
     return "role";
   }
 
-  @Value.Default
-  default String getUserScopesKey() {
-    return "role";
-  }
+  @Deprecated(since = "3.5")
+  @JsonAlias("userScopesKey")
+  @Nullable
+  String getUserPermissionsKey();
 
+  @Deprecated(since = "3.5")
   Optional<String> getUserInfoEndpoint();
 
-  Optional<String> getConnectionInfoEndpoint();
+  @Deprecated(since = "3.5")
+  @JsonAlias("externalDynamicAuthorizationEndpoint")
+  Optional<String> getXacmlJsonEndpoint();
 
-  Optional<String> getExternalDynamicAuthorizationEndpoint();
-
+  // TODO
   Optional<String> getPostProcessingEndpoint();
 
-  @Value.Default
-  default String getXacmlJsonVersion() {
-    return "1.1";
+  @Deprecated(since = "3.5")
+  @Nullable
+  String getXacmlJsonVersion();
+
+  @Deprecated(since = "3.5")
+  @Nullable
+  String getXacmlJsonMediaType();
+
+  @Deprecated(since = "3.5")
+  @Value.Check
+  default AuthConfiguration backwardsCompatibility() {
+
+    if (Objects.nonNull(getUserNameKey()) || Objects.nonNull(getUserPermissionsKey())) {
+      ImmutableClaims.Builder builder = new ImmutableClaims.Builder();
+      if (Objects.nonNull(getUserNameKey())) {
+        builder.userName(getUserNameKey());
+      }
+      if (Objects.nonNull(getUserPermissionsKey())) {
+        builder.permissions(getUserPermissionsKey());
+      }
+
+      return new ImmutableAuthConfiguration.Builder()
+          .from(this)
+          .claims(builder.build())
+          .userNameKey(null)
+          .userPermissionsKey(null)
+          .build();
+    }
+
+    if (Objects.nonNull(getJwtSigningKey()) || getUserInfoEndpoint().isPresent()) {
+      ImmutableSimple.Builder builder = new ImmutableSimple.Builder();
+      if (Objects.nonNull(getJwtSigningKey())) {
+        builder.jwtSigningKey(getJwtSigningKey());
+      }
+      if (getUserInfoEndpoint().isPresent()) {
+        builder.userInfoEndpoint(getUserInfoEndpoint().get());
+      }
+
+      return new ImmutableAuthConfiguration.Builder()
+          .from(this)
+          .simple(builder.build())
+          .jwtSigningKey(null)
+          .userInfoEndpoint(Optional.empty())
+          .build();
+    }
+
+    if (getXacmlJsonEndpoint().isPresent()
+        || Objects.nonNull(getXacmlJsonVersion())
+        || Objects.nonNull(getXacmlJsonMediaType())) {
+      ImmutableXacmlJson.Builder builder = new ImmutableXacmlJson.Builder();
+      if (getXacmlJsonEndpoint().isPresent()) {
+        builder.endpoint(getXacmlJsonEndpoint().get());
+      }
+      if (Objects.nonNull(getXacmlJsonVersion())) {
+        builder.version(getXacmlJsonVersion());
+      }
+      if (Objects.nonNull(getUserPermissionsKey())) {
+        builder.mediaType(getXacmlJsonMediaType());
+      }
+
+      return new ImmutableAuthConfiguration.Builder()
+          .from(this)
+          .xacmlJson(builder.build())
+          .xacmlJsonEndpoint(Optional.empty())
+          .xacmlJsonVersion(null)
+          .xacmlJsonMediaType(null)
+          .build();
+    }
+
+    return this;
   }
 
-  @Value.Default
-  default String getXacmlJsonMediaType() {
-    return "application/xacml+json;charset=UTF-8";
+  @Value.Check
+  default AuthConfiguration defaults() {
+    if (Objects.isNull(getClaims())) {
+      return new ImmutableAuthConfiguration.Builder()
+          .from(this)
+          .claims(ModifiableClaims.create())
+          .build();
+    }
+
+    return this;
+  }
+
+  Optional<Oidc> getOidc();
+
+  Optional<Simple> getSimple();
+
+  Optional<XacmlJson> getXacmlJson();
+
+  @Nullable
+  Claims getClaims();
+
+  @Value.Immutable
+  @Value.Modifiable
+  @JsonDeserialize(as = ModifiableOidc.class)
+  interface Oidc {
+    String getEndpoint();
+
+    String getClientId();
+
+    Optional<String> getClientSecret();
+  }
+
+  @Value.Immutable
+  @Value.Modifiable
+  @JsonDeserialize(as = ModifiableSimple.class)
+  interface Simple {
+    Optional<String> getJwtSigningKey();
+
+    Optional<String> getUserInfoEndpoint();
+  }
+
+  @Value.Immutable
+  @Value.Modifiable
+  @JsonDeserialize(as = ModifiableClaims.class)
+  interface Claims {
+    @Value.Default
+    default String getUserName() {
+      return "sub";
+    }
+
+    @JsonAlias("userScopesKey")
+    @Value.Default
+    default String getPermissions() {
+      return "roles";
+    }
+  }
+
+  @Value.Immutable
+  @Value.Modifiable
+  @JsonDeserialize(as = ModifiableXacmlJson.class)
+  interface XacmlJson {
+    String getEndpoint();
+
+    @Value.Default
+    default String getVersion() {
+      return "1.1";
+    }
+
+    @Value.Default
+    default String getMediaType() {
+      return "application/xacml+json;charset=UTF-8";
+    }
   }
 }
