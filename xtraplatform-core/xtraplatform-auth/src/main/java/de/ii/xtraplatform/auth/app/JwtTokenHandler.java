@@ -34,15 +34,13 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
@@ -58,6 +56,8 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private static final String RESOURCES_JWT = "jwt";
   private static final Path SIGNING_KEY_PATH = Path.of("signingKey");
   private static final Splitter LIST_SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
+  private static final Splitter LIST_SPLITTER_BLANKS =
+      Splitter.on(' ').trimResults().omitEmptyStrings();
   private static final Splitter PATH_SPLITTER = Splitter.on('.');
 
   private final BlobStore keyStore;
@@ -66,8 +66,6 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private final boolean isOldStoreAndReadOnly;
   private Key signingKey;
   private JwtParser parser;
-  private Function<Claims, Set<String>> permissionReader;
-  private Function<Claims, Set<String>> audienceReader;
 
   @Inject
   public JwtTokenHandler(AppContext appContext, BlobStore blobStore, Oidc oidc) {
@@ -85,82 +83,18 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
 
     // TODO
     long clockSkew = 3600;
-    String claimsPermissions = authConfig.getClaims().getPermissions();
-    boolean isComplex = claimsPermissions.contains(".");
-    String permissionsKey =
-        isComplex
-            ? claimsPermissions.substring(0, claimsPermissions.indexOf("."))
-            : claimsPermissions;
-    List<String> subKeys =
-        isComplex
-            ? PATH_SPLITTER.splitToStream(claimsPermissions).skip(1).collect(Collectors.toList())
-            : List.of();
 
     this.parser =
         Jwts.parserBuilder()
             .setSigningKey(signingKey)
             .setAllowedClockSkewSeconds(clockSkew)
             .deserializeJsonWith(
-                new JacksonDeserializer(Map.of(permissionsKey, isComplex ? Map.class : List.class)))
+                new JacksonDeserializer(listType(authConfig.getClaims().getAudience())))
+            .deserializeJsonWith(
+                new JacksonDeserializer(listType(authConfig.getClaims().getScopes())))
+            .deserializeJsonWith(
+                new JacksonDeserializer(listType(authConfig.getClaims().getPermissions())))
             .build();
-
-    this.permissionReader =
-        (claims) -> {
-          Set<String> permissions = new HashSet<>();
-          try {
-            if (isComplex) {
-              Map<Object, Object> map = claims.get(permissionsKey, Map.class);
-              if (Objects.nonNull(map)) {
-                for (int i = 0; i < subKeys.size(); i++) {
-                  Object entry = map.get(subKeys.get(i));
-                  if (i == subKeys.size() - 1) {
-                    if (entry instanceof String) {
-                      permissions.add((String) entry);
-                    } else if (entry instanceof List) {
-                      ((List<Object>) entry).forEach(e -> permissions.add(e.toString()));
-                    } else {
-                      throw new IllegalArgumentException(
-                          "List or string expected at " + subKeys.get(i));
-                    }
-                    break;
-                  }
-                  if (entry instanceof Map) {
-                    map = (Map<Object, Object>) entry;
-                  } else {
-                    throw new IllegalArgumentException("Map expected at " + subKeys.get(i));
-                  }
-                }
-              }
-            } else {
-              List<Object> list = claims.get(permissionsKey, List.class);
-              if (Objects.nonNull(list)) {
-                list.stream().forEach(e -> permissions.add(e.toString()));
-              }
-            }
-          } catch (Throwable e) {
-            LogContext.error(
-                LOGGER,
-                e,
-                "Permission key '{}' cannot be resolved for given token",
-                claimsPermissions);
-          }
-          return permissions;
-        };
-
-    this.audienceReader =
-        (claims) -> {
-          if (Objects.isNull(claims.getAudience())) {
-            return Set.of();
-          }
-
-          String aud = claims.getAudience().trim();
-          if (aud.startsWith("[") && aud.endsWith("]")) {
-            return LIST_SPLITTER
-                .splitToStream(aud.substring(1, aud.length() - 1))
-                .collect(Collectors.toSet());
-          }
-          return Set.of(aud);
-        };
   }
 
   @Override
@@ -183,23 +117,100 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     return jwtBuilder.signWith(signingKey).compact();
   }
 
+  private boolean isComplex(String claim) {
+    return claim.contains(".");
+  }
+
+  private String baseKey(String claim) {
+    return isComplex(claim) ? claim.substring(0, claim.indexOf(".")) : claim;
+  }
+
+  private Map<String, Class<?>> listType(String claim) {
+    return Map.of(baseKey(claim), isComplex(claim) ? Map.class : Object.class);
+  }
+
+  private String read(Claims claims, String claim) {
+    return claims.get(claim, String.class);
+  }
+
+  private List<String> readList(Claims claims, String claim) {
+    boolean isComplex = isComplex(claim);
+    String baseKey = baseKey(claim);
+    List<String> subKeys =
+        isComplex
+            ? PATH_SPLITTER.splitToStream(claim).skip(1).collect(Collectors.toList())
+            : List.of();
+    List<String> list = new ArrayList<>();
+
+    try {
+      if (isComplex) {
+        Map<Object, Object> map = claims.get(baseKey, Map.class);
+        if (Objects.nonNull(map)) {
+          for (int i = 0; i < subKeys.size(); i++) {
+            Object entry = map.get(subKeys.get(i));
+            if (i == subKeys.size() - 1) {
+              list.addAll(parseList(entry, subKeys.get(i)));
+              break;
+            }
+            if (entry instanceof Map) {
+              map = (Map<Object, Object>) entry;
+            } else {
+              throw new IllegalArgumentException("Map expected at " + subKeys.get(i));
+            }
+          }
+        }
+      } else {
+        Object entry = claims.get(baseKey, Object.class);
+        list.addAll(parseList(entry, baseKey));
+      }
+    } catch (Throwable e) {
+      LogContext.error(LOGGER, e, "Claim '{}' cannot be resolved for given token", claim);
+    }
+    return list;
+  }
+
+  private List<String> parseList(Object entry, String key) {
+    if (entry instanceof String) {
+      String listString = (String) entry;
+      if (listString.startsWith("[") && listString.endsWith("]")) {
+        listString = listString.substring(1, listString.length() - 1);
+      }
+      if (listString.contains(",")) {
+        return LIST_SPLITTER.splitToList(listString);
+      } else if (listString.contains(" ")) {
+        return LIST_SPLITTER_BLANKS.splitToList(listString);
+      } else {
+        return List.of(listString);
+      }
+    } else if (entry instanceof List) {
+      return ((List<Object>) entry).stream().map(Object::toString).collect(Collectors.toList());
+    } else {
+      throw new IllegalArgumentException("List or string expected at " + key);
+    }
+  }
+
   @Override
   public Optional<User> parseToken(String token) {
     if (Objects.nonNull(signingKey)) {
       try {
         Claims claimsJws = parser.parseClaimsJws(token).getBody();
-
-        return Optional.of(
+        User user =
             ImmutableUser.builder()
-                .name(claimsJws.get(authConfig.getClaims().getUserName(), String.class))
+                .name(read(claimsJws, authConfig.getClaims().getUserName()))
                 .role(
                     Role.fromString(
-                        Optional.ofNullable(
-                                claimsJws.get(authConfig.getUserRoleKey(), String.class))
+                        Optional.ofNullable(read(claimsJws, authConfig.getUserRoleKey()))
                             .orElse("USER")))
-                .scopes(permissionReader.apply(claimsJws))
-                .audience(audienceReader.apply(claimsJws))
-                .build());
+                .audience(readList(claimsJws, authConfig.getClaims().getAudience()))
+                .scopes(readList(claimsJws, authConfig.getClaims().getScopes()))
+                .permissions(readList(claimsJws, authConfig.getClaims().getPermissions()))
+                .build();
+
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("USER {}", user);
+        }
+
+        return Optional.of(user);
       } catch (Throwable e) {
         LogContext.errorAsDebug(LOGGER, e, "Error validating token");
       }

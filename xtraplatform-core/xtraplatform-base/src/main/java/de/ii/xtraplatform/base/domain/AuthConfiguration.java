@@ -200,7 +200,16 @@ public interface AuthConfiguration {
       return "sub";
     }
 
-    @JsonAlias("userScopesKey")
+    @Value.Default
+    default String getAudience() {
+      return "aud";
+    }
+
+    @Value.Default
+    default String getScopes() {
+      return "scope";
+    }
+
     @Value.Default
     default String getPermissions() {
       return "roles";

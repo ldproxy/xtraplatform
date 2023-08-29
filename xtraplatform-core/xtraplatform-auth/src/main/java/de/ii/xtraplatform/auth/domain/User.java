@@ -8,7 +8,6 @@
 package de.ii.xtraplatform.auth.domain;
 
 import java.security.Principal;
-import java.util.List;
 import java.util.Set;
 import org.immutables.value.Value;
 
@@ -25,9 +24,11 @@ public interface User extends Principal {
     NOT_APPLICABLE
   }
 
-  List<String> getScopes();
-
   Set<String> getAudience();
+
+  Set<String> getScopes();
+
+  Set<String> getPermissions();
 
   @Value.Default
   default Role getRole() {
