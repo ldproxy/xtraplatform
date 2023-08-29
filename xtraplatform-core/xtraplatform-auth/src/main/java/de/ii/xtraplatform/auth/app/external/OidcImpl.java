@@ -55,6 +55,9 @@ public class OidcImpl implements Oidc, AppLifeCycle {
     @JsonProperty("authorization_endpoint")
     URI getAuthorizationEndpoint();
 
+    @JsonProperty("token_endpoint")
+    URI getTokenEndpoint();
+
     @JsonProperty("userinfo_endpoint")
     URI getUserInfoEndpoint();
 
@@ -183,13 +186,33 @@ public class OidcImpl implements Oidc, AppLifeCycle {
   }
 
   @Override
+  public String getConfigurationUri() {
+    return authConfig.getOidc().map(AuthConfiguration.Oidc::getEndpoint).orElse(null);
+  }
+
+  @Override
   public URI getLoginUri() {
     return oidcConfiguration.map(OidcConfiguration::getAuthorizationEndpoint).orElse(null);
   }
 
   @Override
+  public URI getTokenUri() {
+    return oidcConfiguration.map(OidcConfiguration::getTokenEndpoint).orElse(null);
+  }
+
+  @Override
   public URI getLogoutUri() {
     return oidcConfiguration.map(OidcConfiguration::getEndSessionEndpoint).orElse(null);
+  }
+
+  @Override
+  public String getClientId() {
+    return authConfig.getOidc().map(AuthConfiguration.Oidc::getClientId).orElse(null);
+  }
+
+  @Override
+  public Optional<String> getClientSecret() {
+    return authConfig.getOidc().flatMap(AuthConfiguration.Oidc::getClientSecret);
   }
 
   @Override

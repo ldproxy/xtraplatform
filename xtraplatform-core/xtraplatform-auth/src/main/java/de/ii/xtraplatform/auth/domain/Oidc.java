@@ -10,13 +10,22 @@ package de.ii.xtraplatform.auth.domain;
 import java.net.URI;
 import java.security.Key;
 import java.util.Map;
+import java.util.Optional;
 
 public interface Oidc {
   boolean isEnabled();
 
+  String getConfigurationUri();
+
   URI getLoginUri();
 
+  URI getTokenUri();
+
   URI getLogoutUri();
+
+  String getClientId();
+
+  Optional<String> getClientSecret();
 
   Map<String, Key> getSigningKeys();
 }
