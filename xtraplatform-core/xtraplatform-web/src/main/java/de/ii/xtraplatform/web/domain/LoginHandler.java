@@ -19,11 +19,14 @@ public interface LoginHandler {
   String PARAM_LOGIN_REDIRECT_URI = "redirect_uri";
   String PARAM_LOGIN_SCOPES = "scopes";
   String PARAM_CALLBACK_STATE = "state";
+  String PARAM_CALLBACK_TOKEN = "access_token";
 
   Response handle(
       ContainerRequestContext containerRequestContext,
       String redirectUri,
       String scopes,
       String rootPath,
-      boolean isCallback);
+      boolean isCallback,
+      String state,
+      String token);
 }

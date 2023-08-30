@@ -178,7 +178,8 @@ public class ServicesEndpoint implements Endpoint {
         .get()
         .iterator()
         .next()
-        .handle(containerRequestContext, redirectUri, scopes, servicesUri.getPath(), false);
+        .handle(
+            containerRequestContext, redirectUri, scopes, servicesUri.getPath(), false, null, null);
   }
 
   @GET
@@ -186,7 +187,9 @@ public class ServicesEndpoint implements Endpoint {
   @Produces(MediaType.TEXT_HTML)
   @CacheControl(maxAge = 3600)
   public Response getCallback(
-      @QueryParam(LoginHandler.PARAM_CALLBACK_STATE) String redirectUri,
+      @QueryParam(LoginHandler.PARAM_CALLBACK_STATE) String state,
+      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @QueryParam(LoginHandler.PARAM_CALLBACK_TOKEN) String token,
       @Context ContainerRequestContext containerRequestContext) {
     if (loginHandler.get().isEmpty()) {
       throw new NotFoundException();
@@ -196,7 +199,8 @@ public class ServicesEndpoint implements Endpoint {
         .get()
         .iterator()
         .next()
-        .handle(containerRequestContext, redirectUri, null, servicesUri.getPath(), true);
+        .handle(
+            containerRequestContext, redirectUri, null, servicesUri.getPath(), true, state, token);
   }
 
   @Path("/{service}/")
