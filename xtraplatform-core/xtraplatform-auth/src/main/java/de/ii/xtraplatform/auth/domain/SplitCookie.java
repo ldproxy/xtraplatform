@@ -5,9 +5,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.auth.app;
+package de.ii.xtraplatform.auth.domain;
 
 import com.google.common.collect.ImmutableList;
+import de.ii.xtraplatform.auth.app.SplitCookieCredentialAuthFilter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,7 +25,7 @@ public class SplitCookie {
   private static final String TOKEN_COOKIE_NAME = "xtraplatform-token";
   private static final String SIGNATURE_COOKIE_NAME = "xtraplatform-signature";
 
-  static Optional<String> readToken(Map<String, Cookie> cookies) {
+  public static Optional<String> readToken(Map<String, Cookie> cookies) {
     Optional<Cookie> tokenCookie = Optional.ofNullable(cookies.get(TOKEN_COOKIE_NAME));
     Optional<Cookie> signatureCookie = Optional.ofNullable(cookies.get(SIGNATURE_COOKIE_NAME));
 
@@ -51,6 +52,11 @@ public class SplitCookie {
     return ImmutableList.of(
         getPayloadCookie(headerPayload, domain, secure, payloadExpires),
         getSignatureCookie(signature, domain, secure, signatureExpires));
+  }
+
+  public static List<String> deleteToken(String domain, boolean secure) {
+    return ImmutableList.of(
+        getPayloadCookie(null, domain, secure, 0), getSignatureCookie(null, domain, secure, 0));
   }
 
   private static String getPayloadCookie(

@@ -137,7 +137,10 @@ public class ServicesEndpoint implements Endpoint {
             .findFirst();
 
     if (provider.isPresent()) {
-      Response serviceListing = provider.get().getServiceListing(services, uriInfo.getRequestUri());
+      Optional<Principal> user =
+          Optional.ofNullable(containerRequestContext.getSecurityContext().getUserPrincipal());
+      Response serviceListing =
+          provider.get().getServiceListing(services, uriInfo.getRequestUri(), user);
       return Response.ok().entity(serviceListing.getEntity()).type(mediaType).build();
     }
 
@@ -201,6 +204,19 @@ public class ServicesEndpoint implements Endpoint {
         .next()
         .handle(
             containerRequestContext, redirectUri, null, servicesUri.getPath(), true, state, token);
+  }
+
+  @GET
+  @Path(LoginHandler.PATH_LOGOUT)
+  @Produces(MediaType.TEXT_HTML)
+  public Response getLogout(
+      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @Context ContainerRequestContext containerRequestContext) {
+    if (loginHandler.get().isEmpty()) {
+      throw new NotFoundException();
+    }
+
+    return loginHandler.get().iterator().next().logout(containerRequestContext, redirectUri);
   }
 
   @Path("/{service}/")

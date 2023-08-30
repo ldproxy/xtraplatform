@@ -9,6 +9,7 @@ package de.ii.xtraplatform.auth.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.app.User.UserData;
+import de.ii.xtraplatform.auth.domain.SplitCookie;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.services.domain.ServicesContext;

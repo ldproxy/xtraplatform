@@ -16,6 +16,7 @@ public interface LoginHandler {
 
   String PATH_LOGIN = "/_login";
   String PATH_CALLBACK = "/_callback";
+  String PATH_LOGOUT = "/_logout";
   String PARAM_LOGIN_REDIRECT_URI = "redirect_uri";
   String PARAM_LOGIN_SCOPES = "scopes";
   String PARAM_CALLBACK_STATE = "state";
@@ -29,4 +30,6 @@ public interface LoginHandler {
       boolean isCallback,
       String state,
       String token);
+
+  Response logout(ContainerRequestContext containerRequestContext, String redirectUri);
 }

@@ -8,8 +8,8 @@
 package de.ii.xtraplatform.auth.infra.rest;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.auth.app.SplitCookie;
 import de.ii.xtraplatform.auth.domain.Oidc;
+import de.ii.xtraplatform.auth.domain.SplitCookie;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.services.domain.ServicesContext;
@@ -65,6 +65,16 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
       @Context ContainerRequestContext containerRequestContext) {
 
     return handle(containerRequestContext, redirectUri, null, "/", true, state, token);
+  }
+
+  @GET
+  @Path(PATH_LOGOUT)
+  @Produces(MediaType.TEXT_HTML)
+  public Response getLogin(
+      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @Context ContainerRequestContext containerRequestContext) {
+
+    return logout(containerRequestContext, redirectUri);
   }
 
   // TODO: include oauth4webapi, oauth.generateRandomCodeVerifier()
@@ -131,6 +141,20 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
 
       authCookies.forEach(cookie -> response.header("Set-Cookie", cookie));
     }
+
+    return response.build();
+  }
+
+  @Override
+  public Response logout(ContainerRequestContext containerRequestContext, String redirectUri) {
+    ResponseBuilder response = Response.seeOther(oidc.getLogoutUri());
+
+    List<String> authCookies =
+        SplitCookie.deleteToken(
+            getDomain(containerRequestContext.getUriInfo().getRequestUri()),
+            isSecure(containerRequestContext.getUriInfo().getRequestUri()));
+
+    authCookies.forEach(cookie -> response.header("Set-Cookie", cookie));
 
     return response.build();
   }
