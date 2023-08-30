@@ -16,6 +16,7 @@ public class OidcView extends View {
   public final String redirectUri;
   public final String clientId;
   public final String clientSecret;
+  public final String scopes;
   public final boolean callback;
 
   public OidcView(
@@ -24,6 +25,7 @@ public class OidcView extends View {
       String redirectUri,
       String clientId,
       String clientSecret,
+      String scopes,
       boolean callback) {
     super("/templates/oidc.mustache", Charsets.UTF_8);
     this.oidcUri = oidcUri;
@@ -31,6 +33,7 @@ public class OidcView extends View {
     this.redirectUri = redirectUri;
     this.clientId = clientId;
     this.clientSecret = clientSecret;
+    this.scopes = scopes;
     this.callback = callback;
   }
 }

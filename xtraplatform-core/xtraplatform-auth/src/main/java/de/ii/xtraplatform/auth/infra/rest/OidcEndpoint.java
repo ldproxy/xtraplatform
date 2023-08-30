@@ -47,9 +47,10 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
   @Produces(MediaType.TEXT_HTML)
   public Response getLogin(
       @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @QueryParam(LoginHandler.PARAM_LOGIN_SCOPES) String scopes,
       @Context ContainerRequestContext containerRequestContext) {
 
-    return handle(containerRequestContext, redirectUri, "/", false);
+    return handle(containerRequestContext, redirectUri, scopes, "/", false);
   }
 
   @GET
@@ -59,13 +60,12 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
       @QueryParam(LoginHandler.PARAM_CALLBACK_STATE) String redirectUri,
       @Context ContainerRequestContext containerRequestContext) {
 
-    return handle(containerRequestContext, redirectUri, "/", true);
+    return handle(containerRequestContext, redirectUri, null, "/", true);
   }
 
   // TODO: include oauth4webapi, oauth.generateRandomCodeVerifier()
   // TODO: pass token to all links, also in map clients? or use splitcookie (only works for frontend
   // I guess)?
-  // TODO: swagger-ui
   // TODO: xacml abac, aggregate values to list, geometries to ?
 
   private static URI getCallbackUri(
@@ -83,6 +83,7 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
   public Response handle(
       ContainerRequestContext containerRequestContext,
       String redirectUri,
+      String scopes,
       String rootPath,
       boolean isCallback) {
     if (Objects.isNull(redirectUri)) {
@@ -98,6 +99,7 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
                 redirectUri,
                 oidc.getClientId(),
                 oidc.getClientSecret().orElse(null),
+                scopes,
                 isCallback))
         .build();
   }

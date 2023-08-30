@@ -168,6 +168,7 @@ public class ServicesEndpoint implements Endpoint {
   @CacheControl(maxAge = 3600)
   public Response getLogin(
       @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @QueryParam(LoginHandler.PARAM_LOGIN_SCOPES) String scopes,
       @Context ContainerRequestContext containerRequestContext) {
     if (loginHandler.get().isEmpty()) {
       throw new NotFoundException();
@@ -177,7 +178,7 @@ public class ServicesEndpoint implements Endpoint {
         .get()
         .iterator()
         .next()
-        .handle(containerRequestContext, redirectUri, servicesUri.getPath(), false);
+        .handle(containerRequestContext, redirectUri, scopes, servicesUri.getPath(), false);
   }
 
   @GET
@@ -195,7 +196,7 @@ public class ServicesEndpoint implements Endpoint {
         .get()
         .iterator()
         .next()
-        .handle(containerRequestContext, redirectUri, servicesUri.getPath(), true);
+        .handle(containerRequestContext, redirectUri, null, servicesUri.getPath(), true);
   }
 
   @Path("/{service}/")

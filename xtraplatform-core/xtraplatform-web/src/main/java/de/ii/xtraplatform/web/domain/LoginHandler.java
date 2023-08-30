@@ -17,11 +17,13 @@ public interface LoginHandler {
   String PATH_LOGIN = "/_login";
   String PATH_CALLBACK = "/_callback";
   String PARAM_LOGIN_REDIRECT_URI = "redirect_uri";
+  String PARAM_LOGIN_SCOPES = "scopes";
   String PARAM_CALLBACK_STATE = "state";
 
   Response handle(
       ContainerRequestContext containerRequestContext,
       String redirectUri,
+      String scopes,
       String rootPath,
       boolean isCallback);
 }
