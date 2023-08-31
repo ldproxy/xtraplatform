@@ -7,8 +7,8 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
+import io.dropwizard.client.HttpClientConfiguration;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -19,11 +19,11 @@ import org.slf4j.LoggerFactory;
 public class CfgStoreDriverHttp implements CfgStoreDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CfgStoreDriverHttp.class);
-  private static final Path CFG_YML = Path.of("cfg.yml");
-  private final Path tmpDir;
 
-  public CfgStoreDriverHttp(Path tmpDir) {
-    this.tmpDir = tmpDir;
+  private final StoreSourceHttpFetcher httpFetcher;
+
+  public CfgStoreDriverHttp(Path tmpDir, HttpClientConfiguration httpClient) {
+    this.httpFetcher = new StoreSourceHttpFetcher(tmpDir, httpClient);
   }
 
   @Override
@@ -33,16 +33,22 @@ public class CfgStoreDriverHttp implements CfgStoreDriver {
 
   @Override
   public boolean isAvailable(StoreSource storeSource) {
-    LOGGER.warn(
-        "Content of type {} for {} is currently not supported.",
-        Content.CFG,
-        storeSource.getLabel());
-
-    return true;
+    return httpFetcher.isAvailable(storeSource);
   }
 
   @Override
   public Optional<InputStream> load(StoreSource storeSource) throws IOException {
-    return Optional.empty();
+    if (!storeSource.isArchive()) {
+      LOGGER.error("Store source {} only supports archives.", storeSource.getLabel());
+      return Optional.empty();
+    }
+
+    Optional<Path> archivePath = httpFetcher.load(storeSource);
+
+    if (archivePath.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return CfgStoreDriverFs.loadFromZip(archivePath.get(), storeSource.getArchiveRoot());
   }
 }

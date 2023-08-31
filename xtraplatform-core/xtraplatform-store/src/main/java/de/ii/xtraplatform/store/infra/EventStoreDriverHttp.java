@@ -11,10 +11,10 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
+import de.ii.xtraplatform.base.domain.StoreSourceHttpFetcher;
 import de.ii.xtraplatform.store.app.EventSource;
 import de.ii.xtraplatform.store.domain.EntityEvent;
 import de.ii.xtraplatform.store.domain.EventStoreDriver;
-import de.ii.xtraplatform.web.domain.Http;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -31,12 +31,14 @@ public class EventStoreDriverHttp implements EventStoreDriver {
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverHttp.class);
 
   private final EventReader eventReaderZip;
-  private final HttpFetcher httpFetcher;
+  private final StoreSourceHttpFetcher httpFetcher;
 
   @Inject
-  EventStoreDriverHttp(AppContext appContext, Http http) {
+  EventStoreDriverHttp(AppContext appContext) {
     this.eventReaderZip = new ZipReader();
-    this.httpFetcher = new HttpFetcher(appContext.getTmpDir(), http.getDefaultClient());
+    this.httpFetcher =
+        new StoreSourceHttpFetcher(
+            appContext.getTmpDir(), appContext.getConfiguration().getHttpClient());
   }
 
   @Override

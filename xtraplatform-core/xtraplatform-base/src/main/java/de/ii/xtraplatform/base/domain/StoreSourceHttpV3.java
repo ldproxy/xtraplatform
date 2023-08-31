@@ -9,7 +9,6 @@ package de.ii.xtraplatform.base.domain;
 
 import static de.ii.xtraplatform.base.domain.StoreSourceFsV3.V3_SOURCES;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
 import java.util.Optional;
@@ -22,10 +21,10 @@ public interface StoreSourceHttpV3 extends StoreSourceHttp {
 
   String KEY = "HTTP_V3";
 
-  @JsonProperty(StoreSource.TYPE_PROP)
   @Value.Derived
-  default String getTypeString() {
-    return Type.HTTP.name();
+  @Override
+  default Type getType() {
+    return Type.HTTP;
   }
 
   @Value.Derived

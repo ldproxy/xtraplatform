@@ -64,7 +64,8 @@ public class CfgStoreDriverFs implements CfgStoreDriver {
     return Optional.empty();
   }
 
-  public Optional<InputStream> loadFromZip(Path zipPath, String archiveRoot) throws IOException {
+  public static Optional<InputStream> loadFromZip(Path zipPath, String archiveRoot)
+      throws IOException {
     List<InputStream> entries = new ArrayList<>();
     Path cfgYml = Path.of(archiveRoot).resolve(CFG_YML);
 
