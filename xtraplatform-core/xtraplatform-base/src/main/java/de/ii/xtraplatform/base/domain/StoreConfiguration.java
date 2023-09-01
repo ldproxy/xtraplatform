@@ -18,9 +18,12 @@ import de.ii.xtraplatform.docs.DocStep;
 import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.immutables.value.Value;
 
 /**
@@ -308,7 +311,7 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ModifiableStoreConfiguration.class)
 public interface StoreConfiguration {
 
-  String DEFAULT_LOCATION = "store";
+  String OLD_DEFAULT_LOCATION = "store";
 
   enum StoreMode {
     READ_WRITE,
@@ -368,6 +371,23 @@ public interface StoreConfiguration {
     return getFilter().isPresent();
   }
 
+  @Deprecated(since = "3.5")
+  default List<StoreSource> getSources(Path dataDir) {
+    return getSources().stream()
+        .filter(source -> source.getContent() != Content.NONE)
+        .flatMap(
+            source -> {
+              if (source instanceof StoreSourceFsV3Auto) {
+                if (Files.exists(dataDir.resolve("entities").resolve("instances"))) {
+                  return Stream.of(new ImmutableStoreSourceDefault.Builder().build());
+                }
+                return new ImmutableStoreSourceFsV3.Builder().build().explode().stream();
+              }
+              return Stream.of(source);
+            })
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   @Deprecated(since = "3.3")
   @Value.Check
   default StoreConfiguration backwardsCompatibility() {
@@ -397,12 +417,34 @@ public interface StoreConfiguration {
               getSources().stream()
                   .map(
                       source -> {
-                        if (source instanceof StoreSourceDefaultV3) {
-                          return new ImmutableStoreSourceDefaultV3.Builder()
+                        if (StoreSourceFsV3.isOldDefaultStore(source)) {
+                          return new ImmutableStoreSourceFs.Builder()
+                              .from(source)
                               .desiredMode(Mode.RO)
                               .build();
                         }
                         return source;
+                      })
+                  .collect(Collectors.toList()))
+          .build();
+    }
+
+    return this;
+  }
+
+  @Value.Check
+  default StoreConfiguration explodeMultiParts() {
+    if (getSources().stream().anyMatch(storeSource -> storeSource.getContent() == Content.MULTI)) {
+      return new ImmutableStoreConfiguration.Builder()
+          .from(this)
+          .sources(
+              getSources().stream()
+                  .flatMap(
+                      storeSource -> {
+                        if (storeSource.getContent() == Content.MULTI) {
+                          return storeSource.explode().stream();
+                        }
+                        return Stream.of(storeSource);
                       })
                   .collect(Collectors.toList()))
           .build();

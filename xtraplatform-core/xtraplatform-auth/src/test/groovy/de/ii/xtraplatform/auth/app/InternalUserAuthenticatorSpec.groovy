@@ -22,6 +22,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
+import java.util.function.Predicate
 
 class InternalUserAuthenticatorSpec extends Specification {
 
@@ -171,6 +172,11 @@ class InternalUserAuthenticatorSpec extends Specification {
 
         @Override
         boolean has(Identifier identifier) {
+            return false
+        }
+
+        @Override
+        boolean has(Predicate<Identifier> matcher) {
             return false
         }
 

@@ -92,7 +92,7 @@ public class DropwizardProvider implements AppLifeCycle {
             new HealthCheck() {
               @Override
               protected Result check() throws Exception {
-                return Result.healthy();
+                return Result.builder().healthy().withDetail("foo", "bar").build();
               }
             });
 

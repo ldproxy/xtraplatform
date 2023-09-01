@@ -11,10 +11,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 public interface BlobStore extends BlobReader, BlobWriter, BlobLocals {
+
+  CompletableFuture<Void> onReady();
 
   Path getPrefix();
 
@@ -23,6 +26,11 @@ public interface BlobStore extends BlobReader, BlobWriter, BlobLocals {
     Path prefix = Path.of(type, path);
 
     return new BlobStore() {
+      @Override
+      public CompletableFuture<Void> onReady() {
+        return delegate.onReady();
+      }
+
       @Override
       public Path getPrefix() {
         return prefix;

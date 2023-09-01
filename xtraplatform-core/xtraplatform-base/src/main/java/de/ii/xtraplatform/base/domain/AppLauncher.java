@@ -17,6 +17,7 @@ import com.google.common.io.ByteSource;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import java.io.IOException;
@@ -116,8 +117,9 @@ public class AppLauncher implements AppContext {
     this.cfg = configurationReader.loadMergedConfig(Map.of(), env);
 
     this.drivers.add(new CfgStoreDriverFs(dataDir));
+    this.drivers.add(new CfgStoreDriverHttp(tmpDir));
 
-    Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources());
+    Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources(dataDir));
 
     this.cfg = configurationReader.loadMergedConfig(cfgs, env);
 
@@ -233,7 +235,11 @@ public class AppLauncher implements AppContext {
                   Optional<InputStream> cfg = driver.get().load(source);
 
                   if (cfg.isPresent()) {
-                    return Stream.of(new SimpleImmutableEntry<>(source.getLabel(), cfg.get()));
+                    String label =
+                        source.getContent() == Content.CFG
+                            ? source.getLabel()
+                            : source.getLabel() + "/" + CfgStoreDriverFs.CFG_YML;
+                    return Stream.of(new SimpleImmutableEntry<>(label, cfg.get()));
                   }
                 } catch (Throwable e) {
                   LogContext.error(
@@ -252,7 +258,10 @@ public class AppLauncher implements AppContext {
 
   private List<StoreSource> findSources(List<StoreSource> sources) {
     return sources.stream()
-        .filter(source -> source.getContent() == Content.ALL || source.getContent() == Content.CFG)
+        .filter(
+            source ->
+                source.getType() != Type.EMPTY
+                    && (source.getContent() == Content.ALL || source.getContent() == Content.CFG))
         .collect(Collectors.toUnmodifiableList());
   }
 

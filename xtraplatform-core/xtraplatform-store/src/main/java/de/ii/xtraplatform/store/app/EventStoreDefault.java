@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.store.app;
 
-import static de.ii.xtraplatform.store.app.entities.EntityDataStoreImpl.entityType;
+import static de.ii.xtraplatform.store.domain.entities.EntityDataStore.entityType;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.Lists;
@@ -86,7 +86,8 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
 
     sources.forEach(
         source -> {
-          Optional<EventStoreDriver> driver = findDriver(source, true);
+          Optional<EventStoreDriver> driver =
+              findDriver(source, source.getContent() != Content.ALL);
 
           driver.ifPresent(eventStoreDriver -> load(source, eventStoreDriver, startupFilter));
         });
@@ -184,8 +185,10 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
         .filter(
             source ->
                 source.getContent() == Content.ALL
-                    || source.getContent() == Content.DEFAULTS
                     || source.getContent() == Content.ENTITIES
+                    || source.getContent() == Content.DEFAULTS
+                    || source.getContent() == Content.INSTANCES
+                    || source.getContent() == Content.INSTANCES_OLD
                     || source.getContent() == Content.OVERRIDES)
         .collect(Collectors.toUnmodifiableList());
   }

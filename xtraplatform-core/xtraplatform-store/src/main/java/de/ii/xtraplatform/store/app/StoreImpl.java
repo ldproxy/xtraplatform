@@ -48,7 +48,7 @@ public class StoreImpl implements Store, AppLifeCycle {
     this.dataDirectory = dataDirectory;
     this.storeConfiguration = storeConfiguration;
     this.sources =
-        storeConfiguration.getSources().stream()
+        storeConfiguration.getSources(dataDirectory).stream()
             .filter(source -> source.getContent() != Content.NONE)
             .collect(Collectors.toUnmodifiableList());
   }
@@ -80,7 +80,7 @@ public class StoreImpl implements Store, AppLifeCycle {
                   ? String.format(" [%s]", s.getPrefix().get())
                   : "";
 
-          LOGGER.info("  {} {} [{}]{}{}", s.getType(), src, s.getContent(), subType, mode);
+          LOGGER.info("  {} [{}]{}{}", s.getLabelSpaces(), s.getContent(), subType, mode);
         });
   }
 
@@ -99,7 +99,11 @@ public class StoreImpl implements Store, AppLifeCycle {
   @Override
   public List<StoreSource> get(Content content) {
     return sources.stream()
-        .filter(source -> source.getContent() == content || source.getContent() == Content.ALL)
+        .filter(
+            source ->
+                source.getContent() == content
+                    || source.getContent() == Content.ALL
+                    || (content.isEvent() && source.getContent() == Content.ENTITIES))
         .collect(Collectors.toUnmodifiableList());
   }
 

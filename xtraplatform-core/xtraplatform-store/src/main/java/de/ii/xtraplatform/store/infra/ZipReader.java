@@ -57,6 +57,9 @@ public class ZipReader implements EventReader, BlobExtractor {
         archiveFile,
         LambdaWithException.biConsumerMayThrow(
             (zipEntry, payload) -> {
+              if (!zipEntry.startsWith(archiveRoot)) {
+                return;
+              }
               Path entry = archiveRoot.relativize(zipEntry);
               Path target = targetRoot.resolve(entry);
 

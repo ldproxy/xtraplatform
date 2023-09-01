@@ -17,7 +17,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.base.domain.LogContext;
-import de.ii.xtraplatform.base.domain.StoreSourceDefaultV3;
+import de.ii.xtraplatform.base.domain.StoreSourceFsV3;
 import de.ii.xtraplatform.store.domain.BlobStore;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
@@ -60,8 +60,8 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     this.authConfig = appContext.getConfiguration().getAuth();
     this.keyStore = blobStore.with(RESOURCES_JWT);
     this.isOldStoreAndReadOnly =
-        appContext.getConfiguration().getStore().getSources().stream()
-            .anyMatch(source -> source instanceof StoreSourceDefaultV3 && !source.isWritable());
+        appContext.getConfiguration().getStore().getSources(appContext.getDataDir()).stream()
+            .anyMatch(source -> StoreSourceFsV3.isOldDefaultStore(source) && !source.isWritable());
   }
 
   @Override
@@ -147,9 +147,11 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
       Optional<InputStream> signingKey = keyStore.get(SIGNING_KEY_PATH);
 
       if (signingKey.isPresent()) {
-        byte[] bytes = signingKey.get().readAllBytes();
+        try (InputStream inputStream = signingKey.get()) {
+          byte[] bytes = inputStream.readAllBytes();
 
-        return Optional.of(bytes);
+          return Optional.of(bytes);
+        }
       }
     } catch (IOException e) {
       LogContext.error(LOGGER, e, "Could not load JWT signing key");

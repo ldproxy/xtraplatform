@@ -7,45 +7,50 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import static de.ii.xtraplatform.base.domain.StoreSourceFsV3.V3_SOURCES;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceTemplatesV3.Builder.class)
-public interface StoreSourceTemplatesV3 extends StoreSourceFs {
+@JsonDeserialize(builder = ImmutableStoreSourceHttpV3.Builder.class)
+public interface StoreSourceHttpV3 extends StoreSourceHttp {
 
-  String KEY = "FS_TEMPLATES_V3";
+  String KEY = "HTTP_V3";
 
   @JsonProperty(StoreSource.TYPE_PROP)
   @Value.Derived
   default String getTypeString() {
-    return Type.FS.name();
+    return Type.HTTP.name();
   }
 
   @Value.Derived
   @Override
   default Content getContent() {
-    return Content.RESOURCES;
-  }
-
-  @Value.Derived
-  @Override
-  default String getSrc() {
-    return "templates/html";
+    return Content.MULTI;
   }
 
   @Value.Derived
   @Override
   default Optional<String> getPrefix() {
-    return Optional.of("html/templates");
+    return Optional.empty();
   }
 
-  @JsonProperty(StoreSource.MODE_PROP)
   @Value.Derived
   @Override
-  default Mode getDesiredMode() {
-    return Mode.RO;
+  default List<StoreSourcePartial> getParts() {
+    return V3_SOURCES.stream()
+        .map(
+            storeSource ->
+                new ImmutableStoreSourcePartial.Builder()
+                    .from(storeSource)
+                    .src("")
+                    .archiveRoot("/" + storeSource.getSrc())
+                    .build())
+        .collect(Collectors.toList());
   }
 }

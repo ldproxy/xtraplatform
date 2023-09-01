@@ -9,14 +9,29 @@ package de.ii.xtraplatform.store.domain.entities;
 
 import static java.lang.annotation.ElementType.TYPE;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-// @Component(propagation = false)
-// @Provides
-// customization in HandlerDeclarationVisitor needed for multiple callbacks
-// @HandlerDeclaration("<callbacks><callback transition=\"validate\"
-// method=\"onValidate\"></callback><callback transition=\"invalidate\"
-// method=\"onInvalidate\"></callback></callbacks>")
-// @Stereotype
+@Retention(RetentionPolicy.CLASS)
 @Target(TYPE)
-public @interface EntityComponent {}
+public @interface Entity {
+
+  String type();
+
+  SubType[] subTypes() default {};
+
+  Class<?> data();
+
+  boolean auxiliary() default false;
+
+  public @interface SubType {
+    String key();
+
+    String value();
+
+    String[] keyAlias() default {};
+
+    String[] valueAlias() default {};
+  }
+}

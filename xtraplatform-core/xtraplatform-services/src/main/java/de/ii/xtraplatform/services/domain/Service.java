@@ -16,6 +16,8 @@ public interface Service extends PersistentEntity {
 
   String TYPE = "services";
 
+  String SERVICE_TYPE_KEY = "serviceType";
+
   @Override
   default String getType() {
     return TYPE;

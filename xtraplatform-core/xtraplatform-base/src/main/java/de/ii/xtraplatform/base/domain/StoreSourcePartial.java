@@ -7,31 +7,28 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceDefault.Builder.class)
-public interface StoreSourceDefault extends StoreSourceFs {
-
-  String KEY = "FS_DEFAULT";
-
-  @JsonProperty(StoreSource.TYPE_PROP)
-  @Value.Derived
-  default String getTypeString() {
-    return Type.FS.name();
-  }
+@JsonDeserialize(builder = ImmutableStoreSourcePartial.Builder.class)
+public interface StoreSourcePartial extends StoreSource {
 
   @Value.Derived
   @Override
-  default Content getContent() {
-    return Content.ALL;
+  default String getTypeString() {
+    return Type.EMPTY_KEY;
   }
 
   @Value.Default
   @Override
   default String getSrc() {
-    return ".";
+    return "";
+  }
+
+  @Value.Default
+  @Override
+  default boolean isWatchable() {
+    return false;
   }
 }

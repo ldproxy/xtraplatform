@@ -9,14 +9,13 @@ package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceCacheV3.Builder.class)
-public interface StoreSourceCacheV3 extends StoreSourceFs {
+@JsonDeserialize(builder = ImmutableStoreSourceFsV3Auto.Builder.class)
+public interface StoreSourceFsV3Auto extends StoreSourceFs {
 
-  String KEY = "FS_CACHE_V3";
+  String KEY = "FS_V3_AUTO";
 
   @JsonProperty(StoreSource.TYPE_PROP)
   @Value.Derived
@@ -27,18 +26,12 @@ public interface StoreSourceCacheV3 extends StoreSourceFs {
   @Value.Derived
   @Override
   default Content getContent() {
-    return Content.RESOURCES;
+    return Content.ALL;
   }
 
   @Value.Derived
   @Override
   default String getSrc() {
-    return "cache/tiles";
-  }
-
-  @Value.Derived
-  @Override
-  default Optional<String> getPrefix() {
-    return Optional.of("tiles");
+    return ".";
   }
 }

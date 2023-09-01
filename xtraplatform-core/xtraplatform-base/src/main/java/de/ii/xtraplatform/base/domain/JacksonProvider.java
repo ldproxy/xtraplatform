@@ -39,6 +39,7 @@ import io.dropwizard.jackson.CaffeineModule;
 import io.dropwizard.jackson.FuzzyEnumModule;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -61,31 +62,38 @@ public class JacksonProvider implements Jackson {
   private final Lazy<Set<JacksonSubTypeIds>> subTypeIds;
   private final Multimap<Class<?>, JacksonSubType> classMapping;
   private final Multimap<String, JacksonSubType> idMapping;
+  private final boolean optimize;
 
   @Inject
   public JacksonProvider(Lazy<Set<JacksonSubTypeIds>> subTypeIds) {
+    this(subTypeIds, true);
+  }
+
+  public JacksonProvider(Lazy<Set<JacksonSubTypeIds>> subTypeIds, boolean optimize) {
     this.dynamicHandlerInstantiator = new DynamicHandlerInstantiator();
     this.jsonMapper = configureMapper(new ObjectMapper());
     this.subTypeIds = subTypeIds;
     this.classMapping = HashMultimap.create();
     this.idMapping = HashMultimap.create();
+    this.optimize = optimize;
   }
 
   private ObjectMapper configureMapper(ObjectMapper mapper) {
-    return (ObjectMapper)
-        mapper
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
-            .registerModule(new Jdk8Module())
-            .registerModule(new GuavaModule())
-            .registerModule(new CaffeineModule())
-            // TODO: use new default blackbird instead, does not work with modules out of the box
-            .registerModule(new AfterburnerModule())
-            .registerModule(new FuzzyEnumModule())
-            .registerModule(new JavaTimeModule())
-            .setDefaultMergeable(false)
-            .setHandlerInstantiator(dynamicHandlerInstantiator);
+    ObjectMapper configured =
+        (ObjectMapper)
+            mapper
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
+                .registerModule(new Jdk8Module())
+                .registerModule(new GuavaModule())
+                .registerModule(new CaffeineModule())
+                .registerModule(new FuzzyEnumModule())
+                .registerModule(new JavaTimeModule())
+                .setDefaultMergeable(false)
+                .setHandlerInstantiator(dynamicHandlerInstantiator);
+    // TODO: use new default blackbird instead, does not work with modules out of the box
+    return optimize ? configured.registerModule(new AfterburnerModule()) : configured;
   }
 
   @Override
@@ -161,6 +169,11 @@ public class JacksonProvider implements Jackson {
         }
         aClass = aClass.getSuperclass();
       }
+      for (Class<?> candidate : value.getClass().getInterfaces()) {
+        if (getClassMapping().containsKey(candidate)) {
+          return getClassMapping().get(candidate).iterator().next().getId();
+        }
+      }
 
       return null;
     }
@@ -170,6 +183,14 @@ public class JacksonProvider implements Jackson {
       if (getIdMapping().containsKey(id)) {
         // TODO: compare baseType with getSuperType to allow the same id for different super classes
         Class<?> clazz = getIdMapping().get(id).iterator().next().getSubType();
+        JavaType javaType =
+            TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
+        return javaType;
+      }
+      Optional<String> patternId = getIdMapping().keySet().stream().filter(id::matches).findFirst();
+      if (patternId.isPresent()) {
+        // TODO: compare baseType with getSuperType to allow the same id for different super classes
+        Class<?> clazz = getIdMapping().get(patternId.get()).iterator().next().getSubType();
         JavaType javaType =
             TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
         return javaType;
@@ -222,8 +243,7 @@ public class JacksonProvider implements Jackson {
       if (resolverClass.equals(DynamicTypeIdResolver.class)) {
         typeIdResolvers.putIfAbsent(
             annotated.getName(), new DynamicTypeIdResolver(annotated.getType()));
-        // LOGGER.debug("DynamicHandlerInstantiator typeIdResolverInstance {} {}",
-        // annotated.getName(), typeIdResolvers.get(annotated.getName()));
+
         return typeIdResolvers.get(annotated.getName());
       }
       return null;

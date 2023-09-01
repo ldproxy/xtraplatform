@@ -9,30 +9,54 @@ package de.ii.xtraplatform.store.domain.entities;
 
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.Migration;
-import de.ii.xtraplatform.store.domain.Migration.MigrationContext;
 import de.ii.xtraplatform.store.domain.entities.EntityMigration.EntityMigrationContext;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
 
-public interface EntityMigration<T extends EntityData, U extends EntityData>
-    extends Migration<EntityMigrationContext<T>> {
+public abstract class EntityMigration<T extends EntityData, U extends EntityData>
+    implements Migration<EntityMigrationContext, EntityData> {
 
-  interface EntityMigrationContext<T extends EntityData> extends MigrationContext {
-    List<T> getAll();
+  private final EntityMigrationContext context;
 
-    boolean exists(Identifier identifier);
+  public EntityMigration(EntityMigrationContext context) {
+    this.context = context;
   }
 
-  @Override
-  default boolean isApplicable(EntityMigrationContext<T> context) {
-    return context.getAll().stream().anyMatch(entityData -> isApplicable(context, entityData));
+  public interface EntityMigrationContext extends MigrationContext {
+    boolean exists(Predicate<Identifier> matcher);
   }
 
-  boolean isApplicable(EntityMigrationContext<T> context, T entityData);
+  public final EntityMigrationContext getContext() {
+    return context;
+  }
 
-  U migrate(T entityData);
+  public boolean isApplicable(EntityData entityData) {
+    return isApplicable(entityData, Optional.empty());
+  }
 
-  default Map<Identifier, ? extends EntityData> getAdditionalEntities(T entityData) {
+  public abstract boolean isApplicable(EntityData entityData, Optional<EntityData> defaults);
+
+  public U migrate(T entityData) {
+    return migrate(entityData, Optional.empty());
+  }
+
+  public abstract U migrate(T entityData, Optional<T> defaults);
+
+  public EntityData migrateRaw(EntityData entityData) {
+    return migrateRaw((T) entityData, Optional.empty());
+  }
+
+  public EntityData migrateRaw(EntityData entityData, Optional<EntityData> defaults) {
+    return migrate((T) entityData, defaults.map(d -> (T) d));
+  }
+
+  public Map<Identifier, ? extends EntityData> getAdditionalEntities(EntityData entityData) {
+    return getAdditionalEntities(entityData, Optional.empty());
+  }
+
+  public Map<Identifier, ? extends EntityData> getAdditionalEntities(
+      EntityData entityData, Optional<EntityData> defaults) {
     return Map.of();
   }
 }

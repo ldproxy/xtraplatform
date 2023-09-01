@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +72,11 @@ public abstract class AbstractKeyValueStore<T> implements KeyValueStore<T> {
   @Override
   public boolean has(Identifier identifier) {
     return getEventSourcing().isInCache(identifier);
+  }
+
+  @Override
+  public boolean has(Predicate<Identifier> matcher) {
+    return getEventSourcing().isInCache(matcher);
   }
 
   @Override

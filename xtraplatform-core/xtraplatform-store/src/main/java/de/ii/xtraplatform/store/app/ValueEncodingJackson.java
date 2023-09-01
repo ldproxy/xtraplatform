@@ -13,13 +13,11 @@ import static de.ii.xtraplatform.store.app.EntityDeserialization.DESERIALIZE_MER
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.ObjectCodec;
-import com.fasterxml.jackson.core.io.IOContext;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.store.domain.Identifier;
@@ -27,7 +25,6 @@ import de.ii.xtraplatform.store.domain.KeyPathAlias;
 import de.ii.xtraplatform.store.domain.ValueDecoderMiddleware;
 import de.ii.xtraplatform.store.domain.ValueEncoding;
 import java.io.IOException;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,8 +36,6 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.DumperOptions.ScalarStyle;
-import org.yaml.snakeyaml.DumperOptions.Version;
 
 // TODO: make default format and supported formats configurable
 public class ValueEncodingJackson<T> implements ValueEncoding<T> {
@@ -53,6 +48,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
   private static final Pattern YAML_EMPTY = Pattern.compile("---(\\s)*");
 
   private static final FORMAT DEFAULT_FORMAT = FORMAT.YML;
+
+  @Deprecated
   private static final FORMAT DESER_FORMAT_LEGACY =
       FORMAT.JSON; // old configuration files without file extension are JSON
 
@@ -75,11 +72,15 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     ObjectMapper yamlMapper =
         jackson
             .getNewObjectMapper(
-                new EmptyStringFixYAMLFactory()
-                    .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
-                    .disable(YAMLGenerator.Feature.USE_NATIVE_OBJECT_ID)
-                    .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                    .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS))
+                new YAMLFactory()
+                    .disable(Feature.USE_NATIVE_TYPE_ID)
+                    .disable(Feature.USE_NATIVE_OBJECT_ID)
+                    .disable(Feature.INDENT_ARRAYS)
+                    .disable(Feature.USE_PLATFORM_LINE_BREAKS)
+                    .disable(Feature.SPLIT_LINES)
+                    .disable(Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS)
+                    .enable(Feature.WRITE_DOC_START_MARKER)
+                    .enable(Feature.MINIMIZE_QUOTES))
             .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
             .registerModule(DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER)
             .registerModule(DESERIALIZE_API_BUILDINGBLOCK_MIGRATION)
@@ -232,48 +233,5 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     String payloadString = new String(payload, StandardCharsets.UTF_8);
     return JSON_EMPTY.matcher(payloadString).matches()
         || YAML_EMPTY.matcher(payloadString).matches();
-  }
-
-  @Deprecated // can be removed after upgrade to Jackson 2.10 / Dropwizard 2.x (edit: check if
-  // quoted numbers are also fixed)
-  static class EmptyStringFixYAMLGenerator extends YAMLGenerator {
-
-    private static final Character STYLE_QUOTED = '"';
-    private static final Pattern PLAIN_NUMBER_P_FIXED =
-        Pattern.compile("[+\\-]?[0-9]*(\\.[0-9]*)?");
-
-    public EmptyStringFixYAMLGenerator(
-        IOContext ctxt,
-        int jsonFeatures,
-        int yamlFeatures,
-        ObjectCodec codec,
-        Writer out,
-        Version version)
-        throws IOException {
-      super(ctxt, jsonFeatures, yamlFeatures, codec, out, version);
-    }
-
-    @Override
-    protected void _writeScalar(String value, String type, ScalarStyle style) throws IOException {
-      if (type.equals("string") && value.isEmpty()) {
-        super._writeScalar(value, type, ScalarStyle.DOUBLE_QUOTED);
-      } else if (type.equals("string")
-          && ScalarStyle.DOUBLE_QUOTED != style
-          && Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS.enabledIn(_formatFeatures)
-          && PLAIN_NUMBER_P_FIXED.matcher(value).matches()) {
-        super._writeScalar(value, type, ScalarStyle.DOUBLE_QUOTED);
-      } else {
-        super._writeScalar(value, type, style);
-      }
-    }
-  }
-
-  @Deprecated // can be removed after upgrade to Jackson 2.10 / Dropwizard 2.x
-  static class EmptyStringFixYAMLFactory extends YAMLFactory {
-    @Override
-    protected YAMLGenerator _createGenerator(Writer out, IOContext ctxt) throws IOException {
-      return new EmptyStringFixYAMLGenerator(
-          ctxt, _generatorFeatures, _yamlGeneratorFeatures, _objectCodec, out, _version);
-    }
   }
 }
