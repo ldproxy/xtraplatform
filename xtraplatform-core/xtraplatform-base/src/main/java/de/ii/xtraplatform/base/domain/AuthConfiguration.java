@@ -231,5 +231,10 @@ public interface AuthConfiguration {
     default String getMediaType() {
       return "application/xacml+json;charset=UTF-8";
     }
+
+    @Value.Default
+    default boolean getGeoXacml() {
+      return false;
+    }
   }
 }

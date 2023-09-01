@@ -47,6 +47,7 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
   private final XacmlRequest.Version version;
   private final MediaType mediaTypeContent;
   private final MediaType mediaTypeAccept;
+  private final boolean geoXacml;
 
   private final HttpClient httpClient;
 
@@ -65,6 +66,7 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
     this.mediaTypeContent =
         xacmlJson.map(XacmlJson::getMediaType).map(this::parse).orElse(XACML.withCharset("utf-8"));
     this.mediaTypeAccept = new MediaType(mediaTypeContent.getType(), mediaTypeContent.getSubtype());
+    this.geoXacml = xacmlJson.map(XacmlJson::getGeoXacml).orElse(false);
   }
 
   @Override
@@ -106,7 +108,8 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
       Optional<User> user)
       throws JsonProcessingException {
     Object xacmlRequest =
-        new XacmlRequest(version, resourceId, resourceAttributes, actionId, actionAttributes, user);
+        new XacmlRequest(
+            version, resourceId, resourceAttributes, actionId, actionAttributes, user, geoXacml);
 
     LOGGER.debug(
         "XACML {}", JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlRequest));

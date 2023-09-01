@@ -13,6 +13,7 @@ import de.ii.xtraplatform.auth.domain.User;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -23,6 +24,8 @@ public class XacmlRequest {
     _1_0,
     _1_1
   }
+  // TODO
+  private static final String PREFIX_GEO = "ldproxy:feature:geometry";
 
   public final Map<String, Object> Request;
 
@@ -32,7 +35,8 @@ public class XacmlRequest {
       Map<String, Object> resourceAttributes,
       String actionId,
       Map<String, Object> actionAttributes,
-      Optional<User> user) {
+      Optional<User> user,
+      boolean geoXacml) {
     ImmutableList.Builder<Attribute> subject =
         ImmutableList.<Attribute>builder()
             .add(
@@ -40,29 +44,41 @@ public class XacmlRequest {
                     "urn:oasis:names:tc:xacml:1.0:subject:subject-id",
                     user.map(User::getName).orElse("UNKNOWN")));
     if (user.isPresent()) {
-      subject.add(new Attribute("ldproxy:claims:permissions", user.get().getPermissions()));
+      subject.add(new Attribute("ldproxy:claim:permissions", user.get().getPermissions()));
       if (!user.get().getScopes().isEmpty()) {
-        subject.add(new Attribute("ldproxy:claims:scopes", user.get().getScopes()));
+        subject.add(new Attribute("ldproxy:claim:scopes", user.get().getScopes()));
       }
       if (!user.get().getAudience().isEmpty()) {
-        subject.add(new Attribute("ldproxy:claims:audience", user.get().getAudience()));
+        subject.add(new Attribute("ldproxy:claim:audience", user.get().getAudience()));
       }
     }
 
     ImmutableList.Builder<Attribute> resource =
         ImmutableList.<Attribute>builder()
             .add(new Attribute("urn:oasis:names:tc:xacml:1.0:resource:resource-id", resourceId));
-    resourceAttributes.forEach((id, value) -> resource.add(new Attribute(id, value)));
+    resourceAttributes.forEach((id, value) -> add(id, value, resource, geoXacml));
 
     ImmutableList.Builder<Attribute> action =
         ImmutableList.<Attribute>builder()
             .add(new Attribute("urn:oasis:names:tc:xacml:1.0:action:action-id", actionId));
-    actionAttributes.forEach((id, value) -> action.add(new Attribute(id, value)));
+    actionAttributes.forEach((id, value) -> add(id, value, action, geoXacml));
 
     Request =
         version == Version._1_0
             ? request10(subject.build(), resource.build(), action.build())
             : request11(subject.build(), resource.build(), action.build());
+  }
+
+  private static void add(
+      String id, Object value, ImmutableList.Builder<Attribute> category, boolean geoXacml) {
+    if (value instanceof Collection<?> && ((Collection<?>) value).isEmpty()) {
+      return;
+    }
+    if (geoXacml && Objects.equals(id, PREFIX_GEO)) {
+      category.add(new Attribute(id, value, "urn:ogc:def:dataType:geoxacml:1.0:geometry"));
+      return;
+    }
+    category.add(new Attribute(id, value));
   }
 
   private static Map<String, Object> request11(
@@ -101,17 +117,17 @@ public class XacmlRequest {
     public final String DataType;
 
     Attribute(String attributeId, String value) {
-      this(attributeId, value, "string");
+      this(attributeId, value, "http://www.w3.org/2001/XMLSchema#string");
     }
 
     Attribute(String attributeId, Object value) {
-      this(attributeId, value, inferType(value));
+      this(attributeId, value, "http://www.w3.org/2001/XMLSchema#" + inferType(value));
     }
 
     Attribute(String attributeId, Object value, String dataType) {
       AttributeId = attributeId;
       Value = value;
-      DataType = "http://www.w3.org/2001/XMLSchema#" + dataType;
+      DataType = dataType;
     }
 
     private static String inferType(Object value) {
