@@ -88,9 +88,11 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     }
   }
 
-  // TODO
+  // TODO: cfg.yml
   static List<String> METHODS = ImmutableList.of("GET", "POST", "PUT", "DELETE");
 
+  // TODO: either interface that is implemented in ogcapi to which we pass service id
+  // or add xacml request as callback to user
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
     SecurityContext oldSecurityContext = requestContext.getSecurityContext();
@@ -195,12 +197,29 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     return PolicyDecision.DENY;
   }
 
+  // TODO
   private byte[] getXacmlRequest(String user, String method, String path, byte[] body)
       throws JsonProcessingException {
-    Object xacmlRequest =
-        xacmlJson10
-            ? new XacmlRequest10(user, method, path, body)
-            : new XacmlRequest(user, method, path, body);
+    Object xacmlRequest = null;
+    /*xacmlJson10
+    ? new XacmlRequest(
+        Version._1_0,
+        Optional.empty(),
+        method,
+        method,
+        "",
+        path,
+        Optional.ofNullable(body),
+        Map.of())
+    : new XacmlRequest(
+        Version._1_1,
+        Optional.empty(),
+        method,
+        method,
+        "",
+        path,
+        Optional.ofNullable(body),
+        Map.of());*/
 
     LOGGER.debug(
         "XACML {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlRequest));

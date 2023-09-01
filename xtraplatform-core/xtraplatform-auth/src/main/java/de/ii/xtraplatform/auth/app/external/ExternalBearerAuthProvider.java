@@ -74,7 +74,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
             .setPrefix("Bearer")
             .buildAuthFilter();
 
-    if (authConfig.getXacmlJson().isPresent()) {
+    /*if (authConfig.getXacmlJson().isPresent()) {
       return new ExternalDynamicAuthFilter<>(
           authConfig.getXacmlJson().get().getEndpoint(),
           authConfig.getXacmlJson().get().getVersion(),
@@ -82,7 +82,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
           authConfig.getPostProcessingEndpoint().orElse(""),
           httpClient,
           authFilter);
-    }
+    }*/
 
     return authFilter;
   }

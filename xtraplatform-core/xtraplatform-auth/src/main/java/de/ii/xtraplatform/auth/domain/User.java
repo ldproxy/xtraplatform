@@ -21,7 +21,8 @@ public interface User extends Principal {
     NONE,
     PERMIT,
     DENY,
-    NOT_APPLICABLE
+    NOT_APPLICABLE,
+    INDETERMINATE
   }
 
   Set<String> getAudience();
