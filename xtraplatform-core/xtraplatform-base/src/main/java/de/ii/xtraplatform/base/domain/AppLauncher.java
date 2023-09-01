@@ -19,7 +19,6 @@ import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import io.dropwizard.core.server.DefaultServerFactory;
-import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import java.io.IOException;
 import java.io.InputStream;
