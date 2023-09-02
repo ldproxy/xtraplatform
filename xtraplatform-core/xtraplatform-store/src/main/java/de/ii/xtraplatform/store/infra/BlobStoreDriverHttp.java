@@ -12,9 +12,9 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
+import de.ii.xtraplatform.base.domain.StoreSourceHttpFetcher;
 import de.ii.xtraplatform.store.domain.BlobSource;
 import de.ii.xtraplatform.store.domain.BlobStoreDriver;
-import de.ii.xtraplatform.web.domain.Http;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -31,13 +31,15 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
 
   private final BlobExtractor blobExtractor;
   private final Path tmpDirectory;
-  private final HttpFetcher httpFetcher;
+  private final StoreSourceHttpFetcher httpFetcher;
 
   @Inject
-  BlobStoreDriverHttp(AppContext appContext, Http http) {
+  BlobStoreDriverHttp(AppContext appContext) {
     this.blobExtractor = new ZipReader();
     this.tmpDirectory = appContext.getTmpDir();
-    this.httpFetcher = new HttpFetcher(appContext.getTmpDir(), http.getDefaultClient());
+    this.httpFetcher =
+        new StoreSourceHttpFetcher(
+            appContext.getTmpDir(), appContext.getConfiguration().getHttpClient());
   }
 
   @Override
@@ -67,7 +69,7 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
     Path extractRoot =
         storeSource.isSingleContent() ? root.resolve(storeSource.getPrefix().orElse("")) : root;
     // TODO
-    LOGGER.debug("EXTRACT {}", storeSource.getLabel());
+    // LOGGER.debug("EXTRACT {}", storeSource.getLabel());
     // if (!storeSource.getArchiveCache() || !Files.exists(root)) {
     blobExtractor.extract(
         archivePath.get(),
@@ -76,7 +78,7 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
         extractRoot,
         !storeSource.getArchiveCache());
     // }
-    LOGGER.debug("EXTRACTED {}", storeSource.getLabel());
+    // LOGGER.debug("EXTRACTED {}", storeSource.getLabel());
     if (!storeSource.isSingleContent()) {
       root = root.resolve(Content.RESOURCES.getPrefix());
     }

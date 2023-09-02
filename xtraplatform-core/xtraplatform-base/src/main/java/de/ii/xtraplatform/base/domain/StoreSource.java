@@ -30,6 +30,7 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(value = StoreSourceFs.class, name = Type.FS_KEY),
   @JsonSubTypes.Type(value = StoreSourceHttp.class, name = Type.HTTP_KEY),
   @JsonSubTypes.Type(value = StoreSourceGithub.class, name = StoreSourceGithub.KEY),
+  @JsonSubTypes.Type(value = StoreSourceGitea.class, name = StoreSourceGitea.KEY),
   @JsonSubTypes.Type(value = StoreSourceDefault.class, name = StoreSourceDefault.KEY),
   @JsonSubTypes.Type(value = StoreSourceEmpty.class, name = Type.EMPTY_KEY),
   @JsonSubTypes.Type(value = StoreSourceFsV3.class, name = StoreSourceFsV3.KEY),

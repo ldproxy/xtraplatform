@@ -1,12 +1,10 @@
 package de.ii.xtraplatform.auth.app
 
 import de.ii.xtraplatform.auth.domain.ImmutableUser
+import de.ii.xtraplatform.auth.domain.Oidc
 import de.ii.xtraplatform.auth.domain.Role
 import de.ii.xtraplatform.auth.domain.User
-import de.ii.xtraplatform.base.domain.AppConfiguration
-import de.ii.xtraplatform.base.domain.AppContext
-import de.ii.xtraplatform.base.domain.AuthConfiguration
-import de.ii.xtraplatform.base.domain.ModifiableAuthConfiguration
+import de.ii.xtraplatform.base.domain.*
 import de.ii.xtraplatform.store.domain.BlobStore
 import spock.lang.Ignore
 import spock.lang.Shared
@@ -24,15 +22,19 @@ class JwtTokenHandlerSpec extends Specification {
 
     def setupSpec() {
         def auth = ModifiableAuthConfiguration.create()
-        auth.setJwtSigningKey(Base64.getEncoder().encodeToString(secretKey))
+        auth.setSimple(ModifiableSimple.create().setJwtSigningKey(Base64.getEncoder().encodeToString(secretKey)))
+        auth.setClaims(ModifiableClaims.create())
         AppConfiguration config = Stub(AppConfiguration) {
             getAuth() >> auth
         }
         AppContext ac = Stub(AppContext) {
             getConfiguration() >> config
         }
+        Oidc oidc = Stub(Oidc) {
+            isEnabled() >> false
+        }
 
-        jwtTokenHandler = new JwtTokenHandler(ac, Stub(BlobStore))
+        jwtTokenHandler = new JwtTokenHandler(ac, Stub(BlobStore), oidc)
         jwtTokenHandler.onStart()
     }
 

@@ -20,6 +20,7 @@ import de.ii.xtraplatform.services.domain.ServiceListingProvider;
 import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
 import de.ii.xtraplatform.web.domain.Endpoint;
+import de.ii.xtraplatform.web.domain.LoginHandler;
 import de.ii.xtraplatform.web.domain.MediaTypeCharset;
 import de.ii.xtraplatform.web.domain.StaticResourceHandler;
 import io.dropwizard.jersey.caching.CacheControl;
@@ -68,9 +69,10 @@ public class ServicesEndpoint implements Endpoint {
   private final ServiceInjectableContext serviceContext;
   private final URI servicesUri;
   private final StaticResourceHandler staticResourceHandler;
+  private final Lazy<Set<LoginHandler>> loginHandler;
 
-  private Lazy<Set<ServiceEndpoint>> serviceResources;
-  private Lazy<Set<ServiceListingProvider>> serviceListingProviders;
+  private final Lazy<Set<ServiceEndpoint>> serviceResources;
+  private final Lazy<Set<ServiceListingProvider>> serviceListingProviders;
 
   @Inject
   public ServicesEndpoint(
@@ -78,12 +80,14 @@ public class ServicesEndpoint implements Endpoint {
       ServicesContext servicesContext,
       ServiceInjectableContext serviceContext,
       StaticResourceHandler staticResourceHandler,
+      Lazy<Set<LoginHandler>> loginHandler,
       Lazy<Set<ServiceEndpoint>> serviceResources,
       Lazy<Set<ServiceListingProvider>> serviceListingProviders) {
     this.entityRegistry = entityRegistry;
     this.servicesUri = servicesContext.getUri();
     this.serviceContext = serviceContext;
     this.staticResourceHandler = staticResourceHandler;
+    this.loginHandler = loginHandler;
     this.serviceResources = serviceResources;
     this.serviceListingProviders = serviceListingProviders;
   }
@@ -133,7 +137,10 @@ public class ServicesEndpoint implements Endpoint {
             .findFirst();
 
     if (provider.isPresent()) {
-      Response serviceListing = provider.get().getServiceListing(services, uriInfo.getRequestUri());
+      Optional<Principal> user =
+          Optional.ofNullable(containerRequestContext.getSecurityContext().getUserPrincipal());
+      Response serviceListing =
+          provider.get().getServiceListing(services, uriInfo.getRequestUri(), user);
       return Response.ok().entity(serviceListing.getEntity()).type(mediaType).build();
     }
 
@@ -156,6 +163,60 @@ public class ServicesEndpoint implements Endpoint {
     }
 
     return Response.status(Response.Status.NOT_FOUND).build();
+  }
+
+  @GET
+  @Path(LoginHandler.PATH_LOGIN)
+  @Produces(MediaType.TEXT_HTML)
+  @CacheControl(maxAge = 3600)
+  public Response getLogin(
+      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @QueryParam(LoginHandler.PARAM_LOGIN_SCOPES) String scopes,
+      @Context ContainerRequestContext containerRequestContext) {
+    if (loginHandler.get().isEmpty()) {
+      throw new NotFoundException();
+    }
+
+    return loginHandler
+        .get()
+        .iterator()
+        .next()
+        .handle(
+            containerRequestContext, redirectUri, scopes, servicesUri.getPath(), false, null, null);
+  }
+
+  @GET
+  @Path(LoginHandler.PATH_CALLBACK)
+  @Produces(MediaType.TEXT_HTML)
+  @CacheControl(maxAge = 3600)
+  public Response getCallback(
+      @QueryParam(LoginHandler.PARAM_CALLBACK_STATE) String state,
+      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @QueryParam(LoginHandler.PARAM_CALLBACK_TOKEN) String token,
+      @Context ContainerRequestContext containerRequestContext) {
+    if (loginHandler.get().isEmpty()) {
+      throw new NotFoundException();
+    }
+
+    return loginHandler
+        .get()
+        .iterator()
+        .next()
+        .handle(
+            containerRequestContext, redirectUri, null, servicesUri.getPath(), true, state, token);
+  }
+
+  @GET
+  @Path(LoginHandler.PATH_LOGOUT)
+  @Produces(MediaType.TEXT_HTML)
+  public Response getLogout(
+      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @Context ContainerRequestContext containerRequestContext) {
+    if (loginHandler.get().isEmpty()) {
+      throw new NotFoundException();
+    }
+
+    return loginHandler.get().iterator().next().logout(containerRequestContext, redirectUri);
   }
 
   @Path("/{service}/")

@@ -8,8 +8,9 @@
 package de.ii.xtraplatform.auth.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import com.google.common.base.Strings;
+import com.google.common.base.Splitter;
 import de.ii.xtraplatform.auth.domain.ImmutableUser;
+import de.ii.xtraplatform.auth.domain.Oidc;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
@@ -21,9 +22,10 @@ import de.ii.xtraplatform.base.domain.StoreSourceFsV3;
 import de.ii.xtraplatform.store.domain.BlobStore;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.impl.DefaultJwtBuilder;
-import io.jsonwebtoken.impl.DefaultJwtParser;
+import io.jsonwebtoken.jackson.io.JacksonDeserializer;
 import io.jsonwebtoken.security.Keys;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,10 +34,14 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -49,16 +55,23 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenHandler.class);
   private static final String RESOURCES_JWT = "jwt";
   private static final Path SIGNING_KEY_PATH = Path.of("signingKey");
+  private static final Splitter LIST_SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
+  private static final Splitter LIST_SPLITTER_BLANKS =
+      Splitter.on(' ').trimResults().omitEmptyStrings();
+  private static final Splitter PATH_SPLITTER = Splitter.on('.');
 
   private final BlobStore keyStore;
   private final AuthConfiguration authConfig;
+  private final Oidc oidc;
   private final boolean isOldStoreAndReadOnly;
   private Key signingKey;
+  private JwtParser parser;
 
   @Inject
-  public JwtTokenHandler(AppContext appContext, BlobStore blobStore) {
+  public JwtTokenHandler(AppContext appContext, BlobStore blobStore, Oidc oidc) {
     this.authConfig = appContext.getConfiguration().getAuth();
     this.keyStore = blobStore.with(RESOURCES_JWT);
+    this.oidc = oidc;
     this.isOldStoreAndReadOnly =
         appContext.getConfiguration().getStore().getSources(appContext.getDataDir()).stream()
             .anyMatch(source -> StoreSourceFsV3.isOldDefaultStore(source) && !source.isWritable());
@@ -67,6 +80,21 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   @Override
   public void onStart() {
     this.signingKey = getKey();
+
+    // TODO
+    long clockSkew = 3600;
+
+    this.parser =
+        Jwts.parserBuilder()
+            .setSigningKey(signingKey)
+            .setAllowedClockSkewSeconds(clockSkew)
+            .deserializeJsonWith(
+                new JacksonDeserializer(listType(authConfig.getClaims().getAudience())))
+            .deserializeJsonWith(
+                new JacksonDeserializer(listType(authConfig.getClaims().getScopes())))
+            .deserializeJsonWith(
+                new JacksonDeserializer(listType(authConfig.getClaims().getPermissions())))
+            .build();
   }
 
   @Override
@@ -78,7 +106,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   @Override
   public String generateToken(User user, Date expiration, boolean rememberMe) {
     JwtBuilder jwtBuilder =
-        new DefaultJwtBuilder()
+        Jwts.builder()
             .setSubject(user.getName())
             .claim(authConfig.getUserRoleKey(), user.getRole().toString())
             .claim("rememberMe", rememberMe)
@@ -89,26 +117,102 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     return jwtBuilder.signWith(signingKey).compact();
   }
 
+  private boolean isComplex(String claim) {
+    return claim.contains(".");
+  }
+
+  private String baseKey(String claim) {
+    return isComplex(claim) ? claim.substring(0, claim.indexOf(".")) : claim;
+  }
+
+  private Map<String, Class<?>> listType(String claim) {
+    return Map.of(baseKey(claim), isComplex(claim) ? Map.class : Object.class);
+  }
+
+  private String read(Claims claims, String claim) {
+    return claims.get(claim, String.class);
+  }
+
+  private List<String> readList(Claims claims, String claim) {
+    boolean isComplex = isComplex(claim);
+    String baseKey = baseKey(claim);
+    List<String> subKeys =
+        isComplex
+            ? PATH_SPLITTER.splitToStream(claim).skip(1).collect(Collectors.toList())
+            : List.of();
+    List<String> list = new ArrayList<>();
+
+    try {
+      if (isComplex) {
+        Map<Object, Object> map = claims.get(baseKey, Map.class);
+        if (Objects.nonNull(map)) {
+          for (int i = 0; i < subKeys.size(); i++) {
+            Object entry = map.get(subKeys.get(i));
+            if (i == subKeys.size() - 1) {
+              list.addAll(parseList(entry, subKeys.get(i)));
+              break;
+            }
+            if (entry instanceof Map) {
+              map = (Map<Object, Object>) entry;
+            } else {
+              throw new IllegalArgumentException("Map expected at " + subKeys.get(i));
+            }
+          }
+        }
+      } else {
+        Object entry = claims.get(baseKey, Object.class);
+        list.addAll(parseList(entry, baseKey));
+      }
+    } catch (Throwable e) {
+      LogContext.error(LOGGER, e, "Claim '{}' cannot be resolved for given token", claim);
+    }
+    return list;
+  }
+
+  private List<String> parseList(Object entry, String key) {
+    if (entry instanceof String) {
+      String listString = (String) entry;
+      if (listString.startsWith("[") && listString.endsWith("]")) {
+        listString = listString.substring(1, listString.length() - 1);
+      }
+      if (listString.contains(",")) {
+        return LIST_SPLITTER.splitToList(listString);
+      } else if (listString.contains(" ")) {
+        return LIST_SPLITTER_BLANKS.splitToList(listString);
+      } else {
+        return List.of(listString);
+      }
+    } else if (entry instanceof List) {
+      return ((List<Object>) entry).stream().map(Object::toString).collect(Collectors.toList());
+    } else {
+      throw new IllegalArgumentException("List or string expected at " + key);
+    }
+  }
+
   @Override
   public Optional<User> parseToken(String token) {
     if (Objects.nonNull(signingKey)) {
       try {
-        Claims claimsJws =
-            new DefaultJwtParser().setSigningKey(signingKey).parseClaimsJws(token).getBody();
-
-        return Optional.of(
+        Claims claimsJws = parser.parseClaimsJws(token).getBody();
+        User user =
             ImmutableUser.builder()
-                .name(claimsJws.getSubject())
+                .name(read(claimsJws, authConfig.getClaims().getUserName()))
                 .role(
                     Role.fromString(
-                        Optional.ofNullable(
-                                claimsJws.get(authConfig.getUserRoleKey(), String.class))
+                        Optional.ofNullable(read(claimsJws, authConfig.getUserRoleKey()))
                             .orElse("USER")))
-                .build());
-      } catch (Throwable e) {
+                .audience(readList(claimsJws, authConfig.getClaims().getAudience()))
+                .scopes(readList(claimsJws, authConfig.getClaims().getScopes()))
+                .permissions(readList(claimsJws, authConfig.getClaims().getPermissions()))
+                .build();
+
         if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace("Error validating token", e);
+          LOGGER.trace("USER {}", user);
         }
+
+        return Optional.of(user);
+      } catch (Throwable e) {
+        LogContext.errorAsDebug(LOGGER, e, "Error validating token");
       }
     }
 
@@ -119,8 +223,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   public <T> Optional<T> parseTokenClaim(String token, String name, Class<T> type) {
     if (Objects.nonNull(signingKey)) {
       try {
-        Claims claimsJws =
-            new DefaultJwtParser().setSigningKey(signingKey).parseClaimsJws(token).getBody();
+        Claims claimsJws = parser.parseClaimsJws(token).getBody();
 
         return Optional.ofNullable(claimsJws.get(name, type));
 
@@ -135,10 +238,18 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   }
 
   private Key getKey() {
-    return Optional.ofNullable(Strings.emptyToNull(authConfig.getJwtSigningKey()))
-        .map(Base64.getDecoder()::decode)
-        .or(this::loadKey)
-        .map(Keys::hmacShaKeyFor)
+    // TODO: multiple keys?
+    return (!oidc.isEnabled() || oidc.getSigningKeys().isEmpty()
+            ? Optional.<Key>empty()
+            : Optional.of(oidc.getSigningKeys().values().iterator().next()))
+        .or(
+            () ->
+                authConfig
+                    .getSimple()
+                    .flatMap(simple -> simple.getJwtSigningKey())
+                    .map(Base64.getDecoder()::decode)
+                    .map(Keys::hmacShaKeyFor))
+        .or(() -> loadKey().map(Keys::hmacShaKeyFor))
         .orElseGet(this::generateKey);
   }
 

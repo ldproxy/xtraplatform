@@ -9,8 +9,8 @@ package de.ii.xtraplatform.auth.infra.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.auth.app.SplitCookie;
 import de.ii.xtraplatform.auth.domain.ImmutableTokenResponse;
+import de.ii.xtraplatform.auth.domain.SplitCookie;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthenticator;

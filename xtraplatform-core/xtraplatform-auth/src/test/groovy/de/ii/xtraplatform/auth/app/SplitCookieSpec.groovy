@@ -1,5 +1,6 @@
 package de.ii.xtraplatform.auth.app
 
+import de.ii.xtraplatform.auth.domain.SplitCookie
 import spock.lang.Shared
 import spock.lang.Specification
 

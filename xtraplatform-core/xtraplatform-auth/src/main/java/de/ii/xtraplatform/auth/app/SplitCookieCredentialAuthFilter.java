@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.auth.app;
 
+import de.ii.xtraplatform.auth.domain.SplitCookie;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.Authenticator;
 import java.io.IOException;

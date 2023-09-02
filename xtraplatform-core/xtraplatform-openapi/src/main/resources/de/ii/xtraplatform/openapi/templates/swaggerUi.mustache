@@ -1,0 +1,23 @@
+{{#swaggerUi}}
+
+<script type="text/javascript">
+  globalThis._swaggerUiCfg = {
+      dom_id: '#swagger-ui',
+      url: '{{{definitionUri}}}',
+      deepLinking: true,
+      displayOperationId: true,
+      displayRequestDuration: true,
+      validatorUrl: 'none',
+  }
+  {{#clientId}}
+  globalThis._swaggerUiAuth = {
+      clientId: '{{.}}',
+      clientSecret: {{#clientSecret}}'{{.}}'{{/clientSecret}}{{^clientSecret}}undefined{{/clientSecret}},
+  }
+  {{/clientId}}
+</script>
+
+{{> app-swagger-ui}}
+
+{{/swaggerUi}}
+
