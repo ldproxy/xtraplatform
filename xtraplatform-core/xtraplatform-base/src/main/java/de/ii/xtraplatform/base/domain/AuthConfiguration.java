@@ -467,6 +467,11 @@ public interface AuthConfiguration {
   @Value.Modifiable
   @JsonDeserialize(as = ModifiableXacmlJson.class)
   interface XacmlJson {
+    /**
+     * @langEn The Policy Decision Point.
+     * @langDe Der Policy Decision Point.
+     * @since v3.5
+     */
     String getEndpoint();
 
     /**
