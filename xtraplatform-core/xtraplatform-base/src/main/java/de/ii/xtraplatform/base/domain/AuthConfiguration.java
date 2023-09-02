@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.net.URI;
@@ -132,7 +133,7 @@ public interface AuthConfiguration {
         builder.endpoint(getXacmlJsonEndpoint().get());
       }
       if (Objects.nonNull(getXacmlJsonVersion())) {
-        builder.version(getXacmlJsonVersion());
+        builder.version(XacmlJsonVersion.fromString(getXacmlJsonVersion()));
       }
       if (Objects.nonNull(getUserPermissionsKey())) {
         builder.mediaType(getXacmlJsonMediaType());
@@ -223,8 +224,8 @@ public interface AuthConfiguration {
     String getEndpoint();
 
     @Value.Default
-    default String getVersion() {
-      return "1.1";
+    default XacmlJsonVersion getVersion() {
+      return XacmlJsonVersion._1_1;
     }
 
     @Value.Default
@@ -233,8 +234,59 @@ public interface AuthConfiguration {
     }
 
     @Value.Default
-    default boolean getGeoXacml() {
-      return false;
+    default GeoXacmlVersion getGeoXacmlVersion() {
+      return GeoXacmlVersion.NONE;
+    }
+  }
+
+  enum XacmlJsonVersion {
+    _1_0("1.0"),
+    _1_1("1.1");
+    private final String stringRepresentation;
+
+    XacmlJsonVersion(String stringRepresentation) {
+      this.stringRepresentation = stringRepresentation;
+    }
+
+    @Override
+    public String toString() {
+      return stringRepresentation;
+    }
+
+    @JsonCreator
+    public static XacmlJsonVersion fromString(String type) {
+      for (XacmlJsonVersion v : XacmlJsonVersion.values()) {
+        if (v.toString().equals(type)) {
+          return v;
+        }
+      }
+      return _1_1;
+    }
+  }
+
+  enum GeoXacmlVersion {
+    NONE("NONE"),
+    _1_0("1.0"),
+    _3_0("3.0");
+    private final String stringRepresentation;
+
+    GeoXacmlVersion(String stringRepresentation) {
+      this.stringRepresentation = stringRepresentation;
+    }
+
+    @Override
+    public String toString() {
+      return stringRepresentation;
+    }
+
+    @JsonCreator
+    public static GeoXacmlVersion fromString(String type) {
+      for (GeoXacmlVersion v : GeoXacmlVersion.values()) {
+        if (v.toString().equals(type)) {
+          return v;
+        }
+      }
+      return NONE;
     }
   }
 }

@@ -8,8 +8,11 @@
 package de.ii.xtraplatform.auth.app.external;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.auth.domain.User;
+import de.ii.xtraplatform.base.domain.AuthConfiguration.GeoXacmlVersion;
+import de.ii.xtraplatform.base.domain.AuthConfiguration.XacmlJsonVersion;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -20,23 +23,19 @@ import java.util.Optional;
  * @author zahnen
  */
 public class XacmlRequest {
-  enum Version {
-    _1_0,
-    _1_1
-  }
   // TODO
   private static final String PREFIX_GEO = "ldproxy:feature:geometry";
 
   public final Map<String, Object> Request;
 
   public XacmlRequest(
-      Version version,
+      XacmlJsonVersion version,
       String resourceId,
       Map<String, Object> resourceAttributes,
       String actionId,
       Map<String, Object> actionAttributes,
       Optional<User> user,
-      boolean geoXacml) {
+      GeoXacmlVersion geoXacmlVersion) {
     ImmutableList.Builder<Attribute> subject =
         ImmutableList.<Attribute>builder()
             .add(
@@ -56,26 +55,32 @@ public class XacmlRequest {
     ImmutableList.Builder<Attribute> resource =
         ImmutableList.<Attribute>builder()
             .add(new Attribute("urn:oasis:names:tc:xacml:1.0:resource:resource-id", resourceId));
-    resourceAttributes.forEach((id, value) -> add(id, value, resource, geoXacml));
+    resourceAttributes.forEach((id, value) -> add(id, value, resource, geoXacmlVersion));
 
     ImmutableList.Builder<Attribute> action =
         ImmutableList.<Attribute>builder()
             .add(new Attribute("urn:oasis:names:tc:xacml:1.0:action:action-id", actionId));
-    actionAttributes.forEach((id, value) -> add(id, value, action, geoXacml));
+    actionAttributes.forEach((id, value) -> add(id, value, action, geoXacmlVersion));
 
     Request =
-        version == Version._1_0
+        version == XacmlJsonVersion._1_0
             ? request10(subject.build(), resource.build(), action.build())
             : request11(subject.build(), resource.build(), action.build());
   }
 
   private static void add(
-      String id, Object value, ImmutableList.Builder<Attribute> category, boolean geoXacml) {
+      String id, Object value, Builder<Attribute> category, GeoXacmlVersion geoXacmlVersion) {
     if (value instanceof Collection<?> && ((Collection<?>) value).isEmpty()) {
       return;
     }
-    if (geoXacml && Objects.equals(id, PREFIX_GEO)) {
-      category.add(new Attribute(id, value, "urn:ogc:def:dataType:geoxacml:1.0:geometry"));
+    if (geoXacmlVersion != GeoXacmlVersion.NONE && Objects.equals(id, PREFIX_GEO)) {
+      category.add(
+          new Attribute(
+              id,
+              value,
+              geoXacmlVersion == GeoXacmlVersion._1_0
+                  ? "urn:ogc:def:dataType:geoxacml:1.0:geometry"
+                  : "urn:ogc:def:geoxacml:3.0:data-type:geometry"));
       return;
     }
     category.add(new Attribute(id, value));

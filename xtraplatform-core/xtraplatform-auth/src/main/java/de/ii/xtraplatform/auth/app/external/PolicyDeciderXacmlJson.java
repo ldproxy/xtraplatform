@@ -11,12 +11,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.auth.app.external.XacmlRequest.Version;
 import de.ii.xtraplatform.auth.domain.PolicyDecider;
 import de.ii.xtraplatform.auth.domain.PolicyDecision;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AuthConfiguration.GeoXacmlVersion;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.XacmlJson;
+import de.ii.xtraplatform.base.domain.AuthConfiguration.XacmlJsonVersion;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.Http;
 import de.ii.xtraplatform.web.domain.HttpClient;
@@ -44,10 +45,10 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
 
   private final boolean enabled;
   private final String pdpUrl;
-  private final XacmlRequest.Version version;
+  private final XacmlJsonVersion version;
   private final MediaType mediaTypeContent;
   private final MediaType mediaTypeAccept;
-  private final boolean geoXacml;
+  private final GeoXacmlVersion geoXacml;
 
   private final HttpClient httpClient;
 
@@ -59,14 +60,11 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
 
     this.enabled = xacmlJson.isPresent();
     this.pdpUrl = xacmlJson.map(XacmlJson::getEndpoint).orElse(null);
-    this.version =
-        "1.0".equals(xacmlJson.map(XacmlJson::getVersion).orElse(null))
-            ? Version._1_0
-            : Version._1_1;
+    this.version = xacmlJson.map(XacmlJson::getVersion).orElse(null);
     this.mediaTypeContent =
         xacmlJson.map(XacmlJson::getMediaType).map(this::parse).orElse(XACML.withCharset("utf-8"));
     this.mediaTypeAccept = new MediaType(mediaTypeContent.getType(), mediaTypeContent.getSubtype());
-    this.geoXacml = xacmlJson.map(XacmlJson::getGeoXacml).orElse(false);
+    this.geoXacml = xacmlJson.map(XacmlJson::getGeoXacmlVersion).orElse(null);
   }
 
   @Override
