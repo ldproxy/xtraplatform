@@ -21,6 +21,9 @@ import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.Http;
 import de.ii.xtraplatform.web.domain.HttpClient;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwsHeader;
+import io.jsonwebtoken.SigningKeyResolver;
 import io.jsonwebtoken.io.Decoders;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -44,7 +47,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class OidcImpl implements Oidc, AppLifeCycle {
+public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OidcImpl.class);
 
@@ -111,6 +114,7 @@ public class OidcImpl implements Oidc, AppLifeCycle {
         OidcConfiguration oidcConfiguration1 =
             objectMapper.readValue(inputStream, OidcConfiguration.class);
 
+        // TODO: move to html building block when implementing multiple provider support
         if (!oidcConfiguration1.getGrantTypes().contains("authorization_code")) {
           LOGGER.error(
               "OpenID Connect endpoint does not support Authorization Code Flow: {}", endpoint);
@@ -124,6 +128,12 @@ public class OidcImpl implements Oidc, AppLifeCycle {
         return;
       }
 
+      loadSigningKeys();
+    }
+  }
+
+  private void loadSigningKeys() {
+    if (oidcConfiguration.isPresent()) {
       String certsEndpoint = oidcConfiguration.get().getJwksEndpoint().toString();
       try {
         InputStream inputStream = httpClient.getAsInputStream(certsEndpoint);
@@ -218,5 +228,25 @@ public class OidcImpl implements Oidc, AppLifeCycle {
   @Override
   public Map<String, Key> getSigningKeys() {
     return signingKeys;
+  }
+
+  @Override
+  public Key resolveSigningKey(JwsHeader jwsHeader, Claims claims) {
+    return getSigningKey(jwsHeader.getKeyId());
+  }
+
+  @Override
+  public Key resolveSigningKey(JwsHeader jwsHeader, String s) {
+    return getSigningKey(jwsHeader.getKeyId());
+  }
+
+  private Key getSigningKey(String id) {
+    if (!getSigningKeys().containsKey(id)) {
+      loadSigningKeys();
+    }
+    if (!getSigningKeys().containsKey(id)) {
+      LOGGER.error("Token has unknown signing key: {}", id);
+    }
+    return getSigningKeys().get(id);
   }
 }

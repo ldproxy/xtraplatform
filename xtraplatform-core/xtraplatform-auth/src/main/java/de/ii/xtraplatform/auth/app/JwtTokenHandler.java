@@ -23,8 +23,10 @@ import de.ii.xtraplatform.store.domain.BlobStore;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.JwtParserBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.SigningKeyResolver;
 import io.jsonwebtoken.jackson.io.JacksonDeserializer;
 import io.jsonwebtoken.security.Keys;
 import java.io.ByteArrayInputStream;
@@ -79,22 +81,34 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
 
   @Override
   public void onStart() {
-    this.signingKey = getKey();
-
     // TODO
     long clockSkew = 3600;
 
+    this.signingKey = getKey();
     this.parser =
+        oidc.isEnabled() && oidc instanceof SigningKeyResolver
+            ? createParser(null, (SigningKeyResolver) oidc, clockSkew)
+            : createParser(signingKey, null, clockSkew);
+  }
+
+  private JwtParser createParser(Key key, SigningKeyResolver keyResolver, long clockSkew) {
+    JwtParserBuilder jwtParserBuilder =
         Jwts.parserBuilder()
-            .setSigningKey(signingKey)
             .setAllowedClockSkewSeconds(clockSkew)
             .deserializeJsonWith(
                 new JacksonDeserializer(listType(authConfig.getClaims().getAudience())))
             .deserializeJsonWith(
                 new JacksonDeserializer(listType(authConfig.getClaims().getScopes())))
             .deserializeJsonWith(
-                new JacksonDeserializer(listType(authConfig.getClaims().getPermissions())))
-            .build();
+                new JacksonDeserializer(listType(authConfig.getClaims().getPermissions())));
+
+    if (Objects.nonNull(keyResolver)) {
+      jwtParserBuilder.setSigningKeyResolver(keyResolver);
+    } else {
+      jwtParserBuilder.setSigningKey(key);
+    }
+
+    return jwtParserBuilder.build();
   }
 
   @Override
@@ -191,29 +205,27 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
 
   @Override
   public Optional<User> parseToken(String token) {
-    if (Objects.nonNull(signingKey)) {
-      try {
-        Claims claimsJws = parser.parseClaimsJws(token).getBody();
-        User user =
-            ImmutableUser.builder()
-                .name(read(claimsJws, authConfig.getClaims().getUserName()))
-                .role(
-                    Role.fromString(
-                        Optional.ofNullable(read(claimsJws, authConfig.getUserRoleKey()))
-                            .orElse("USER")))
-                .audience(readList(claimsJws, authConfig.getClaims().getAudience()))
-                .scopes(readList(claimsJws, authConfig.getClaims().getScopes()))
-                .permissions(readList(claimsJws, authConfig.getClaims().getPermissions()))
-                .build();
+    try {
+      Claims claimsJws = parser.parseClaimsJws(token).getBody();
+      User user =
+          ImmutableUser.builder()
+              .name(read(claimsJws, authConfig.getClaims().getUserName()))
+              .role(
+                  Role.fromString(
+                      Optional.ofNullable(read(claimsJws, authConfig.getUserRoleKey()))
+                          .orElse("USER")))
+              .audience(readList(claimsJws, authConfig.getClaims().getAudience()))
+              .scopes(readList(claimsJws, authConfig.getClaims().getScopes()))
+              .permissions(readList(claimsJws, authConfig.getClaims().getPermissions()))
+              .build();
 
-        if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace("USER {}", user);
-        }
-
-        return Optional.of(user);
-      } catch (Throwable e) {
-        LogContext.errorAsDebug(LOGGER, e, "Error validating token");
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("USER {}", user);
       }
+
+      return Optional.of(user);
+    } catch (Throwable e) {
+      LogContext.errorAsDebug(LOGGER, e, "Error validating token");
     }
 
     return Optional.empty();
@@ -238,7 +250,6 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   }
 
   private Key getKey() {
-    // TODO: multiple keys?
     return (!oidc.isEnabled() || oidc.getSigningKeys().isEmpty()
             ? Optional.<Key>empty()
             : Optional.of(oidc.getSigningKeys().values().iterator().next()))
