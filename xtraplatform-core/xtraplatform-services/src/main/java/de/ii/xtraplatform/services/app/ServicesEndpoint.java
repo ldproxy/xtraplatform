@@ -210,7 +210,7 @@ public class ServicesEndpoint implements Endpoint {
   @Path(LoginHandler.PATH_LOGOUT)
   @Produces(MediaType.TEXT_HTML)
   public Response getLogout(
-      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @QueryParam(LoginHandler.PARAM_LOGOUT_REDIRECT_URI) String redirectUri,
       @Context ContainerRequestContext containerRequestContext) {
     if (loginHandler.get().isEmpty()) {
       throw new NotFoundException();

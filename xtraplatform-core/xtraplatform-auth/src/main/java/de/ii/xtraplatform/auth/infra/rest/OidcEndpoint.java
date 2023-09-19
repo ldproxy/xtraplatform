@@ -29,6 +29,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriBuilder;
 
 @Singleton
 @AutoBind
@@ -70,14 +71,12 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
   @GET
   @Path(PATH_LOGOUT)
   @Produces(MediaType.TEXT_HTML)
-  public Response getLogin(
-      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+  public Response getLogout(
+      @QueryParam(LoginHandler.PARAM_LOGOUT_REDIRECT_URI) String redirectUri,
       @Context ContainerRequestContext containerRequestContext) {
 
     return logout(containerRequestContext, redirectUri);
   }
-
-  // TODO: include oauth4webapi, oauth.generateRandomCodeVerifier()
 
   private static URI getCallbackUri(
       ContainerRequestContext containerRequestContext, String rootPath) {
@@ -147,7 +146,15 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
 
   @Override
   public Response logout(ContainerRequestContext containerRequestContext, String redirectUri) {
-    ResponseBuilder response = Response.seeOther(oidc.getLogoutUri());
+    URI logoutUri =
+        Objects.nonNull(redirectUri)
+            ? UriBuilder.fromUri(oidc.getLogoutUri())
+                .queryParam(LoginHandler.PARAM_LOGOUT_CLIENT_ID, oidc.getClientId())
+                .queryParam(LoginHandler.PARAM_LOGOUT_REDIRECT_URI, redirectUri)
+                .build()
+            : oidc.getLogoutUri();
+
+    ResponseBuilder response = Response.seeOther(logoutUri);
 
     List<String> authCookies =
         SplitCookie.deleteToken(
