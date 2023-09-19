@@ -9,7 +9,7 @@
 <body>
 
 <script type="module">
-  import * as oauth from 'https://unpkg.com/oauth4webapi@1.2.1';
+  import * as oauth from '{{urlPrefix}}/xtraplatform-auth/assets/oauth4webapi-2.3.0.js';
 
   const currentUrl = new URL(window.location.href);
   const oidcUrl = new URL('{{{oidcUri}}}');
@@ -44,7 +44,7 @@
     authorizationUrl.searchParams.set('prompt', 'login')
     authorizationUrl.searchParams.set('state', '{{{redirectUri}}}')
 
-    console.log('L', authorizationUrl.toString());
+    //console.log('L', authorizationUrl.toString());
     //console.log(authorizationUrl.searchParams);
 
     window.location = authorizationUrl;
@@ -86,7 +86,7 @@
     redirectUrl.searchParams.set('access_token', result.access_token)
     //redirectUrl.searchParams.set('code', result.id_token)
 
-    console.log('C', redirectUrl.toString(), result);
+    //console.log('C', redirectUrl.toString(), result);
     //console.log(redirectUrl.searchParams);
 
     window.location = redirectUrl;
@@ -94,7 +94,7 @@
     {{#token}}
     const redirectUrl = new URL('{{{redirectUri}}}')
 
-    console.log('T', redirectUrl.toString());
+    //console.log('T', redirectUrl.toString());
 
     window.location = redirectUrl;
     {{/token}}
