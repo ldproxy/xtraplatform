@@ -22,8 +22,7 @@ class JwtTokenHandlerSpec extends Specification {
 
     def setupSpec() {
         def auth = ModifiableAuthConfiguration.create()
-        auth.setSimple(ModifiableSimple.create().setJwtSigningKey(Base64.getEncoder().encodeToString(secretKey)))
-        auth.setClaims(ModifiableClaims.create())
+        auth.putProviders("jwt", new ImmutableJwt.Builder().type(AuthConfiguration.AuthProviderType.JWT).signingKey(Base64.getEncoder().encodeToString(secretKey)).build())
         AppConfiguration config = Stub(AppConfiguration) {
             getAuth() >> auth
         }

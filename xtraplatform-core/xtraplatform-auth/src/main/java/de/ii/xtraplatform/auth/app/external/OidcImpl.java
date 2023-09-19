@@ -18,6 +18,7 @@ import de.ii.xtraplatform.auth.domain.Oidc;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.AuthConfiguration;
+import de.ii.xtraplatform.base.domain.AuthConfiguration.Login;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.web.domain.Http;
 import de.ii.xtraplatform.web.domain.HttpClient;
@@ -114,8 +115,8 @@ public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
         OidcConfiguration oidcConfiguration1 =
             objectMapper.readValue(inputStream, OidcConfiguration.class);
 
-        // TODO: move to html building block when implementing multiple provider support
-        if (!oidcConfiguration1.getGrantTypes().contains("authorization_code")) {
+        if (authConfig.getOidc().get().getLogin().isPresent()
+            && !oidcConfiguration1.getGrantTypes().contains("authorization_code")) {
           LOGGER.error(
               "OpenID Connect endpoint does not support Authorization Code Flow: {}", endpoint);
           return;
@@ -217,12 +218,19 @@ public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
 
   @Override
   public String getClientId() {
-    return authConfig.getOidc().map(AuthConfiguration.Oidc::getClientId).orElse(null);
+    return authConfig
+        .getOidc()
+        .flatMap(AuthConfiguration.Oidc::getLogin)
+        .map(Login::getClientId)
+        .orElse(null);
   }
 
   @Override
   public Optional<String> getClientSecret() {
-    return authConfig.getOidc().flatMap(AuthConfiguration.Oidc::getClientSecret);
+    return authConfig
+        .getOidc()
+        .flatMap(AuthConfiguration.Oidc::getLogin)
+        .flatMap(Login::getClientSecret);
   }
 
   @Override

@@ -10,6 +10,8 @@ package de.ii.xtraplatform.base.domain;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.docs.DocFile;
 import de.ii.xtraplatform.docs.DocIgnore;
@@ -18,9 +20,7 @@ import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import de.ii.xtraplatform.docs.DocVar;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -28,42 +28,79 @@ import org.immutables.value.Value;
 /**
  * @langEn # Authorization
  *     <p>Access to web resources can be restricted using [bearer
- *     tokens](https://tools.ietf.org/html/rfc6750). The configuration options determine how such
- *     tokens are validated and evaluated.
+ *     tokens](https://tools.ietf.org/html/rfc6750). To validate and evaluate such tokens, an
+ *     identity provider (type `OIDC`, `USER_INFO` or `JWT`) has to be defined in the configuration.
+ *     Currently only a single identity provider is supported, additional ones are ignored.
  *     <p>An additional authorization layer may be enabled using a [Policy Decision
  *     Point](https://docs.oasis-open.org/xacml/xacml-rest/v1.1/os/xacml-rest-v1.1-os.html#_Toc525034242).
+ *     To do that, a provider with type `XACML_JSON` has to be defined in the configuration.
+ *     Currently only a single policy decision provider is supported, additional ones are ignored.
+ *     <p>**Provider types**
+ *     <p><code>
+ * - `OIDC`: identity provider, see [OpenID Connect](#openid-connect)
+ * - `USER_INFO`: identity provider, see [User info endpoint](#user-info-endpoint)
+ * - `JWT`: identity provider, see [JWT signing key](#jwt-signing-key)
+ * - `XACML_JSON`: policy decision provider, see [XACML JSON](#xacml-json)
+ *     </code>
+ *     <p>**Configuration**
+ *     <p>These are the configuration options for key `auth` in `cfg.yml`.
  *     <p>{@docTable:properties}
  *     <p>{@docVar:oidc}
  *     <p>{@docTable:oidc}
- *     <p>{@docVar:simple}
- *     <p>{@docTable:simple}
+ *     <p>{@docVar:userInfo}
+ *     <p>{@docTable:userInfo}
+ *     <p>{@docVar:jwt}
+ *     <p>{@docTable:jwt}
  *     <p>{@docVar:claims}
  *     <p>{@docTable:claims}
+ *     <p>{@docVar:login}
+ *     <p>{@docTable:login}
  *     <p>{@docVar:xacml}
  *     <p>{@docTable:xacml}
  * @langDe # Autorisierung
  *     <p>Der Zugriff auf Web-Ressourcen kann mithilfe von [Bearer
- *     Token](https://tools.ietf.org/html/rfc6750) beschränkt werden. Die Konfigurations-Optionen
- *     bestimmen, wie solche Tokens validiert und ausgewertet werden.
+ *     Token](https://tools.ietf.org/html/rfc6750) beschränkt werden. Um solche Tokens zu validieren
+ *     und auszuwerten muss ein Identity-Provider (`type` ist `OIDC`, `USER_INFO` oder `JWT`) in der
+ *     Konfiguration definiert werden. Aktuell wird nur ein einziger Identity-Provider unterstützt,
+ *     weitere werden ignoriert.
  *     <p>Ein zusätzlicher Autorisierungs-Layer kann mithilfe eines [Policy Decision
  *     Point](https://docs.oasis-open.org/xacml/xacml-rest/v1.1/os/xacml-rest-v1.1-os.html#_Toc525034242)
- *     aktiviert werden.
+ *     aktiviert werden. Um das zu tun, muss ein Provider mit `type: XACML_JSON` in der
+ *     Konfiguration definiert werden. Aktuell wird nur ein einziger Policy-Decision-Provider
+ *     unterstützt, weitere werden ignoriert.
+ *     <p>**Provider Typen**
+ *     <p><code>
+ * - `OIDC`: Identity-Provider, siehe [OpenID Connect](#openid-connect)
+ * - `USER_INFO`: Identity-Provider, siehe [User-Info-Endpoint](#user-info-endpoint)
+ * - `JWT`: Identity-Provider, siehe [JWT-Signing-Key](#jwt-signing-key)
+ * - `XACML_JSON`: Policy-Decision-Provider, siehe [XACML JSON](#xacml-json)
+ *     </code>
+ *     <p>**Konfiguration**
+ *     <p>Dies sind die Konfigurations-Optionen für den Key `auth` in `cfg.yml`.
  *     <p>{@docTable:properties}
  *     <p>{@docVar:oidc}
  *     <p>{@docTable:oidc}
- *     <p>{@docVar:simple}
- *     <p>{@docTable:simple}
+ *     <p>{@docVar:userInfo}
+ *     <p>{@docTable:userInfo}
+ *     <p>{@docVar:jwt}
+ *     <p>{@docTable:jwt}
  *     <p>{@docVar:claims}
  *     <p>{@docTable:claims}
+ *     <p>{@docVar:login}
+ *     <p>{@docTable:login}
  *     <p>{@docVar:xacml}
  *     <p>{@docTable:xacml}
  * @ref:cfgProperties {@link de.ii.xtraplatform.base.domain.ImmutableAuthConfiguration}
  * @ref:oidc {@link de.ii.xtraplatform.base.domain.AuthConfiguration.Oidc}
  * @ref:oidcTable {@link de.ii.xtraplatform.base.domain.ImmutableOidc}
- * @ref:simple {@link de.ii.xtraplatform.base.domain.AuthConfiguration.Simple}
- * @ref:simpleTable {@link de.ii.xtraplatform.base.domain.ImmutableSimple}
+ * @ref:userInfo {@link de.ii.xtraplatform.base.domain.AuthConfiguration.UserInfo}
+ * @ref:userInfoTable {@link de.ii.xtraplatform.base.domain.ImmutableUserInfo}
+ * @ref:jwt {@link de.ii.xtraplatform.base.domain.AuthConfiguration.Jwt}
+ * @ref:jwtTable {@link de.ii.xtraplatform.base.domain.ImmutableJwt}
  * @ref:claims {@link de.ii.xtraplatform.base.domain.AuthConfiguration.Claims}
  * @ref:claimsTable {@link de.ii.xtraplatform.base.domain.ImmutableClaims}
+ * @ref:login {@link de.ii.xtraplatform.base.domain.AuthConfiguration.Login}
+ * @ref:loginTable {@link de.ii.xtraplatform.base.domain.ImmutableLogin}
  * @ref:xacml {@link de.ii.xtraplatform.base.domain.AuthConfiguration.XacmlJson}
  * @ref:xacmlTable {@link de.ii.xtraplatform.base.domain.ImmutableXacmlJson}
  */
@@ -86,9 +123,16 @@ import org.immutables.value.Value;
           },
           columnSet = ColumnSet.JSON_PROPERTIES),
       @DocTable(
-          name = "simple",
+          name = "userInfo",
           rows = {
-            @DocStep(type = Step.TAG_REFS, params = "{@ref:simpleTable}"),
+            @DocStep(type = Step.TAG_REFS, params = "{@ref:userInfoTable}"),
+            @DocStep(type = Step.JSON_PROPERTIES)
+          },
+          columnSet = ColumnSet.JSON_PROPERTIES),
+      @DocTable(
+          name = "jwt",
+          rows = {
+            @DocStep(type = Step.TAG_REFS, params = "{@ref:jwtTable}"),
             @DocStep(type = Step.JSON_PROPERTIES)
           },
           columnSet = ColumnSet.JSON_PROPERTIES),
@@ -96,6 +140,13 @@ import org.immutables.value.Value;
           name = "claims",
           rows = {
             @DocStep(type = Step.TAG_REFS, params = "{@ref:claimsTable}"),
+            @DocStep(type = Step.JSON_PROPERTIES)
+          },
+          columnSet = ColumnSet.JSON_PROPERTIES),
+      @DocTable(
+          name = "login",
+          rows = {
+            @DocStep(type = Step.TAG_REFS, params = "{@ref:loginTable}"),
             @DocStep(type = Step.JSON_PROPERTIES)
           },
           columnSet = ColumnSet.JSON_PROPERTIES),
@@ -115,15 +166,27 @@ import org.immutables.value.Value;
             @DocStep(type = Step.TAG, params = "{@bodyBlock}")
           }),
       @DocVar(
-          name = "simple",
+          name = "userInfo",
           value = {
-            @DocStep(type = Step.TAG_REFS, params = "{@ref:simple}"),
+            @DocStep(type = Step.TAG_REFS, params = "{@ref:userInfo}"),
+            @DocStep(type = Step.TAG, params = "{@bodyBlock}")
+          }),
+      @DocVar(
+          name = "jwt",
+          value = {
+            @DocStep(type = Step.TAG_REFS, params = "{@ref:jwt}"),
             @DocStep(type = Step.TAG, params = "{@bodyBlock}")
           }),
       @DocVar(
           name = "claims",
           value = {
             @DocStep(type = Step.TAG_REFS, params = "{@ref:claims}"),
+            @DocStep(type = Step.TAG, params = "{@bodyBlock}")
+          }),
+      @DocVar(
+          name = "login",
+          value = {
+            @DocStep(type = Step.TAG_REFS, params = "{@ref:login}"),
             @DocStep(type = Step.TAG, params = "{@bodyBlock}")
           }),
       @DocVar(
@@ -137,19 +200,6 @@ import org.immutables.value.Value;
 @Value.Modifiable
 @JsonDeserialize(as = ModifiableAuthConfiguration.class)
 public interface AuthConfiguration {
-
-  // TODO
-  @JsonIgnore
-  @Value.Derived
-  default boolean isUserInfo() {
-    Optional<String> userInfoEndpoint = getSimple().flatMap(Simple::getUserInfoEndpoint);
-    try {
-      return (userInfoEndpoint.isPresent()
-          && new URI(userInfoEndpoint.get().replace("{{token}}", "token")).isAbsolute());
-    } catch (URISyntaxException e) {
-      return false;
-    }
-  }
 
   @DocIgnore
   @Deprecated(since = "3.5")
@@ -198,7 +248,8 @@ public interface AuthConfiguration {
   @Nullable
   String getXacmlJsonMediaType();
 
-  @Deprecated(since = "3.5")
+  // TODO
+  /*@Deprecated(since = "3.5")
   @Value.Check
   default AuthConfiguration backwardsCompatibility() {
 
@@ -260,52 +311,48 @@ public interface AuthConfiguration {
     }
 
     return this;
+  }*/
+
+  default Optional<Oidc> getOidc() {
+    return getProviders().values().stream()
+        .filter(authProvider -> authProvider instanceof IdentityProvider)
+        .findFirst()
+        .filter(authProvider -> authProvider.getType() == AuthProviderType.OIDC)
+        .map(Oidc.class::cast);
   }
 
-  @Value.Check
-  default AuthConfiguration defaults() {
-    if (Objects.isNull(getClaims())) {
-      return new ImmutableAuthConfiguration.Builder()
-          .from(this)
-          .claims(ModifiableClaims.create())
-          .build();
-    }
+  default Optional<UserInfo> getUserInfo() {
+    return getProviders().values().stream()
+        .filter(authProvider -> authProvider instanceof IdentityProvider)
+        .findFirst()
+        .filter(authProvider -> authProvider.getType() == AuthProviderType.USER_INFO)
+        .map(UserInfo.class::cast);
+  }
 
-    return this;
+  default Optional<Jwt> getJwt() {
+    return getProviders().values().stream()
+        .filter(authProvider -> authProvider instanceof IdentityProvider)
+        .findFirst()
+        .filter(authProvider -> authProvider.getType() == AuthProviderType.JWT)
+        .map(Jwt.class::cast);
+  }
+
+  default Optional<XacmlJson> getXacmlJson() {
+    return getProviders().values().stream()
+        .filter(authProvider -> authProvider.getType() == AuthProviderType.XACML_JSON)
+        .map(XacmlJson.class::cast)
+        .findFirst();
   }
 
   /**
-   * @langEn OpenID Connect settings, see [OpenId Connect](#openid-connect).
-   * @langDe OpenID Connect Einstellungen, siehe [OpenId Connect](#openid-connect).
+   * @langEn A map with provider definitions. Keys are user-defined ids used for referencing, values
+   *     are provider definitions with a `type`. See above for supported types.
+   * @langDe Eine Map mit Provider-Definitionen. Keys sind Nutzer-definierte Ids, Werte sind
+   *     Provider-Definitionen mit einem `type`. Siehe oben für unterstützte Typen.
    * @since v3.5
    * @default {}
    */
-  Optional<Oidc> getOidc();
-
-  /**
-   * @langEn Settings for other protocols, see [Simple](#simple).
-   * @langDe Einstellungen für andere Protokolle, siehe [Simple](#simple).
-   * @since v3.5
-   * @default {}
-   */
-  Optional<Simple> getSimple();
-
-  /**
-   * @langEn Mapping of token claims to ldproxy claims, see [Claims Mapping](#claims-mapping).
-   * @langDe Mapping von Token-Claims zu ldproxy-Claims, siehe [Claims Mapping](#claims-mapping).
-   * @since v3.5
-   * @default see below
-   */
-  @Nullable
-  Claims getClaims();
-
-  /**
-   * @langEn XACML JSON PDP settings, see [XACML JSON](#xacml-json).
-   * @langDe XACML JSON PDP Einstellungen, siehe [XACML JSON](#xacml-json).
-   * @since v3.5
-   * @default {}
-   */
-  Optional<XacmlJson> getXacmlJson();
+  Map<String, AuthProvider> getProviders();
 
   /**
    * @langEn ## OpenID Connect
@@ -321,9 +368,29 @@ public interface AuthConfiguration {
    *     <p>Eine verbreitete Open-Source Implementierung ist [Keycloak](https://www.keycloak.org).
    */
   @Value.Immutable
-  @Value.Modifiable
-  @JsonDeserialize(as = ModifiableOidc.class)
-  interface Oidc {
+  @JsonDeserialize(builder = ImmutableOidc.Builder.class)
+  interface Oidc extends AuthProvider, IdentityProvider, LoginProvider {
+
+    /**
+     * @langEn Always `OIDC`.
+     * @langDe Immer `OIDC`.
+     * @since v3.5
+     */
+    @Value.Default
+    @Override
+    default AuthProviderType getType() {
+      return AuthProviderType.OIDC;
+    }
+
+    @Value.Default
+    @Override
+    default ImmutableClaims getClaims() {
+      return IdentityProvider.super.getClaims();
+    }
+
+    @Override
+    Optional<Login> getLogin();
+
     /**
      * @langEn The OpenID Connect configuration endpoint, a URL ending with
      *     `.well-known/openid-configuration`.
@@ -332,52 +399,74 @@ public interface AuthConfiguration {
      * @since v3.5
      */
     String getEndpoint();
-
-    /**
-     * @langEn The client id used in requests to the OpenID Connect provider.
-     * @langDe Die Client-Id die in Requests an den OpenID Connect Provider verwendet wird.
-     * @since v3.5
-     */
-    String getClientId();
-
-    /**
-     * @langEn Optional client secret.
-     * @langDe Optionales Client-Secret.
-     * @since v3.5
-     * @default null
-     */
-    Optional<String> getClientSecret();
   }
 
   /**
-   * @langEn ## Simple
-   *     <p>Without OpenID Connect, either a signing key for JSON Web Tokens may be provided or an
-   *     endpoint can be defined that is responsible for validating a token and returning the
-   *     required claims.
-   * @langDe ## Simple
-   *     <p>Ohne OpenID Connect kann entweder ein Signing-Key für JSON Web Tokens angegeben werden
-   *     oder ein Endpunkt der dafür verantwortlich ist, das Token zu validieren und die benötigten
+   * @langEn ## User info endpoint
+   *     <p>An endpoint that is responsible for validating a token and returning the required
+   *     claims.
+   * @langDe ## User-Info-Endpoint
+   *     <p>Ein Endpoint der dafür verantwortlich ist, das Token zu validieren und die benötigten
    *     Claims zurückzuliefern.
    */
   @Value.Immutable
-  @Value.Modifiable
-  @JsonDeserialize(as = ModifiableSimple.class)
-  interface Simple {
+  @JsonDeserialize(builder = ImmutableUserInfo.Builder.class)
+  interface UserInfo extends AuthProvider, IdentityProvider {
+
+    /**
+     * @langEn Always `USER_INFO`.
+     * @langDe Immer `USER_INFO`.
+     * @since v3.5
+     */
+    @Override
+    AuthProviderType getType();
+
+    @Value.Default
+    @Override
+    default ImmutableClaims getClaims() {
+      return IdentityProvider.super.getClaims();
+    }
+
+    /**
+     * @langEn A URL template, `{token}` is replaced with the token.
+     * @langDe Ein URL-Template, `{token}` wird durch das Token ersetzt.
+     * @since v3.5
+     */
+    String getEndpoint();
+  }
+
+  /**
+   * @langEn ## JWT signing key
+   *     <p>A signing key is used to validate JSON Web Tokens and the claims are extracted directly
+   *     from the token.
+   * @langDe ## JWT-Signing-Key
+   *     <p>Ein Signing-Key wird verwendet um JSON Web Tokens zu validieren und die Claims werden
+   *     direkt aus dem Token extrahiert.
+   */
+  @Value.Immutable
+  @JsonDeserialize(builder = ImmutableJwt.Builder.class)
+  interface Jwt extends AuthProvider, IdentityProvider {
+
+    /**
+     * @langEn Always `JWT`.
+     * @langDe Immer `JWT`.
+     * @since v3.5
+     */
+    @Override
+    AuthProviderType getType();
+
+    @Value.Default
+    @Override
+    default ImmutableClaims getClaims() {
+      return IdentityProvider.super.getClaims();
+    }
+
     /**
      * @langEn Signing key for JSON Web Tokens.
      * @langDe Signing-Key für JSON Web Tokens.
      * @since v3.5
-     * @default null
      */
-    Optional<String> getJwtSigningKey();
-
-    /**
-     * @langEn User info endpoint.
-     * @langDe User-Info-Endpunkt.
-     * @since v3.5
-     * @default null
-     */
-    Optional<String> getUserInfoEndpoint();
+    String getSigningKey();
   }
 
   /**
@@ -391,8 +480,7 @@ public interface AuthConfiguration {
    *     unterstützt, die Werte können einen Pfad wie `foo.bar` sein.
    */
   @Value.Immutable
-  @Value.Modifiable
-  @JsonDeserialize(as = ModifiableClaims.class)
+  @JsonDeserialize(builder = ImmutableClaims.Builder.class)
   interface Claims {
     /**
      * @langEn The claim containing the user name.
@@ -440,6 +528,87 @@ public interface AuthConfiguration {
   }
 
   /**
+   * @langEn ## Login
+   *     <p>This allows API clients that are integrated in ldproxy to automatically redirect to the
+   *     login form of the identity provider.
+   * @langDe ## Login
+   *     <p>Dies erlaubt in ldproxy integrierten API-Clients die automatische Weiterleitung zum
+   *     Login-Formular des Identity-Providers.
+   */
+  @Value.Immutable
+  @JsonDeserialize(builder = ImmutableLogin.Builder.class)
+  interface Login {
+    /**
+     * @langEn A client id that is registered with the identity provider. The corresponding client
+     *     has to support [Authorization Code
+     *     Flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth).
+     * @langDe Eine Client-Id die im Identity-Provider registriert ist. Der zugehörige Client muss
+     *     [Authorization Code
+     *     Flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) unterstützen.
+     * @since v3.5
+     */
+    String getClientId();
+
+    /**
+     * @langEn Optional client secret for the given client id.
+     * @langDe Optionales Client-Secret für die angegebene Client-Id.
+     * @since v3.5
+     * @default null
+     */
+    Optional<String> getClientSecret();
+  }
+
+  enum AuthProviderType {
+    OIDC,
+    USER_INFO,
+    JWT,
+    XACML_JSON
+  }
+
+  String OIDC = "OIDC";
+  String USER_INFO = "USER_INFO";
+  String JWT = "JWT";
+  String XACML_JSON = "XACML_JSON";
+
+  @JsonTypeInfo(
+      use = JsonTypeInfo.Id.NAME,
+      include = JsonTypeInfo.As.EXISTING_PROPERTY,
+      property = "type",
+      visible = true)
+  @JsonSubTypes({
+    @JsonSubTypes.Type(value = Oidc.class, name = OIDC),
+    @JsonSubTypes.Type(value = UserInfo.class, name = USER_INFO),
+    @JsonSubTypes.Type(value = Jwt.class, name = JWT),
+    @JsonSubTypes.Type(value = XacmlJson.class, name = XACML_JSON),
+  })
+  interface AuthProvider {
+    AuthProviderType getType();
+  }
+
+  interface IdentityProvider {
+    /**
+     * @langEn Mapping of token claims to ldproxy claims, see [Claims Mapping](#claims-mapping).
+     * @langDe Mapping von Token-Claims zu ldproxy-Claims, siehe [Claims Mapping](#claims-mapping).
+     * @since v3.5
+     * @default see below
+     */
+    @Value.Default
+    default ImmutableClaims getClaims() {
+      return new ImmutableClaims.Builder().build();
+    }
+  }
+
+  interface LoginProvider {
+    /**
+     * @langEn Login settings, see [Login](#login).
+     * @langDe Login Einstellungen, siehe [Login](#login).
+     * @since v3.5
+     * @default null
+     */
+    Optional<Login> getLogin();
+  }
+
+  /**
    * @langEn ## XACML JSON
    *     <p>Policy Decision Points implementing [XACML
    *     3.0](https://docs.oasis-open.org/xacml/3.0/xacml-3.0-core-spec-os-en.html), [XACML REST
@@ -464,9 +633,17 @@ public interface AuthConfiguration {
    *     Edition)](https://github.com/authzforce/server).
    */
   @Value.Immutable
-  @Value.Modifiable
-  @JsonDeserialize(as = ModifiableXacmlJson.class)
-  interface XacmlJson {
+  @JsonDeserialize(builder = ImmutableXacmlJson.Builder.class)
+  interface XacmlJson extends AuthProvider {
+
+    /**
+     * @langEn Always `XACML_JSON`.
+     * @langDe Immer `XACML_JSON`.
+     * @since v3.5
+     */
+    @Override
+    AuthProviderType getType();
+
     /**
      * @langEn The Policy Decision Point.
      * @langDe Der Policy Decision Point.

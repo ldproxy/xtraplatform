@@ -14,6 +14,7 @@ import de.ii.xtraplatform.auth.domain.ImmutableUser;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.base.domain.AuthConfiguration;
+import de.ii.xtraplatform.base.domain.AuthConfiguration.UserInfo;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
@@ -45,10 +46,11 @@ public class TokenAuthenticator implements Authenticator<String, User> {
 
   @Override
   public Optional<User> authenticate(String token) throws AuthenticationException {
-    if (authConfig.isUserInfo()) {
+    if (authConfig.getUserInfo().isPresent()) {
+      UserInfo userInfoProvider = authConfig.getUserInfo().get();
       try {
         String url =
-            authConfig.getSimple().get().getUserInfoEndpoint().get().replace("{{token}}", token);
+            userInfoProvider.getEndpoint().replace("{{token}}", token).replace("{token}", token);
         InputStream response =
             httpClient.getAsInputStream(url, Map.of("Authorization", "Bearer " + token));
 
@@ -56,17 +58,17 @@ public class TokenAuthenticator implements Authenticator<String, User> {
 
         LOGGER.debug("USERINFO {}", userInfo);
 
-        String name = (String) userInfo.get(authConfig.getClaims().getUserName());
+        String name = (String) userInfo.get(userInfoProvider.getClaims().getUserName());
         Role role =
             Role.fromString(
                 Optional.ofNullable((String) userInfo.get(authConfig.getUserRoleKey()))
                     .orElse("USER"));
         List<String> scopes =
-            userInfo.get(authConfig.getClaims().getPermissions()) instanceof String
+            userInfo.get(userInfoProvider.getClaims().getPermissions()) instanceof String
                 ? SPLITTER.splitToList(
-                    (String) userInfo.get(authConfig.getClaims().getPermissions()))
+                    (String) userInfo.get(userInfoProvider.getClaims().getPermissions()))
                 : Optional.ofNullable(
-                        (List<String>) userInfo.get(authConfig.getClaims().getPermissions()))
+                        (List<String>) userInfo.get(userInfoProvider.getClaims().getPermissions()))
                     .orElse(List.of());
 
         return Optional.of(ImmutableUser.builder().name(name).role(role).scopes(scopes).build());
