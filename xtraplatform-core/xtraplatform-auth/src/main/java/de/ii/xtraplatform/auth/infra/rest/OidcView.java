@@ -20,6 +20,7 @@ public class OidcView extends View {
   public final String state;
   public final String token;
   public final boolean callback;
+  public final String urlPrefix;
 
   public OidcView(
       String oidcUri,
@@ -30,7 +31,8 @@ public class OidcView extends View {
       String scopes,
       String state,
       String token,
-      boolean callback) {
+      boolean callback,
+      String staticUrlPrefix) {
     super("/templates/oidc.mustache", Charsets.UTF_8);
     this.oidcUri = oidcUri;
     this.callbackUri = callbackUri;
@@ -41,5 +43,6 @@ public class OidcView extends View {
     this.state = state;
     this.token = token;
     this.callback = callback;
+    this.urlPrefix = staticUrlPrefix;
   }
 }

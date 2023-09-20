@@ -11,5 +11,7 @@ import java.net.URI;
 
 public interface ServicesContext {
 
+  String STATIC_PREFIX = "___static___";
+
   URI getUri();
 }

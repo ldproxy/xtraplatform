@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.auth.infra.rest;
 
+import static de.ii.xtraplatform.services.domain.ServicesContext.STATIC_PREFIX;
+
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.domain.Oidc;
 import de.ii.xtraplatform.auth.domain.SplitCookie;
@@ -15,6 +17,7 @@ import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.web.domain.LoginHandler;
+import de.ii.xtraplatform.web.domain.URICustomizer;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
@@ -101,6 +104,20 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
         .build();
   }
 
+  private String getStaticUrlPrefix(ContainerRequestContext containerRequestContext) {
+    String staticUrlPrefix = "";
+
+    staticUrlPrefix =
+        new URICustomizer(containerRequestContext.getUriInfo().getRequestUri())
+            .cutPathAfterSegments("rest", "services")
+            .replaceInPath("/rest/services", servicesPath)
+            .ensureLastPathSegment(STATIC_PREFIX)
+            .ensureNoTrailingSlash()
+            .getPath();
+
+    return staticUrlPrefix;
+  }
+
   @Override
   public Response handle(
       ContainerRequestContext containerRequestContext,
@@ -121,6 +138,8 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
             ? getCallbackRedirectUri(containerRequestContext, rootPath, state).toString()
             : redirectUri;
 
+    String staticUrlPrefix = getStaticUrlPrefix(containerRequestContext);
+
     ResponseBuilder response =
         Response.ok(
             new OidcView(
@@ -132,7 +151,8 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
                 scopes,
                 state,
                 token,
-                isCallback));
+                isCallback,
+                staticUrlPrefix));
 
     if (Objects.nonNull(token)) {
       List<String> authCookies =
