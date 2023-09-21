@@ -93,7 +93,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
             .filter(provider -> provider instanceof IdentityProvider)
             .map(IdentityProvider.class::cast)
             .findFirst()
-            .orElse(null);
+            .orElse(new IdentityProvider() {});
     this.parser =
         oidc.isEnabled() && oidc instanceof SigningKeyResolver
             ? createParser(null, (SigningKeyResolver) oidc, claimsProvider, clockSkew)
