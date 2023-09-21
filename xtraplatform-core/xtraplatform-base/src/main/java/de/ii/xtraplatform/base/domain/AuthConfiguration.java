@@ -366,6 +366,20 @@ public interface AuthConfiguration {
    *     Konfigurations-Endpunkt bereitstellt, und die Claims werden direkt aus dem Token
    *     extrahiert.
    *     <p>Eine verbreitete Open-Source Implementierung ist [Keycloak](https://www.keycloak.org).
+   * @langAll
+   *     <p><code>
+   * ```yaml
+   * auth:
+   *   providers:
+   *     oidc-ldproxy-integrated:
+   *       type: OIDC
+   *       endpoint: https://my-keycloak/realms/ldproxy/.well-known/openid-configuration
+   *       login:
+   *         clientId: ldproxy-integrated
+   *       claims:
+   *         userName: preferred_username
+   * ```
+   * </code>
    */
   @Value.Immutable
   @JsonDeserialize(builder = ImmutableOidc.Builder.class)
@@ -408,6 +422,18 @@ public interface AuthConfiguration {
    * @langDe ## User-Info-Endpoint
    *     <p>Ein Endpoint der dafür verantwortlich ist, das Token zu validieren und die benötigten
    *     Claims zurückzuliefern.
+   * @langAll
+   *     <p><code>
+   * ```yaml
+   * auth:
+   *   providers:
+   *     userinfo-custom:
+   *       type: USER_INFO
+   *       endpoint: https://my-userinfo-endpoint?token={token}
+   *       claims:
+   *         userName: name
+   * ```
+   * </code>
    */
   @Value.Immutable
   @JsonDeserialize(builder = ImmutableUserInfo.Builder.class)
@@ -442,6 +468,18 @@ public interface AuthConfiguration {
    * @langDe ## JWT-Signing-Key
    *     <p>Ein Signing-Key wird verwendet um JSON Web Tokens zu validieren und die Claims werden
    *     direkt aus dem Token extrahiert.
+   * @langAll
+   *     <p><code>
+   * ```yaml
+   * auth:
+   *   providers:
+   *     jwt-custom:
+   *       type: JWT
+   *       signingKey: 'nurrK3JeUC3ccqs5CESFzgjCsCj3omS+PxDvMeSngqM='
+   *       claims:
+   *         userName: user
+   * ```
+   * </code>
    */
   @Value.Immutable
   @JsonDeserialize(builder = ImmutableJwt.Builder.class)
@@ -631,6 +669,17 @@ public interface AuthConfiguration {
    *     implementieren werden unterstützt.
    *     <p>Eine verbreitete Open-Source Implementierung ist [AuthzForce Server (Community
    *     Edition)](https://github.com/authzforce/server).
+   * @langAll
+   *     <p><code>
+   * ```yaml
+   * auth:
+   *   providers:
+   *     policies:
+   *       type: XACML_JSON
+   *       endpoint: https://my-authzforce/policies/domains/ldproxy/pdp
+   *       version: 1.0
+   * ```
+   * </code>
    */
   @Value.Immutable
   @JsonDeserialize(builder = ImmutableXacmlJson.Builder.class)
