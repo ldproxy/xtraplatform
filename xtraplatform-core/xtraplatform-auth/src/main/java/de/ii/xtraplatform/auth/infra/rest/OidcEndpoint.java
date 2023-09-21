@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.auth.infra.rest;
 
+import static de.ii.xtraplatform.services.domain.ServicesContext.STATIC_PREFIX;
+
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.domain.Oidc;
 import de.ii.xtraplatform.auth.domain.SplitCookie;
@@ -15,6 +17,7 @@ import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.web.domain.LoginHandler;
+import de.ii.xtraplatform.web.domain.URICustomizer;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
@@ -29,6 +32,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriBuilder;
 
 @Singleton
 @AutoBind
@@ -70,14 +74,12 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
   @GET
   @Path(PATH_LOGOUT)
   @Produces(MediaType.TEXT_HTML)
-  public Response getLogin(
-      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+  public Response getLogout(
+      @QueryParam(LoginHandler.PARAM_LOGOUT_REDIRECT_URI) String redirectUri,
       @Context ContainerRequestContext containerRequestContext) {
 
     return logout(containerRequestContext, redirectUri);
   }
-
-  // TODO: include oauth4webapi, oauth.generateRandomCodeVerifier()
 
   private static URI getCallbackUri(
       ContainerRequestContext containerRequestContext, String rootPath) {
@@ -102,6 +104,20 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
         .build();
   }
 
+  private String getStaticUrlPrefix(ContainerRequestContext containerRequestContext) {
+    String staticUrlPrefix = "";
+
+    staticUrlPrefix =
+        new URICustomizer(containerRequestContext.getUriInfo().getRequestUri())
+            .cutPathAfterSegments("rest", "services")
+            .replaceInPath("/rest/services", servicesPath)
+            .ensureLastPathSegment(STATIC_PREFIX)
+            .ensureNoTrailingSlash()
+            .getPath();
+
+    return staticUrlPrefix;
+  }
+
   @Override
   public Response handle(
       ContainerRequestContext containerRequestContext,
@@ -122,6 +138,8 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
             ? getCallbackRedirectUri(containerRequestContext, rootPath, state).toString()
             : redirectUri;
 
+    String staticUrlPrefix = getStaticUrlPrefix(containerRequestContext);
+
     ResponseBuilder response =
         Response.ok(
             new OidcView(
@@ -133,7 +151,8 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
                 scopes,
                 state,
                 token,
-                isCallback));
+                isCallback,
+                staticUrlPrefix));
 
     if (Objects.nonNull(token)) {
       List<String> authCookies =
@@ -147,7 +166,15 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
 
   @Override
   public Response logout(ContainerRequestContext containerRequestContext, String redirectUri) {
-    ResponseBuilder response = Response.seeOther(oidc.getLogoutUri());
+    URI logoutUri =
+        Objects.nonNull(redirectUri)
+            ? UriBuilder.fromUri(oidc.getLogoutUri())
+                .queryParam(LoginHandler.PARAM_LOGOUT_CLIENT_ID, oidc.getClientId())
+                .queryParam(LoginHandler.PARAM_LOGOUT_REDIRECT_URI, redirectUri)
+                .build()
+            : oidc.getLogoutUri();
+
+    ResponseBuilder response = Response.seeOther(logoutUri);
 
     List<String> authCookies =
         SplitCookie.deleteToken(

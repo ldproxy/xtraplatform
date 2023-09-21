@@ -21,6 +21,8 @@ public interface LoginHandler {
   String PARAM_LOGIN_SCOPES = "scopes";
   String PARAM_CALLBACK_STATE = "state";
   String PARAM_CALLBACK_TOKEN = "access_token";
+  String PARAM_LOGOUT_REDIRECT_URI = "post_logout_redirect_uri";
+  String PARAM_LOGOUT_CLIENT_ID = "client_id";
 
   Response handle(
       ContainerRequestContext containerRequestContext,
