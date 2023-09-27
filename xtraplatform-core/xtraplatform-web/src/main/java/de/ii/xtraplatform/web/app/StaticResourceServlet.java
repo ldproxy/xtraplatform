@@ -5,19 +5,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.web.domain;
+package de.ii.xtraplatform.web.app;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.hash.Hashing;
-import com.google.common.io.Resources;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import de.ii.xtraplatform.web.app.ResourceURL;
+import de.ii.xtraplatform.web.domain.StaticResourceReader;
+import de.ii.xtraplatform.web.domain.StaticResourceReader.CachedResource;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,37 +33,12 @@ public class StaticResourceServlet extends HttpServlet {
   private static final CharMatcher SLASHES = CharMatcher.is('/');
   private static final String DEFAULT_PAGE = "index.html";
 
-  private static class CachedAsset {
-
-    private final byte[] resource;
-    private final String eTag;
-    private final long lastModifiedTime;
-
-    private CachedAsset(byte[] resource, long lastModifiedTime) {
-      this.resource = resource;
-      this.eTag = '"' + Hashing.murmur3_128().hashBytes(resource).toString() + '"';
-      this.lastModifiedTime = lastModifiedTime;
-    }
-
-    public byte[] getResource() {
-      return resource;
-    }
-
-    public String getETag() {
-      return eTag;
-    }
-
-    public long getLastModifiedTime() {
-      return lastModifiedTime;
-    }
-  }
-
   private static final MediaType DEFAULT_MEDIA_TYPE = MediaType.HTML_UTF_8;
 
   private final String resourcePath;
   private final String uriPath;
   private final Charset defaultCharset;
-  private final Class<?> contextClass;
+  private final StaticResourceReader resourceReader;
   private final Optional<String> rootRedirect;
 
   /**
@@ -81,40 +54,32 @@ public class StaticResourceServlet extends HttpServlet {
    * @param resourcePath the base URL from which assets are loaded
    * @param uriPath the URI path fragment in which all requests are rooted
    * @param defaultCharset the default character set
-   * @param contextClass
+   * @param resourceReader
    * @param rootRedirect
    */
   public StaticResourceServlet(
       String resourcePath,
       String uriPath,
       Charset defaultCharset,
-      Class<?> contextClass,
+      StaticResourceReader resourceReader,
       Optional<String> rootRedirect) {
     final String trimmedPath = SLASHES.trimFrom(resourcePath);
     this.resourcePath = trimmedPath.isEmpty() ? trimmedPath : trimmedPath + '/';
     final String trimmedUri = SLASHES.trimTrailingFrom(uriPath);
     this.uriPath = trimmedUri.isEmpty() ? "/" : trimmedUri;
     this.defaultCharset = defaultCharset;
-    this.contextClass = contextClass;
+    this.resourceReader = resourceReader;
     this.rootRedirect = rootRedirect;
   }
 
   public StaticResourceServlet(
-      String resourcePath, String uriPath, Charset defaultCharset, Class<?> contextClass) {
-    this(resourcePath, uriPath, defaultCharset, contextClass, Optional.of("/"));
+      String resourcePath,
+      String uriPath,
+      Charset defaultCharset,
+      StaticResourceReader resourceReader) {
+    this(resourcePath, uriPath, defaultCharset, resourceReader, Optional.of("/"));
   }
 
-  /*public URL getResourceURL() {
-  return Resources.getResource(resourcePath);
-  }
-
-  public String getUriPath() {
-  return uriPath;
-  }
-
-  public String getIndexFile() {
-  return indexFile;
-  }*/
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
@@ -132,7 +97,7 @@ public class StaticResourceServlet extends HttpServlet {
         return;
       }
 
-      final CachedAsset cachedAsset = loadAsset(builder.toString());
+      final CachedResource cachedAsset = loadAsset(builder.toString());
       if (cachedAsset == null) {
         resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         return;
@@ -143,7 +108,7 @@ public class StaticResourceServlet extends HttpServlet {
         return;
       }
 
-      resp.setDateHeader(HttpHeaders.LAST_MODIFIED, cachedAsset.getLastModifiedTime());
+      resp.setDateHeader(HttpHeaders.LAST_MODIFIED, cachedAsset.getLastModified());
       resp.setHeader(HttpHeaders.ETAG, cachedAsset.getETag());
 
       final String mimeTypeOfExtension = req.getServletContext().getMimeType(req.getRequestURI());
@@ -176,7 +141,7 @@ public class StaticResourceServlet extends HttpServlet {
     }
   }
 
-  private CachedAsset loadAsset(String key) throws URISyntaxException, IOException {
+  private CachedResource loadAsset(String key) throws URISyntaxException, IOException {
     String cleanKey =
         key.startsWith("/rest/services/___static___")
             ? key.replace("/rest/services/___static___", "")
@@ -186,50 +151,12 @@ public class StaticResourceServlet extends HttpServlet {
     final String absoluteRequestedResourcePath =
         "/" + SLASHES.trimFrom(this.resourcePath + requestedResourcePath);
 
-    URL requestedResourceURL = null;
-    byte[] requestedResourceBytes = null;
-    // Try to determine whether we're given a resource with an actual file, or that
-    // it is pointing to an (internal) directory. In the latter case, use the default
-    // pages to search instead...
-    try {
-      requestedResourceURL = Resources.getResource(contextClass, absoluteRequestedResourcePath);
-      requestedResourceBytes = Resources.toByteArray(requestedResourceURL);
-      if (requestedResourceBytes.length == 0) {
-        throw new IllegalStateException();
-      }
-    } catch (Throwable e) {
-      // Given resource was a directory, stop looking for the actual resource
-      // and check whether we can display a default page instead...
-      String defaultPage = DEFAULT_PAGE;
-      if (!defaultPage.isEmpty()) {
-        try {
-          requestedResourceURL =
-              Resources.getResource(
-                  contextClass, absoluteRequestedResourcePath + '/' + defaultPage);
-          requestedResourceBytes = Resources.toByteArray(requestedResourceURL);
-        } catch (Throwable e1) {
-          // ignore
-        }
-      }
-    }
-
-    if (requestedResourceURL == null) {
-      return null;
-    }
-
-    long lastModified = ResourceURL.getLastModified(requestedResourceURL);
-
-    if (lastModified < 1) {
-      // Something went wrong trying to get the last modified time: just use the current time
-      lastModified = System.currentTimeMillis();
-    }
-
-    // zero out the millis since the date we get back from If-Modified-Since will not have them
-    lastModified = (lastModified / 1000) * 1000;
-    return new CachedAsset(requestedResourceBytes, lastModified);
+    return resourceReader
+        .load(absoluteRequestedResourcePath, Optional.of(DEFAULT_PAGE))
+        .orElse(null);
   }
 
-  private boolean isCachedClientSide(HttpServletRequest req, CachedAsset cachedAsset) {
+  private boolean isCachedClientSide(HttpServletRequest req, CachedResource cachedAsset) {
     // HTTP: A recipient MUST ignore If-Modified-Since if the request contains an If-None-Match
     // header field
     String ifNoneMatch = req.getHeader(HttpHeaders.IF_NONE_MATCH);
@@ -241,7 +168,7 @@ public class StaticResourceServlet extends HttpServlet {
     if (method.equals("GET") || method.equals("HEAD")) {
       try {
         long ifModifiedSince = req.getDateHeader(HttpHeaders.IF_MODIFIED_SINCE);
-        return ifModifiedSince >= cachedAsset.getLastModifiedTime();
+        return ifModifiedSince >= cachedAsset.getLastModified();
       } catch (IllegalArgumentException e) {
         // HTTP: A recipient MUST ignore the If-Modified-Since header field if the received
         // field-value is not a valid HTTP-date

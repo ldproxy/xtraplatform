@@ -13,7 +13,6 @@ import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.ServletRegistration;
 import de.ii.xtraplatform.web.domain.StaticResourceHandler;
-import de.ii.xtraplatform.web.domain.StaticResourceServlet;
 import de.ii.xtraplatform.web.domain.StaticResources;
 import io.dropwizard.core.setup.Environment;
 import java.util.HashMap;
@@ -59,7 +58,9 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
                       staticResources1.getResourcePath(),
                       staticResources1.getUrlPath(),
                       null,
-                      staticResources1.getClass());
+                      staticResources1
+                          .getResourceReader()
+                          .orElse(new StaticResourceReaderJar(staticResources1.getClass())));
 
               Dynamic registration =
                   environment.servlets().addServlet(staticResources1.getUrlPath(), servlet);
