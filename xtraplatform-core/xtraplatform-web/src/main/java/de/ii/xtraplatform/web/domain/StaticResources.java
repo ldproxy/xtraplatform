@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
+import java.util.Optional;
 
 @AutoMultiBind
 public interface StaticResources {
@@ -18,5 +19,9 @@ public interface StaticResources {
 
   default boolean isEnabled() {
     return true;
+  }
+
+  default Optional<StaticResourceReader> getResourceReader() {
+    return Optional.empty();
   }
 }
