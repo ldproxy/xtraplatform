@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class MapSubtractor {
 
@@ -173,13 +174,20 @@ public class MapSubtractor {
                     ImmutableList.<String>builder().addAll(ignoreKeys).add(listEntryKey).build(),
                     Map.of(),
                     keepIndexes);
+
+            // ignore entries that only have key
+            if (subtracted.size() == 1
+                && Objects.equals(subtracted.keySet().iterator().next(), listEntryKey)) {
+              subtracted = null;
+            }
+
             diff.set(diff.indexOf(leftMatch.get()), subtracted);
           }
         }
       }
     }
 
-    return diff;
+    return diff.stream().filter(Objects::nonNull).collect(Collectors.toList());
   }
 
   private Map<String, Object> entriesDiffering(MapDifference<String, Object> difference) {
