@@ -12,6 +12,7 @@ import de.ii.xtraplatform.store.domain.ValueEncoding;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
@@ -112,5 +113,11 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
   @Override
   default EntityData fromBytes(Identifier identifier, byte[] entityData) throws IOException {
     return getDecorated().fromBytes(identifier, entityData);
+  }
+
+  @Override
+  default EntityDataBuilder<EntityData> getBuilder(
+      Identifier identifier, Optional<String> entitySubtype) {
+    return getDecorated().getBuilder(identifier, entitySubtype);
   }
 }

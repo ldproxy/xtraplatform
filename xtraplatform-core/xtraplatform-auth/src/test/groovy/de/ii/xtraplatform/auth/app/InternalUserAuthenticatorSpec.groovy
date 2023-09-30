@@ -17,6 +17,7 @@ import de.ii.xtraplatform.base.domain.ModifiableAuthConfiguration
 import de.ii.xtraplatform.store.domain.Identifier
 import de.ii.xtraplatform.store.domain.ValueEncoding
 import de.ii.xtraplatform.store.domain.entities.EntityData
+import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder
 import de.ii.xtraplatform.store.domain.entities.EntityDataStore
 import spock.lang.Shared
 import spock.lang.Specification
@@ -103,6 +104,11 @@ class InternalUserAuthenticatorSpec extends Specification {
 
         @Override
         ValueEncoding<EntityData> getValueEncoding() {
+            return null
+        }
+
+        @Override
+        EntityDataBuilder<EntityData> getBuilder(Identifier identifier, Optional<String> entitySubtype) {
             return null
         }
 

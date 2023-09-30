@@ -256,11 +256,21 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     return ImmutableList.of(builder.build());
   }
 
+  @Override
+  public EntityDataBuilder<EntityData> getBuilder(
+      Identifier identifier, Optional<String> entitySubtype) {
+    return entitySubtype.isPresent()
+        ? getBuilder(identifier, entitySubtype.get())
+        : getBuilder(identifier);
+  }
+
   protected EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
     if (noDefaults) {
       return (EntityDataBuilder<EntityData>)
           entityFactories.get(EntityDataStore.entityType(identifier)).emptySuperDataBuilder();
     }
+
+    // TODO: try defaults like below?
 
     return (EntityDataBuilder<EntityData>)
         entityFactories.get(EntityDataStore.entityType(identifier)).superDataBuilder();

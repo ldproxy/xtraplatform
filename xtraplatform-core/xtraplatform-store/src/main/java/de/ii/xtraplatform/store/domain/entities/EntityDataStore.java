@@ -76,6 +76,8 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
 
   ValueEncoding<EntityData> getValueEncoding();
 
+  EntityDataBuilder<EntityData> getBuilder(Identifier identifier, Optional<String> entitySubtype);
+
   <U extends T> EntityDataStore<U> forType(Class<U> type);
 
   Map<String, Object> asMap(Identifier identifier, EntityData entityData) throws IOException;
