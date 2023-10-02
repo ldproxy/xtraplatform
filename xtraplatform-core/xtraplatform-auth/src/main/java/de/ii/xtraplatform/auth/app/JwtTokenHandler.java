@@ -134,6 +134,9 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
             .setSubject(user.getName())
             .claim(authConfig.getUserRoleKey(), user.getRole().toString())
             .claim("rememberMe", rememberMe)
+            .claim("roles", "")
+            .claim("scope", "")
+            .claim("aud", "")
             .setExpiration(expiration);
     if (user.getForceChangePassword()) {
       jwtBuilder.claim("forceChangePassword", true);
