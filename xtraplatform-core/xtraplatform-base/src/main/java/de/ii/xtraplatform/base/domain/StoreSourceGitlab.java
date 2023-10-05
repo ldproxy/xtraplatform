@@ -10,15 +10,16 @@ package de.ii.xtraplatform.base.domain;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.Strings;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceGitea.Builder.class)
-public interface StoreSourceGitea extends StoreSourceHttp {
+@JsonDeserialize(builder = ImmutableStoreSourceGitlab.Builder.class)
+public interface StoreSourceGitlab extends StoreSourceHttp {
 
-  String KEY = "GITEA";
+  String KEY = "GITLAB";
 
   @Value.Derived
   @Override
@@ -27,14 +28,14 @@ public interface StoreSourceGitea extends StoreSourceHttp {
   }
 
   @Value.Check
-  default StoreSourceGitea apply() {
+  default StoreSourceGitlab apply() {
     Pattern pattern =
         Pattern.compile(
-            "^([\\w\\-\\.\\/]+)\\/([\\w\\-\\.]+)\\/([\\w\\-\\.]+)(?::([\\w\\-\\.]+))?$");
+            "^(?:([\\w\\-\\.\\/]+)\\/)?([\\w\\-\\.]+)\\/([\\w\\-\\.]+)(?::([\\w\\-\\.]+))?$");
     Matcher matcher = pattern.matcher(getSrc());
 
     if (matcher.matches()) {
-      String host = matcher.group(1);
+      String host = Optional.ofNullable(matcher.group(1)).orElse("gitlab.com");
       String org = matcher.group(2);
       String repo = matcher.group(3);
       String optBranch = matcher.group(4);
@@ -44,11 +45,12 @@ public interface StoreSourceGitea extends StoreSourceHttp {
               ? ""
               : getArchiveRoot().startsWith("/") ? getArchiveRoot() : "/" + getArchiveRoot();
 
-      return new ImmutableStoreSourceGitea.Builder()
+      return new ImmutableStoreSourceGitlab.Builder()
           .from(this)
           .typeString(Type.HTTP_KEY)
-          .src(String.format("https://%s/%s/%s/archive/%s.zip", host, org, repo, branch))
-          .archiveRoot(String.format("/%s%s", repo, root))
+          .src(
+              String.format("https://%s/%s/%s/-/archive/%s/%3$s-%4$s.zip", host, org, repo, branch))
+          .archiveRoot(String.format("/%s-%s%s", repo, branch, root))
           .label(String.format("%s[%s]", KEY, Path.of(getSrc())))
           .build();
     }
