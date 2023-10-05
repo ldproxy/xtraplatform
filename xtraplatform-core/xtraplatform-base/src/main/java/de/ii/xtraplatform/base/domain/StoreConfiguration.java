@@ -14,6 +14,7 @@ import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Mode;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.docs.DocFile;
+import de.ii.xtraplatform.docs.DocIgnore;
 import de.ii.xtraplatform.docs.DocStep;
 import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
@@ -28,13 +29,16 @@ import org.immutables.value.Value;
 
 /**
  * @langEn # Store
+ *     <p>::: info This is the documentation of the old store that will be removed in `v4.0`. For
+ *     the new store that was introduced in `v3.5` see [Store (new)](41-store-new.md). For migration
+ *     instructions see [Migration](../migration/README.md). :::
  *     <p>The store contains configuration objects.
  *     <p>## Configuration
  *     <p><code>
  * |Option |Type |Default |Description
  * | --- | --- | --- | ---
  * |`mode` |enum |`READ_WRITE` |`READ_WRITE` or `READ_ONLY`. Dictates if the application may apply changes to the store.
- * |`additionalLocations` |array |`[]` | List of paths with [additional directories](#additional-locations).
+ * |`additionalLocations` |array |`[]` | *Deprecated* List of paths with [additional directories](#additional-locations).
  * </code>
  *     <p>## Store structure
  *     <p>Each configuration object has a type, an optional sub-type, and an id unique to the type
@@ -161,13 +165,16 @@ import org.immutables.value.Value;
  *     the description of [configuration-object-types](README.md#configuration-object-types) in the
  *     ["special-cases"](README.md#special-cases) section.
  * @langDe # Store
+ *     <p>::: info Dies ist die Dokumentation des alten Stores der in `v4.0` entfernt wird. Für den
+ *     neuen Store, der in `v3.5` eingeführt wurde, siehe [Store (neu)](41-store-new.md). Für Hilfe
+ *     bei der Migration, siehe [Migration](../migration/README.md). :::
  *     <p>Der Store enthält Konfigurationsobjekte.
  *     <p>## Konfiguration
  *     <p><code>
  * |Option |Typ |Default |Beschreibung
  * | --- | --- | --- | ---
  * |`mode` |enum |`READ_WRITE` |`READ_WRITE` oder `READ_ONLY`. Bestimmt ob die Applikation Änderungen am Store vornehmen darf.
- * |`additionalLocations` |array |`[]` | Liste von Pfaden mit [zusätzlichen Verzeichnissnen](#additional-locations).
+ * |`additionalLocations` |array |`[]` | *Deprecated* Liste von Pfaden mit [zusätzlichen Verzeichnissnen](#additional-locations).
  * </code>
  *     <p>## Struktur des Store
  *     <p>Jedes Konfigurationsobjekt hat einen Typ, einen optionalen Sub-Typ sowie eine für den Typ
@@ -316,18 +323,20 @@ public interface StoreConfiguration {
   enum StoreMode {
     READ_WRITE,
     READ_ONLY,
-    DISTRIBUTED,
+    RO,
+    RW,
   }
 
   /**
-   * @langEn The store contains configuration objects.
-   * @langDe `READ_WRITE` oder `READ_ONLY`. Bestimmt ob die Software Änderungen am Store vornehmen
-   *     darf.
-   * @default `READ_WRITE`
+   * @langEn `RW` or `RO`. Set to `RO` if ldproxy should not be allowed to write anything.
+   *     Otherwise, see `mode` for [Store sources](#store-sources).
+   * @langDe `RW` oder `RO`. Kann auf `RO` gesetzt werden, falls jeglicher Schreibvorgang verboten
+   *     werden soll. Ansonsten siehe `mode` für [Store sources](#store-sources).
+   * @default RW
    */
   @Value.Default
   default StoreMode getMode() {
-    return StoreMode.READ_WRITE;
+    return StoreMode.RW;
   }
 
   /**
@@ -335,34 +344,47 @@ public interface StoreConfiguration {
    * @langDe Liste von Pfaden mit [zusätzlichen Verzeichnissnen](#additional-locations).
    * @default `[]`
    */
+  @DocIgnore
   @Deprecated(since = "3.3")
   List<String> getAdditionalLocations();
 
+  @DocIgnore
   @Value.Default
   default boolean isWatch() {
     return false;
   }
 
+  @DocIgnore
   @Value.Default
   default boolean isFailOnUnknownProperties() {
     return false;
   }
 
+  /**
+   * @langEn List of [Store sources](#store-sources). The default is the data directory. The list is
+   *     appendable, which means entries from configuration files will be appended to the default.
+   * @langDe Liste von [Store sources](#store-sources). Der Default ist das Data-Verzeichnis. Die
+   *     Liste ist erweiterbar, d.h. Einträge aus Konfigurationsdateien werden zum Default
+   *     hinzugefügt.
+   * @default [{type:FS,src:.}]
+   * @since v3.5
+   */
   @JsonMerge
   List<StoreSource> getSources();
 
+  @DocIgnore
   Optional<StoreFilters> getFilter();
 
   @JsonIgnore
   @Value.Derived
   default boolean isReadOnly() {
-    return getMode() == StoreMode.READ_ONLY;
+    return getMode() == StoreMode.RO || getMode() == StoreMode.READ_ONLY;
   }
 
   @JsonIgnore
   @Value.Derived
   default boolean isReadWrite() {
-    return getMode() == StoreMode.READ_WRITE;
+    return getMode() == StoreMode.RW || getMode() == StoreMode.READ_WRITE;
   }
 
   @JsonIgnore
@@ -409,10 +431,10 @@ public interface StoreConfiguration {
           .build();
     }
 
-    if (getMode() == StoreMode.READ_ONLY) {
+    if (getMode() == StoreMode.RO || getMode() == StoreMode.READ_ONLY) {
       return new ImmutableStoreConfiguration.Builder()
           .from(this)
-          .mode(StoreMode.READ_WRITE)
+          .mode(StoreMode.RW)
           .sources(
               getSources().stream()
                   .map(

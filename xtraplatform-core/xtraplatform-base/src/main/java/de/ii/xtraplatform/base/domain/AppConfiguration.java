@@ -13,6 +13,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.docs.DocFile;
+import de.ii.xtraplatform.docs.DocStep;
+import de.ii.xtraplatform.docs.DocStep.Step;
+import de.ii.xtraplatform.docs.DocTable;
+import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.core.server.ServerFactory;
@@ -22,11 +26,15 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.immutables.value.Value;
 
 /**
- * # Global configuration
- *
- * @langEn The configuration file `cfg.yml` is located in the data directory.
- * @langDe Die Konfigurationsdatei `cfg.yml` befindet sich im Daten-Verzeichnis.
- * @langEn ### Environment variables Both in `cfg.yml` and in configuration objects, defaults and
+ * @langEn # Configuration
+ *     <p>The configuration file `cfg.yml` is located in the data directory (old) or in the [Store
+ *     (new)](41-store-new.md).
+ *     <p>{@docTable:properties}
+ * @langDe # Konfiguration
+ *     <p>Die Konfigurationsdatei `cfg.yml` befindet sich im Daten-Verzeichnis (alt) oder im [Store
+ *     (neu)](41-store-new.md).
+ *     <p>{@docTable:properties}
+ * @todoEn ### Environment variables Both in `cfg.yml` and in configuration objects, defaults and
  *     overrides, substitutions can be made by environment variables.
  *     <p>Such an expression `${NAME}` in one of these files is replaced by the value of the
  *     environment variable `NAME`. If the variable is not set, `null` is used. You can also specify
@@ -43,7 +51,7 @@ import org.immutables.value.Value;
  *     <p>To load the files from the above example into `env/test`, you would then have to set the
  *     environment variable `DEPLOYMENT_ENV=test`. If this is not set, the directory
  *     `env/production` would be loaded.
- * @langDe ### Umgebungsvariablen Sowohl in der `cfg.yml` als auch in Konfigurationsobjekten,
+ * @todoDe ### Umgebungsvariablen Sowohl in der `cfg.yml` als auch in Konfigurationsobjekten,
  *     Defaults und Overrides können Ersetzungen durch Umgebungsvariablen vorgenommen werden.
  *     <p>Ein solcher Ausdruck `${NAME}` in einer dieser Dateien wird durch den Wert der
  *     Umgebungsvariable `NAME` ersetzt. Ist die Variable nicht gesetzt, wird `null` eingesetzt. Man
@@ -61,7 +69,7 @@ import org.immutables.value.Value;
  *     <p>Um die Dateien aus obigem Beispiel in `env/test` zu laden, müsste man dann die
  *     Umgebunsvariable `DEPLOYMENT_ENV=test` setzen. Wenn diese nicht gesetzt ist würde das
  *     Verzeichnis `env/production` geladen.
- * @langEn ### HTTP-Proxy If the application needs to use an HTTP proxy to access external
+ * @todoEn ### HTTP-Proxy If the application needs to use an HTTP proxy to access external
  *     resources, it can be configured as follows.
  *     <p>In this example, the HTTP proxy URL is `http://localhost:8888`. Connections to hosts
  *     listed under `nonProxyHosts` are made directly and not through the HTTP proxy. In this
@@ -81,7 +89,7 @@ import org.immutables.value.Value;
  * ```
  * </code>
  *     <p>
- * @langDe ### HTTP-Proxy Falls die Applikation einen HTTP-Proxy verwenden muss, um auf externe
+ * @todoDe ### HTTP-Proxy Falls die Applikation einen HTTP-Proxy verwenden muss, um auf externe
  *     Ressourcen zuzugreifen, kann dieser wie folgt konfiguriert werden.
  *     <p>In diesem Beispiel ist die HTTP-Proxy-URL `http://localhost:8888`. Verbindungen zu Hosts
  *     die unter `nonProxyHosts` augelistet sind werden direkt und nicht durch den HTTP-Proxy
@@ -101,28 +109,39 @@ import org.immutables.value.Value;
  * ```
  * </code>
  *     <p>
- * @langEn ### Idle-Timeout This setting should only be adjusted if users report persistent problems
+ * @todoEn ### Idle-Timeout This setting should only be adjusted if users report persistent problems
  *     with long-running requests. In most cases, the default setting of 30 seconds is recommended.
- * @langDe ### Idle-Timeout Diese Einstellung sollte nur angepasst werden, falls Nutzer von
+ * @todoDe ### Idle-Timeout Diese Einstellung sollte nur angepasst werden, falls Nutzer von
  *     anhaltenden Problemen mit langlaufenden Requests berichten. In den meisten Fällen wird die
  *     Standard-Einstellung von 30 Sekunden empfohlen.
- * @see StoreConfiguration
- * @see ServerConfiguration
- * @see LoggingConfiguration
- * @see io.dropwizard.client.HttpClientConfiguration
- * @see ManagerConfiguration
- * @see BackgroundTasksConfiguration
- * @see AuthConfiguration
  */
-@DocFile(path = "application/todo", name = "README.md")
+@DocFile(
+    path = "application",
+    name = "30-configuration.md",
+    tables = {
+      @DocTable(
+          name = "properties",
+          rows = {@DocStep(type = Step.JSON_PROPERTIES)},
+          columnSet = ColumnSet.JSON_PROPERTIES)
+    })
 @Value.Immutable
 @Value.Modifiable
 @JsonDeserialize(as = ModifiableAppConfiguration.class)
 public abstract class AppConfiguration extends Configuration {
 
+  /**
+   * @langEn See [Store (new)](41-store-new.md).
+   * @langDe Siehe [Store (neu)](41-store-new.md).
+   */
+  @JsonProperty("store")
   @Valid
   public abstract StoreConfiguration getStore();
 
+  /**
+   * @langEn See [Authorization](65-auth.md).
+   * @langDe Siehe [Autorisierung](65-auth.md).
+   */
+  @JsonProperty("auth")
   @Valid
   public abstract AuthConfiguration getAuth();
 
@@ -139,11 +158,19 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   public abstract HttpClientConfiguration getHttpClient();
 
+  /**
+   * @langEn See [Web Server](60-server.md).
+   * @langDe Siehe [Webserver](60-server.md).
+   */
   @JsonProperty("server")
   @Valid
   @Override
   public abstract ServerConfiguration getServerFactory();
 
+  /**
+   * @langEn See [Logging](50-logging.md).
+   * @langDe Siehe [Logging](50-logging.md).
+   */
   @JsonProperty("logging")
   @Valid
   @Override
