@@ -7,17 +7,17 @@
  */
 package de.ii.xtraplatform.entities.app;
 
-import static de.ii.xtraplatform.store.domain.entities.EntityDataStore.entityType;
+import static de.ii.xtraplatform.entities.domain.EntityDataStore.entityType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.base.domain.Jackson;
-import de.ii.xtraplatform.store.domain.Identifier;
-import de.ii.xtraplatform.store.domain.entities.EntityDataStore;
-import de.ii.xtraplatform.store.domain.entities.EntityRegistry;
-import de.ii.xtraplatform.store.domain.entities.EntityState;
-import de.ii.xtraplatform.store.domain.entities.EntityState.STATE;
+import de.ii.xtraplatform.entities.domain.EntityDataStore;
+import de.ii.xtraplatform.entities.domain.EntityRegistry;
+import de.ii.xtraplatform.entities.domain.EntityState;
+import de.ii.xtraplatform.entities.domain.EntityState.STATE;
+import de.ii.xtraplatform.entities.domain.Identifier;
 import de.ii.xtraplatform.web.domain.AdminSubEndpoint;
 import java.io.IOException;
 import java.io.PrintWriter;

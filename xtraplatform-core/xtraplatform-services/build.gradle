@@ -3,7 +3,7 @@ maturity = 'MATURE'
 
 dependencies {
     provided project(':xtraplatform-web')
-    provided project(':xtraplatform-store')
+    provided project(':xtraplatform-entities')
     provided project(':xtraplatform-openapi')
 
     embedded group: 'it.sauronsoftware.cron4j', name: 'cron4j', version: '2.2.5'

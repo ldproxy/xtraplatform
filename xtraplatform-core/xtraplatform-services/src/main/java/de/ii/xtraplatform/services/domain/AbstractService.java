@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.services.domain;
 
 import de.ii.xtraplatform.base.domain.LogContext;
-import de.ii.xtraplatform.store.domain.entities.AbstractPersistentEntity;
+import de.ii.xtraplatform.entities.domain.AbstractPersistentEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

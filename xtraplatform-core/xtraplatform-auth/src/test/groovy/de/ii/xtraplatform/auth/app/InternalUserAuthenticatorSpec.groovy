@@ -12,13 +12,12 @@ import de.ii.xtraplatform.auth.domain.Role
 import de.ii.xtraplatform.base.domain.AppContext
 import de.ii.xtraplatform.auth.domain.User
 import de.ii.xtraplatform.base.domain.AppConfiguration
-import de.ii.xtraplatform.base.domain.AuthConfiguration
 import de.ii.xtraplatform.base.domain.ModifiableAuthConfiguration
-import de.ii.xtraplatform.store.domain.Identifier
-import de.ii.xtraplatform.store.domain.ValueEncoding
-import de.ii.xtraplatform.store.domain.entities.EntityData
-import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder
-import de.ii.xtraplatform.store.domain.entities.EntityDataStore
+import de.ii.xtraplatform.entities.domain.Identifier
+import de.ii.xtraplatform.entities.domain.ValueEncoding
+import de.ii.xtraplatform.entities.domain.EntityData
+import de.ii.xtraplatform.entities.domain.EntityDataBuilder
+import de.ii.xtraplatform.entities.domain.EntityDataStore
 import spock.lang.Shared
 import spock.lang.Specification
 
