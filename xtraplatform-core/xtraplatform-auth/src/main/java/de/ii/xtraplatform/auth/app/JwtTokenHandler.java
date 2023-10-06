@@ -21,7 +21,7 @@ import de.ii.xtraplatform.base.domain.AuthConfiguration.IdentityProvider;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.Jwt;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSourceFsV3;
-import de.ii.xtraplatform.store.domain.BlobStore;
+import de.ii.xtraplatform.blobs.domain.BlobStore;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.JwtParser;

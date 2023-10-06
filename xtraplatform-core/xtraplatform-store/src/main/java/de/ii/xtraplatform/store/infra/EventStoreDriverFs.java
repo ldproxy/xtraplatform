@@ -68,7 +68,7 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
   public EventStoreDriverFs(Path dataDirectory) {
     this.dataDirectory = dataDirectory;
     this.eventReaderDir = new EventReaderDir();
-    this.eventReaderZip = new ZipReader();
+    this.eventReaderZip = new EventReaderZip();
   }
 
   @Override

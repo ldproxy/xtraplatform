@@ -3,8 +3,6 @@ maturity = 'MATURE'
 
 dependencies {
     provided project(':xtraplatform-streams')
-    provided project(':xtraplatform-web')
-
 }
 
 moduleInfo {

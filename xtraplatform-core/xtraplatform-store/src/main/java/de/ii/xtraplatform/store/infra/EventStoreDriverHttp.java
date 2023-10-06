@@ -35,7 +35,7 @@ public class EventStoreDriverHttp implements EventStoreDriver {
 
   @Inject
   EventStoreDriverHttp(AppContext appContext) {
-    this.eventReaderZip = new ZipReader();
+    this.eventReaderZip = new EventReaderZip();
     this.httpFetcher =
         new StoreSourceHttpFetcher(
             appContext.getTmpDir(), appContext.getConfiguration().getHttpClient());

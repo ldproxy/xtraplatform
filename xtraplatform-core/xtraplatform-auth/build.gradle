@@ -7,6 +7,7 @@ ext {
 dependencies {
     provided project(':xtraplatform-web')
     provided project(':xtraplatform-streams')
+    provided project(':xtraplatform-blobs')
     provided project(':xtraplatform-store')
     provided project(':xtraplatform-openapi')
     provided project(':xtraplatform-services')

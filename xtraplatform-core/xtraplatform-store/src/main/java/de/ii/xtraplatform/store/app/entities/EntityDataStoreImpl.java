@@ -23,7 +23,7 @@ import de.ii.xtraplatform.store.app.ValueDecoderEnvVarSubstitution;
 import de.ii.xtraplatform.store.app.ValueDecoderWithBuilder;
 import de.ii.xtraplatform.store.app.ValueEncodingJackson;
 import de.ii.xtraplatform.store.domain.AbstractMergeableKeyValueStore;
-import de.ii.xtraplatform.store.domain.BlobStore;
+// import de.ii.xtraplatform.store.domain.BlobStore;
 import de.ii.xtraplatform.store.domain.EventStore;
 import de.ii.xtraplatform.store.domain.Identifier;
 import de.ii.xtraplatform.store.domain.ImmutableIdentifier;
@@ -89,9 +89,9 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       EventStore eventStore,
       Jackson jackson,
       Lazy<Set<EntityFactory>> entityFactories,
-      EntityDataDefaultsStore defaultsStore,
-      BlobStore blobStore) {
-    this(appContext, eventStore, jackson, entityFactories, defaultsStore, blobStore, false);
+      EntityDataDefaultsStore defaultsStore /*,
+      BlobStore blobStore*/) {
+    this(appContext, eventStore, jackson, entityFactories, defaultsStore /*, blobStore*/, false);
   }
 
   // for ldproxy-cfg
@@ -100,8 +100,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       EventStore eventStore,
       Jackson jackson,
       Lazy<Set<EntityFactory>> entityFactories,
-      EntityDataDefaultsStore defaultsStore,
-      BlobStore blobStore,
+      EntityDataDefaultsStore defaultsStore /*,
+      BlobStore blobStore*/,
       boolean noDefaults) {
     this.isEventStoreReadOnly = eventStore.isReadOnly();
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
@@ -122,7 +122,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             Optional.empty(),
             Optional.of(this::onUpdate));
     this.defaultsStore = defaultsStore;
-    this.blobStoreReady = blobStore.onReady()::join;
+    this.blobStoreReady = () -> null; // blobStore.onReady()::join;
     this.noDefaults = noDefaults;
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());

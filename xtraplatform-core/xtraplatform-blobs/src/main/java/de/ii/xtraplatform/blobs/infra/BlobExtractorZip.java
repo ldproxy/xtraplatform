@@ -5,41 +5,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.store.infra;
+package de.ii.xtraplatform.blobs.infra;
 
 import de.ii.xtraplatform.base.domain.util.LambdaWithException;
-import de.ii.xtraplatform.base.domain.util.Tuple;
 import de.ii.xtraplatform.base.domain.util.ZipWalker;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ZipReader implements EventReader, BlobExtractor {
+public class BlobExtractorZip implements BlobExtractor {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ZipReader.class);
-
-  @Override
-  public Stream<Tuple<Path, Supplier<byte[]>>> load(Path sourcePath) throws IOException {
-    List<Tuple<Path, Supplier<byte[]>>> entries = new ArrayList<>();
-
-    ZipWalker.walkEntries(
-        sourcePath,
-        (zipEntry, payload) -> {
-          // have to read here because zip is closed after return of entries
-          byte[] bytes = payload.get();
-          entries.add(Tuple.of(zipEntry, () -> bytes));
-        });
-
-    return entries.stream();
-  }
+  private static final Logger LOGGER = LoggerFactory.getLogger(BlobExtractorZip.class);
 
   @Override
   public void extract(

@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.store.app;
+package de.ii.xtraplatform.blobs.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.Lists;
@@ -14,10 +14,10 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
-import de.ii.xtraplatform.store.domain.BlobReader;
-import de.ii.xtraplatform.store.domain.BlobSource;
-import de.ii.xtraplatform.store.domain.BlobStore;
-import de.ii.xtraplatform.store.domain.BlobStoreDriver;
+import de.ii.xtraplatform.blobs.domain.BlobReader;
+import de.ii.xtraplatform.blobs.domain.BlobSource;
+import de.ii.xtraplatform.blobs.domain.BlobStore;
+import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import de.ii.xtraplatform.store.domain.Store;
 import java.io.IOException;
 import java.io.InputStream;

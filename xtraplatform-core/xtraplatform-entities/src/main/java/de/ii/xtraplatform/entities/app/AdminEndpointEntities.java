@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.store.app.entities;
+package de.ii.xtraplatform.entities.app;
 
 import static de.ii.xtraplatform.store.domain.entities.EntityDataStore.entityType;
 

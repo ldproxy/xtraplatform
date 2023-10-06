@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.store.infra;
+package de.ii.xtraplatform.blobs.infra;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
@@ -13,8 +13,8 @@ import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.base.domain.StoreSourceFs;
-import de.ii.xtraplatform.store.domain.BlobSource;
-import de.ii.xtraplatform.store.domain.BlobStoreDriver;
+import de.ii.xtraplatform.blobs.domain.BlobSource;
+import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,7 +35,7 @@ public class BlobStoreDriverFs implements BlobStoreDriver {
 
   @Inject
   public BlobStoreDriverFs(AppContext appContext) {
-    this.blobExtractor = new ZipReader();
+    this.blobExtractor = new BlobExtractorZip();
     this.dataDirectory = appContext.getDataDir();
     this.tmpDirectory = appContext.getTmpDir();
   }

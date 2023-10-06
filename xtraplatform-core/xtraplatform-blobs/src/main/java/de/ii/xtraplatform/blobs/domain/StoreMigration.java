@@ -5,12 +5,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.store.domain;
+package de.ii.xtraplatform.blobs.domain;
 
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSourceFs;
 import de.ii.xtraplatform.base.domain.util.Tuple;
-import de.ii.xtraplatform.store.domain.StoreMigration.StoreMigrationContext;
+import de.ii.xtraplatform.blobs.domain.StoreMigration.StoreMigrationContext;
+import de.ii.xtraplatform.store.domain.Migration;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;

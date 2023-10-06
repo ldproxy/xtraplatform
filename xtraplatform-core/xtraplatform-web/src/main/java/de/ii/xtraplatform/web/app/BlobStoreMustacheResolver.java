@@ -5,10 +5,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.store.app;
+package de.ii.xtraplatform.web.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.store.domain.BlobStore;
+import de.ii.xtraplatform.blobs.domain.BlobStore;
 import de.ii.xtraplatform.web.domain.PartialMustacheResolver;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,7 +21,6 @@ import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-// TODO: move back to xtraplatform-web, introduce xtraplatform-ops to remove store dependency on web
 @Singleton
 @AutoBind
 public class BlobStoreMustacheResolver implements PartialMustacheResolver {

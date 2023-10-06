@@ -5,11 +5,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.store.infra;
+package de.ii.xtraplatform.blobs.infra;
 
-import de.ii.xtraplatform.store.domain.BlobLocals;
-import de.ii.xtraplatform.store.domain.BlobSource;
-import de.ii.xtraplatform.store.domain.BlobWriter;
+import de.ii.xtraplatform.blobs.domain.BlobLocals;
+import de.ii.xtraplatform.blobs.domain.BlobSource;
+import de.ii.xtraplatform.blobs.domain.BlobWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
