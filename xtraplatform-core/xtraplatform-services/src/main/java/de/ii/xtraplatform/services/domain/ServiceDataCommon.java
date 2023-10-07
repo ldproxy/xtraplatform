@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.services.domain;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
+import de.ii.xtraplatform.entities.domain.EntityDataBuilder;
 import org.immutables.value.Value;
 
 @Value.Immutable

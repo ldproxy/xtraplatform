@@ -6,7 +6,8 @@ dependencies {
     provided project(':xtraplatform-auth')
     provided project(':xtraplatform-openapi')
     provided project(':xtraplatform-services')
-    provided project(':xtraplatform-store')
+    provided project(':xtraplatform-entities')
+    provided project(':xtraplatform-blobs')
     provided project(':xtraplatform-streams')
 }
 

@@ -10,11 +10,11 @@ package de.ii.xtraplatform.auth.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.assisted.AssistedFactory;
 import de.ii.xtraplatform.auth.app.User.UserData;
-import de.ii.xtraplatform.store.domain.entities.AbstractEntityFactory;
-import de.ii.xtraplatform.store.domain.entities.EntityData;
-import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
-import de.ii.xtraplatform.store.domain.entities.EntityFactory;
-import de.ii.xtraplatform.store.domain.entities.PersistentEntity;
+import de.ii.xtraplatform.entities.domain.AbstractEntityFactory;
+import de.ii.xtraplatform.entities.domain.EntityData;
+import de.ii.xtraplatform.entities.domain.EntityDataBuilder;
+import de.ii.xtraplatform.entities.domain.EntityFactory;
+import de.ii.xtraplatform.entities.domain.PersistentEntity;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 

@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-import de.ii.xtraplatform.store.domain.entities.EntityState;
+import de.ii.xtraplatform.entities.domain.EntityState;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 

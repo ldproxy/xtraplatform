@@ -12,10 +12,10 @@ import dagger.assisted.Assisted;
 import dagger.assisted.AssistedInject;
 import de.ii.xtraplatform.auth.app.User.UserData;
 import de.ii.xtraplatform.auth.domain.Role;
-import de.ii.xtraplatform.store.domain.entities.AbstractPersistentEntity;
-import de.ii.xtraplatform.store.domain.entities.Entity;
-import de.ii.xtraplatform.store.domain.entities.EntityData;
-import de.ii.xtraplatform.store.domain.entities.EntityDataBuilder;
+import de.ii.xtraplatform.entities.domain.AbstractPersistentEntity;
+import de.ii.xtraplatform.entities.domain.Entity;
+import de.ii.xtraplatform.entities.domain.EntityData;
+import de.ii.xtraplatform.entities.domain.EntityDataBuilder;
 import java.util.OptionalLong;
 import org.immutables.value.Value;
 

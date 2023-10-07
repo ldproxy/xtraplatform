@@ -2,5 +2,6 @@
 maturity = 'MATURE'
 
 dependencies {
+    provided project(':xtraplatform-blobs')
     provided project(':xtraplatform-streams')
 }
