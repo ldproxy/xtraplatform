@@ -7,11 +7,11 @@
  */
 package de.ii.xtraplatform.blobs.domain;
 
+import de.ii.xtraplatform.base.domain.Migration;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSourceFs;
 import de.ii.xtraplatform.base.domain.util.Tuple;
 import de.ii.xtraplatform.blobs.domain.StoreMigration.StoreMigrationContext;
-import de.ii.xtraplatform.store.domain.Migration;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;

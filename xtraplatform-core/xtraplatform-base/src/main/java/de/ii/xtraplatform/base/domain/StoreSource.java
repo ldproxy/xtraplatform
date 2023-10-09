@@ -359,7 +359,7 @@ import org.immutables.value.Value;
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,
     property = StoreSource.TYPE_PROP,
-    defaultImpl = StoreSourcePartial.class,
+    // defaultImpl = StoreSourcePartial.class,
     visible = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = StoreSourceFs.class, name = Type.FS_KEY),
