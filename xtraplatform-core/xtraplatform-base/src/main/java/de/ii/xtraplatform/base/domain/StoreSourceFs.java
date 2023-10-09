@@ -49,7 +49,7 @@ public interface StoreSourceFs extends StoreSource {
                   new ImmutableStoreSourceFs.Builder()
                       .from(this)
                       .from(part)
-                      .typeString(getTypeString())
+                      .type(getType())
                       .src(
                           getSrc()
                               + (getSrc().endsWith("/") || part.getSrc().startsWith("/") ? "" : "/")

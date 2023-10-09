@@ -27,8 +27,8 @@ public class CfgStoreDriverHttp implements CfgStoreDriver {
   }
 
   @Override
-  public Type getType() {
-    return Type.HTTP;
+  public String getType() {
+    return Type.HTTP_KEY;
   }
 
   @Override

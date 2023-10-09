@@ -162,7 +162,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
     // TODO: content all/entities
     Optional<EventStoreDriver> driver =
         drivers.get().stream()
-            .filter(d -> d.getType() == storeSource.getType())
+            .filter(d -> Objects.equals(d.getType(), storeSource.getType()))
             .filter(
                 d -> {
                   if (!d.isAvailable(storeSource)) {

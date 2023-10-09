@@ -23,8 +23,8 @@ public interface StoreSourceHttpV3 extends StoreSourceHttp {
 
   @Value.Derived
   @Override
-  default Type getType() {
-    return Type.HTTP;
+  default String getType() {
+    return Type.HTTP.name();
   }
 
   @Value.Derived

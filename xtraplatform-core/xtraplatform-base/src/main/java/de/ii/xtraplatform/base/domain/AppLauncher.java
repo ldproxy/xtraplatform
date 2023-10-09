@@ -260,7 +260,7 @@ public class AppLauncher implements AppContext {
     return sources.stream()
         .filter(
             source ->
-                source.getType() != Type.EMPTY
+                !Objects.equals(source.getType(), Type.EMPTY.name())
                     && (source.getContent() == Content.ALL || source.getContent() == Content.CFG))
         .collect(Collectors.toUnmodifiableList());
   }
@@ -271,7 +271,7 @@ public class AppLauncher implements AppContext {
     // TODO: driver content types, s3 only supports resources
     Optional<CfgStoreDriver> driver =
         drivers.stream()
-            .filter(d -> d.getType() == storeSource.getType())
+            .filter(d -> Objects.equals(d.getType(), storeSource.getType()))
             .filter(
                 d -> {
                   if (!d.isAvailable(storeSource)) {

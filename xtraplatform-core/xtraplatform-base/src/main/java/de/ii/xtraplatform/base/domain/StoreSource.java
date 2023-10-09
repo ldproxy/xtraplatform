@@ -373,6 +373,7 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(value = StoreSourceFsV3Auto.class, name = StoreSourceFsV3Auto.KEY),
   @JsonSubTypes.Type(value = StoreSourceHttpV3.class, name = StoreSourceHttpV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceGithubV3.class, name = StoreSourceGithubV3.KEY),
+  @JsonSubTypes.Type(value = StoreSourceS3.class, name = "S3"),
 })
 public interface StoreSource {
 
@@ -448,13 +449,7 @@ public interface StoreSource {
    * @since v3.5
    */
   @JsonProperty(StoreSource.TYPE_PROP)
-  String getTypeString();
-
-  @JsonIgnore
-  @Value.Derived
-  default Type getType() {
-    return Type.valueOf(getTypeString());
-  }
+  String getType();
 
   /**
    * @langEn The [Content Type](#content-types).

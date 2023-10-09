@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -128,7 +129,7 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
     // TODO: driver content types, s3 only supports resources
     Optional<BlobStoreDriver> driver =
         drivers.get().stream()
-            .filter(d -> d.getType() == storeSource.getType())
+            .filter(d -> Objects.equals(d.getType(), storeSource.getType()))
             .filter(
                 d -> {
                   if (!d.isAvailable(storeSource)) {

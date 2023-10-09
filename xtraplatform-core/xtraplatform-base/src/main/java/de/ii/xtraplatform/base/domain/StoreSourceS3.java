@@ -14,14 +14,18 @@ import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(builder = ImmutableStoreSourceHttp.Builder.class)
-public interface StoreSourceHttp extends StoreSource {
+@JsonDeserialize(builder = ImmutableStoreSourceS3.Builder.class)
+public interface StoreSourceS3 extends StoreSource {
+
+  String getAccessKey();
+
+  String getSecretKey();
 
   @JsonIgnore
   @Value.Derived
   @Override
   default Mode getDesiredMode() {
-    return Mode.RO;
+    return Mode.RW;
   }
 
   @JsonIgnore
@@ -42,7 +46,7 @@ public interface StoreSourceHttp extends StoreSource {
       return getParts().stream()
           .map(
               part ->
-                  new ImmutableStoreSourceHttp.Builder()
+                  new ImmutableStoreSourceS3.Builder()
                       .from(this)
                       .from(part)
                       .type(this.getType())

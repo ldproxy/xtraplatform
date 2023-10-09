@@ -21,6 +21,7 @@ import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.base.domain.StoreSourceFs;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -71,7 +72,7 @@ public class StoreImpl implements Store, AppLifeCycle {
     sources.forEach(
         s -> {
           String src =
-              s.getType() == Type.FS
+              Objects.equals(s.getType(), Type.FS_KEY)
                   ? ((StoreSourceFs) s).getAbsolutePath(dataDirectory).toString()
                   : s.getSrc();
           String mode = storeConfiguration.isReadOnly() ? "" : String.format(" [%s]", s.getMode());
@@ -90,9 +91,9 @@ public class StoreImpl implements Store, AppLifeCycle {
   }
 
   @Override
-  public List<StoreSource> get(Type type) {
+  public List<StoreSource> get(String type) {
     return sources.stream()
-        .filter(source -> source.getType() == type)
+        .filter(source -> Objects.equals(source.getType(), type))
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -108,29 +109,29 @@ public class StoreImpl implements Store, AppLifeCycle {
   }
 
   @Override
-  public <U> List<U> get(Type type, Function<StoreSource, U> map) {
+  public <U> List<U> get(String type, Function<StoreSource, U> map) {
     return sources.stream()
-        .filter(source -> source.getType() == type)
+        .filter(source -> Objects.equals(source.getType(), type))
         .map(map)
         .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
-  public boolean has(Type type) {
-    return sources.stream().anyMatch(source -> source.getType() == type);
+  public boolean has(String type) {
+    return sources.stream().anyMatch(source -> Objects.equals(source.getType(), type));
   }
 
   @Override
-  public Optional<StoreSource> getWritable(Type type) {
+  public Optional<StoreSource> getWritable(String type) {
     return Lists.reverse(sources).stream()
-        .filter(source -> source.getType() == type && source.getMode() == Mode.RW)
+        .filter(source -> Objects.equals(source.getType(), type) && source.getMode() == Mode.RW)
         .findFirst();
   }
 
   @Override
-  public <U> Optional<U> getWritable(Type type, Function<StoreSource, U> map) {
+  public <U> Optional<U> getWritable(String type, Function<StoreSource, U> map) {
     return Lists.reverse(sources).stream()
-        .filter(source -> source.getType() == type && source.getMode() == Mode.RW)
+        .filter(source -> Objects.equals(source.getType(), type) && source.getMode() == Mode.RW)
         .map(map)
         .findFirst();
   }

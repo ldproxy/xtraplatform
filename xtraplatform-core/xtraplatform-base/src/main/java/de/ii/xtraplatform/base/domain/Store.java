@@ -8,7 +8,6 @@
 package de.ii.xtraplatform.base.domain;
 
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
-import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -17,17 +16,17 @@ public interface Store {
 
   List<StoreSource> get();
 
-  List<StoreSource> get(Type type);
+  List<StoreSource> get(String type);
 
   List<StoreSource> get(Content content);
 
-  <U> List<U> get(Type type, Function<StoreSource, U> map);
+  <U> List<U> get(String type, Function<StoreSource, U> map);
 
-  boolean has(Type type);
+  boolean has(String type);
 
-  Optional<StoreSource> getWritable(Type type);
+  Optional<StoreSource> getWritable(String type);
 
-  <U> Optional<U> getWritable(Type type, Function<StoreSource, U> map);
+  <U> Optional<U> getWritable(String type, Function<StoreSource, U> map);
 
   boolean isWritable();
 

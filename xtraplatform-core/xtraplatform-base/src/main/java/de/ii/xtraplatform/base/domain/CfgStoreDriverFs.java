@@ -32,8 +32,8 @@ public class CfgStoreDriverFs implements CfgStoreDriver {
   }
 
   @Override
-  public Type getType() {
-    return Type.FS;
+  public String getType() {
+    return Type.FS_KEY;
   }
 
   // TODO: same as in BlobStoreDriverFs

@@ -16,7 +16,7 @@ public interface StoreSourcePartial extends StoreSource {
 
   @Value.Derived
   @Override
-  default String getTypeString() {
+  default String getType() {
     return Type.EMPTY_KEY;
   }
 

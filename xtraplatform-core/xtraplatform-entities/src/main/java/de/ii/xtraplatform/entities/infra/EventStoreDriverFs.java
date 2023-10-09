@@ -72,8 +72,8 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
   }
 
   @Override
-  public Type getType() {
-    return Type.FS;
+  public String getType() {
+    return Type.FS_KEY;
   }
 
   @Override

@@ -8,11 +8,10 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
-import de.ii.xtraplatform.base.domain.StoreSource.Type;
 
 @AutoMultiBind
 public interface StoreDriver {
-  Type getType();
+  String getType();
 
   boolean isAvailable(StoreSource storeSource);
 }

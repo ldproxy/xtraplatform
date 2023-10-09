@@ -41,8 +41,8 @@ public class BlobStoreDriverFs implements BlobStoreDriver {
   }
 
   @Override
-  public Type getType() {
-    return Type.FS;
+  public String getType() {
+    return Type.FS_KEY;
   }
 
   @Override

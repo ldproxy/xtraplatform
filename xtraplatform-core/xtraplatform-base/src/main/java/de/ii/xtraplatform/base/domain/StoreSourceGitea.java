@@ -22,8 +22,8 @@ public interface StoreSourceGitea extends StoreSourceHttp {
 
   @Value.Derived
   @Override
-  default Type getType() {
-    return Type.HTTP;
+  default String getType() {
+    return Type.HTTP.name();
   }
 
   @Value.Check
@@ -46,7 +46,6 @@ public interface StoreSourceGitea extends StoreSourceHttp {
 
       return new ImmutableStoreSourceGitea.Builder()
           .from(this)
-          .typeString(Type.HTTP_KEY)
           .src(String.format("https://%s/%s/%s/archive/%s.zip", host, org, repo, branch))
           .archiveRoot(String.format("/%s%s", repo, root))
           .label(String.format("%s[%s]", KEY, Path.of(getSrc())))

@@ -43,8 +43,8 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
   }
 
   @Override
-  public Type getType() {
-    return Type.HTTP;
+  public String getType() {
+    return Type.HTTP_KEY;
   }
 
   @Override

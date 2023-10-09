@@ -23,8 +23,8 @@ public interface StoreSourceGitlab extends StoreSourceHttp {
 
   @Value.Derived
   @Override
-  default Type getType() {
-    return Type.HTTP;
+  default String getType() {
+    return Type.HTTP.name();
   }
 
   @Value.Check
@@ -47,7 +47,6 @@ public interface StoreSourceGitlab extends StoreSourceHttp {
 
       return new ImmutableStoreSourceGitlab.Builder()
           .from(this)
-          .typeString(Type.HTTP_KEY)
           .src(
               String.format("https://%s/%s/%s/-/archive/%s/%3$s-%4$s.zip", host, org, repo, branch))
           .archiveRoot(String.format("/%s-%s%s", repo, branch, root))

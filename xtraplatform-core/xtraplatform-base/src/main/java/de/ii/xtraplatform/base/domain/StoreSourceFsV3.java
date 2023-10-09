@@ -32,53 +32,53 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
   List<StoreSource> V3_SOURCES =
       List.of(
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.CFG)
               .src("cfg.yml")
               .desiredMode(Mode.RO)
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.ENTITIES)
               .src(OLD_DEFAULT_LOCATION)
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("api-resources")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("api-resources/resources")
               .prefix("api-resources")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src(OLD_DEFAULT_LOCATION + "/resources")
               .desiredMode(Mode.RO)
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("cache/tiles")
               .prefix("tiles")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("cache/tiles3d")
               .prefix("tiles3d")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("proj")
               .prefix("proj")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("templates/html")
               .prefix("html/templates")
@@ -92,7 +92,7 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
 
   @JsonProperty(StoreSource.TYPE_PROP)
   @Value.Derived
-  default String getTypeString() {
+  default String getType() {
     return Type.FS.name();
   }
 
