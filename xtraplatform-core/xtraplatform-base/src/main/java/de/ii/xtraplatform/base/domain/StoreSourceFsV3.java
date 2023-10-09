@@ -26,7 +26,8 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
   static boolean isOldDefaultStore(StoreSource storeSource) {
     return storeSource instanceof StoreSourceFs
         && storeSource.getContent() == Content.ENTITIES
-        && Objects.equals(storeSource.getSrc(), OLD_DEFAULT_LOCATION);
+        && (Objects.equals(storeSource.getSrc(), OLD_DEFAULT_LOCATION)
+            || Objects.equals(storeSource.getSrc(), "./" + OLD_DEFAULT_LOCATION));
   }
 
   List<StoreSource> V3_SOURCES =

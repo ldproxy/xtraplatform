@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,8 +22,8 @@ public interface StoreSourceS3 extends StoreSource {
 
   String getSecretKey();
 
-  @JsonIgnore
-  @Value.Derived
+  @JsonProperty(StoreSource.MODE_PROP)
+  @Value.Default
   @Override
   default Mode getDesiredMode() {
     return Mode.RW;

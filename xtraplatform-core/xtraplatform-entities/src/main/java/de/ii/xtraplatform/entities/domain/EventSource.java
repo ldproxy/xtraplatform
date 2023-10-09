@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.entities.app;
+package de.ii.xtraplatform.entities.domain;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -14,11 +14,6 @@ import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
-import de.ii.xtraplatform.entities.domain.EntityEvent;
-import de.ii.xtraplatform.entities.domain.Identifier;
-import de.ii.xtraplatform.entities.domain.ImmutableIdentifier;
-import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent;
-import de.ii.xtraplatform.entities.infra.EventReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -180,9 +175,10 @@ public class EventSource {
     }
 
     Path resolve = path;
-    if (source.getContent() == Content.ALL && path.startsWith(entitiesPath)) {
+    // TODO
+    /*if (source.getContent() == Content.ALL && path.startsWith(entitiesPath)) {
       resolve = entitiesPath.relativize(path);
-    }
+    }*/
     if (resolve.startsWith(Content.INSTANCES.getPrefix())) {
       resolve = entitiesPath.resolve(resolve.subpath(1, resolve.getNameCount()));
     }

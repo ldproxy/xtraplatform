@@ -431,24 +431,10 @@ public interface StoreConfiguration {
           .build();
     }
 
-    if (getMode() == StoreMode.RO || getMode() == StoreMode.READ_ONLY) {
-      return new ImmutableStoreConfiguration.Builder()
-          .from(this)
-          .mode(StoreMode.RW)
-          .sources(
-              getSources().stream()
-                  .map(
-                      source -> {
-                        if (StoreSourceFsV3.isOldDefaultStore(source)) {
-                          return new ImmutableStoreSourceFs.Builder()
-                              .from(source)
-                              .desiredMode(Mode.RO)
-                              .build();
-                        }
-                        return source;
-                      })
-                  .collect(Collectors.toList()))
-          .build();
+    if ((getMode() == StoreMode.RO || getMode() == StoreMode.READ_ONLY)
+        && !getSources().isEmpty()
+        && getSources().get(0) instanceof StoreSourceFsV3Auto) {
+      return new ImmutableStoreConfiguration.Builder().from(this).mode(StoreMode.RW).build();
     }
 
     return this;

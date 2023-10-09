@@ -9,6 +9,7 @@ package de.ii.xtraplatform.entities.infra;
 
 import de.ii.xtraplatform.base.domain.util.Tuple;
 import de.ii.xtraplatform.base.domain.util.ZipWalker;
+import de.ii.xtraplatform.entities.domain.EventReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;

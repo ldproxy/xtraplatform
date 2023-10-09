@@ -10,6 +10,7 @@ package de.ii.xtraplatform.entities.infra;
 import static de.ii.xtraplatform.base.domain.util.LambdaWithException.supplierMayThrow;
 
 import de.ii.xtraplatform.base.domain.util.Tuple;
+import de.ii.xtraplatform.entities.domain.EventReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

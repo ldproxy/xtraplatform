@@ -10,7 +10,6 @@ package de.ii.xtraplatform.base.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.Lists;
 import de.ii.xtraplatform.base.domain.AppContext;
-import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreConfiguration;
 import de.ii.xtraplatform.base.domain.StoreFilters;
@@ -32,7 +31,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class StoreImpl implements Store, AppLifeCycle {
+public class StoreImpl implements Store {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StoreImpl.class);
 
@@ -52,15 +51,10 @@ public class StoreImpl implements Store, AppLifeCycle {
         storeConfiguration.getSources(dataDirectory).stream()
             .filter(source -> source.getContent() != Content.NONE)
             .collect(Collectors.toUnmodifiableList());
+    info();
   }
 
-  @Override
-  public int getPriority() {
-    return 10;
-  }
-
-  @Override
-  public void onStart() {
+  public void info() {
     LOGGER.info(
         "Loading store ({}{}{})",
         storeConfiguration.isReadOnly() ? "read-only" : "writable",
