@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.blobs.app;
 
+import static de.ii.xtraplatform.base.domain.util.LambdaWithException.mayThrow;
+
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.Lists;
 import dagger.Lazy;
@@ -208,13 +210,13 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
   @Override
   public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException {
-    for (BlobReader source : blobReaders) {
-      if (source.has(path)) {
-        return source.walk(path, maxDepth, matcher);
-      }
+    try {
+      return blobReaders.stream()
+          .flatMap(mayThrow(reader -> reader.walk(path, maxDepth, matcher)))
+          .distinct();
+    } catch (Throwable e) {
+      throw new IOException("Error in BlobStore.walk", e);
     }
-
-    return Stream.empty();
   }
 
   @Override
