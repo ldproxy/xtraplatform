@@ -8,6 +8,8 @@
 package de.ii.xtraplatform.entities.domain;
 
 import com.google.common.base.Splitter;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;

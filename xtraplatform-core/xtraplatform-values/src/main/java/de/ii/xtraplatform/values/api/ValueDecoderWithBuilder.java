@@ -5,14 +5,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.entities.app;
+package de.ii.xtraplatform.values.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.ii.xtraplatform.entities.domain.Builder;
-import de.ii.xtraplatform.entities.domain.Identifier;
-import de.ii.xtraplatform.entities.domain.Value;
-import de.ii.xtraplatform.entities.domain.ValueCache;
-import de.ii.xtraplatform.entities.domain.ValueDecoderMiddleware;
+import de.ii.xtraplatform.values.domain.Builder;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.Value;
+import de.ii.xtraplatform.values.domain.ValueCache;
+import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
 import java.io.IOException;
 import java.util.function.Function;
 

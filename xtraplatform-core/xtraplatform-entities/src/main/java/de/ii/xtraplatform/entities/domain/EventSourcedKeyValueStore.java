@@ -9,12 +9,14 @@ package de.ii.xtraplatform.entities.domain;
 
 import de.ii.xtraplatform.entities.app.EventSourcingCache;
 import de.ii.xtraplatform.streams.domain.Event;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ValueStore;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public interface EventSourcedKeyValueStore<T> extends EventSourcedStore<T>, KeyValueStore<T> {
+public interface EventSourcedKeyValueStore<T> extends EventSourcedStore<T>, ValueStore<T> {
 
   Logger LOGGER = LoggerFactory.getLogger(EventSourcedKeyValueStore.class);
 

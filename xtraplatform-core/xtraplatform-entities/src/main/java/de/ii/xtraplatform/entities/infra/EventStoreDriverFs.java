@@ -27,7 +27,7 @@ import de.ii.xtraplatform.entities.domain.EventSource;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver.Watcher;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver.Writer;
-import de.ii.xtraplatform.entities.domain.Identifier;
+import de.ii.xtraplatform.values.domain.Identifier;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;

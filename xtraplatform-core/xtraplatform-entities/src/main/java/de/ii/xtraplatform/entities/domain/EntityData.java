@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.Optional;
 import org.immutables.value.Value;
 
-public interface EntityData extends de.ii.xtraplatform.entities.domain.Value {
+public interface EntityData extends de.ii.xtraplatform.values.domain.Value {
 
   /**
    * @langEn Unique identifier of the entity, has to match the filename. Allowed characters are

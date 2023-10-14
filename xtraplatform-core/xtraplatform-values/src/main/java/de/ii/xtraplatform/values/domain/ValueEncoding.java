@@ -5,14 +5,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.entities.domain;
+package de.ii.xtraplatform.values.domain;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 public interface ValueEncoding<T> {
 
@@ -51,9 +49,5 @@ public interface ValueEncoding<T> {
   byte[] serialize(Map<String, Object> data);
 
   T deserialize(Identifier identifier, byte[] payload, FORMAT format, boolean ignoreCache)
-      throws IOException;
-
-  byte[] nestPayload(
-      byte[] payload, String format, List<String> nestingPath, Optional<KeyPathAlias> keyPathAlias)
       throws IOException;
 }

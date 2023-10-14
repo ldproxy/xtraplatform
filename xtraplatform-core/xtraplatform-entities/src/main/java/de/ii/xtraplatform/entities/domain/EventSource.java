@@ -14,6 +14,8 @@ import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;

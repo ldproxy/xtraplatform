@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +86,12 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
   @Override
   default CompletableFuture<U> put(Identifier identifier, U value) {
     return null; // getDecorated().patch(identifier, value);
+  }
+
+  // TODO
+  @Override
+  default CompletableFuture<Boolean> delete(Identifier identifier) {
+    return null; // getDecorated().delete(identifier);
   }
 
   @Override

@@ -5,30 +5,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.entities.app;
+package de.ii.xtraplatform.values.api;
 
 import static de.ii.xtraplatform.base.domain.util.JacksonModules.DESERIALIZE_IMMUTABLE_BUILDER_NESTED;
-import static de.ii.xtraplatform.entities.app.EntityDeserialization.DESERIALIZE_API_BUILDINGBLOCK_MIGRATION;
-import static de.ii.xtraplatform.entities.app.EntityDeserialization.DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.base.domain.Jackson;
-import de.ii.xtraplatform.entities.domain.Identifier;
-import de.ii.xtraplatform.entities.domain.KeyPathAlias;
-import de.ii.xtraplatform.entities.domain.ValueDecoderMiddleware;
-import de.ii.xtraplatform.entities.domain.ValueEncoding;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -65,8 +60,6 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
             .getDefaultObjectMapper()
             .copy()
             .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
-            .registerModule(DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER)
-            .registerModule(DESERIALIZE_API_BUILDINGBLOCK_MIGRATION)
             .setDefaultMergeable(true);
 
     ObjectMapper yamlMapper =
@@ -82,8 +75,6 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
                     .enable(Feature.WRITE_DOC_START_MARKER)
                     .enable(Feature.MINIMIZE_QUOTES))
             .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
-            .registerModule(DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER)
-            .registerModule(DESERIALIZE_API_BUILDINGBLOCK_MIGRATION)
             .setDefaultMergeable(true)
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
@@ -175,45 +166,6 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     }
 
     return data;
-  }
-
-  @Override
-  public byte[] nestPayload(
-      byte[] payload,
-      String formatString,
-      List<String> nestingPath,
-      Optional<KeyPathAlias> keyPathAlias)
-      throws IOException {
-    if (nestingPath.isEmpty()) {
-      return payload;
-    }
-
-    FORMAT format;
-    try {
-      format = FORMAT.fromString(formatString);
-    } catch (Throwable e) {
-      // LOGGER.error("Could not deserialize, format '{}' unknown.", formatString);
-      return payload;
-    }
-
-    // TODO: .metadata.yml.swp leads to invisible error, should be ignored either silently or with
-    // log message
-
-    ObjectMapper mapper = getMapper(format);
-
-    Map<String, Object> data =
-        mapper.readValue(payload, new TypeReference<LinkedHashMap<String, Object>>() {});
-
-    for (int i = nestingPath.size() - 1; i >= 0; i--) {
-      if (i == nestingPath.size() - 1 && keyPathAlias.isPresent()) {
-        data = keyPathAlias.get().wrapMap(data);
-        continue;
-      }
-
-      String key = nestingPath.get(i);
-      data = ImmutableMap.of(key, data);
-    }
-    return mapper.writeValueAsBytes(data);
   }
 
   final ObjectMapper getDefaultMapper() {

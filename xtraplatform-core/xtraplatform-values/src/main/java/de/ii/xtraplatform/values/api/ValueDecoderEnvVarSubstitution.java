@@ -5,11 +5,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.entities.app;
+package de.ii.xtraplatform.values.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.ii.xtraplatform.entities.domain.Identifier;
-import de.ii.xtraplatform.entities.domain.ValueDecoderMiddleware;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

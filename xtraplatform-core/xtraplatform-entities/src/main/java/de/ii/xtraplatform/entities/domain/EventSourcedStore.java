@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import de.ii.xtraplatform.values.domain.Identifier;
 import java.util.concurrent.CompletableFuture;
 
 public interface EventSourcedStore<T> extends EventStoreSubscriber {

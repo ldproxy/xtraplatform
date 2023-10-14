@@ -7,6 +7,9 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import de.ii.xtraplatform.values.domain.Builder;
+import de.ii.xtraplatform.values.domain.Value;
+
 public interface EntityDataBuilder<T extends EntityData> extends Builder<T> {
 
   @Override

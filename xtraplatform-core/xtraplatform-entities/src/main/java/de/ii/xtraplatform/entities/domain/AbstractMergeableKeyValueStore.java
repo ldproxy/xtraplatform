@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;

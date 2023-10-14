@@ -13,8 +13,8 @@ import de.ii.xtraplatform.base.domain.AppContext
 import de.ii.xtraplatform.auth.domain.User
 import de.ii.xtraplatform.base.domain.AppConfiguration
 import de.ii.xtraplatform.base.domain.ModifiableAuthConfiguration
-import de.ii.xtraplatform.entities.domain.Identifier
-import de.ii.xtraplatform.entities.domain.ValueEncoding
+import de.ii.xtraplatform.values.domain.Identifier
+import de.ii.xtraplatform.values.domain.ValueEncoding
 import de.ii.xtraplatform.entities.domain.EntityData
 import de.ii.xtraplatform.entities.domain.EntityDataBuilder
 import de.ii.xtraplatform.entities.domain.EntityDataStore
@@ -192,6 +192,11 @@ class InternalUserAuthenticatorSpec extends Specification {
 
         @Override
         CompletableFuture<EntityData> put(Identifier identifier, EntityData value) {
+            return null
+        }
+
+        @Override
+        CompletableFuture<Boolean> delete(Identifier identifier) {
             return null
         }
     }

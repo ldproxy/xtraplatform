@@ -5,10 +5,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.entities.domain;
+package de.ii.xtraplatform.values.domain;
 
-public interface Builder<T extends Value> {
-  T build();
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-  Builder<T> from(Value value);
+public interface Value {
+
+  // TODO
+  @JsonIgnore
+  @org.immutables.value.Value.Default
+  default long storageVersion() {
+    return 1L;
+  }
 }

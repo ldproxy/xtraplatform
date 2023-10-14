@@ -410,6 +410,7 @@ public interface StoreSource {
     INSTANCES_OLD,
     INSTANCES,
     OVERRIDES,
+    VALUES,
     RESOURCES,
     MULTI;
 

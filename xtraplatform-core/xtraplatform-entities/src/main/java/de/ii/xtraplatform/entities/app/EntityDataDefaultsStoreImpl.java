@@ -31,16 +31,19 @@ import de.ii.xtraplatform.entities.domain.EntityFactoriesImpl;
 import de.ii.xtraplatform.entities.domain.EntityFactory;
 import de.ii.xtraplatform.entities.domain.EventFilter;
 import de.ii.xtraplatform.entities.domain.EventStore;
-import de.ii.xtraplatform.entities.domain.Identifier;
-import de.ii.xtraplatform.entities.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.entities.domain.ImmutableMutationEvent;
 import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.entities.domain.KeyPathAlias;
 import de.ii.xtraplatform.entities.domain.MergeableKeyValueStore;
 import de.ii.xtraplatform.entities.domain.MutationEvent;
 import de.ii.xtraplatform.entities.domain.ReplayEvent;
-import de.ii.xtraplatform.entities.domain.ValueCache;
-import de.ii.xtraplatform.entities.domain.ValueEncoding;
+import de.ii.xtraplatform.values.api.ValueDecoderBase;
+import de.ii.xtraplatform.values.api.ValueDecoderEnvVarSubstitution;
+import de.ii.xtraplatform.values.api.ValueDecoderWithBuilder;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
+import de.ii.xtraplatform.values.domain.ValueCache;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -66,10 +69,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityDataDefaultsStoreImpl.class);
 
   private final EntityFactoriesImpl entityFactories;
-  private final ValueEncodingJackson<Map<String, Object>> valueEncoding;
-  private final ValueEncodingJackson<EntityDataBuilder<EntityData>> valueEncodingBuilder;
-  private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
-  private final ValueEncodingJackson<EntityData> valueEncodingEntity;
+  private final ValueEncodingJacksonWithNesting<Map<String, Object>> valueEncoding;
+  private final ValueEncodingJacksonWithNesting<EntityDataBuilder<EntityData>> valueEncodingBuilder;
+  private final ValueEncodingJacksonWithNesting<Map<String, Object>> valueEncodingMap;
+  private final ValueEncodingJacksonWithNesting<EntityData> valueEncodingEntity;
   private final EventSourcing<Map<String, Object>> eventSourcing;
   private final EventStore eventStore;
 
@@ -82,7 +85,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.eventStore = eventStore;
     this.valueEncoding =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     this.eventSourcing =
         new EventSourcing<>(
@@ -100,7 +103,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     // eventSourcing.start();
 
     this.valueEncodingBuilder =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     valueEncodingBuilder.addDecoderMiddleware(
         new ValueDecoderBase<>(
@@ -123,7 +126,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             }));
 
     this.valueEncodingMap =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
@@ -146,7 +149,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             }));
 
     this.valueEncodingEntity =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     valueEncodingEntity.addDecoderMiddleware(
         new ValueDecoderWithBuilder<>(

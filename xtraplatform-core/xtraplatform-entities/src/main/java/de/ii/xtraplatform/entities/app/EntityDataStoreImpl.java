@@ -29,13 +29,16 @@ import de.ii.xtraplatform.entities.domain.EntityFactoriesImpl;
 import de.ii.xtraplatform.entities.domain.EntityFactory;
 import de.ii.xtraplatform.entities.domain.EntityStoreDecorator;
 import de.ii.xtraplatform.entities.domain.EventStore;
-import de.ii.xtraplatform.entities.domain.Identifier;
-import de.ii.xtraplatform.entities.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.entities.domain.KeyPathAlias;
 import de.ii.xtraplatform.entities.domain.ReplayEvent;
-import de.ii.xtraplatform.entities.domain.ValueCache;
-import de.ii.xtraplatform.entities.domain.ValueEncoding;
+import de.ii.xtraplatform.values.api.ValueDecoderBase;
+import de.ii.xtraplatform.values.api.ValueDecoderEnvVarSubstitution;
+import de.ii.xtraplatform.values.api.ValueDecoderWithBuilder;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
+import de.ii.xtraplatform.values.domain.ValueCache;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -71,8 +74,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private final boolean isEventStoreReadOnly;
   private final EntityFactoriesImpl entityFactories;
   private final Queue<Map.Entry<Identifier, EntityData>> additionalEvents;
-  private final ValueEncodingJackson<EntityData> valueEncoding;
-  private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
+  private final ValueEncodingJacksonWithNesting<EntityData> valueEncoding;
+  private final ValueEncodingJacksonWithNesting<Map<String, Object>> valueEncodingMap;
   private final EventSourcing<EntityData> eventSourcing;
   private final EntityDataDefaultsStore defaultsStore;
   private final Supplier<Void> blobStoreReady;
@@ -102,10 +105,10 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.additionalEvents = new ConcurrentLinkedQueue<>();
     this.valueEncoding =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     this.valueEncodingMap =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     this.eventSourcing =
         new EventSourcing<>(

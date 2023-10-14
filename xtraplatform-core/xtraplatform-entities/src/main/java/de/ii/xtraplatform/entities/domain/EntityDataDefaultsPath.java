@@ -11,6 +11,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
 import java.util.List;
 import java.util.Set;
 import org.immutables.value.Value;

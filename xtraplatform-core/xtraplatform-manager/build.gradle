@@ -8,6 +8,7 @@ dependencies {
     provided project(':xtraplatform-services')
     provided project(':xtraplatform-entities')
     provided project(':xtraplatform-blobs')
+    provided project(':xtraplatform-values')
     provided project(':xtraplatform-streams')
 }
 
