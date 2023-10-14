@@ -139,10 +139,16 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
     }
     LOGGER.debug("WALK {}", path);
 
+    Path prefix = Path.of(full(path));
+
     Spliterator<Result<Item>> results =
         minioClient
             .listObjects(
-                ListObjectsArgs.builder().bucket(bucket).prefix(full(path)).recursive(true).build())
+                ListObjectsArgs.builder()
+                    .bucket(bucket)
+                    .prefix(prefix.toString())
+                    .recursive(true)
+                    .build())
             .spliterator();
 
     return StreamSupport.stream(results, false)
@@ -156,7 +162,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
             })
         .map(
             item -> {
-              Path resolved = Path.of(item.objectName());
+              Path resolved = prefix.relativize(Path.of(item.objectName()));
               LOGGER.debug("S3 BLOB {}", resolved);
               return resolved;
             });

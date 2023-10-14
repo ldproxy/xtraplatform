@@ -8,32 +8,60 @@
 package de.ii.xtraplatform.web.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
 import de.ii.xtraplatform.web.domain.PartialMustacheResolver;
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
 @AutoBind
-public class BlobStoreMustacheResolver implements PartialMustacheResolver {
+public class BlobStoreMustacheResolver implements PartialMustacheResolver, AppLifeCycle {
 
   private static final String TEMPLATE_DIR_NAME = "templates";
   private static final String HTML_DIR_NAME = "html";
   private static final String TEMPLATE_DIR_START = String.format("/%s/", TEMPLATE_DIR_NAME);
 
   private final BlobStore templateStore;
+  private final Map<Path, Optional<Path>> localPaths;
 
   @Inject
   public BlobStoreMustacheResolver(BlobStore blobStore) {
     this.templateStore = blobStore.with(HTML_DIR_NAME, TEMPLATE_DIR_NAME);
+    this.localPaths = new HashMap<>();
+  }
+
+  @Override
+  public void onStart() {
+    try (Stream<Path> paths =
+        templateStore.walk(Path.of(""), 1, (path, pathAttributes) -> pathAttributes.isValue())) {
+      for (Iterator<Path> it = paths.iterator(); it.hasNext(); ) {
+        Path path = it.next();
+
+        try {
+          Optional<Path> localPath = templateStore.asLocalPath(path, false);
+
+          localPaths.put(path, localPath);
+        } catch (IOException e) {
+          // ignore
+        }
+      }
+    } catch (IOException e) {
+      // ignore
+    }
   }
 
   @Override
@@ -43,22 +71,23 @@ public class BlobStoreMustacheResolver implements PartialMustacheResolver {
 
   @Override
   public boolean canResolve(String templateName, Class<?> viewClass) {
-    try {
-      return templateStore.has(toPath(templateName));
-    } catch (IOException e) {
-      return false;
-    }
+    Path template = toPath(templateName);
+
+    return localPaths.containsKey(template) && localPaths.get(template).isPresent();
   }
 
   @Override
   public Reader getReader(String templateName, Class<?> viewClass) {
-    try {
-      Optional<InputStream> inputStream = templateStore.get(toPath(templateName));
-      if (inputStream.isPresent()) {
-        return new BufferedReader(new InputStreamReader(inputStream.get(), StandardCharsets.UTF_8));
+    Optional<Path> localPath = localPaths.get(toPath(templateName));
+
+    if (localPath.isPresent()) {
+      try (InputStream inputStream =
+          new ByteArrayInputStream(Files.readAllBytes(localPath.get()))) {
+
+        return new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+      } catch (IOException e) {
+        // continue
       }
-    } catch (IOException e) {
-      // continue
     }
     return null;
   }
