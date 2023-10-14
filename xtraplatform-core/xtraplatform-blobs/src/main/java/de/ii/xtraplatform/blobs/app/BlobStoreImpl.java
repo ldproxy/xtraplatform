@@ -17,6 +17,7 @@ import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.blobs.domain.Blob;
 import de.ii.xtraplatform.blobs.domain.BlobReader;
 import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
@@ -168,10 +169,23 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
   }
 
   @Override
-  public Optional<InputStream> get(Path path) throws IOException {
+  public Optional<InputStream> content(Path path) throws IOException {
 
     for (BlobReader source : blobReaders) {
-      Optional<InputStream> blob = source.get(path);
+      Optional<InputStream> blob = source.content(path);
+
+      if (blob.isPresent()) {
+        return blob;
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<Blob> get(Path path) throws IOException {
+    for (BlobReader source : blobReaders) {
+      Optional<Blob> blob = source.get(path);
 
       if (blob.isPresent()) {
         return blob;

@@ -42,7 +42,12 @@ public interface BlobStore extends BlobReader, BlobWriter, BlobLocals {
       }
 
       @Override
-      public Optional<InputStream> get(Path path) throws IOException {
+      public Optional<InputStream> content(Path path) throws IOException {
+        return delegate.content(prefix.resolve(path));
+      }
+
+      @Override
+      public Optional<Blob> get(Path path) throws IOException {
         return delegate.get(prefix.resolve(path));
       }
 

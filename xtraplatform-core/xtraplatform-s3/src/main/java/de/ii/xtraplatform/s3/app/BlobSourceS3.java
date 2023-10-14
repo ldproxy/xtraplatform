@@ -7,11 +7,16 @@
  */
 package de.ii.xtraplatform.s3.app;
 
+import static de.ii.xtraplatform.base.domain.util.LambdaWithException.supplierMayThrow;
+
+import de.ii.xtraplatform.blobs.domain.Blob;
 import de.ii.xtraplatform.blobs.domain.BlobCache;
 import de.ii.xtraplatform.blobs.domain.BlobLocals;
 import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobWriter;
+import de.ii.xtraplatform.blobs.domain.ImmutableBlob;
 import io.minio.GetObjectArgs;
+import io.minio.GetObjectArgs.Builder;
 import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -31,6 +36,7 @@ import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
+import javax.ws.rs.core.EntityTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,76 +70,48 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public boolean has(Path path) throws IOException {
-    if (!canHandle(path)) {
-      return false;
-    }
-
-    LOGGER.debug("HAS {}", path);
-
-    try {
-      StatObjectResponse objectStat =
-          minioClient.statObject(
-              StatObjectArgs.builder().bucket(bucket).object(full(path)).build());
-      return true;
-    } catch (Throwable e) {
-      return false;
-    }
+    return getStat(path).isPresent();
   }
 
   @Override
-  public Optional<InputStream> get(Path path) throws IOException {
-    if (!canHandle(path)) {
-      return Optional.empty();
-    }
+  public Optional<InputStream> content(Path path) throws IOException {
+    return getCurrent(path);
+  }
 
-    LOGGER.debug("GET {}", path);
-
-    try {
-      return Optional.of(
-          minioClient.getObject(GetObjectArgs.builder().bucket(bucket).object(full(path)).build()));
-    } catch (Throwable e) {
-      return Optional.empty();
-    }
+  @Override
+  public Optional<Blob> get(Path path) throws IOException {
+    return getStat(path)
+        .map(
+            stat ->
+                ImmutableBlob.of(
+                    path,
+                    stat.size(),
+                    stat.lastModified().toInstant().toEpochMilli(),
+                    Optional.of(new EntityTag(stat.etag())),
+                    Optional.ofNullable(stat.contentType()),
+                    supplierMayThrow(
+                        () ->
+                            content(path)
+                                .orElseThrow(
+                                    () ->
+                                        new IOException(
+                                            "Unexpected error, could not get " + path)))));
   }
 
   @Override
   public long size(Path path) throws IOException {
-    if (!canHandle(path)) {
-      return -1;
-    }
-
-    try {
-      StatObjectResponse objectStat =
-          minioClient.statObject(
-              StatObjectArgs.builder().bucket(bucket).object(full(path)).build());
-
-      return objectStat.size();
-    } catch (Throwable e) {
-      throw new IOException("S3 Driver", e);
-    }
+    return getStat(path).map(StatObjectResponse::size).orElse(-1L);
   }
 
   @Override
   public long lastModified(Path path) throws IOException {
-    if (!canHandle(path)) {
-      return -1;
-    }
-
-    try {
-      StatObjectResponse objectStat =
-          minioClient.statObject(
-              StatObjectArgs.builder().bucket(bucket).object(full(path)).build());
-
-      return objectStat.lastModified().toEpochSecond();
-    } catch (Throwable e) {
-      throw new IOException("S3 Driver", e);
-    }
+    return getStat(path).map(stat -> stat.lastModified().toEpochSecond()).orElse(-1L);
   }
 
+  // TODO: walkInfo
   @Override
   public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException {
-    LOGGER.debug("WALK {}", path);
     if (!canHandle(path)) {
       return Stream.empty();
     }
@@ -198,21 +176,73 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
     }
   }
 
-  // TODO: etags
   @Override
   public Optional<Path> asLocalPath(Path path, boolean writable) throws IOException {
-    Optional<InputStream> content = get(path);
+    Optional<StatObjectResponse> stat = getStat(path);
 
-    if (content.isPresent()) {
-      return Optional.of(cache.save(content.get(), path))
-          .map(
-              p -> {
-                LOGGER.debug("GOT LOCAL {}", p);
-                return p;
-              });
+    if (stat.isPresent()) {
+      String eTag = stat.get().etag();
+      Optional<Path> cachePath = cache.get(path, eTag);
+
+      if (cachePath.isPresent()) {
+        LOGGER.debug("GOT LOCAL {}", cachePath.get());
+        return cachePath;
+      }
+
+      Optional<InputStream> content = content(path);
+
+      if (content.isPresent()) {
+        return Optional.of(cache.put(path, eTag, content.get()))
+            .map(
+                p -> {
+                  LOGGER.debug("PUT LOCAL {}", p);
+                  return p;
+                });
+      }
     }
 
     return Optional.empty();
+  }
+
+  private Optional<StatObjectResponse> getStat(Path path) {
+    if (!canHandle(path)) {
+      return Optional.empty();
+    }
+
+    LOGGER.debug("STAT {}", path);
+
+    try {
+      return Optional.of(
+          minioClient.statObject(
+              StatObjectArgs.builder().bucket(bucket).object(full(path)).build()));
+    } catch (Throwable e) {
+      return Optional.empty();
+    }
+  }
+
+  public Optional<InputStream> getCurrent(Path path) throws IOException {
+    return getByETag(path, null);
+  }
+
+  public Optional<InputStream> getByETag(Path path, String eTag) {
+    if (!canHandle(path)) {
+      return Optional.empty();
+    }
+
+    LOGGER.debug("GET {} {}", path, eTag);
+
+    Builder builder = GetObjectArgs.builder().bucket(bucket).object(full(path));
+
+    if (Objects.nonNull(eTag)) {
+      builder.notMatchETag(eTag);
+    }
+
+    try {
+      return Optional.of(minioClient.getObject(builder.build()));
+    } catch (Throwable e) {
+      return Optional.empty();
+      // throw new IOException("S3 Driver", e);
+    }
   }
 
   private String full(Path path) {

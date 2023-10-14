@@ -279,7 +279,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
 
   private Optional<byte[]> loadKey() {
     try {
-      Optional<InputStream> signingKey = keyStore.get(SIGNING_KEY_PATH);
+      Optional<InputStream> signingKey = keyStore.content(SIGNING_KEY_PATH);
 
       if (signingKey.isPresent()) {
         try (InputStream inputStream = signingKey.get()) {

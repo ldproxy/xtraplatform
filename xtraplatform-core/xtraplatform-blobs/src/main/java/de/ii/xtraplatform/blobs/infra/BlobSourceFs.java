@@ -7,9 +7,11 @@
  */
 package de.ii.xtraplatform.blobs.infra;
 
+import de.ii.xtraplatform.blobs.domain.Blob;
 import de.ii.xtraplatform.blobs.domain.BlobLocals;
 import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobWriter;
+import de.ii.xtraplatform.blobs.domain.ImmutableBlob;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -49,7 +51,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
   }
 
   @Override
-  public Optional<InputStream> get(Path path) throws IOException {
+  public Optional<InputStream> content(Path path) throws IOException {
     if (!canHandle(path)) {
       return Optional.empty();
     }
@@ -61,6 +63,28 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
     }
 
     return Optional.of(Files.newInputStream(filePath));
+  }
+
+  @Override
+  public Optional<Blob> get(Path path) throws IOException {
+    if (!has(path)) {
+      return Optional.empty();
+    }
+
+    Optional<InputStream> content = content(path);
+
+    if (content.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        ImmutableBlob.of(
+            path,
+            size(path),
+            lastModified(path),
+            Optional.empty(),
+            Optional.empty(),
+            content::get));
   }
 
   @Override

@@ -10,8 +10,11 @@ package de.ii.xtraplatform.blobs.domain;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.Optional;
 
 public interface BlobCache {
 
-  Path save(InputStream content, Path path) throws IOException;
+  Optional<Path> get(Path path, String eTag) throws IOException;
+
+  Path put(Path path, String eTag, InputStream content) throws IOException;
 }

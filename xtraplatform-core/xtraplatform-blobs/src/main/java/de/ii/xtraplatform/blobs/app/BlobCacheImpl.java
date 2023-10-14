@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -26,22 +27,35 @@ public class BlobCacheImpl implements BlobCache {
 
   @Inject
   BlobCacheImpl(AppContext appContext) {
-    this.tmpDirectory = appContext.getTmpDir();
+    this.tmpDirectory = appContext.getTmpDir().resolve("_store_/locals");
   }
 
   @Override
-  public Path save(InputStream content, Path path) throws IOException {
-    Path cachePath = getDirectory(path).resolve(path.getFileName());
+  public Optional<Path> get(Path path, String eTag) throws IOException {
+    Path cachePath = getCachePath(path, eTag);
+
+    if (Files.isRegularFile(cachePath)) {
+      return Optional.of(cachePath);
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
+  public Path put(Path path, String eTag, InputStream content) throws IOException {
+    Path cachePath = getCachePath(path, eTag);
 
     Files.createDirectories(cachePath.getParent());
     Files.copy(content, cachePath, StandardCopyOption.REPLACE_EXISTING);
 
+    // TODO: cleanup older/other entries?
+
     return cachePath;
   }
 
-  private Path getDirectory(Path blobPath) {
-    String fileDir = blobPath.getFileName().toString().replaceAll("\\.", "_");
+  private Path getCachePath(Path path, String eTag) {
+    String fileDir = path.getFileName().toString().replaceAll("\\.", "_");
 
-    return tmpDirectory.resolve("blobs").resolve(blobPath.getParent()).resolve(fileDir);
+    return tmpDirectory.resolve(path.getParent()).resolve(fileDir).resolve(eTag);
   }
 }
