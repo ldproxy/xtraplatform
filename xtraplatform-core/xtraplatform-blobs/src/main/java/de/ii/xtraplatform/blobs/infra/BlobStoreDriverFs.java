@@ -69,7 +69,7 @@ public class BlobStoreDriverFs implements BlobStoreDriver {
   }
 
   @Override
-  public BlobSource init(StoreSource storeSource) throws IOException {
+  public BlobSource init(StoreSource storeSource, Content contentType) throws IOException {
     Path root = getAbsolutePath(dataDirectory, storeSource);
 
     if (storeSource.isArchive()) {
@@ -82,13 +82,13 @@ public class BlobStoreDriverFs implements BlobStoreDriver {
       blobExtractor.extract(
           archivePath,
           Path.of(storeSource.getArchiveRoot()),
-          entry -> storeSource.isSingleContent() || entry.startsWith(Content.RESOURCES.getPrefix()),
+          entry -> storeSource.isSingleContent() || entry.startsWith(contentType.getPrefix()),
           extractRoot,
           !storeSource.getArchiveCache());
     }
 
     if (!storeSource.isSingleContent()) {
-      root = root.resolve(Content.RESOURCES.getPrefix());
+      root = root.resolve(contentType.getPrefix());
     }
 
     BlobSource blobSource =

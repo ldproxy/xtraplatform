@@ -9,7 +9,7 @@ package de.ii.xtraplatform.web.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
-import de.ii.xtraplatform.blobs.domain.BlobStore;
+import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.web.domain.PartialMustacheResolver;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -35,11 +35,11 @@ public class BlobStoreMustacheResolver implements PartialMustacheResolver, AppLi
   private static final String HTML_DIR_NAME = "html";
   private static final String TEMPLATE_DIR_START = String.format("/%s/", TEMPLATE_DIR_NAME);
 
-  private final BlobStore templateStore;
+  private final ResourceStore templateStore;
   private final Map<Path, Optional<Path>> localPaths;
 
   @Inject
-  public BlobStoreMustacheResolver(BlobStore blobStore) {
+  public BlobStoreMustacheResolver(ResourceStore blobStore) {
     this.templateStore = blobStore.with(HTML_DIR_NAME, TEMPLATE_DIR_NAME);
     this.localPaths = new HashMap<>();
   }

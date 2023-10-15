@@ -64,13 +64,13 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
   }
 
   @Override
-  public BlobSource init(StoreSource storeSource) throws IOException {
+  public BlobSource init(StoreSource storeSource, Content contentType) throws IOException {
     Tuple<MinioClient, String> client = getClient((StoreSourceS3) storeSource);
     String bucket = client.second();
     Path root = Path.of("");
 
     if (!storeSource.isSingleContent()) {
-      root = root.resolve(Content.RESOURCES.getPrefix());
+      root = root.resolve(contentType.getPrefix());
     }
 
     BlobSource blobSource =

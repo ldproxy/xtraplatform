@@ -17,7 +17,7 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
-import de.ii.xtraplatform.blobs.domain.BlobStore;
+import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.entities.domain.AbstractMergeableKeyValueStore;
 import de.ii.xtraplatform.entities.domain.AutoEntity;
 import de.ii.xtraplatform.entities.domain.EntityData;
@@ -88,7 +88,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Jackson jackson,
       Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore,
-      BlobStore blobStore) {
+      ResourceStore blobStore) {
     this(appContext, eventStore, jackson, entityFactories, defaultsStore, blobStore, false);
   }
 
@@ -99,7 +99,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Jackson jackson,
       Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore,
-      BlobStore blobStore,
+      ResourceStore blobStore,
       boolean noDefaults) {
     this.isEventStoreReadOnly = eventStore.isReadOnly();
     this.entityFactories = new EntityFactoriesImpl(entityFactories);

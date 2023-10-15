@@ -53,7 +53,7 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
   }
 
   @Override
-  public BlobSource init(StoreSource storeSource) throws IOException {
+  public BlobSource init(StoreSource storeSource, Content contentType) throws IOException {
     if (!storeSource.isArchive()) {
       LOGGER.error("Store source {} only supports archives.", storeSource.getLabel());
       return new BlobSourceEmpty();
@@ -74,13 +74,13 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
     blobExtractor.extract(
         archivePath.get(),
         Path.of(storeSource.getArchiveRoot()),
-        entry -> storeSource.isSingleContent() || entry.startsWith(Content.RESOURCES.getPrefix()),
+        entry -> storeSource.isSingleContent() || entry.startsWith(contentType.getPrefix()),
         extractRoot,
         !storeSource.getArchiveCache());
     // }
     // LOGGER.debug("EXTRACTED {}", storeSource.getLabel());
     if (!storeSource.isSingleContent()) {
-      root = root.resolve(Content.RESOURCES.getPrefix());
+      root = root.resolve(contentType.getPrefix());
     }
 
     BlobSource blobSource =

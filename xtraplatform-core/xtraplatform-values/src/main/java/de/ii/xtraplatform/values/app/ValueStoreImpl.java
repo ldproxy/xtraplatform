@@ -8,8 +8,13 @@
 package de.ii.xtraplatform.values.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
+import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.Jackson;
+import de.ii.xtraplatform.base.domain.Store;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.blobs.domain.BlobStore;
+import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import de.ii.xtraplatform.values.api.ValueDecoderEnvVarSubstitution;
 import de.ii.xtraplatform.values.api.ValueDecoderWithBuilder;
 import de.ii.xtraplatform.values.api.ValueEncodingJackson;
@@ -20,6 +25,7 @@ import de.ii.xtraplatform.values.domain.ValueCache;
 import de.ii.xtraplatform.values.domain.ValueFactories;
 import de.ii.xtraplatform.values.domain.ValueStore;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import javax.inject.Inject;
@@ -27,13 +33,19 @@ import javax.inject.Singleton;
 
 @Singleton
 @AutoBind
-public class ValueStoreImpl implements ValueStore<Value> {
+public class ValueStoreImpl extends BlobStore implements ValueStore<Value> {
   private final ValueFactories valueFactories;
   private final ValueCache<Value> cache;
   private final ValueEncodingJackson<Value> valueEncoding;
 
   @Inject
-  public ValueStoreImpl(AppContext appContext, Jackson jackson, ValueFactories valueFactories) {
+  public ValueStoreImpl(
+      AppContext appContext,
+      Jackson jackson,
+      Store store,
+      Lazy<Set<BlobStoreDriver>> drivers,
+      ValueFactories valueFactories) {
+    super(store, drivers, Content.VALUES);
     this.valueFactories = valueFactories;
     this.valueEncoding =
         new ValueEncodingJackson<>(

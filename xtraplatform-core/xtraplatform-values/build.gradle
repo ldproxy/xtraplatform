@@ -1,2 +1,6 @@
 
-maturity = 'PROPOSAL'
+maturity = 'MATURE'
+
+dependencies {
+    provided project(':xtraplatform-blobs')
+}

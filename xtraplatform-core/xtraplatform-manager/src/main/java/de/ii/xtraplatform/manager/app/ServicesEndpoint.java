@@ -18,7 +18,7 @@ import dagger.Lazy;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.base.domain.LogContext;
-import de.ii.xtraplatform.blobs.domain.BlobStore;
+import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.entities.domain.EntityData;
 import de.ii.xtraplatform.entities.domain.EntityDataDefaultsStore;
 import de.ii.xtraplatform.entities.domain.EntityDataStore;
@@ -100,7 +100,7 @@ public class ServicesEndpoint implements Endpoint {
   private final List<Consumer<EntityStateEvent>> entityStateSubscriber;
   private final EventStream<EntityStateEvent> eventStream;
 
-  private final BlobStore featuresStore;
+  private final ResourceStore featuresStore;
 
   @Inject
   ServicesEndpoint(
@@ -110,7 +110,7 @@ public class ServicesEndpoint implements Endpoint {
       EntityDataDefaultsStore defaultsStore,
       ServiceBackgroundTasks serviceBackgroundTasks,
       Reactive reactive,
-      BlobStore blobStore) {
+      ResourceStore blobStore) {
     this.entityRepository = (EntityDataStore<EntityData>) entityRepository;
     this.serviceRepository = getServiceRepository(this.entityRepository);
     this.entityRegistry = entityRegistry;
