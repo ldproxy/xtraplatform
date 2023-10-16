@@ -5,13 +5,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.values.domain;
+package de.ii.xtraplatform.blobs.domain;
 
-import java.util.concurrent.CompletableFuture;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
 
-public interface ValueStore extends KeyValueStore<Value> {
-
-  CompletableFuture<Void> onReady();
-
-  <U extends Value> KeyValueStore<U> forType(Class<U> type);
+public interface BlobStoreFactory {
+  BlobStore createBlobStore(Content contentType);
 }

@@ -8,101 +8,213 @@
 package de.ii.xtraplatform.values.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import dagger.Lazy;
+import com.google.common.io.Files;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
-import de.ii.xtraplatform.base.domain.Store;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
-import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
+import de.ii.xtraplatform.blobs.domain.BlobStoreFactory;
 import de.ii.xtraplatform.values.api.ValueDecoderEnvVarSubstitution;
 import de.ii.xtraplatform.values.api.ValueDecoderWithBuilder;
 import de.ii.xtraplatform.values.api.ValueEncodingJackson;
 import de.ii.xtraplatform.values.domain.Builder;
 import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.KeyValueStore;
 import de.ii.xtraplatform.values.domain.Value;
 import de.ii.xtraplatform.values.domain.ValueCache;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
 import de.ii.xtraplatform.values.domain.ValueFactories;
+import de.ii.xtraplatform.values.domain.ValueFactory;
 import de.ii.xtraplatform.values.domain.ValueStore;
+import de.ii.xtraplatform.values.domain.ValueStoreDecorator;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
-@AutoBind
-public class ValueStoreImpl extends BlobStore implements ValueStore<Value> {
+@AutoBind(interfaces = {ValueStore.class, AppLifeCycle.class})
+public class ValueStoreImpl implements ValueStore, ValueCache<Value>, AppLifeCycle {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ValueStoreImpl.class);
+
+  private final BlobStore blobStore;
   private final ValueFactories valueFactories;
-  private final ValueCache<Value> cache;
+  private final Map<Identifier, Value> memCache;
   private final ValueEncodingJackson<Value> valueEncoding;
+  private final CompletableFuture<Void> ready;
 
   @Inject
   public ValueStoreImpl(
       AppContext appContext,
       Jackson jackson,
-      Store store,
-      Lazy<Set<BlobStoreDriver>> drivers,
+      BlobStoreFactory blobStoreFactory,
       ValueFactories valueFactories) {
-    super(store, drivers, Content.VALUES);
+    this.blobStore = blobStoreFactory.createBlobStore(Content.VALUES);
     this.valueFactories = valueFactories;
     this.valueEncoding =
         new ValueEncodingJackson<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
-    this.cache =
-        new ValueCache<Value>() {
-          @Override
-          public boolean isInCache(Identifier identifier) {
-            return false;
-          }
-
-          @Override
-          public boolean isInCache(Predicate<Identifier> keyMatcher) {
-            return false;
-          }
-
-          @Override
-          public Value getFromCache(Identifier identifier) {
-            return null;
-          }
-        };
+    this.memCache = new ConcurrentHashMap<>();
+    this.ready = new CompletableFuture<>();
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
-    valueEncoding.addDecoderMiddleware(new ValueDecoderWithBuilder<>(this::getBuilder, cache));
+    valueEncoding.addDecoderMiddleware(new ValueDecoderWithBuilder<>(this::getBuilder, this));
+  }
+
+  @Override
+  public int getPriority() {
+    return 55;
+  }
+
+  @Override
+  public void onStart() {
+    blobStore.start();
+
+    LOGGER.debug("Loading values");
+
+    valueFactories
+        .getTypes()
+        .forEach(
+            valueType -> {
+              ValueFactory valueFactory = valueFactories.get(valueType);
+              Path typePath = Path.of(valueFactory.type());
+              int count = 0;
+
+              try (Stream<Path> paths =
+                  blobStore.walk(
+                      typePath,
+                      8,
+                      (path, attributes) -> attributes.isValue() && !attributes.isHidden())) {
+                List<Path> files = paths.sorted().collect(Collectors.toList());
+
+                for (Path file : files) {
+                  ValueEncoding.FORMAT payloadFormat =
+                      ValueEncoding.FORMAT.fromString(
+                          Files.getFileExtension(file.getFileName().toString()));
+
+                  if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN) {
+                    return;
+                  }
+
+                  if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Loading value: {} {} {}", valueType, file, payloadFormat);
+                  }
+
+                  Path currentPath = typePath.resolve(file);
+                  Identifier identifier =
+                      Identifier.from(
+                          typePath
+                              .resolve(Objects.requireNonNullElse(file.getParent(), Path.of("")))
+                              .resolve(
+                                  Files.getNameWithoutExtension(file.getFileName().toString())));
+
+                  try {
+                    byte[] bytes = blobStore.content(currentPath).get().readAllBytes();
+
+                    Value value = valueEncoding.deserialize(identifier, bytes, payloadFormat, true);
+
+                    this.memCache.put(identifier, value);
+
+                    count++;
+                  } catch (IOException e) {
+                    LogContext.error(LOGGER, e, "Could not load value from {}", currentPath);
+                  }
+                }
+
+              } catch (IOException e) {
+                LogContext.error(LOGGER, e, "Could not load values with type {}", valueType);
+              }
+
+              LOGGER.debug("Loaded {} {}", count, valueType);
+            });
+
+    LOGGER.debug("Loaded values");
+
+    ready.complete(null);
   }
 
   protected Builder<Value> getBuilder(Identifier identifier) {
-    return (Builder<Value>) valueFactories.get(ValueStore.valueType(identifier)).builder();
+    return (Builder<Value>) valueFactories.get(KeyValueStore.valueType(identifier)).builder();
   }
 
   @Override
   public List<Identifier> identifiers(String... path) {
-    return null;
+    return memCache.keySet().stream()
+        .filter(
+            identifier ->
+                identifier.path().size() >= path.length
+                    && Objects.equals(identifier.path().subList(0, path.length), List.of(path)))
+        .collect(Collectors.toList());
+  }
+
+  // TODO: change in KeyValueStore, might affect EntityDataStore
+  @Override
+  public List<String> ids(String... path) {
+    return identifiers(path).stream().map(Identifier::asPath).collect(Collectors.toList());
   }
 
   @Override
   public boolean has(Identifier identifier) {
-    return false;
+    return memCache.containsKey(identifier);
   }
 
   @Override
   public boolean has(Predicate<Identifier> matcher) {
-    return false;
+    return memCache.keySet().stream().anyMatch(matcher);
   }
 
   @Override
   public Value get(Identifier identifier) {
-    return null;
+    return memCache.get(identifier);
   }
 
   @Override
   public CompletableFuture<Value> put(Identifier identifier, Value value) {
-    return null;
+    memCache.put(identifier, value);
+
+    return CompletableFuture.completedFuture(value);
   }
 
   @Override
   public CompletableFuture<Boolean> delete(Identifier identifier) {
-    return null;
+    Value removed = memCache.remove(identifier);
+
+    return CompletableFuture.completedFuture(Objects.nonNull(removed));
+  }
+
+  @Override
+  public CompletableFuture<Void> onReady() {
+    return ready;
+  }
+
+  @Override
+  public <U extends Value> KeyValueStore<U> forType(Class<U> type) {
+    final String valueType = valueFactories.get(type).type();
+
+    return new ValueStoreDecorator<Value, U>() {
+
+      @Override
+      public KeyValueStore<Value> getDecorated() {
+        return ValueStoreImpl.this;
+      }
+
+      @Override
+      public String getValueType() {
+        return valueType;
+      }
+    };
   }
 }

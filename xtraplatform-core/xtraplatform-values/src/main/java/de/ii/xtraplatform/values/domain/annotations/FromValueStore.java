@@ -16,13 +16,11 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(TYPE)
-public @interface Value {
+public @interface FromValueStore {
 
   String type();
 
-  Class<?> builder();
-
-  boolean cacheValues();
+  boolean cacheValues() default true;
 
   FORMAT defaultFormat() default FORMAT.YAML;
 }

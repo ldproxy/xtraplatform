@@ -33,8 +33,8 @@ public class ValueDecoderWithBuilder<T extends Value> implements ValueDecoderMid
       throws IOException {
     Builder<T> builder = newBuilderSupplier.apply(identifier);
 
-    if (valueCache.isInCache(identifier) && !ignoreCache) {
-      builder.from(valueCache.getFromCache(identifier));
+    if (valueCache.has(identifier) && !ignoreCache) {
+      builder.from(valueCache.get(identifier));
     }
 
     objectMapper.readerForUpdating(builder).readValue(payload);

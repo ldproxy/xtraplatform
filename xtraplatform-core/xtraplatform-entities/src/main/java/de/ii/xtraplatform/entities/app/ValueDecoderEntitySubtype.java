@@ -45,8 +45,8 @@ public class ValueDecoderEntitySubtype implements ValueDecoderMiddleware<EntityD
         return data;
       }
 
-      if (eventSourcing.isInCache(identifier) && !ignoreCache) {
-        builder.from(eventSourcing.getFromCache(identifier));
+      if (eventSourcing.has(identifier) && !ignoreCache) {
+        builder.from(eventSourcing.get(identifier));
       }
 
       objectMapper.readerForUpdating(builder).readValue(payload);

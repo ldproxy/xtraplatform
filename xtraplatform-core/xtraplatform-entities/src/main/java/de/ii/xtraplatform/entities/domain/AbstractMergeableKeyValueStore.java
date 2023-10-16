@@ -28,7 +28,7 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
   // locks???
   protected boolean isUpdateValid(Identifier identifier, byte[] payload) {
     try {
-      return getEventSourcing().isInCache(identifier)
+      return getEventSourcing().has(identifier)
           && Objects.nonNull(
               getValueEncoding()
                   .deserialize(identifier, payload, getValueEncoding().getDefaultFormat(), false));

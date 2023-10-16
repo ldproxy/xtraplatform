@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
-import de.ii.xtraplatform.values.domain.ValueStore;
+import de.ii.xtraplatform.values.domain.KeyValueStore;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
  * @author zahnen
  */
 // TODO: KeyValueStoreWithMerging
-public interface MergeableKeyValueStore<T> extends ValueStore<T> {
+public interface MergeableKeyValueStore<T> extends KeyValueStore<T> {
 
   CompletableFuture<T> patch(String id, Map<String, Object> partialData, String... path);
 

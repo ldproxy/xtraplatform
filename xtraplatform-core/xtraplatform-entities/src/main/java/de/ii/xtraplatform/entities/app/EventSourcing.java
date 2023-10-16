@@ -176,24 +176,24 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
               CompletableFuture.completedFuture((Void) null),
               (completableFuture, identifier) ->
                   completableFuture.thenCompose(
-                      ignore2 -> updateHook.get().apply(identifier, getFromCache(identifier))),
+                      ignore2 -> updateHook.get().apply(identifier, get(identifier))),
               (first, second) -> first.thenCompose(ignore2 -> second))
           .join();
     }
   }
 
   @Override
-  public boolean isInCache(Identifier identifier) {
+  public boolean has(Identifier identifier) {
     return cache.containsKey(identifier);
   }
 
   @Override
-  public boolean isInCache(Predicate<Identifier> keyMatcher) {
+  public boolean has(Predicate<Identifier> keyMatcher) {
     return cache.keySet().stream().anyMatch(keyMatcher);
   }
 
   @Override
-  public T getFromCache(Identifier identifier) {
+  public T get(Identifier identifier) {
     return cache.get(identifier);
   }
 

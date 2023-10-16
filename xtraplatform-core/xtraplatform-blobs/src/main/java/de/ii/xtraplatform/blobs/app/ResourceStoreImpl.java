@@ -12,7 +12,6 @@ import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
-import de.ii.xtraplatform.blobs.domain.BlobStore;
 import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import java.nio.file.Path;
@@ -23,11 +22,14 @@ import javax.inject.Singleton;
 
 @Singleton
 @AutoBind
-public class ResourceStoreImpl extends BlobStore implements ResourceStore, AppLifeCycle {
+public class ResourceStoreImpl extends BlobStoreImpl implements ResourceStore, AppLifeCycle {
+
+  private final CompletableFuture<Void> ready;
 
   @Inject
   public ResourceStoreImpl(Store store, Lazy<Set<BlobStoreDriver>> drivers) {
     super(store, drivers, Content.RESOURCES);
+    this.ready = new CompletableFuture<>();
   }
 
   @Override
@@ -37,12 +39,13 @@ public class ResourceStoreImpl extends BlobStore implements ResourceStore, AppLi
 
   @Override
   public void onStart() {
-    super.onStart();
+    super.start();
+    ready.complete(null);
   }
 
   @Override
   public CompletableFuture<Void> onReady() {
-    return super.onReady();
+    return ready;
   }
 
   @Override

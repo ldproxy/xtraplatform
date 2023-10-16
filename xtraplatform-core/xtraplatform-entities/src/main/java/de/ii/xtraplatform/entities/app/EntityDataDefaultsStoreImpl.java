@@ -110,17 +110,17 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             this::getNewBuilder,
             new ValueCache<EntityDataBuilder<EntityData>>() {
               @Override
-              public boolean isInCache(Identifier identifier) {
+              public boolean has(Identifier identifier) {
                 return false;
               }
 
               @Override
-              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+              public boolean has(Predicate<Identifier> keyMatcher) {
                 return false;
               }
 
               @Override
-              public EntityDataBuilder<EntityData> getFromCache(Identifier identifier) {
+              public EntityDataBuilder<EntityData> get(Identifier identifier) {
                 return null;
               }
             }));
@@ -133,17 +133,17 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             identifier -> new LinkedHashMap<>(),
             new ValueCache<Map<String, Object>>() {
               @Override
-              public boolean isInCache(Identifier identifier) {
+              public boolean has(Identifier identifier) {
                 return false;
               }
 
               @Override
-              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+              public boolean has(Predicate<Identifier> keyMatcher) {
                 return false;
               }
 
               @Override
-              public Map<String, Object> getFromCache(Identifier identifier) {
+              public Map<String, Object> get(Identifier identifier) {
                 return null;
               }
             }));
@@ -156,17 +156,17 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             this::getBuilder,
             new ValueCache<EntityData>() {
               @Override
-              public boolean isInCache(Identifier identifier) {
+              public boolean has(Identifier identifier) {
                 return false;
               }
 
               @Override
-              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+              public boolean has(Predicate<Identifier> keyMatcher) {
                 return false;
               }
 
               @Override
-              public EntityData getFromCache(Identifier identifier) {
+              public EntityData get(Identifier identifier) {
                 return null;
               }
             }));
@@ -346,8 +346,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   }
 
   private Map<String, Object> getDefaults(Identifier identifier) {
-    if (eventSourcing.isInCache(identifier)) {
-      return eventSourcing.getFromCache(identifier);
+    if (eventSourcing.has(identifier)) {
+      return eventSourcing.get(identifier);
     }
 
     for (int i = 1; i < identifier.path().size(); i++) {
@@ -356,12 +356,12 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               .from(identifier)
               .path(identifier.path().subList(i, identifier.path().size()))
               .build();
-      if (eventSourcing.isInCache(parent)) {
+      if (eventSourcing.has(parent)) {
         try {
           Map<String, Object> deserialize =
               valueEncodingMap.deserialize(
                   parent,
-                  valueEncodingEntity.serialize(eventSourcing.getFromCache(parent)),
+                  valueEncodingEntity.serialize(eventSourcing.get(parent)),
                   valueEncoding.getDefaultFormat(),
                   false);
 
@@ -388,8 +388,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   @Override
   public EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
 
-    if (eventSourcing.isInCache(identifier)) {
-      Map<String, Object> defaults = eventSourcing.getFromCache(identifier);
+    if (eventSourcing.has(identifier)) {
+      Map<String, Object> defaults = eventSourcing.get(identifier);
       byte[] payload = valueEncodingBuilder.serialize(defaults);
 
       try {

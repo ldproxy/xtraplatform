@@ -30,8 +30,8 @@ public class ValueDecoderBase<T> implements ValueDecoderMiddleware<T> {
       throws IOException {
     T data2 = null;
 
-    if (valueCache.isInCache(identifier) && !ignoreCache) {
-      data2 = valueCache.getFromCache(identifier);
+    if (valueCache.has(identifier) && !ignoreCache) {
+      data2 = valueCache.get(identifier);
     } else {
       data2 = newInstanceSupplier.apply(identifier);
     }

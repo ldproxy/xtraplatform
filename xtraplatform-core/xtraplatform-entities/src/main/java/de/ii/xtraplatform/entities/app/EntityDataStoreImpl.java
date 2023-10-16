@@ -138,17 +138,17 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             identifier -> new LinkedHashMap<>(),
             new ValueCache<Map<String, Object>>() {
               @Override
-              public boolean isInCache(Identifier identifier) {
+              public boolean has(Identifier identifier) {
                 return false;
               }
 
               @Override
-              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+              public boolean has(Predicate<Identifier> keyMatcher) {
                 return false;
               }
 
               @Override
-              public Map<String, Object> getFromCache(Identifier identifier) {
+              public Map<String, Object> get(Identifier identifier) {
                 return null;
               }
             }));
@@ -199,7 +199,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
     if (!event.isDelete()
         && event.type().equals(EntityDataStore.EVENT_TYPE_ENTITIES)
-        && eventSourcing.isInCache(isDuplicate(event.identifier()))) {
+        && eventSourcing.has(isDuplicate(event.identifier()))) {
       LOGGER.warn(
           "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single group.",
           event.asPathNoType(),
@@ -209,7 +209,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
     if (!event.isDelete()
         && event.type().equals(EntityDataStore.EVENT_TYPE_ENTITIES)
-        && eventSourcing.isInCache(event.identifier())) {
+        && eventSourcing.has(event.identifier())) {
       LOGGER.warn(
           "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single source, use overrides to update it from another source.",
           event.asPathNoType(),
@@ -227,7 +227,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     Identifier cacheKey = overridesPath.asIdentifier();
 
     // override without matching entity
-    if (!eventSourcing.isInCache(cacheKey)) {
+    if (!eventSourcing.has(cacheKey)) {
       LOGGER.warn("Ignoring override '{}', no matching entity found", event.asPath());
       return ImmutableList.of();
     }

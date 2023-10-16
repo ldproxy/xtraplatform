@@ -10,6 +10,7 @@ package de.ii.xtraplatform.values.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.Joiner;
+import java.nio.file.Path;
 import java.util.List;
 import org.immutables.value.Value;
 
@@ -23,8 +24,18 @@ public interface Identifier extends Comparable<Identifier> {
   List<String> path();
 
   static Identifier from(String id, String... path) {
-
     return ImmutableIdentifier.builder().id(id).addPath(path).build();
+  }
+
+  static Identifier from(Path path) {
+    ImmutableIdentifier.Builder builder =
+        ImmutableIdentifier.builder().id(path.getFileName().toString());
+
+    for (Path element : path.getParent()) {
+      builder.addPath(element.toString());
+    }
+
+    return builder.build();
   }
 
   @Override

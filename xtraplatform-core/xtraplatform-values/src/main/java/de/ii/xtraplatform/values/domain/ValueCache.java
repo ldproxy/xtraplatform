@@ -10,9 +10,9 @@ package de.ii.xtraplatform.values.domain;
 import java.util.function.Predicate;
 
 public interface ValueCache<T> {
-  boolean isInCache(Identifier identifier);
+  boolean has(Identifier identifier);
 
-  boolean isInCache(Predicate<Identifier> keyMatcher);
+  boolean has(Predicate<Identifier> keyMatcher);
 
-  T getFromCache(Identifier identifier);
+  T get(Identifier identifier);
 }
