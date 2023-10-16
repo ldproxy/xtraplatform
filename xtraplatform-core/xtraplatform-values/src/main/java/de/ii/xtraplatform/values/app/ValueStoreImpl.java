@@ -19,10 +19,10 @@ import de.ii.xtraplatform.blobs.domain.BlobStoreFactory;
 import de.ii.xtraplatform.values.api.ValueDecoderEnvVarSubstitution;
 import de.ii.xtraplatform.values.api.ValueDecoderWithBuilder;
 import de.ii.xtraplatform.values.api.ValueEncodingJackson;
-import de.ii.xtraplatform.values.domain.Builder;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.KeyValueStore;
-import de.ii.xtraplatform.values.domain.Value;
+import de.ii.xtraplatform.values.domain.StoredValue;
+import de.ii.xtraplatform.values.domain.ValueBuilder;
 import de.ii.xtraplatform.values.domain.ValueCache;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
 import de.ii.xtraplatform.values.domain.ValueFactories;
@@ -46,14 +46,14 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind(interfaces = {ValueStore.class, AppLifeCycle.class})
-public class ValueStoreImpl implements ValueStore, ValueCache<Value>, AppLifeCycle {
+public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ValueStoreImpl.class);
 
   private final BlobStore blobStore;
   private final ValueFactories valueFactories;
-  private final Map<Identifier, Value> memCache;
-  private final ValueEncodingJackson<Value> valueEncoding;
+  private final Map<Identifier, StoredValue> memCache;
+  private final ValueEncodingJackson<StoredValue> valueEncoding;
   private final CompletableFuture<Void> ready;
 
   @Inject
@@ -124,7 +124,8 @@ public class ValueStoreImpl implements ValueStore, ValueCache<Value>, AppLifeCyc
                   try {
                     byte[] bytes = blobStore.content(currentPath).get().readAllBytes();
 
-                    Value value = valueEncoding.deserialize(identifier, bytes, payloadFormat, true);
+                    StoredValue value =
+                        valueEncoding.deserialize(identifier, bytes, payloadFormat, true);
 
                     this.memCache.put(identifier, value);
 
@@ -146,8 +147,9 @@ public class ValueStoreImpl implements ValueStore, ValueCache<Value>, AppLifeCyc
     ready.complete(null);
   }
 
-  protected Builder<Value> getBuilder(Identifier identifier) {
-    return (Builder<Value>) valueFactories.get(KeyValueStore.valueType(identifier)).builder();
+  protected ValueBuilder<StoredValue> getBuilder(Identifier identifier) {
+    return (ValueBuilder<StoredValue>)
+        valueFactories.get(KeyValueStore.valueType(identifier)).builder();
   }
 
   @Override
@@ -177,12 +179,12 @@ public class ValueStoreImpl implements ValueStore, ValueCache<Value>, AppLifeCyc
   }
 
   @Override
-  public Value get(Identifier identifier) {
+  public StoredValue get(Identifier identifier) {
     return memCache.get(identifier);
   }
 
   @Override
-  public CompletableFuture<Value> put(Identifier identifier, Value value) {
+  public CompletableFuture<StoredValue> put(Identifier identifier, StoredValue value) {
     memCache.put(identifier, value);
 
     return CompletableFuture.completedFuture(value);
@@ -190,7 +192,7 @@ public class ValueStoreImpl implements ValueStore, ValueCache<Value>, AppLifeCyc
 
   @Override
   public CompletableFuture<Boolean> delete(Identifier identifier) {
-    Value removed = memCache.remove(identifier);
+    StoredValue removed = memCache.remove(identifier);
 
     return CompletableFuture.completedFuture(Objects.nonNull(removed));
   }
@@ -201,13 +203,13 @@ public class ValueStoreImpl implements ValueStore, ValueCache<Value>, AppLifeCyc
   }
 
   @Override
-  public <U extends Value> KeyValueStore<U> forType(Class<U> type) {
+  public <U extends StoredValue> KeyValueStore<U> forType(Class<U> type) {
     final String valueType = valueFactories.get(type).type();
 
-    return new ValueStoreDecorator<Value, U>() {
+    return new ValueStoreDecorator<StoredValue, U>() {
 
       @Override
-      public KeyValueStore<Value> getDecorated() {
+      public KeyValueStore<StoredValue> getDecorated() {
         return ValueStoreImpl.this;
       }
 

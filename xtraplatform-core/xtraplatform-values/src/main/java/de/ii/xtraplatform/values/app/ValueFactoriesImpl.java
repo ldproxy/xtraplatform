@@ -10,7 +10,7 @@ package de.ii.xtraplatform.values.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableSet;
 import dagger.Lazy;
-import de.ii.xtraplatform.values.domain.Value;
+import de.ii.xtraplatform.values.domain.StoredValue;
 import de.ii.xtraplatform.values.domain.ValueFactories;
 import de.ii.xtraplatform.values.domain.ValueFactory;
 import java.util.NoSuchElementException;
@@ -42,7 +42,7 @@ public class ValueFactoriesImpl implements ValueFactories {
   }
 
   @Override
-  public ValueFactory get(Class<? extends Value> valueClass) {
+  public ValueFactory get(Class<? extends StoredValue> valueClass) {
     return valueFactories.get().stream()
         .filter(entityFactory -> Objects.equals(valueClass, entityFactory.valueClass()))
         .findFirst()

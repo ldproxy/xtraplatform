@@ -14,11 +14,11 @@ import java.util.Objects;
 
 public class ValueFactoryAuto implements ValueFactory {
 
-  private final Class<? extends Value> valueClass;
+  private final Class<? extends StoredValue> valueClass;
   private final FromValueStore options;
   private final JsonDeserialize deserialize;
 
-  protected <T extends Value> ValueFactoryAuto(Class<T> clazz) {
+  protected <T extends StoredValue> ValueFactoryAuto(Class<T> clazz) {
     this.valueClass = clazz;
     this.options =
         Objects.requireNonNull(
@@ -31,7 +31,7 @@ public class ValueFactoryAuto implements ValueFactory {
   }
 
   @Override
-  public Class<? extends Value> valueClass() {
+  public Class<? extends StoredValue> valueClass() {
     return valueClass;
   }
 
@@ -41,9 +41,9 @@ public class ValueFactoryAuto implements ValueFactory {
   }
 
   @Override
-  public Builder<? extends Value> builder() {
+  public ValueBuilder<? extends StoredValue> builder() {
     try {
-      return (Builder<? extends Value>) deserialize.builder().newInstance();
+      return (ValueBuilder<? extends StoredValue>) deserialize.builder().newInstance();
     } catch (Throwable e) {
       throw new IllegalStateException(
           "Invalid builder "

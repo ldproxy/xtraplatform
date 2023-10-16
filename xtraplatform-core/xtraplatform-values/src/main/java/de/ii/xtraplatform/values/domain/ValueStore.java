@@ -9,9 +9,9 @@ package de.ii.xtraplatform.values.domain;
 
 import java.util.concurrent.CompletableFuture;
 
-public interface ValueStore extends KeyValueStore<Value> {
+public interface ValueStore extends KeyValueStore<StoredValue> {
 
   CompletableFuture<Void> onReady();
 
-  <U extends Value> KeyValueStore<U> forType(Class<U> type);
+  <U extends StoredValue> KeyValueStore<U> forType(Class<U> type);
 }

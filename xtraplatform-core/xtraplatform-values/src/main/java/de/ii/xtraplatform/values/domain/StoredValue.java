@@ -9,7 +9,7 @@ package de.ii.xtraplatform.values.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public interface Value {
+public interface StoredValue {
 
   // TODO: removing/emptying breaks builders, no from(Value) is generated
   @JsonIgnore

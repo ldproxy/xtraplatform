@@ -9,11 +9,12 @@ package de.ii.xtraplatform.entities.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.ii.xtraplatform.docs.DocIgnore;
+import de.ii.xtraplatform.values.domain.StoredValue;
 import java.time.Instant;
 import java.util.Optional;
 import org.immutables.value.Value;
 
-public interface EntityData extends de.ii.xtraplatform.values.domain.Value {
+public interface EntityData extends StoredValue {
 
   /**
    * @langEn Unique identifier of the entity, has to match the filename. Allowed characters are

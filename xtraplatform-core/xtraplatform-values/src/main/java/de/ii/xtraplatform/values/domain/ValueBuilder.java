@@ -7,8 +7,8 @@
  */
 package de.ii.xtraplatform.values.domain;
 
-public interface Builder<T extends Value> {
+public interface ValueBuilder<T extends StoredValue> {
   T build();
 
-  Builder<T> from(Value value);
+  ValueBuilder<T> from(StoredValue value);
 }

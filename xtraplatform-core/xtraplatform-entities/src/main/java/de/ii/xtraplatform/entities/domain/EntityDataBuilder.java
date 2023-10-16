@@ -7,16 +7,16 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
-import de.ii.xtraplatform.values.domain.Builder;
-import de.ii.xtraplatform.values.domain.Value;
+import de.ii.xtraplatform.values.domain.StoredValue;
+import de.ii.xtraplatform.values.domain.ValueBuilder;
 
-public interface EntityDataBuilder<T extends EntityData> extends Builder<T> {
+public interface EntityDataBuilder<T extends EntityData> extends ValueBuilder<T> {
 
   @Override
   T build();
 
   @Override
-  EntityDataBuilder<T> from(Value value);
+  EntityDataBuilder<T> from(StoredValue value);
 
   EntityDataBuilder<T> from(EntityData value);
 

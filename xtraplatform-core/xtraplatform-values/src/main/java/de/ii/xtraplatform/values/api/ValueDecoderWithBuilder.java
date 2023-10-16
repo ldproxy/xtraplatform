@@ -8,21 +8,21 @@
 package de.ii.xtraplatform.values.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.ii.xtraplatform.values.domain.Builder;
 import de.ii.xtraplatform.values.domain.Identifier;
-import de.ii.xtraplatform.values.domain.Value;
+import de.ii.xtraplatform.values.domain.StoredValue;
+import de.ii.xtraplatform.values.domain.ValueBuilder;
 import de.ii.xtraplatform.values.domain.ValueCache;
 import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
 import java.io.IOException;
 import java.util.function.Function;
 
-public class ValueDecoderWithBuilder<T extends Value> implements ValueDecoderMiddleware<T> {
+public class ValueDecoderWithBuilder<T extends StoredValue> implements ValueDecoderMiddleware<T> {
 
-  private final Function<Identifier, Builder<T>> newBuilderSupplier;
+  private final Function<Identifier, ValueBuilder<T>> newBuilderSupplier;
   private final ValueCache<T> valueCache;
 
   public ValueDecoderWithBuilder(
-      Function<Identifier, Builder<T>> newBuilderSupplier, ValueCache<T> valueCache) {
+      Function<Identifier, ValueBuilder<T>> newBuilderSupplier, ValueCache<T> valueCache) {
     this.newBuilderSupplier = newBuilderSupplier;
     this.valueCache = valueCache;
   }
@@ -31,7 +31,7 @@ public class ValueDecoderWithBuilder<T extends Value> implements ValueDecoderMid
   public T process(
       Identifier identifier, byte[] payload, ObjectMapper objectMapper, T data, boolean ignoreCache)
       throws IOException {
-    Builder<T> builder = newBuilderSupplier.apply(identifier);
+    ValueBuilder<T> builder = newBuilderSupplier.apply(identifier);
 
     if (valueCache.has(identifier) && !ignoreCache) {
       builder.from(valueCache.get(identifier));

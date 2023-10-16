@@ -13,11 +13,11 @@ import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
 @AutoMultiBind
 public interface ValueFactory {
 
-  Class<? extends Value> valueClass();
+  Class<? extends StoredValue> valueClass();
 
   String type();
 
-  Builder<? extends Value> builder();
+  ValueBuilder<? extends StoredValue> builder();
 
   boolean cacheValues();
 

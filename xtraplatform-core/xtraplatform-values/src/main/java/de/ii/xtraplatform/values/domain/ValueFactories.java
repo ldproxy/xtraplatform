@@ -13,7 +13,7 @@ public interface ValueFactories {
 
   ValueFactory get(String entityType);
 
-  ValueFactory get(Class<? extends Value> valueClass);
+  ValueFactory get(Class<? extends StoredValue> valueClass);
 
   Set<String> getTypes();
 }
