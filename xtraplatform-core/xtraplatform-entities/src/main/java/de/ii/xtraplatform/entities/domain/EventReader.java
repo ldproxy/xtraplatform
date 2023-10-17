@@ -10,9 +10,11 @@ package de.ii.xtraplatform.entities.domain;
 import de.ii.xtraplatform.base.domain.util.Tuple;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public interface EventReader {
-  Stream<Tuple<Path, Supplier<byte[]>>> load(Path sourcePath) throws IOException;
+  Stream<Tuple<Path, Supplier<byte[]>>> load(
+      Path sourcePath, List<String> includes, List<String> excludes) throws IOException;
 }

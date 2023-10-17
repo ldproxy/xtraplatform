@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.values.domain;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.List;
@@ -23,6 +24,15 @@ public interface KeyValueStore<T> {
       throw new IllegalArgumentException("Invalid path, no value type found.");
     }
     return identifier.path().get(0);
+  }
+
+  Splitter TYPE_SPLITTER = Splitter.on('/');
+
+  static boolean valueTypeMatches(Identifier identifier, String type) {
+    List<String> valueType = TYPE_SPLITTER.splitToList(type);
+
+    return identifier.path().size() >= valueType.size()
+        && Objects.equals(identifier.path().subList(0, valueType.size()), valueType);
   }
 
   default List<String> ids(String... path) {
@@ -51,6 +61,10 @@ public interface KeyValueStore<T> {
     return delete(Identifier.from(id, path));
   }
 
+  default long lastModified(String id, String... path) {
+    return lastModified(Identifier.from(id, path));
+  }
+
   List<Identifier> identifiers(String... path);
 
   boolean has(Identifier identifier);
@@ -62,4 +76,8 @@ public interface KeyValueStore<T> {
   CompletableFuture<T> put(Identifier identifier, T value);
 
   CompletableFuture<Boolean> delete(Identifier identifier);
+
+  default long lastModified(Identifier identifier) {
+    return -1;
+  }
 }

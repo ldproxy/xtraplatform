@@ -29,10 +29,12 @@ import de.ii.xtraplatform.values.domain.ValueFactories;
 import de.ii.xtraplatform.values.domain.ValueFactory;
 import de.ii.xtraplatform.values.domain.ValueStore;
 import de.ii.xtraplatform.values.domain.ValueStoreDecorator;
+import de.ii.xtraplatform.values.domain.Values;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
-@AutoBind(interfaces = {ValueStore.class, AppLifeCycle.class})
+@AutoBind(interfaces = {ValueStore.class, Values.class, AppLifeCycle.class})
 public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ValueStoreImpl.class);
@@ -139,7 +141,11 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
                 LogContext.error(LOGGER, e, "Could not load values with type {}", valueType);
               }
 
-              LOGGER.debug("Loaded {} {}", count, valueType);
+              if (count > 0) {
+                LOGGER.info("Loaded {} {}", count, valueType);
+              } else {
+                LOGGER.debug("Loaded {} {}", count, valueType);
+              }
             });
 
     LOGGER.debug("Loaded values");
@@ -148,8 +154,14 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
   }
 
   protected ValueBuilder<StoredValue> getBuilder(Identifier identifier) {
-    return (ValueBuilder<StoredValue>)
-        valueFactories.get(KeyValueStore.valueType(identifier)).builder();
+    return valueFactories.getTypes().stream()
+        .filter(type -> KeyValueStore.valueTypeMatches(identifier, type))
+        .map(type -> (ValueBuilder<StoredValue>) valueFactories.get(type).builder())
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new NoSuchElementException(
+                    String.format("No factory found for value %s", identifier.asPath())));
   }
 
   @Override
@@ -197,6 +209,12 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
     return CompletableFuture.completedFuture(Objects.nonNull(removed));
   }
 
+  // TODO
+  @Override
+  public long lastModified(Identifier identifier) {
+    return ValueStore.super.lastModified(identifier);
+  }
+
   @Override
   public CompletableFuture<Void> onReady() {
     return ready;
@@ -204,7 +222,8 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
 
   @Override
   public <U extends StoredValue> KeyValueStore<U> forType(Class<U> type) {
-    final String valueType = valueFactories.get(type).type();
+    final List<String> valueType =
+        KeyValueStore.TYPE_SPLITTER.splitToList(valueFactories.get(type).type());
 
     return new ValueStoreDecorator<StoredValue, U>() {
 
@@ -214,7 +233,7 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
       }
 
       @Override
-      public String getValueType() {
+      public List<String> getValueType() {
         return valueType;
       }
     };

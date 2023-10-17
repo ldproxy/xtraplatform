@@ -9,6 +9,7 @@ package de.ii.xtraplatform.s3.app;
 
 import static de.ii.xtraplatform.base.domain.util.LambdaWithException.supplierMayThrow;
 
+import de.ii.xtraplatform.base.domain.StoreDriver;
 import de.ii.xtraplatform.base.domain.util.Tuple;
 import de.ii.xtraplatform.entities.domain.EventReader;
 import io.minio.GetObjectArgs;
@@ -18,6 +19,8 @@ import io.minio.Result;
 import io.minio.messages.Item;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -36,27 +39,32 @@ class EventReaderS3 implements EventReader {
   }
 
   @Override
-  public Stream<Tuple<Path, Supplier<byte[]>>> load(Path sourcePath) throws IOException {
-    return loadPathStream(sourcePath)
+  public Stream<Tuple<Path, Supplier<byte[]>>> load(
+      Path sourcePath, List<String> includes, List<String> excludes) throws IOException {
+    Path bucket = sourcePath.getName(0);
+    String prefix =
+        sourcePath.getNameCount() > 1
+            ? sourcePath.subpath(1, sourcePath.getNameCount()).toString()
+            : "";
+    List<PathMatcher> includeMatchers = StoreDriver.asMatchers(includes, prefix);
+    List<PathMatcher> excludeMatchers = StoreDriver.asMatchers(excludes, prefix);
+
+    LOGGER.debug("S3 LOAD {} - {} - {}", sourcePath, bucket, prefix);
+
+    return loadPathStream(bucket, prefix, includeMatchers, excludeMatchers)
         .map(path -> Tuple.of(path, supplierMayThrow(() -> readPayload(path))));
   }
 
-  private Stream<Path> loadPathStream(Path path) throws IOException {
-    Path bucket = path.getName(0);
-    LOGGER.debug(
-        "S3 LOAD {} - {} - {}",
-        path,
-        bucket,
-        (path.getNameCount() > 1 ? path.subpath(1, path.getNameCount()).toString() : ""));
+  private Stream<Path> loadPathStream(
+      Path bucket, String prefix, List<PathMatcher> includes, List<PathMatcher> excludes)
+      throws IOException {
+
     Spliterator<Result<Item>> results =
         minioClient
             .listObjects(
                 ListObjectsArgs.builder()
                     .bucket(bucket.toString())
-                    .prefix(
-                        path.getNameCount() > 1
-                            ? path.subpath(1, path.getNameCount()).toString()
-                            : "")
+                    .prefix(prefix)
                     .recursive(true)
                     .build())
             .spliterator();
@@ -70,6 +78,13 @@ class EventReaderS3 implements EventReader {
                 return Stream.empty();
               }
             })
+        .filter(
+            item ->
+                (includes.isEmpty()
+                        || includes.stream()
+                            .anyMatch(include -> include.matches(Path.of(item.objectName()))))
+                    && excludes.stream()
+                        .noneMatch(exclude -> exclude.matches(Path.of(item.objectName()))))
         .map(
             item -> {
               Path resolved = bucket.resolve(item.objectName());

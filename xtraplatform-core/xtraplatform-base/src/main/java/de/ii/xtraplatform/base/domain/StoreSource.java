@@ -501,6 +501,28 @@ public interface StoreSource {
   Optional<String> getPrefix();
 
   /**
+   * @langEn Glob expressions for file paths from a source that should be included, others will be
+   *     ignored. May be needed to align directory structures.
+   * @langDe Glob-Ausdrücke für Datei-Pfade einer Source die inkludiert werden sollen, alle anderen
+   *     werden ignoriert. Kann benötigt werden, um Verzeichnisstrukturen anzugleichen.
+   * @default []
+   * @since v3.6
+   */
+  @JsonProperty("include")
+  List<String> getIncludes();
+
+  /**
+   * @langEn Glob expressions for file paths from a source that should be ignored. May be needed to
+   *     align directory structures.
+   * @langDe Glob-Ausdrücke für Datei-Pfade einer Source, die ignoriert werden sollen. Kann benötigt
+   *     werden, um Verzeichnisstrukturen anzugleichen.
+   * @default []
+   * @since v3.6
+   */
+  @JsonProperty("exclude")
+  List<String> getExcludes();
+
+  /**
    * @langEn Can be set to use a subdirectory from a ZIP file.
    * @langDe Kann gesetzt werden, um ein Unterverzeichnis aus einer ZIP-Datei zu verwenden.
    * @default /

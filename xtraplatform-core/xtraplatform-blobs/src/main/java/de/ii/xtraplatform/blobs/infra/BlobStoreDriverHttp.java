@@ -9,6 +9,7 @@ package de.ii.xtraplatform.blobs.infra;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.StoreDriver;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
@@ -17,6 +18,8 @@ import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -83,10 +86,13 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
       root = root.resolve(contentType.getPrefix());
     }
 
+    List<PathMatcher> includes = StoreDriver.asMatchers(storeSource.getIncludes(), root.toString());
+    List<PathMatcher> excludes = StoreDriver.asMatchers(storeSource.getExcludes(), root.toString());
+
     BlobSource blobSource =
         storeSource.isSingleContent() && storeSource.getPrefix().isPresent()
-            ? new BlobSourceFs(root, Path.of(storeSource.getPrefix().get()))
-            : new BlobSourceFs(root);
+            ? new BlobSourceFs(root, Path.of(storeSource.getPrefix().get()), includes, excludes)
+            : new BlobSourceFs(root, null, includes, excludes);
 
     return blobSource;
   }

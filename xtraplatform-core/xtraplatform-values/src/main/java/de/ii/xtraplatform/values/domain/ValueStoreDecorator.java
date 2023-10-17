@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.values.domain;
 
 import com.google.common.collect.ObjectArrays;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -18,22 +19,25 @@ public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U> {
 
   KeyValueStore<T> getDecorated();
 
-  String getValueType();
+  List<String> getValueType();
 
   default String[] transformPath(String... path) {
-    if (path.length > 0 && Objects.equals(path[0], getValueType())) {
+    if (path.length >= getValueType().size()
+        && Objects.equals(Arrays.asList(path).subList(0, getValueType().size()), getValueType())) {
       return path;
     }
-    return ObjectArrays.concat(getValueType(), path);
+
+    return ObjectArrays.concat(getValueType().toArray(new String[0]), path, String.class);
   }
 
   default Identifier transformIdentifier(Identifier identifier) {
-    if (!identifier.path().isEmpty() && Objects.equals(identifier.path().get(0), getValueType())) {
+    if (identifier.path().size() >= getValueType().size()
+        && Objects.equals(identifier.path().subList(0, getValueType().size()), getValueType())) {
       return identifier;
     }
     return ImmutableIdentifier.builder()
         .id(identifier.id())
-        .addPath(getValueType())
+        .addAllPath(getValueType())
         .addAllPath(identifier.path())
         .build();
   }
@@ -81,6 +85,11 @@ public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U> {
   }
 
   @Override
+  default long lastModified(Identifier identifier) {
+    return getDecorated().lastModified(transformIdentifier(identifier));
+  }
+
+  @Override
   default List<String> ids(String... path) {
     return getDecorated().ids(transformPath(path));
   }
@@ -103,5 +112,10 @@ public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U> {
   @Override
   default CompletableFuture<Boolean> delete(String id, String... path) {
     return getDecorated().delete(id, transformPath(path));
+  }
+
+  @Override
+  default long lastModified(String id, String... path) {
+    return getDecorated().lastModified(id, transformPath(path));
   }
 }

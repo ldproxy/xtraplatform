@@ -84,7 +84,7 @@ public class EventSource {
             pathPattern -> {
               try {
                 return reader
-                    .load(getPath())
+                    .load(getPath(), source.getIncludes(), source.getExcludes())
                     .map(
                         pathAndPayload ->
                             pathToEvent(

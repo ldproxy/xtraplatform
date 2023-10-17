@@ -42,6 +42,33 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
               .type(Type.FS_KEY)
               .content(Content.ENTITIES)
               .src(OLD_DEFAULT_LOCATION)
+              .addExcludes("entities/codelists/**")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src(OLD_DEFAULT_LOCATION + "/entities/codelists")
+              .prefix("codelists")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src("api-resources/tile-matrix-sets")
+              .prefix("tile-matrix-sets")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src("api-resources/routes")
+              .prefix("routes/results")
+              .addExcludes("**/*.definition.json")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src("api-resources/routes")
+              .prefix("routes/definitions")
+              .addIncludes("**/*.definition.json")
               .build(),
           new ImmutableStoreSourceFs.Builder()
               .type(Type.FS_KEY)
