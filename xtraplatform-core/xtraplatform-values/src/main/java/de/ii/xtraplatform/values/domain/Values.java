@@ -7,6 +7,47 @@
  */
 package de.ii.xtraplatform.values.domain;
 
-public interface Values {
-  <U extends StoredValue> KeyValueStore<U> forType(Class<U> type);
+import com.google.common.collect.ImmutableMap;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+public interface Values<T> {
+
+  List<Identifier> identifiers(String... path);
+
+  boolean has(Identifier identifier);
+
+  boolean has(Predicate<Identifier> matcher);
+
+  T get(Identifier identifier);
+
+  default long lastModified(Identifier identifier) {
+    return -1;
+  }
+
+  default List<String> ids(String... path) {
+    return identifiers(path).stream().map(Identifier::id).collect(Collectors.toList());
+  }
+
+  default Map<String, T> asMap(String... path) {
+    return identifiers(path).stream()
+        .map(identifier -> new SimpleImmutableEntry<>(identifier.asPath(), get(identifier)))
+        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  default boolean has(String id, String... path) {
+    return Objects.nonNull(id) && has(Identifier.from(id, path));
+  }
+
+  default T get(String id, String... path) {
+    return get(Identifier.from(id, path));
+  }
+
+  default long lastModified(String id, String... path) {
+    return lastModified(Identifier.from(id, path));
+  }
 }

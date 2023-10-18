@@ -13,6 +13,8 @@ public interface ValueFactories {
 
   ValueFactory get(String entityType);
 
+  ValueFactory get(Identifier identifier);
+
   ValueFactory get(Class<? extends StoredValue> valueClass);
 
   Set<String> getTypes();

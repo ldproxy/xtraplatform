@@ -9,8 +9,12 @@ package de.ii.xtraplatform.values.domain;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public interface ValueEncoding<T> {
 
@@ -36,6 +40,23 @@ public interface ValueEncoding<T> {
 
       return UNKNOWN;
     }
+
+    public static List<String> extensions(String... additional) {
+      return Stream.concat(
+              Arrays.stream(values())
+                  .filter(format -> format != NONE && format != UNKNOWN)
+                  .map(Enum::name),
+              Arrays.stream(additional))
+          .map(format -> "." + format.toLowerCase())
+          .collect(Collectors.toList());
+    }
+
+    public String apply(String path) {
+      if (this == NONE || this == UNKNOWN) {
+        return path;
+      }
+      return path + "." + this.name().toLowerCase();
+    }
   }
 
   FORMAT getDefaultFormat();
@@ -45,6 +66,8 @@ public interface ValueEncoding<T> {
   }
 
   byte[] serialize(T data);
+
+  byte[] serialize(T data, FORMAT format);
 
   byte[] serialize(Map<String, Object> data);
 

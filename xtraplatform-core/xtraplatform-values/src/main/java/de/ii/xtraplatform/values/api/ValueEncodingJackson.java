@@ -119,6 +119,16 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
   }
 
   @Override
+  public final byte[] serialize(T data, FORMAT format) {
+    try {
+      return getMapper(format).writeValueAsBytes(data);
+    } catch (JsonProcessingException e) {
+      // should never happen
+      throw new IllegalStateException("Unexpected serialization error", e);
+    }
+  }
+
+  @Override
   public byte[] serialize(Map<String, Object> data) {
     try {
       return getDefaultMapper().writeValueAsBytes(data);

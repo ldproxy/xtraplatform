@@ -10,6 +10,7 @@ package de.ii.xtraplatform.values.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableSet;
 import dagger.Lazy;
+import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.StoredValue;
 import de.ii.xtraplatform.values.domain.ValueFactories;
 import de.ii.xtraplatform.values.domain.ValueFactory;
@@ -39,6 +40,17 @@ public class ValueFactoriesImpl implements ValueFactories {
             () ->
                 new NoSuchElementException(
                     String.format("No factory found for value type %s", valueType)));
+  }
+
+  @Override
+  public ValueFactory get(Identifier identifier) {
+    return valueFactories.get().stream()
+        .filter(valueFactory -> identifier.asPath().startsWith(valueFactory.type()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new NoSuchElementException(
+                    String.format("No factory found for value identifier %s", identifier)));
   }
 
   @Override

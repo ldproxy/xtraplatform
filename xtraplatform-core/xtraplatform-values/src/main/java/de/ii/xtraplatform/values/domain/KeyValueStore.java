@@ -8,16 +8,11 @@
 package de.ii.xtraplatform.values.domain;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableMap;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
-public interface KeyValueStore<T> {
+public interface KeyValueStore<T> extends Values<T> {
 
   static String valueType(Identifier identifier) {
     if (identifier.path().isEmpty()) {
@@ -35,24 +30,6 @@ public interface KeyValueStore<T> {
         && Objects.equals(identifier.path().subList(0, valueType.size()), valueType);
   }
 
-  default List<String> ids(String... path) {
-    return identifiers(path).stream().map(Identifier::id).collect(Collectors.toList());
-  }
-
-  default Map<String, T> asMap(String... path) {
-    return identifiers(path).stream()
-        .map(identifier -> new SimpleImmutableEntry<>(identifier.asPath(), get(identifier)))
-        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
-  }
-
-  default boolean has(String id, String... path) {
-    return Objects.nonNull(id) && has(Identifier.from(id, path));
-  }
-
-  default T get(String id, String... path) {
-    return get(Identifier.from(id, path));
-  }
-
   default CompletableFuture<T> put(String id, T value, String... path) {
     return put(Identifier.from(id, path), value);
   }
@@ -61,23 +38,7 @@ public interface KeyValueStore<T> {
     return delete(Identifier.from(id, path));
   }
 
-  default long lastModified(String id, String... path) {
-    return lastModified(Identifier.from(id, path));
-  }
-
-  List<Identifier> identifiers(String... path);
-
-  boolean has(Identifier identifier);
-
-  boolean has(Predicate<Identifier> matcher);
-
-  T get(Identifier identifier);
-
   CompletableFuture<T> put(Identifier identifier, T value);
 
   CompletableFuture<Boolean> delete(Identifier identifier);
-
-  default long lastModified(Identifier identifier) {
-    return -1;
-  }
 }

@@ -31,8 +31,10 @@ import de.ii.xtraplatform.values.domain.ValueFactory;
 import de.ii.xtraplatform.values.domain.ValueStore;
 import de.ii.xtraplatform.values.domain.ValueStoreDecorator;
 import de.ii.xtraplatform.values.domain.Values;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -48,16 +50,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
-@AutoBind(interfaces = {ValueStore.class, Values.class, AppLifeCycle.class})
-public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppLifeCycle {
+@AutoBind(interfaces = {ValueStore.class, AppLifeCycle.class})
+public class ValueStoreImpl
+    implements ValueStore, KeyValueStore<StoredValue>, ValueCache<StoredValue>, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ValueStoreImpl.class);
 
   private final BlobStore blobStore;
   private final ValueFactories valueFactories;
   private final Map<Identifier, StoredValue> memCache;
+  private final Map<Identifier, Long> lastModified;
   private final ValueEncodingJackson<StoredValue> valueEncoding;
   private final CompletableFuture<Void> ready;
+  private final Map<Class<? extends StoredValue>, List<String>> valueTypes;
 
   @Inject
   public ValueStoreImpl(
@@ -71,7 +76,9 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
         new ValueEncodingJackson<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     this.memCache = new ConcurrentHashMap<>();
+    this.lastModified = new ConcurrentHashMap<>();
     this.ready = new CompletableFuture<>();
+    this.valueTypes = new ConcurrentHashMap<>();
 
     valueEncoding.getMapper(FORMAT.YAML).setDefaultMergeable(false);
     valueEncoding.getMapper(FORMAT.JSON).setDefaultMergeable(false);
@@ -98,6 +105,10 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
               ValueFactory valueFactory = valueFactories.get(valueType);
               Path typePath = Path.of(valueFactory.type());
               int count = 0;
+
+              valueTypes.put(
+                  valueFactory.valueClass(),
+                  KeyValueStore.TYPE_SPLITTER.splitToList(valueFactory.type()));
 
               try (Stream<Path> paths =
                   blobStore.walk(
@@ -133,11 +144,13 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
 
                   try {
                     byte[] bytes = blobStore.content(currentPath).get().readAllBytes();
+                    long lm = blobStore.lastModified(currentPath);
 
                     StoredValue value =
                         valueEncoding.deserialize(identifier, bytes, payloadFormat, true);
 
                     this.memCache.put(identifier, value);
+                    this.lastModified.put(identifier, lm == -1 ? Instant.now().toEpochMilli() : lm);
 
                     count++;
                   } catch (IOException e) {
@@ -205,22 +218,53 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
 
   @Override
   public CompletableFuture<StoredValue> put(Identifier identifier, StoredValue value) {
-    memCache.put(identifier, value);
+    FORMAT format = valueFactories.get(value.getClass()).defaultFormat();
+    Path path = Path.of(format.apply(identifier.asPath()));
+    byte[] bytes = valueEncoding.serialize(value, format);
+
+    try {
+      blobStore.put(path, new ByteArrayInputStream(bytes));
+    } catch (IOException e) {
+      return CompletableFuture.failedFuture(e);
+    }
+
+    synchronized (this) {
+      memCache.put(identifier, value);
+
+      lastModified.put(identifier, Instant.now().toEpochMilli());
+    }
 
     return CompletableFuture.completedFuture(value);
   }
 
   @Override
   public CompletableFuture<Boolean> delete(Identifier identifier) {
-    StoredValue removed = memCache.remove(identifier);
+    ValueFactory valueFactory = valueFactories.get(identifier);
+    Path parent = Path.of(identifier.asPath()).getParent();
+    String[] additionalExtensions = valueFactory.formatAliases().keySet().toArray(new String[0]);
+
+    for (String extension : FORMAT.extensions(additionalExtensions)) {
+      try {
+        blobStore.delete(parent.resolve(identifier.id() + extension));
+      } catch (IOException e) {
+        // ignore
+      }
+    }
+
+    StoredValue removed = null;
+
+    synchronized (this) {
+      removed = memCache.remove(identifier);
+
+      lastModified.remove(identifier);
+    }
 
     return CompletableFuture.completedFuture(Objects.nonNull(removed));
   }
 
-  // TODO
   @Override
   public long lastModified(Identifier identifier) {
-    return ValueStore.super.lastModified(identifier);
+    return lastModified.getOrDefault(identifier, Instant.now().toEpochMilli());
   }
 
   @Override
@@ -229,10 +273,7 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
   }
 
   @Override
-  public <U extends StoredValue> KeyValueStore<U> forType(Class<U> type) {
-    final List<String> valueType =
-        KeyValueStore.TYPE_SPLITTER.splitToList(valueFactories.get(type).type());
-
+  public <U extends StoredValue> KeyValueStore<U> forTypeWritable(Class<U> type) {
     return new ValueStoreDecorator<StoredValue, U>() {
 
       @Override
@@ -242,8 +283,13 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
 
       @Override
       public List<String> getValueType() {
-        return valueType;
+        return valueTypes.get(type);
       }
     };
+  }
+
+  @Override
+  public <U extends StoredValue> Values<U> forType(Class<U> type) {
+    return forTypeWritable(type);
   }
 }
