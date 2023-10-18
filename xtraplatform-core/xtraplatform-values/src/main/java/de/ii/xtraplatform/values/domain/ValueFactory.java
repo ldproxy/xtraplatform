@@ -9,6 +9,7 @@ package de.ii.xtraplatform.values.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
+import java.util.Map;
 
 @AutoMultiBind
 public interface ValueFactory {
@@ -22,4 +23,6 @@ public interface ValueFactory {
   boolean cacheValues();
 
   FORMAT defaultFormat();
+
+  Map<String, FORMAT> formatAliases();
 }

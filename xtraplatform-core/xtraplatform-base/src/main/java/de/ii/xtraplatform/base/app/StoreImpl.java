@@ -71,7 +71,8 @@ public class StoreImpl implements Store {
                   : s.getSrc();
           String mode = storeConfiguration.isReadOnly() ? "" : String.format(" [%s]", s.getMode());
           String subType =
-              s.getContent() == Content.RESOURCES && s.getPrefix().isPresent()
+              (s.getContent() == Content.RESOURCES || s.getContent() == Content.VALUES)
+                      && s.getPrefix().isPresent()
                   ? String.format(" [%s]", s.getPrefix().get())
                   : "";
 

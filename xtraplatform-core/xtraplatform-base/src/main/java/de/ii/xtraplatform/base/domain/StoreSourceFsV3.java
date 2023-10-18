@@ -59,6 +59,19 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
           new ImmutableStoreSourceFs.Builder()
               .type(Type.FS_KEY)
               .content(Content.VALUES)
+              .src("api-resources/queries")
+              .prefix("queries")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src("api-resources/styles")
+              .prefix("maplibre-styles")
+              .addIncludes("**/*.mbs")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
               .src("api-resources/routes")
               .prefix("routes/results")
               .addExcludes("**/*.definition.json")
@@ -80,6 +93,13 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
               .content(Content.RESOURCES)
               .src("api-resources/resources")
               .prefix("api-resources")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.RESOURCES)
+              .src("api-resources/styles")
+              .prefix("other-styles")
+              .addExcludes("**/*.mbs")
               .build(),
           new ImmutableStoreSourceFs.Builder()
               .type(Type.FS_KEY)

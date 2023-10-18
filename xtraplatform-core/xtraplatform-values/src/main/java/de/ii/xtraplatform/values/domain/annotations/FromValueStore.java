@@ -10,6 +10,7 @@ package de.ii.xtraplatform.values.domain.annotations;
 import static java.lang.annotation.ElementType.TYPE;
 
 import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -23,4 +24,14 @@ public @interface FromValueStore {
   boolean cacheValues() default true;
 
   FORMAT defaultFormat() default FORMAT.YAML;
+
+  FormatAlias[] formatAliases() default {};
+
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.ANNOTATION_TYPE)
+  @interface FormatAlias {
+    String extension();
+
+    FORMAT format();
+  }
 }

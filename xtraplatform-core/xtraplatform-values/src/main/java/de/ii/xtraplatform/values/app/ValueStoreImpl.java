@@ -25,6 +25,7 @@ import de.ii.xtraplatform.values.domain.StoredValue;
 import de.ii.xtraplatform.values.domain.ValueBuilder;
 import de.ii.xtraplatform.values.domain.ValueCache;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
+import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
 import de.ii.xtraplatform.values.domain.ValueFactories;
 import de.ii.xtraplatform.values.domain.ValueFactory;
 import de.ii.xtraplatform.values.domain.ValueStore;
@@ -72,6 +73,9 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
     this.memCache = new ConcurrentHashMap<>();
     this.ready = new CompletableFuture<>();
 
+    valueEncoding.getMapper(FORMAT.YAML).setDefaultMergeable(false);
+    valueEncoding.getMapper(FORMAT.JSON).setDefaultMergeable(false);
+
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
     valueEncoding.addDecoderMiddleware(new ValueDecoderWithBuilder<>(this::getBuilder, this));
   }
@@ -103,9 +107,13 @@ public class ValueStoreImpl implements ValueStore, ValueCache<StoredValue>, AppL
                 List<Path> files = paths.sorted().collect(Collectors.toList());
 
                 for (Path file : files) {
-                  ValueEncoding.FORMAT payloadFormat =
-                      ValueEncoding.FORMAT.fromString(
-                          Files.getFileExtension(file.getFileName().toString()));
+                  String extension = Files.getFileExtension(file.getFileName().toString());
+                  ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(extension);
+
+                  if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN
+                      && valueFactory.formatAliases().containsKey(extension)) {
+                    payloadFormat = valueFactory.formatAliases().get(extension);
+                  }
 
                   if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN) {
                     return;

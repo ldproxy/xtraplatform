@@ -10,7 +10,10 @@ package de.ii.xtraplatform.values.domain;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
 import de.ii.xtraplatform.values.domain.annotations.FromValueStore;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class ValueFactoryAuto implements ValueFactory {
 
@@ -62,5 +65,12 @@ public class ValueFactoryAuto implements ValueFactory {
   @Override
   public FORMAT defaultFormat() {
     return options.defaultFormat();
+  }
+
+  @Override
+  public Map<String, FORMAT> formatAliases() {
+    return Arrays.stream(options.formatAliases())
+        .map(alias -> Map.entry(alias.extension(), alias.format()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 }
