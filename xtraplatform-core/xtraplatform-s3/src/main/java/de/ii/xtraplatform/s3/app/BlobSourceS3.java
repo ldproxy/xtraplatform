@@ -29,10 +29,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.BiPredicate;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
@@ -105,19 +108,21 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public long lastModified(Path path) throws IOException {
-    return getStat(path).map(stat -> stat.lastModified().toEpochSecond()).orElse(-1L);
+    return getStat(path).map(stat -> stat.lastModified().toInstant().toEpochMilli()).orElse(-1L);
   }
 
   // TODO: walkInfo
   @Override
   public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException {
-    if (!canHandle(path)) {
+    if (!canHandle(path) || maxDepth <= 0) {
       return Stream.empty();
     }
     LOGGER.debug("WALK {}", path);
 
     Path prefix = Path.of(full(path));
+
+    Set<Path> paths = new HashSet<>();
 
     Spliterator<Result<Item>> results =
         minioClient
@@ -129,6 +134,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
                     .build())
             .spliterator();
 
+    // TODO: concat path?
     return StreamSupport.stream(results, false)
         .flatMap(
             result -> {
@@ -138,11 +144,50 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
                 return Stream.empty();
               }
             })
-        .map(
+        .map(item -> prefix.relativize(Path.of(item.objectName())))
+        .flatMap(
             item -> {
-              Path resolved = prefix.relativize(Path.of(item.objectName()));
-              LOGGER.debug("S3 BLOB {}", resolved);
-              return resolved;
+              if (item.getNameCount() <= 1) {
+                return Stream.of(item);
+              }
+
+              return IntStream.rangeClosed(1, Math.min(maxDepth, item.getNameCount()))
+                  .mapToObj(
+                      i -> {
+                        Path subPath = item.subpath(0, i);
+                        boolean added = paths.add(subPath);
+
+                        if (!added) {
+                          return null;
+                        }
+
+                        boolean isValue = i == item.getNameCount();
+
+                        boolean matches =
+                            matcher.test(
+                                subPath,
+                                new PathAttributes() {
+                                  @Override
+                                  public boolean isValue() {
+                                    return isValue;
+                                  }
+
+                                  @Override
+                                  public boolean isHidden() {
+                                    return isValue
+                                        && subPath.getFileName().toString().startsWith(".");
+                                  }
+                                });
+
+                        LOGGER.debug("S3 BLOB {} {} {}", subPath, isValue, matches);
+
+                        if (!matches) {
+                          return null;
+                        }
+
+                        return subPath;
+                      })
+                  .filter(Objects::nonNull);
             });
   }
 
@@ -178,6 +223,10 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public Optional<Path> asLocalPath(Path path, boolean writable) throws IOException {
+    if (writable) {
+      throw new IOException("Local resources from S3 cannot be written to");
+    }
+
     Optional<StatObjectResponse> stat = getStat(path);
 
     if (stat.isPresent()) {

@@ -39,6 +39,7 @@ import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.values.domain.ValueCache;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
+import de.ii.xtraplatform.values.domain.ValueStore;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -79,6 +80,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private final EventSourcing<EntityData> eventSourcing;
   private final EntityDataDefaultsStore defaultsStore;
   private final Supplier<Void> blobStoreReady;
+  private final Supplier<Void> valueStoreReady;
   private final boolean noDefaults;
 
   @Inject
@@ -88,8 +90,17 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Jackson jackson,
       Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore,
-      ResourceStore blobStore) {
-    this(appContext, eventStore, jackson, entityFactories, defaultsStore, blobStore, false);
+      ResourceStore blobStore,
+      ValueStore valueStore) {
+    this(
+        appContext,
+        eventStore,
+        jackson,
+        entityFactories,
+        defaultsStore,
+        blobStore,
+        valueStore,
+        false);
   }
 
   // for ldproxy-cfg
@@ -100,6 +111,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore,
       ResourceStore blobStore,
+      ValueStore valueStore,
       boolean noDefaults) {
     this.isEventStoreReadOnly = eventStore.isReadOnly();
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
@@ -121,6 +133,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             Optional.of(this::onUpdate));
     this.defaultsStore = defaultsStore;
     this.blobStoreReady = blobStore.onReady()::join;
+    this.valueStoreReady = valueStore.onReady()::join;
     this.noDefaults = noDefaults;
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
@@ -330,9 +343,9 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected CompletableFuture<Void> onListenStart() {
-    // LOGGER.debug("WAIT FOR BLOBS");
     blobStoreReady.get();
-    // LOGGER.debug("CONTINUE");
+    valueStoreReady.get();
+
     // TODO: getAllPaths
     return playAdditionalEvents()
         .thenCompose(

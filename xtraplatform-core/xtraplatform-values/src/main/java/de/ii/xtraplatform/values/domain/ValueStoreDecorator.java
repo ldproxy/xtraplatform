@@ -43,12 +43,13 @@ public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U> {
   }
 
   default Identifier transformIdentifierReverse(Identifier identifier) {
-    if (identifier.path().isEmpty() || !Objects.equals(identifier.path().get(0), getValueType())) {
+    if (identifier.path().size() < getValueType().size()
+        || !Objects.equals(identifier.path().subList(0, getValueType().size()), getValueType())) {
       return identifier;
     }
     return ImmutableIdentifier.builder()
         .id(identifier.id())
-        .addAllPath(identifier.path().subList(1, identifier.path().size()))
+        .addAllPath(identifier.path().subList(getValueType().size(), identifier.path().size()))
         .build();
   }
 
