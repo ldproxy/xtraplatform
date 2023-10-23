@@ -9,6 +9,7 @@ package de.ii.xtraplatform.s3.app;
 
 import static de.ii.xtraplatform.base.domain.util.LambdaWithException.supplierMayThrow;
 
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.base.domain.StoreDriver;
 import de.ii.xtraplatform.base.domain.util.Tuple;
 import de.ii.xtraplatform.entities.domain.EventReader;
@@ -49,7 +50,9 @@ class EventReaderS3 implements EventReader {
     List<PathMatcher> includeMatchers = StoreDriver.asMatchers(includes, prefix);
     List<PathMatcher> excludeMatchers = StoreDriver.asMatchers(excludes, prefix);
 
-    LOGGER.debug("S3 LOAD {} - {} - {}", sourcePath, bucket, prefix);
+    if (LOGGER.isDebugEnabled(MARKER.S3)) {
+      LOGGER.debug("S3 loading events from {}", sourcePath);
+    }
 
     return loadPathStream(bucket, prefix, includeMatchers, excludeMatchers)
         .map(path -> Tuple.of(path, supplierMayThrow(() -> readPayload(path))));
@@ -85,12 +88,7 @@ class EventReaderS3 implements EventReader {
                             .anyMatch(include -> include.matches(Path.of(item.objectName()))))
                     && excludes.stream()
                         .noneMatch(exclude -> exclude.matches(Path.of(item.objectName()))))
-        .map(
-            item -> {
-              Path resolved = bucket.resolve(item.objectName());
-              LOGGER.debug("S3 EVENT {}", resolved);
-              return resolved;
-            });
+        .map(item -> bucket.resolve(item.objectName()));
   }
 
   private byte[] readPayload(Path path) throws IOException {
@@ -103,7 +101,7 @@ class EventReaderS3 implements EventReader {
                   .build())
           .readAllBytes();
     } catch (Throwable e) {
-      throw new IOException("minio error", e);
+      throw new IOException("S3 Driver", e);
     }
   }
 }

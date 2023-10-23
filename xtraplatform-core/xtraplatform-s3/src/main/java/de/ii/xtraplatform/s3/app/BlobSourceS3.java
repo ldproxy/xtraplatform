@@ -9,6 +9,7 @@ package de.ii.xtraplatform.s3.app;
 
 import static de.ii.xtraplatform.base.domain.util.LambdaWithException.supplierMayThrow;
 
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.blobs.domain.Blob;
 import de.ii.xtraplatform.blobs.domain.BlobCache;
 import de.ii.xtraplatform.blobs.domain.BlobLocals;
@@ -118,7 +119,10 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
     if (!canHandle(path) || maxDepth <= 0) {
       return Stream.empty();
     }
-    LOGGER.debug("WALK {}", path);
+
+    if (LOGGER.isDebugEnabled(MARKER.S3)) {
+      LOGGER.debug("S3 walk {}", path);
+    }
 
     Path prefix = Path.of(full(path));
 
@@ -179,8 +183,6 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
                                   }
                                 });
 
-                        LOGGER.debug("S3 BLOB {} {} {}", subPath, isValue, matches);
-
                         if (!matches) {
                           return null;
                         }
@@ -198,6 +200,10 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
     }
 
     try (ByteArrayInputStream buffer = new ByteArrayInputStream(content.readAllBytes())) {
+      if (LOGGER.isDebugEnabled(MARKER.S3)) {
+        LOGGER.debug("S3 put content {}", path);
+      }
+
       minioClient.putObject(
           PutObjectArgs.builder().bucket(bucket).object(full(path)).stream(
                   buffer, buffer.available(), -1)
@@ -214,6 +220,10 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
     }
 
     try {
+      if (LOGGER.isDebugEnabled(MARKER.S3)) {
+        LOGGER.debug("S3 delete content {}", path);
+      }
+
       minioClient.removeObject(
           RemoveObjectArgs.builder().bucket(bucket).object(full(path)).build());
     } catch (Throwable e) {
@@ -234,7 +244,9 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
       Optional<Path> cachePath = cache.get(path, eTag);
 
       if (cachePath.isPresent()) {
-        LOGGER.debug("GOT LOCAL {}", cachePath.get());
+        if (LOGGER.isDebugEnabled(MARKER.S3)) {
+          LOGGER.debug("S3 using local cache {}", cachePath.get());
+        }
         return cachePath;
       }
 
@@ -244,7 +256,10 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
         return Optional.of(cache.put(path, eTag, content.get()))
             .map(
                 p -> {
-                  LOGGER.debug("PUT LOCAL {}", p);
+                  if (LOGGER.isDebugEnabled(MARKER.S3)) {
+                    LOGGER.debug("S3 updating local cache {}", p);
+                  }
+
                   return p;
                 });
       }
@@ -258,7 +273,9 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
       return Optional.empty();
     }
 
-    LOGGER.debug("STAT {}", path);
+    if (LOGGER.isDebugEnabled(MARKER.S3)) {
+      LOGGER.debug("S3 get stat {}", path);
+    }
 
     try {
       return Optional.of(
@@ -278,7 +295,10 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
       return Optional.empty();
     }
 
-    LOGGER.debug("GET {} {}", path, eTag);
+    if (LOGGER.isDebugEnabled(MARKER.S3)) {
+      LOGGER.debug(
+          "S3 get content {} {}", path, Objects.nonNull(eTag) ? "if-none-match " + eTag : "");
+    }
 
     Builder builder = GetObjectArgs.builder().bucket(bucket).object(full(path));
 

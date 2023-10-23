@@ -50,11 +50,7 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
       String bucket = client.second();
 
       try {
-        boolean found =
-            client.first().bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
-        LOGGER.debug("S3 bucket found: {}", bucket);
-
-        return found;
+        return client.first().bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
       } catch (Throwable e) {
         LogContext.error(LOGGER, e, "S3 Driver");
         return false;

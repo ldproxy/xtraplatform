@@ -47,11 +47,7 @@ public class EventStoreDriverS3 implements EventStoreDriver {
       String bucket = client.second();
 
       try {
-        boolean found =
-            client.first().bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
-        LOGGER.debug("S3 bucket found: {}", bucket);
-
-        return found;
+        return client.first().bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
       } catch (Throwable e) {
         LogContext.error(LOGGER, e, "S3 Driver");
         return false;
@@ -67,8 +63,6 @@ public class EventStoreDriverS3 implements EventStoreDriver {
 
       EventSource source =
           new EventSource(Path.of(client.second()), storeSource, Function.identity());
-      LOGGER.debug("S3 SRC {}", storeSource.getSrc());
-      LOGGER.debug("S3 PATH {}", source.getPath());
 
       EventReader eventReader = new EventReaderS3(client.first());
 
