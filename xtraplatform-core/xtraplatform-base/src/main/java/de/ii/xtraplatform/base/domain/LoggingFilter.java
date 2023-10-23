@@ -62,8 +62,8 @@ public class LoggingFilter extends TurboFilter {
   public FilterReply decide(
       Marker marker, Logger logger, Level level, String format, Object[] params, Throwable t) {
 
-    if (apiRequests && Objects.equals(marker, MARKER.REQUEST)) {
-      return FilterReply.ACCEPT;
+    if (Objects.equals(marker, MARKER.REQUEST)) {
+      return apiRequests ? FilterReply.ACCEPT : FilterReply.NEUTRAL;
     }
     if (apiRequestUsers && Objects.equals(marker, MARKER.REQUEST_USER)) {
       return FilterReply.ACCEPT;

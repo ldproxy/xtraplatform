@@ -307,7 +307,7 @@ public class ServicesEndpoint implements Endpoint {
       LogContext.remove(LogContext.CONTEXT.SERVICE);
     }
 
-    if (LOGGER.isDebugEnabled(MARKER.REQUEST)) {
+    if (LOGGER.isDebugEnabled() || LOGGER.isDebugEnabled(MARKER.REQUEST)) {
       LogContext.put(LogContext.CONTEXT.REQUEST, LogContext.generateRandomUuid().toString());
 
       LOGGER.debug(

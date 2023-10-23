@@ -53,7 +53,7 @@ public class LoggingContextCloser implements ContainerResponseFilter {
   }
 
   private void closeLoggingContext(ContainerResponseContext responseContext) {
-    if (LOGGER.isDebugEnabled(MARKER.REQUEST)) {
+    if (LOGGER.isDebugEnabled() || LOGGER.isDebugEnabled(MARKER.REQUEST)) {
       LOGGER.debug(
           MARKER.REQUEST,
           "Sending response: {} {}",
