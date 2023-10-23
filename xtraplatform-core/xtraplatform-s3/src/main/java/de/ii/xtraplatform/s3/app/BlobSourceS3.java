@@ -121,7 +121,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
     }
 
     if (LOGGER.isDebugEnabled(MARKER.S3)) {
-      LOGGER.debug("S3 walk {}", path);
+      LOGGER.debug(MARKER.S3, "S3 walk {}", path);
     }
 
     Path prefix = Path.of(full(path));
@@ -201,7 +201,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
 
     try (ByteArrayInputStream buffer = new ByteArrayInputStream(content.readAllBytes())) {
       if (LOGGER.isDebugEnabled(MARKER.S3)) {
-        LOGGER.debug("S3 put content {}", path);
+        LOGGER.debug(MARKER.S3, "S3 put content {}", path);
       }
 
       minioClient.putObject(
@@ -221,7 +221,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
 
     try {
       if (LOGGER.isDebugEnabled(MARKER.S3)) {
-        LOGGER.debug("S3 delete content {}", path);
+        LOGGER.debug(MARKER.S3, "S3 delete content {}", path);
       }
 
       minioClient.removeObject(
@@ -245,7 +245,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
 
       if (cachePath.isPresent()) {
         if (LOGGER.isDebugEnabled(MARKER.S3)) {
-          LOGGER.debug("S3 using local cache {}", cachePath.get());
+          LOGGER.debug(MARKER.S3, "S3 using local cache {}", cachePath.get());
         }
         return cachePath;
       }
@@ -253,11 +253,15 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
       Optional<InputStream> content = content(path);
 
       if (content.isPresent()) {
+        if (LOGGER.isDebugEnabled(MARKER.S3)) {
+          LOGGER.debug(MARKER.S3, "S3 updating local cache for {}", path);
+        }
+
         return Optional.of(cache.put(path, eTag, content.get()))
             .map(
                 p -> {
                   if (LOGGER.isDebugEnabled(MARKER.S3)) {
-                    LOGGER.debug("S3 updating local cache {}", p);
+                    LOGGER.debug(MARKER.S3, "S3 updated local cache {}", p);
                   }
 
                   return p;
@@ -274,7 +278,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
     }
 
     if (LOGGER.isDebugEnabled(MARKER.S3)) {
-      LOGGER.debug("S3 get stat {}", path);
+      LOGGER.debug(MARKER.S3, "S3 get stat {}", path);
     }
 
     try {
@@ -297,7 +301,10 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
 
     if (LOGGER.isDebugEnabled(MARKER.S3)) {
       LOGGER.debug(
-          "S3 get content {} {}", path, Objects.nonNull(eTag) ? "if-none-match " + eTag : "");
+          MARKER.S3,
+          "S3 get content {} {}",
+          path,
+          Objects.nonNull(eTag) ? "if-none-match " + eTag : "");
     }
 
     Builder builder = GetObjectArgs.builder().bucket(bucket).object(full(path));

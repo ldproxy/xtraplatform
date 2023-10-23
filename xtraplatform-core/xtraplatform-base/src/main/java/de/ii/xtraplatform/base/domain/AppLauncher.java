@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -118,6 +119,9 @@ public class AppLauncher implements AppContext {
 
     this.drivers.add(new CfgStoreDriverFs(dataDir));
     this.drivers.add(new CfgStoreDriverHttp(tmpDir, cfg.getHttpClient()));
+
+    ServiceLoader<CfgStoreDriver> services = ServiceLoader.load(CfgStoreDriver.class);
+    services.iterator().forEachRemaining(this.drivers::add);
 
     Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources(dataDir));
 

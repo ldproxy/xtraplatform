@@ -41,6 +41,7 @@ public class LoggingFilter extends TurboFilter {
       boolean apiRequestBodies,
       boolean sqlQueries,
       boolean sqlResults,
+      boolean s3,
       boolean configDumps,
       boolean stackTraces,
       boolean wiring) {
@@ -51,6 +52,7 @@ public class LoggingFilter extends TurboFilter {
     this.apiRequestBodies = apiRequestBodies;
     this.sqlQueries = sqlQueries;
     this.sqlResults = sqlResults;
+    this.s3 = s3;
     this.configDumps = configDumps;
     this.stackTraces = stackTraces;
     this.wiring = wiring;

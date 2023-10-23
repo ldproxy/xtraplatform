@@ -51,7 +51,7 @@ class EventReaderS3 implements EventReader {
     List<PathMatcher> excludeMatchers = StoreDriver.asMatchers(excludes, prefix);
 
     if (LOGGER.isDebugEnabled(MARKER.S3)) {
-      LOGGER.debug("S3 loading events from {}", sourcePath);
+      LOGGER.debug(MARKER.S3, "S3 loading events from {}", sourcePath);
     }
 
     return loadPathStream(bucket, prefix, includeMatchers, excludeMatchers)

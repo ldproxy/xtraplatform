@@ -1,2 +1,7 @@
-
 maturity = 'MATURE'
+
+moduleInfo {
+    additions = [
+            '  uses de.ii.xtraplatform.base.domain.CfgStoreDriver;',
+    ]
+}

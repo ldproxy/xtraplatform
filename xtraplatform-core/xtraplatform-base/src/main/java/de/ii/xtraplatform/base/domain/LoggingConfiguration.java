@@ -94,6 +94,7 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
   private boolean apiRequestBodies;
   private boolean sqlQueries;
   private boolean sqlResults;
+  private boolean s3;
   private boolean configDumps;
   private boolean stackTraces;
   private boolean wiring;
@@ -107,6 +108,7 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
     this.apiRequestBodies = false;
     this.sqlQueries = false;
     this.sqlResults = false;
+    this.s3 = false;
     this.configDumps = false;
     this.stackTraces = false;
     this.wiring = false;
@@ -157,6 +159,7 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
                 apiRequestBodies,
                 sqlQueries,
                 sqlResults,
+                s3,
                 configDumps,
                 stackTraces,
                 wiring));
@@ -230,6 +233,16 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
   @JsonProperty
   public void setSqlResults(boolean sqlResults) {
     this.sqlResults = sqlResults;
+  }
+
+  @JsonProperty
+  public boolean isS3() {
+    return s3;
+  }
+
+  @JsonProperty
+  public void setS3(boolean s3) {
+    this.s3 = s3;
   }
 
   @JsonProperty
