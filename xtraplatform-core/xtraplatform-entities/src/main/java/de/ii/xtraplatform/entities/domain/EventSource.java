@@ -178,9 +178,9 @@ public class EventSource {
 
     Path resolve = path;
     // TODO
-    /*if (source.getContent() == Content.ALL && path.startsWith(entitiesPath)) {
+    if (source.getContent() == Content.ALL && path.startsWith(entitiesPath)) {
       resolve = entitiesPath.relativize(path);
-    }*/
+    }
     if (resolve.startsWith(Content.INSTANCES.getPrefix())) {
       resolve = entitiesPath.resolve(resolve.subpath(1, resolve.getNameCount()));
     }
