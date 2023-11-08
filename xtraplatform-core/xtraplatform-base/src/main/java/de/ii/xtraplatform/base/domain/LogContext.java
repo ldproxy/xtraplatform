@@ -41,7 +41,8 @@ public class LogContext {
     SQL_RESULT,
     STACKTRACE,
     DUMP,
-    DI;
+    DI,
+    S3;
 
     @Override
     public String toString() {

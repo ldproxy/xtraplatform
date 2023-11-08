@@ -12,8 +12,9 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.base.domain.StoreSourceHttpFetcher;
-import de.ii.xtraplatform.entities.app.EventSource;
 import de.ii.xtraplatform.entities.domain.EntityEvent;
+import de.ii.xtraplatform.entities.domain.EventReader;
+import de.ii.xtraplatform.entities.domain.EventSource;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -42,8 +43,8 @@ public class EventStoreDriverHttp implements EventStoreDriver {
   }
 
   @Override
-  public Type getType() {
-    return Type.HTTP;
+  public String getType() {
+    return Type.HTTP_KEY;
   }
 
   @Override

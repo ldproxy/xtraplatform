@@ -2,5 +2,4 @@
 maturity = 'MATURE'
 
 dependencies {
-    provided project(':xtraplatform-store')
 }

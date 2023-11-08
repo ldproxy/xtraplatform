@@ -86,6 +86,9 @@ public class LogConfigurationTask extends Task implements DropwizardPlugin {
       case "sqlResults":
         loggingFilter.setSqlResults(enable);
         break;
+      case "s3":
+        loggingFilter.setS3(enable);
+        break;
       case "configDumps":
         loggingFilter.setConfigDumps(enable);
         break;
@@ -99,6 +102,7 @@ public class LogConfigurationTask extends Task implements DropwizardPlugin {
         loggingFilter.setApiRequestBodies(enable);
         loggingFilter.setSqlQueries(enable);
         loggingFilter.setSqlResults(enable);
+        loggingFilter.setS3(enable);
         loggingFilter.setConfigDumps(enable);
         loggingFilter.setStackTraces(enable);
         break;

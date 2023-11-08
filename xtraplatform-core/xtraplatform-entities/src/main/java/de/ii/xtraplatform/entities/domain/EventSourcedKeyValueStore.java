@@ -9,6 +9,8 @@ package de.ii.xtraplatform.entities.domain;
 
 import de.ii.xtraplatform.entities.app.EventSourcingCache;
 import de.ii.xtraplatform.streams.domain.Event;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.KeyValueStore;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;

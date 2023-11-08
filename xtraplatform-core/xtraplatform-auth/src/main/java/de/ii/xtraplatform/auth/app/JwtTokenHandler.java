@@ -21,7 +21,7 @@ import de.ii.xtraplatform.base.domain.AuthConfiguration.IdentityProvider;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.Jwt;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSourceFsV3;
-import de.ii.xtraplatform.blobs.domain.BlobStore;
+import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.JwtParser;
@@ -64,7 +64,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
       Splitter.on(' ').trimResults().omitEmptyStrings();
   private static final Splitter PATH_SPLITTER = Splitter.on('.');
 
-  private final BlobStore keyStore;
+  private final ResourceStore keyStore;
   private final AuthConfiguration authConfig;
   private final Oidc oidc;
   private final boolean isOldStoreAndReadOnly;
@@ -73,7 +73,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private JwtParser parser;
 
   @Inject
-  public JwtTokenHandler(AppContext appContext, BlobStore blobStore, Oidc oidc) {
+  public JwtTokenHandler(AppContext appContext, ResourceStore blobStore, Oidc oidc) {
     this.authConfig = appContext.getConfiguration().getAuth();
     this.keyStore = blobStore.with(RESOURCES_JWT);
     this.oidc = oidc;
@@ -279,7 +279,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
 
   private Optional<byte[]> loadKey() {
     try {
-      Optional<InputStream> signingKey = keyStore.get(SIGNING_KEY_PATH);
+      Optional<InputStream> signingKey = keyStore.content(SIGNING_KEY_PATH);
 
       if (signingKey.isPresent()) {
         try (InputStream inputStream = signingKey.get()) {

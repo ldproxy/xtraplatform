@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -118,6 +119,9 @@ public class AppLauncher implements AppContext {
 
     this.drivers.add(new CfgStoreDriverFs(dataDir));
     this.drivers.add(new CfgStoreDriverHttp(tmpDir, cfg.getHttpClient()));
+
+    ServiceLoader<CfgStoreDriver> services = ServiceLoader.load(CfgStoreDriver.class);
+    services.iterator().forEachRemaining(this.drivers::add);
 
     Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources(dataDir));
 
@@ -260,7 +264,7 @@ public class AppLauncher implements AppContext {
     return sources.stream()
         .filter(
             source ->
-                source.getType() != Type.EMPTY
+                !Objects.equals(source.getType(), Type.EMPTY.name())
                     && (source.getContent() == Content.ALL || source.getContent() == Content.CFG))
         .collect(Collectors.toUnmodifiableList());
   }
@@ -271,7 +275,7 @@ public class AppLauncher implements AppContext {
     // TODO: driver content types, s3 only supports resources
     Optional<CfgStoreDriver> driver =
         drivers.stream()
-            .filter(d -> d.getType() == storeSource.getType())
+            .filter(d -> Objects.equals(d.getType(), storeSource.getType()))
             .filter(
                 d -> {
                   if (!d.isAvailable(storeSource)) {

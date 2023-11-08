@@ -10,6 +10,7 @@ package de.ii.xtraplatform.entities.domain;
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.base.domain.StoreDriver;
 import de.ii.xtraplatform.base.domain.StoreSource;
+import de.ii.xtraplatform.values.domain.Identifier;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;

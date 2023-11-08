@@ -37,7 +37,7 @@ public interface StoreSourceGithub extends StoreSourceHttp {
 
       return new ImmutableStoreSourceGithub.Builder()
           .from(this)
-          .typeString(Type.HTTP_KEY)
+          .type(Type.HTTP_KEY)
           .src(
               String.format(
                   "https://github.com/%s/%s/archive/refs/heads/%s.zip", org, repo, branch))

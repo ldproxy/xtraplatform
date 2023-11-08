@@ -31,16 +31,19 @@ import de.ii.xtraplatform.entities.domain.EntityFactoriesImpl;
 import de.ii.xtraplatform.entities.domain.EntityFactory;
 import de.ii.xtraplatform.entities.domain.EventFilter;
 import de.ii.xtraplatform.entities.domain.EventStore;
-import de.ii.xtraplatform.entities.domain.Identifier;
-import de.ii.xtraplatform.entities.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.entities.domain.ImmutableMutationEvent;
 import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.entities.domain.KeyPathAlias;
 import de.ii.xtraplatform.entities.domain.MergeableKeyValueStore;
 import de.ii.xtraplatform.entities.domain.MutationEvent;
 import de.ii.xtraplatform.entities.domain.ReplayEvent;
-import de.ii.xtraplatform.entities.domain.ValueCache;
-import de.ii.xtraplatform.entities.domain.ValueEncoding;
+import de.ii.xtraplatform.values.api.ValueDecoderBase;
+import de.ii.xtraplatform.values.api.ValueDecoderEnvVarSubstitution;
+import de.ii.xtraplatform.values.api.ValueDecoderWithBuilder;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
+import de.ii.xtraplatform.values.domain.ValueCache;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -66,10 +69,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityDataDefaultsStoreImpl.class);
 
   private final EntityFactoriesImpl entityFactories;
-  private final ValueEncodingJackson<Map<String, Object>> valueEncoding;
-  private final ValueEncodingJackson<EntityDataBuilder<EntityData>> valueEncodingBuilder;
-  private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
-  private final ValueEncodingJackson<EntityData> valueEncodingEntity;
+  private final ValueEncodingJacksonWithNesting<Map<String, Object>> valueEncoding;
+  private final ValueEncodingJacksonWithNesting<EntityDataBuilder<EntityData>> valueEncodingBuilder;
+  private final ValueEncodingJacksonWithNesting<Map<String, Object>> valueEncodingMap;
+  private final ValueEncodingJacksonWithNesting<EntityData> valueEncodingEntity;
   private final EventSourcing<Map<String, Object>> eventSourcing;
   private final EventStore eventStore;
 
@@ -82,7 +85,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.eventStore = eventStore;
     this.valueEncoding =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     this.eventSourcing =
         new EventSourcing<>(
@@ -100,70 +103,70 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     // eventSourcing.start();
 
     this.valueEncodingBuilder =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     valueEncodingBuilder.addDecoderMiddleware(
         new ValueDecoderBase<>(
             this::getNewBuilder,
             new ValueCache<EntityDataBuilder<EntityData>>() {
               @Override
-              public boolean isInCache(Identifier identifier) {
+              public boolean has(Identifier identifier) {
                 return false;
               }
 
               @Override
-              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+              public boolean has(Predicate<Identifier> keyMatcher) {
                 return false;
               }
 
               @Override
-              public EntityDataBuilder<EntityData> getFromCache(Identifier identifier) {
+              public EntityDataBuilder<EntityData> get(Identifier identifier) {
                 return null;
               }
             }));
 
     this.valueEncodingMap =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
             identifier -> new LinkedHashMap<>(),
             new ValueCache<Map<String, Object>>() {
               @Override
-              public boolean isInCache(Identifier identifier) {
+              public boolean has(Identifier identifier) {
                 return false;
               }
 
               @Override
-              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+              public boolean has(Predicate<Identifier> keyMatcher) {
                 return false;
               }
 
               @Override
-              public Map<String, Object> getFromCache(Identifier identifier) {
+              public Map<String, Object> get(Identifier identifier) {
                 return null;
               }
             }));
 
     this.valueEncodingEntity =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     valueEncodingEntity.addDecoderMiddleware(
         new ValueDecoderWithBuilder<>(
             this::getBuilder,
             new ValueCache<EntityData>() {
               @Override
-              public boolean isInCache(Identifier identifier) {
+              public boolean has(Identifier identifier) {
                 return false;
               }
 
               @Override
-              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+              public boolean has(Predicate<Identifier> keyMatcher) {
                 return false;
               }
 
               @Override
-              public EntityData getFromCache(Identifier identifier) {
+              public EntityData get(Identifier identifier) {
                 return null;
               }
             }));
@@ -343,8 +346,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   }
 
   private Map<String, Object> getDefaults(Identifier identifier) {
-    if (eventSourcing.isInCache(identifier)) {
-      return eventSourcing.getFromCache(identifier);
+    if (eventSourcing.has(identifier)) {
+      return eventSourcing.get(identifier);
     }
 
     for (int i = 1; i < identifier.path().size(); i++) {
@@ -353,12 +356,12 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               .from(identifier)
               .path(identifier.path().subList(i, identifier.path().size()))
               .build();
-      if (eventSourcing.isInCache(parent)) {
+      if (eventSourcing.has(parent)) {
         try {
           Map<String, Object> deserialize =
               valueEncodingMap.deserialize(
                   parent,
-                  valueEncodingEntity.serialize(eventSourcing.getFromCache(parent)),
+                  valueEncodingEntity.serialize(eventSourcing.get(parent)),
                   valueEncoding.getDefaultFormat(),
                   false);
 
@@ -385,8 +388,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   @Override
   public EntityDataBuilder<EntityData> getBuilder(Identifier identifier) {
 
-    if (eventSourcing.isInCache(identifier)) {
-      Map<String, Object> defaults = eventSourcing.getFromCache(identifier);
+    if (eventSourcing.has(identifier)) {
+      Map<String, Object> defaults = eventSourcing.get(identifier);
       byte[] payload = valueEncodingBuilder.serialize(defaults);
 
       try {

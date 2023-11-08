@@ -8,12 +8,13 @@
 package de.ii.xtraplatform.entities.domain;
 
 import de.ii.xtraplatform.entities.app.EventSourcing;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.KeyValueStore;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,48 +41,23 @@ public abstract class AbstractKeyValueStore<T> implements KeyValueStore<T> {
   protected void onFailure(Identifier identifier, Throwable throwable) {}
 
   @Override
-  public List<String> ids(String... path) {
-    return identifiers(path).stream().map(Identifier::id).collect(Collectors.toList());
-  }
-
-  @Override
-  public boolean has(String id, String... path) {
-    return Objects.nonNull(id) && has(Identifier.from(id, path));
-  }
-
-  @Override
-  public T get(String id, String... path) {
-    return get(Identifier.from(id, path));
-  }
-
-  @Override
-  public CompletableFuture<T> put(String id, T value, String... path) {
-    return put(Identifier.from(id, path), value);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> delete(String id, String... path) {
-    return drop(Identifier.from(id, path));
-  }
-
-  @Override
   public List<Identifier> identifiers(String... path) {
     return getEventSourcing().getIdentifiers(path);
   }
 
   @Override
   public boolean has(Identifier identifier) {
-    return getEventSourcing().isInCache(identifier);
+    return getEventSourcing().has(identifier);
   }
 
   @Override
   public boolean has(Predicate<Identifier> matcher) {
-    return getEventSourcing().isInCache(matcher);
+    return getEventSourcing().has(matcher);
   }
 
   @Override
   public T get(Identifier identifier) {
-    return getEventSourcing().getFromCache(identifier);
+    return getEventSourcing().get(identifier);
   }
 
   @Override
@@ -110,7 +86,8 @@ public abstract class AbstractKeyValueStore<T> implements KeyValueStore<T> {
     return getEventSourcing().pushPartialMutationEvent(identifier, value);
   }
 
-  protected CompletableFuture<Boolean> drop(Identifier identifier) {
+  @Override
+  public CompletableFuture<Boolean> delete(Identifier identifier) {
     return getEventSourcing()
         .pushMutationEvent(identifier, null)
         .whenComplete(

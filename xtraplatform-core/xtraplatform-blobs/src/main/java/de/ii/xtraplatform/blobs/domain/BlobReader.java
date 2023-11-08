@@ -18,7 +18,9 @@ public interface BlobReader {
 
   boolean has(Path path) throws IOException;
 
-  Optional<InputStream> get(Path path) throws IOException;
+  Optional<InputStream> content(Path path) throws IOException;
+
+  Optional<Blob> get(Path path) throws IOException;
 
   long size(Path path) throws IOException;
 

@@ -200,7 +200,7 @@ public abstract class AppConfiguration extends Configuration {
                   .from(getStore())
                   .addSources(
                       new ImmutableStoreSourceFs.Builder()
-                          .typeString(Type.FS.key())
+                          .type(Type.FS.key())
                           .content(Content.RESOURCES)
                           .src(getProj().getLocation().get())
                           .prefix("proj")

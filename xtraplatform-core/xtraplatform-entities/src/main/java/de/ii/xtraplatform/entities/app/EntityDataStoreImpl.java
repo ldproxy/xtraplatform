@@ -17,7 +17,7 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
-import de.ii.xtraplatform.blobs.domain.BlobStore;
+import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.entities.domain.AbstractMergeableKeyValueStore;
 import de.ii.xtraplatform.entities.domain.AutoEntity;
 import de.ii.xtraplatform.entities.domain.EntityData;
@@ -29,13 +29,17 @@ import de.ii.xtraplatform.entities.domain.EntityFactoriesImpl;
 import de.ii.xtraplatform.entities.domain.EntityFactory;
 import de.ii.xtraplatform.entities.domain.EntityStoreDecorator;
 import de.ii.xtraplatform.entities.domain.EventStore;
-import de.ii.xtraplatform.entities.domain.Identifier;
-import de.ii.xtraplatform.entities.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.entities.domain.KeyPathAlias;
 import de.ii.xtraplatform.entities.domain.ReplayEvent;
-import de.ii.xtraplatform.entities.domain.ValueCache;
-import de.ii.xtraplatform.entities.domain.ValueEncoding;
+import de.ii.xtraplatform.values.api.ValueDecoderBase;
+import de.ii.xtraplatform.values.api.ValueDecoderEnvVarSubstitution;
+import de.ii.xtraplatform.values.api.ValueDecoderWithBuilder;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
+import de.ii.xtraplatform.values.domain.ValueCache;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
+import de.ii.xtraplatform.values.domain.ValueStore;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -71,11 +75,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private final boolean isEventStoreReadOnly;
   private final EntityFactoriesImpl entityFactories;
   private final Queue<Map.Entry<Identifier, EntityData>> additionalEvents;
-  private final ValueEncodingJackson<EntityData> valueEncoding;
-  private final ValueEncodingJackson<Map<String, Object>> valueEncodingMap;
+  private final ValueEncodingJacksonWithNesting<EntityData> valueEncoding;
+  private final ValueEncodingJacksonWithNesting<Map<String, Object>> valueEncodingMap;
   private final EventSourcing<EntityData> eventSourcing;
   private final EntityDataDefaultsStore defaultsStore;
   private final Supplier<Void> blobStoreReady;
+  private final Supplier<Void> valueStoreReady;
   private final boolean noDefaults;
 
   @Inject
@@ -85,8 +90,17 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Jackson jackson,
       Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore,
-      BlobStore blobStore) {
-    this(appContext, eventStore, jackson, entityFactories, defaultsStore, blobStore, false);
+      ResourceStore blobStore,
+      ValueStore valueStore) {
+    this(
+        appContext,
+        eventStore,
+        jackson,
+        entityFactories,
+        defaultsStore,
+        blobStore,
+        valueStore,
+        false);
   }
 
   // for ldproxy-cfg
@@ -96,16 +110,17 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Jackson jackson,
       Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore,
-      BlobStore blobStore,
+      ResourceStore blobStore,
+      ValueStore valueStore,
       boolean noDefaults) {
     this.isEventStoreReadOnly = eventStore.isReadOnly();
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.additionalEvents = new ConcurrentLinkedQueue<>();
     this.valueEncoding =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     this.valueEncodingMap =
-        new ValueEncodingJackson<>(
+        new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
     this.eventSourcing =
         new EventSourcing<>(
@@ -118,6 +133,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             Optional.of(this::onUpdate));
     this.defaultsStore = defaultsStore;
     this.blobStoreReady = blobStore.onReady()::join;
+    this.valueStoreReady = valueStore.onReady()::join;
     this.noDefaults = noDefaults;
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
@@ -135,17 +151,17 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             identifier -> new LinkedHashMap<>(),
             new ValueCache<Map<String, Object>>() {
               @Override
-              public boolean isInCache(Identifier identifier) {
+              public boolean has(Identifier identifier) {
                 return false;
               }
 
               @Override
-              public boolean isInCache(Predicate<Identifier> keyMatcher) {
+              public boolean has(Predicate<Identifier> keyMatcher) {
                 return false;
               }
 
               @Override
-              public Map<String, Object> getFromCache(Identifier identifier) {
+              public Map<String, Object> get(Identifier identifier) {
                 return null;
               }
             }));
@@ -196,7 +212,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
     if (!event.isDelete()
         && event.type().equals(EntityDataStore.EVENT_TYPE_ENTITIES)
-        && eventSourcing.isInCache(isDuplicate(event.identifier()))) {
+        && eventSourcing.has(isDuplicate(event.identifier()))) {
       LOGGER.warn(
           "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single group.",
           event.asPathNoType(),
@@ -206,7 +222,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
     if (!event.isDelete()
         && event.type().equals(EntityDataStore.EVENT_TYPE_ENTITIES)
-        && eventSourcing.isInCache(event.identifier())) {
+        && eventSourcing.has(event.identifier())) {
       LOGGER.warn(
           "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single source, use overrides to update it from another source.",
           event.asPathNoType(),
@@ -224,7 +240,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     Identifier cacheKey = overridesPath.asIdentifier();
 
     // override without matching entity
-    if (!eventSourcing.isInCache(cacheKey)) {
+    if (!eventSourcing.has(cacheKey)) {
       LOGGER.warn("Ignoring override '{}', no matching entity found", event.asPath());
       return ImmutableList.of();
     }
@@ -327,9 +343,9 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected CompletableFuture<Void> onListenStart() {
-    // LOGGER.debug("WAIT FOR BLOBS");
     blobStoreReady.get();
-    // LOGGER.debug("CONTINUE");
+    valueStoreReady.get();
+
     // TODO: getAllPaths
     return playAdditionalEvents()
         .thenCompose(

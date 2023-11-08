@@ -26,59 +26,107 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
   static boolean isOldDefaultStore(StoreSource storeSource) {
     return storeSource instanceof StoreSourceFs
         && storeSource.getContent() == Content.ENTITIES
-        && Objects.equals(storeSource.getSrc(), OLD_DEFAULT_LOCATION);
+        && (Objects.equals(storeSource.getSrc(), OLD_DEFAULT_LOCATION)
+            || Objects.equals(storeSource.getSrc(), "./" + OLD_DEFAULT_LOCATION));
   }
 
   List<StoreSource> V3_SOURCES =
       List.of(
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.CFG)
               .src("cfg.yml")
               .desiredMode(Mode.RO)
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.ENTITIES)
               .src(OLD_DEFAULT_LOCATION)
+              .addExcludes("entities/codelists/**")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src(OLD_DEFAULT_LOCATION + "/entities/codelists")
+              .prefix("codelists")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src("api-resources/tile-matrix-sets")
+              .prefix("tile-matrix-sets")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src("api-resources/queries")
+              .prefix("queries")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src("api-resources/styles")
+              .prefix("maplibre-styles")
+              .addIncludes("**/*.mbs")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src("api-resources/routes")
+              .prefix("routes/results")
+              .addExcludes("**/*.definition.json")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
+              .src("api-resources/routes")
+              .prefix("routes/definitions")
+              .addIncludes("**/*.definition.json")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("api-resources")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("api-resources/resources")
               .prefix("api-resources")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
+              .content(Content.RESOURCES)
+              .src("api-resources/styles")
+              .prefix("other-styles")
+              .addExcludes("**/*.mbs")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src(OLD_DEFAULT_LOCATION + "/resources")
               .desiredMode(Mode.RO)
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("cache/tiles")
               .prefix("tiles")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("cache/tiles3d")
               .prefix("tiles3d")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("proj")
               .prefix("proj")
               .build(),
           new ImmutableStoreSourceFs.Builder()
-              .typeString(Type.FS_KEY)
+              .type(Type.FS_KEY)
               .content(Content.RESOURCES)
               .src("templates/html")
               .prefix("html/templates")
@@ -92,7 +140,7 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
 
   @JsonProperty(StoreSource.TYPE_PROP)
   @Value.Derived
-  default String getTypeString() {
+  default String getType() {
     return Type.FS.name();
   }
 

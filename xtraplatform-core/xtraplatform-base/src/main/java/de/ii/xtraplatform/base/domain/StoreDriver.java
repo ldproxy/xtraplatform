@@ -8,11 +8,20 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
-import de.ii.xtraplatform.base.domain.StoreSource.Type;
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @AutoMultiBind
 public interface StoreDriver {
-  Type getType();
+  static List<PathMatcher> asMatchers(List<String> globs, String prefix) {
+    return globs.stream()
+        .map(glob -> FileSystems.getDefault().getPathMatcher("glob:" + prefix + "/" + glob))
+        .collect(Collectors.toList());
+  }
+
+  String getType();
 
   boolean isAvailable(StoreSource storeSource);
 }

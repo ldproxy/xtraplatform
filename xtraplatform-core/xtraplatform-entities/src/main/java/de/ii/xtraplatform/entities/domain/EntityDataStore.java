@@ -9,6 +9,9 @@ package de.ii.xtraplatform.entities.domain;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;

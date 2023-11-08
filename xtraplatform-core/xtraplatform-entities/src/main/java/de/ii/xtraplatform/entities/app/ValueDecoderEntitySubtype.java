@@ -10,8 +10,8 @@ package de.ii.xtraplatform.entities.app;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.ii.xtraplatform.entities.domain.EntityData;
 import de.ii.xtraplatform.entities.domain.EntityDataBuilder;
-import de.ii.xtraplatform.entities.domain.Identifier;
-import de.ii.xtraplatform.entities.domain.ValueDecoderMiddleware;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
 import java.io.IOException;
 import java.util.function.BiFunction;
 
@@ -45,8 +45,8 @@ public class ValueDecoderEntitySubtype implements ValueDecoderMiddleware<EntityD
         return data;
       }
 
-      if (eventSourcing.isInCache(identifier) && !ignoreCache) {
-        builder.from(eventSourcing.getFromCache(identifier));
+      if (eventSourcing.has(identifier) && !ignoreCache) {
+        builder.from(eventSourcing.get(identifier));
       }
 
       objectMapper.readerForUpdating(builder).readValue(payload);

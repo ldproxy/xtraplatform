@@ -26,6 +26,7 @@ public class LoggingFilter extends TurboFilter {
   private boolean apiRequestUsers;
   private boolean apiRequestHeaders;
   private boolean apiRequestBodies;
+  private boolean s3;
   private boolean sqlQueries;
   private boolean sqlResults;
   private boolean configDumps;
@@ -40,6 +41,7 @@ public class LoggingFilter extends TurboFilter {
       boolean apiRequestBodies,
       boolean sqlQueries,
       boolean sqlResults,
+      boolean s3,
       boolean configDumps,
       boolean stackTraces,
       boolean wiring) {
@@ -50,6 +52,7 @@ public class LoggingFilter extends TurboFilter {
     this.apiRequestBodies = apiRequestBodies;
     this.sqlQueries = sqlQueries;
     this.sqlResults = sqlResults;
+    this.s3 = s3;
     this.configDumps = configDumps;
     this.stackTraces = stackTraces;
     this.wiring = wiring;
@@ -59,9 +62,8 @@ public class LoggingFilter extends TurboFilter {
   public FilterReply decide(
       Marker marker, Logger logger, Level level, String format, Object[] params, Throwable t) {
 
-    if (Objects.equals(marker, MARKER.REQUEST)
-        && (apiRequests || level == Level.DEBUG || level == Level.TRACE)) {
-      return FilterReply.ACCEPT;
+    if (Objects.equals(marker, MARKER.REQUEST)) {
+      return apiRequests ? FilterReply.ACCEPT : FilterReply.NEUTRAL;
     }
     if (apiRequestUsers && Objects.equals(marker, MARKER.REQUEST_USER)) {
       return FilterReply.ACCEPT;
@@ -82,6 +84,10 @@ public class LoggingFilter extends TurboFilter {
     if (sqlResults
         && (Objects.equals(marker, MARKER.SQL_RESULT)
             || logger.getName().equals("slick.jdbc.StatementInvoker.result"))) {
+      return FilterReply.ACCEPT;
+    }
+
+    if (s3 && Objects.equals(marker, MARKER.S3)) {
       return FilterReply.ACCEPT;
     }
 
@@ -166,6 +172,14 @@ public class LoggingFilter extends TurboFilter {
 
   public void setSqlResults(boolean sqlResults) {
     this.sqlResults = sqlResults;
+  }
+
+  public boolean isS3() {
+    return s3;
+  }
+
+  public void setS3(boolean s3) {
+    this.s3 = s3;
   }
 
   public boolean isConfigDumps() {

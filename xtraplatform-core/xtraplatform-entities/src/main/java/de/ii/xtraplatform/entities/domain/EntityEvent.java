@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.entities.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.ii.xtraplatform.values.domain.Identifier;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;

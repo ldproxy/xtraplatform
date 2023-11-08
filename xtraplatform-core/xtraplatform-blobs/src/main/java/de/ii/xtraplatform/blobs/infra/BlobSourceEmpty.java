@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.blobs.infra;
 
+import de.ii.xtraplatform.blobs.domain.Blob;
 import de.ii.xtraplatform.blobs.domain.BlobSource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,7 +24,12 @@ public class BlobSourceEmpty implements BlobSource {
   }
 
   @Override
-  public Optional<InputStream> get(Path path) throws IOException {
+  public Optional<InputStream> content(Path path) throws IOException {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<Blob> get(Path path) throws IOException {
     return Optional.empty();
   }
 

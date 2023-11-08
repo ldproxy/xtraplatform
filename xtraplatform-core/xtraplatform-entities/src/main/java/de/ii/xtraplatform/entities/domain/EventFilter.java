@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import de.ii.xtraplatform.values.domain.Identifier;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;

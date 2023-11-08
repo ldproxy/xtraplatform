@@ -5,7 +5,7 @@ import de.ii.xtraplatform.auth.domain.Oidc
 import de.ii.xtraplatform.auth.domain.Role
 import de.ii.xtraplatform.auth.domain.User
 import de.ii.xtraplatform.base.domain.*
-import de.ii.xtraplatform.blobs.domain.BlobStore
+import de.ii.xtraplatform.blobs.domain.ResourceStore
 import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Specification
@@ -33,7 +33,7 @@ class JwtTokenHandlerSpec extends Specification {
             isEnabled() >> false
         }
 
-        jwtTokenHandler = new JwtTokenHandler(ac, Stub(BlobStore), oidc)
+        jwtTokenHandler = new JwtTokenHandler(ac, Stub(ResourceStore), oidc)
         jwtTokenHandler.onStart()
     }
 

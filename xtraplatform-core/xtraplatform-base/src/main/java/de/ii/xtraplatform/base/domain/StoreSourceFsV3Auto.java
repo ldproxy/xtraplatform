@@ -19,7 +19,7 @@ public interface StoreSourceFsV3Auto extends StoreSourceFs {
 
   @JsonProperty(StoreSource.TYPE_PROP)
   @Value.Derived
-  default String getTypeString() {
+  default String getType() {
     return Type.FS.name();
   }
 

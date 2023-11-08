@@ -21,12 +21,13 @@ import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Mode;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
-import de.ii.xtraplatform.entities.app.EventSource;
 import de.ii.xtraplatform.entities.domain.EntityEvent;
+import de.ii.xtraplatform.entities.domain.EventReader;
+import de.ii.xtraplatform.entities.domain.EventSource;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver.Watcher;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver.Writer;
-import de.ii.xtraplatform.entities.domain.Identifier;
+import de.ii.xtraplatform.values.domain.Identifier;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -72,8 +73,8 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
   }
 
   @Override
-  public Type getType() {
-    return Type.FS;
+  public String getType() {
+    return Type.FS_KEY;
   }
 
   @Override

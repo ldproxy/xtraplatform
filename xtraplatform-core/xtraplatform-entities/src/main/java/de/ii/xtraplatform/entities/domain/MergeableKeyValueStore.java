@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import de.ii.xtraplatform.values.domain.KeyValueStore;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 

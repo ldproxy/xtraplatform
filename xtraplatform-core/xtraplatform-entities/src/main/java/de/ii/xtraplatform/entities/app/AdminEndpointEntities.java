@@ -17,7 +17,7 @@ import de.ii.xtraplatform.entities.domain.EntityDataStore;
 import de.ii.xtraplatform.entities.domain.EntityRegistry;
 import de.ii.xtraplatform.entities.domain.EntityState;
 import de.ii.xtraplatform.entities.domain.EntityState.STATE;
-import de.ii.xtraplatform.entities.domain.Identifier;
+import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.web.domain.AdminSubEndpoint;
 import java.io.IOException;
 import java.io.PrintWriter;

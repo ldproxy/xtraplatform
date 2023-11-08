@@ -107,6 +107,7 @@ public class AdminEndpointLogs implements AdminSubEndpoint {
                       "apiRequestBodies", loggingFilter.isApiRequestBodies(),
                       "sqlQueries", loggingFilter.isSqlQueries(),
                       "sqlResults", loggingFilter.isSqlResults(),
+                      "s3", loggingFilter.isS3(),
                       "configDumps", loggingFilter.isConfigDumps(),
                       "stackTraces", loggingFilter.isStackTraces()))
           .orElse(ImmutableMap.of());

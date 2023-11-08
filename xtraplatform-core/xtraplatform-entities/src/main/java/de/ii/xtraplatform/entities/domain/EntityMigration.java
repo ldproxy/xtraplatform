@@ -7,8 +7,9 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import de.ii.xtraplatform.base.domain.Migration;
 import de.ii.xtraplatform.entities.domain.EntityMigration.EntityMigrationContext;
-import de.ii.xtraplatform.store.domain.Migration;
+import de.ii.xtraplatform.values.domain.Identifier;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;

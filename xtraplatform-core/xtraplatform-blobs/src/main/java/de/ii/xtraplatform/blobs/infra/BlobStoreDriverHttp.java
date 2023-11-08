@@ -9,6 +9,7 @@ package de.ii.xtraplatform.blobs.infra;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.StoreDriver;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
@@ -17,6 +18,8 @@ import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -43,8 +46,8 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
   }
 
   @Override
-  public Type getType() {
-    return Type.HTTP;
+  public String getType() {
+    return Type.HTTP_KEY;
   }
 
   @Override
@@ -53,7 +56,7 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
   }
 
   @Override
-  public BlobSource init(StoreSource storeSource) throws IOException {
+  public BlobSource init(StoreSource storeSource, Content contentType) throws IOException {
     if (!storeSource.isArchive()) {
       LOGGER.error("Store source {} only supports archives.", storeSource.getLabel());
       return new BlobSourceEmpty();
@@ -74,19 +77,22 @@ public class BlobStoreDriverHttp implements BlobStoreDriver {
     blobExtractor.extract(
         archivePath.get(),
         Path.of(storeSource.getArchiveRoot()),
-        entry -> storeSource.isSingleContent() || entry.startsWith(Content.RESOURCES.getPrefix()),
+        entry -> storeSource.isSingleContent() || entry.startsWith(contentType.getPrefix()),
         extractRoot,
         !storeSource.getArchiveCache());
     // }
     // LOGGER.debug("EXTRACTED {}", storeSource.getLabel());
     if (!storeSource.isSingleContent()) {
-      root = root.resolve(Content.RESOURCES.getPrefix());
+      root = root.resolve(contentType.getPrefix());
     }
+
+    List<PathMatcher> includes = StoreDriver.asMatchers(storeSource.getIncludes(), root.toString());
+    List<PathMatcher> excludes = StoreDriver.asMatchers(storeSource.getExcludes(), root.toString());
 
     BlobSource blobSource =
         storeSource.isSingleContent() && storeSource.getPrefix().isPresent()
-            ? new BlobSourceFs(root, Path.of(storeSource.getPrefix().get()))
-            : new BlobSourceFs(root);
+            ? new BlobSourceFs(root, Path.of(storeSource.getPrefix().get()), includes, excludes)
+            : new BlobSourceFs(root, null, includes, excludes);
 
     return blobSource;
   }

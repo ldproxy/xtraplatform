@@ -16,15 +16,15 @@ import de.ii.xtraplatform.entities.domain.EntityEvent;
 import de.ii.xtraplatform.entities.domain.EventFilter;
 import de.ii.xtraplatform.entities.domain.EventStore;
 import de.ii.xtraplatform.entities.domain.EventStoreSubscriber;
-import de.ii.xtraplatform.entities.domain.Identifier;
 import de.ii.xtraplatform.entities.domain.ImmutableMutationEvent;
 import de.ii.xtraplatform.entities.domain.MutationEvent;
 import de.ii.xtraplatform.entities.domain.ReloadEvent;
 import de.ii.xtraplatform.entities.domain.ReplayEvent;
 import de.ii.xtraplatform.entities.domain.StateChangeEvent;
-import de.ii.xtraplatform.entities.domain.ValueCache;
-import de.ii.xtraplatform.entities.domain.ValueEncoding;
 import de.ii.xtraplatform.streams.domain.Event;
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ValueCache;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -176,24 +176,24 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
               CompletableFuture.completedFuture((Void) null),
               (completableFuture, identifier) ->
                   completableFuture.thenCompose(
-                      ignore2 -> updateHook.get().apply(identifier, getFromCache(identifier))),
+                      ignore2 -> updateHook.get().apply(identifier, get(identifier))),
               (first, second) -> first.thenCompose(ignore2 -> second))
           .join();
     }
   }
 
   @Override
-  public boolean isInCache(Identifier identifier) {
+  public boolean has(Identifier identifier) {
     return cache.containsKey(identifier);
   }
 
   @Override
-  public boolean isInCache(Predicate<Identifier> keyMatcher) {
+  public boolean has(Predicate<Identifier> keyMatcher) {
     return cache.keySet().stream().anyMatch(keyMatcher);
   }
 
   @Override
-  public T getFromCache(Identifier identifier) {
+  public T get(Identifier identifier) {
     return cache.get(identifier);
   }
 

@@ -45,7 +45,7 @@ public interface StoreSourceHttp extends StoreSource {
                   new ImmutableStoreSourceHttp.Builder()
                       .from(this)
                       .from(part)
-                      .typeString(this.getTypeString())
+                      .type(this.getType())
                       .src(this.getSrc())
                       .archiveRoot(
                           getArchiveRoot()

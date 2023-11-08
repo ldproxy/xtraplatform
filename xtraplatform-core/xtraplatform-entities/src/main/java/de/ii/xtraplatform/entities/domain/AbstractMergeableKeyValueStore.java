@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import de.ii.xtraplatform.values.domain.Identifier;
+import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
@@ -26,7 +28,7 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
   // locks???
   protected boolean isUpdateValid(Identifier identifier, byte[] payload) {
     try {
-      return getEventSourcing().isInCache(identifier)
+      return getEventSourcing().has(identifier)
           && Objects.nonNull(
               getValueEncoding()
                   .deserialize(identifier, payload, getValueEncoding().getDefaultFormat(), false));

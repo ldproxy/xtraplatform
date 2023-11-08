@@ -359,7 +359,7 @@ import org.immutables.value.Value;
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,
     property = StoreSource.TYPE_PROP,
-    defaultImpl = StoreSourcePartial.class,
+    // defaultImpl = StoreSourcePartial.class,
     visible = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = StoreSourceFs.class, name = Type.FS_KEY),
@@ -373,6 +373,7 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(value = StoreSourceFsV3Auto.class, name = StoreSourceFsV3Auto.KEY),
   @JsonSubTypes.Type(value = StoreSourceHttpV3.class, name = StoreSourceHttpV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceGithubV3.class, name = StoreSourceGithubV3.KEY),
+  @JsonSubTypes.Type(value = StoreSourceS3.class, name = "S3"),
 })
 public interface StoreSource {
 
@@ -409,6 +410,7 @@ public interface StoreSource {
     INSTANCES_OLD,
     INSTANCES,
     OVERRIDES,
+    VALUES,
     RESOURCES,
     MULTI;
 
@@ -448,13 +450,7 @@ public interface StoreSource {
    * @since v3.5
    */
   @JsonProperty(StoreSource.TYPE_PROP)
-  String getTypeString();
-
-  @JsonIgnore
-  @Value.Derived
-  default Type getType() {
-    return Type.valueOf(getTypeString());
-  }
+  String getType();
 
   /**
    * @langEn The [Content Type](#content-types).
@@ -503,6 +499,28 @@ public interface StoreSource {
    */
   @JsonProperty("prefix")
   Optional<String> getPrefix();
+
+  /**
+   * @langEn Glob expressions for file paths from a source that should be included, others will be
+   *     ignored. May be needed to align directory structures.
+   * @langDe Glob-Ausdrücke für Datei-Pfade einer Source die inkludiert werden sollen, alle anderen
+   *     werden ignoriert. Kann benötigt werden, um Verzeichnisstrukturen anzugleichen.
+   * @default []
+   * @since v3.6
+   */
+  @JsonProperty("include")
+  List<String> getIncludes();
+
+  /**
+   * @langEn Glob expressions for file paths from a source that should be ignored. May be needed to
+   *     align directory structures.
+   * @langDe Glob-Ausdrücke für Datei-Pfade einer Source, die ignoriert werden sollen. Kann benötigt
+   *     werden, um Verzeichnisstrukturen anzugleichen.
+   * @default []
+   * @since v3.6
+   */
+  @JsonProperty("exclude")
+  List<String> getExcludes();
 
   /**
    * @langEn Can be set to use a subdirectory from a ZIP file.

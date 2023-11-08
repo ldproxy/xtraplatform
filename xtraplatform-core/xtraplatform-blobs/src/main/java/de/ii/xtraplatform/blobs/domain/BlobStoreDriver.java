@@ -10,10 +10,11 @@ package de.ii.xtraplatform.blobs.domain;
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.base.domain.StoreDriver;
 import de.ii.xtraplatform.base.domain.StoreSource;
+import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import java.io.IOException;
 
 @AutoMultiBind
 public interface BlobStoreDriver extends StoreDriver {
 
-  BlobSource init(StoreSource storeSource) throws IOException;
+  BlobSource init(StoreSource storeSource, Content contentType) throws IOException;
 }

@@ -7,37 +7,34 @@
  */
 package de.ii.xtraplatform.blobs.app;
 
-import com.github.azahnen.dagger.annotations.AutoBind;
+import static de.ii.xtraplatform.base.domain.util.LambdaWithException.mayThrow;
+
 import com.google.common.collect.Lists;
 import dagger.Lazy;
-import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.blobs.domain.Blob;
 import de.ii.xtraplatform.blobs.domain.BlobReader;
 import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
 import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
-import de.ii.xtraplatform.store.domain.Store;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Singleton
-@AutoBind
-public class BlobStoreImpl implements BlobStore, AppLifeCycle {
+public class BlobStoreImpl implements BlobStore {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BlobStoreImpl.class);
 
@@ -47,25 +44,19 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
   private final List<BlobSource> blobReaders;
   private final List<BlobSource> blobWriters;
   private final boolean isReadOnly;
-  private final CompletableFuture<Void> ready;
+  private final Content contentType;
 
-  @Inject
-  public BlobStoreImpl(Store store, Lazy<Set<BlobStoreDriver>> drivers) {
+  public BlobStoreImpl(Store store, Lazy<Set<BlobStoreDriver>> drivers, Content contentType) {
     this.store = store;
     this.drivers = drivers;
     this.blobReaders = new ArrayList<>();
     this.blobWriters = new ArrayList<>();
     this.isReadOnly = !store.isWritable();
-    this.ready = new CompletableFuture<>();
+    this.contentType = contentType;
   }
 
   @Override
-  public int getPriority() {
-    return 50;
-  }
-
-  @Override
-  public void onStart() {
+  public void start() {
     List<StoreSource> sources = findSources();
 
     Lists.reverse(sources)
@@ -76,7 +67,7 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
               blobStoreDriver.ifPresent(
                   driver -> {
                     try {
-                      BlobSource blobSource = driver.init(source);
+                      BlobSource blobSource = driver.init(source, contentType);
 
                       blobReaders.add(blobSource);
 
@@ -89,7 +80,7 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
                       if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(
                             "{}{} for {} ready{}",
-                            Content.RESOURCES.getLabel(),
+                            contentType.getLabel(),
                             source.getPrefix().isPresent()
                                 ? " of type " + source.getPrefix().get()
                                 : "",
@@ -101,41 +92,32 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
                           LOGGER,
                           e,
                           "{} for {} could not be loaded",
-                          Content.RESOURCES.getLabel(),
+                          contentType.getLabel(),
                           source.getLabel());
                     }
                   });
             });
-    ready.complete(null);
-  }
-
-  @Override
-  public CompletableFuture<Void> onReady() {
-    return ready;
   }
 
   private List<StoreSource> findSources() {
     return store.get().stream()
-        .filter(
-            source ->
-                source.getContent() == Content.ALL || source.getContent() == Content.RESOURCES)
+        .filter(source -> source.getContent() == Content.ALL || source.getContent() == contentType)
         .collect(Collectors.toUnmodifiableList());
   }
 
   private Optional<BlobStoreDriver> findDriver(StoreSource storeSource, boolean warn) {
     final boolean[] foundUnavailable = {false};
 
-    // TODO: driver content types, s3 only supports resources
     Optional<BlobStoreDriver> driver =
         drivers.get().stream()
-            .filter(d -> d.getType() == storeSource.getType())
+            .filter(d -> Objects.equals(d.getType(), storeSource.getType()))
             .filter(
                 d -> {
                   if (!d.isAvailable(storeSource)) {
                     if (warn) {
                       LOGGER.warn(
                           "{} for {} are not available.",
-                          Content.RESOURCES.getLabel(),
+                          contentType.getLabel(),
                           storeSource.getLabel());
                     }
                     foundUnavailable[0] = true;
@@ -165,10 +147,23 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
   }
 
   @Override
-  public Optional<InputStream> get(Path path) throws IOException {
+  public Optional<InputStream> content(Path path) throws IOException {
 
     for (BlobReader source : blobReaders) {
-      Optional<InputStream> blob = source.get(path);
+      Optional<InputStream> blob = source.content(path);
+
+      if (blob.isPresent()) {
+        return blob;
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<Blob> get(Path path) throws IOException {
+    for (BlobReader source : blobReaders) {
+      Optional<Blob> blob = source.get(path);
 
       if (blob.isPresent()) {
         return blob;
@@ -207,13 +202,13 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
   @Override
   public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException {
-    for (BlobReader source : blobReaders) {
-      if (source.has(path)) {
-        return source.walk(path, maxDepth, matcher);
-      }
+    try {
+      return blobReaders.stream()
+          .flatMap(mayThrow(reader -> reader.walk(path, maxDepth, matcher)))
+          .distinct();
+    } catch (Throwable e) {
+      throw new IOException("Error in BlobStore.walk", e);
     }
-
-    return Stream.empty();
   }
 
   @Override
@@ -231,7 +226,7 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
     }
 
     LOGGER.error(
-        "Cannot write {} at '{}', no writable source found.", Content.RESOURCES.getPrefix(), path);
+        "Cannot write {} at '{}', no writable source found.", contentType.getPrefix(), path);
   }
 
   @Override
@@ -249,7 +244,7 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
     }
 
     LOGGER.error(
-        "Cannot delete {} at '{}', no writable source found.", Content.RESOURCES.getPrefix(), path);
+        "Cannot delete {} at '{}', no writable source found.", contentType.getPrefix(), path);
   }
 
   @Override
@@ -274,10 +269,5 @@ public class BlobStoreImpl implements BlobStore, AppLifeCycle {
     }
 
     return Optional.empty();
-  }
-
-  @Override
-  public Path getPrefix() {
-    return Path.of("");
   }
 }

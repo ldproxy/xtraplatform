@@ -13,6 +13,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.Lists;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
+import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreFilters;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
@@ -25,11 +26,11 @@ import de.ii.xtraplatform.entities.domain.EventStore;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver;
 import de.ii.xtraplatform.entities.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.entities.domain.ImmutableEventFilter;
-import de.ii.xtraplatform.entities.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.entities.domain.ImmutableReloadEvent;
 import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent;
-import de.ii.xtraplatform.store.domain.Store;
 import de.ii.xtraplatform.streams.domain.Reactive;
+import de.ii.xtraplatform.values.api.ValueEncodingJackson;
+import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -162,7 +163,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
     // TODO: content all/entities
     Optional<EventStoreDriver> driver =
         drivers.get().stream()
-            .filter(d -> d.getType() == storeSource.getType())
+            .filter(d -> Objects.equals(d.getType(), storeSource.getType()))
             .filter(
                 d -> {
                   if (!d.isAvailable(storeSource)) {
