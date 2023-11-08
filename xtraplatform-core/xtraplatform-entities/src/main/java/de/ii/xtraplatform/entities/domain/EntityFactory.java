@@ -61,6 +61,10 @@ public interface EntityFactory {
     return entityData;
   }
 
+  default Optional<AutoEntityFactory> auto() {
+    return Optional.empty();
+  }
+
   default Optional<KeyPathAlias> getKeyPathAlias(String keyPath) {
     return Optional.empty();
   }

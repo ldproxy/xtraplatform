@@ -24,7 +24,7 @@ public class HttpApache implements Http {
   private final HttpClient defaultClient;
 
   @Inject
-  HttpApache(AppContext appContext) {
+  public HttpApache(AppContext appContext) {
     this.defaultClient =
         new HttpClientApache(
             new HttpClientBuilder(new MetricRegistry())

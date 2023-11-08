@@ -25,14 +25,16 @@ public interface AutoEntity {
   Optional<Boolean> getAuto();
 
   /**
-   * @langEn Option to persist definitions generated with `auto` to the configuration file. The
-   *     [Store](/application/40-store.md) must not be `READ_ONLY` for this to take effect.
-   * @langDe Steuert ob mit `auto` generierte Definitionen in die Konfigurationsdatei geschrieben
-   *     werden sollen. Setzt voraus, dass der [Store](/de/application/40-store.md) nicht
-   *     `READ_ONLY` ist.
+   * @langEn *Deprecated, use the editor instead.* Option to persist definitions generated with
+   *     `auto` to the configuration file. The [Store](/application/40-store.md) must not be
+   *     `READ_ONLY` for this to take effect.
+   * @langDe *Deprecated, wird vom Editor abgelöst.* Steuert ob mit `auto` generierte Definitionen
+   *     in die Konfigurationsdatei geschrieben werden sollen. Setzt voraus, dass der
+   *     [Store](/de/application/40-store.md) nicht `READ_ONLY` ist.
    * @default false
    */
   @JsonProperty(value = "autoPersist", access = JsonProperty.Access.WRITE_ONLY)
+  @Deprecated(since = "3.6")
   Optional<Boolean> getAutoPersist();
 
   @JsonIgnore
