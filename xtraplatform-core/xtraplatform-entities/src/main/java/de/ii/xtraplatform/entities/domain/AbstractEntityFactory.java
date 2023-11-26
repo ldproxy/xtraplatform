@@ -72,6 +72,7 @@ public abstract class AbstractEntityFactory<
   public CompletableFuture<PersistentEntity> updateInstance(EntityData entityData) {
     String id = entityData.getId();
     String entityTypeSingular = type().substring(0, type().length() - 1);
+    U instance = instances.get(id);
 
     try (MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
       if (Objects.equals(entityData.hashCode(), instanceConfigurationHashes.get(id))) {
@@ -81,12 +82,16 @@ public abstract class AbstractEntityFactory<
             entityTypeSingular,
             id);
 
+        // update data anyway to enable garbage collection, will not trigger reload
+        if (Objects.nonNull(instance)) {
+          instance.setData((T) entityData);
+        }
+
         return CompletableFuture.completedFuture(null);
       }
 
       LOGGER.info("Reloading configuration for {} with id '{}'", entityTypeSingular, id);
 
-      U instance = instances.get(id);
       CompletableFuture<PersistentEntity> reloaded = new CompletableFuture<>();
 
       if (Objects.nonNull(instance)) {
