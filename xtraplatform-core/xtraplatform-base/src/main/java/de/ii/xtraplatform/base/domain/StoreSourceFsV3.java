@@ -72,6 +72,13 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
           new ImmutableStoreSourceFs.Builder()
               .type(Type.FS_KEY)
               .content(Content.VALUES)
+              .src("api-resources/styles")
+              .prefix("3dtiles-styles")
+              .addIncludes("**/*.3dtiles")
+              .build(),
+          new ImmutableStoreSourceFs.Builder()
+              .type(Type.FS_KEY)
+              .content(Content.VALUES)
               .src("api-resources/routes")
               .prefix("routes/results")
               .addExcludes("**/*.definition.json")
@@ -100,6 +107,7 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
               .src("api-resources/styles")
               .prefix("other-styles")
               .addExcludes("**/*.mbs")
+              .addExcludes("**/*.3dtiles")
               .build(),
           new ImmutableStoreSourceFs.Builder()
               .type(Type.FS_KEY)
