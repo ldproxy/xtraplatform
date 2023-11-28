@@ -218,7 +218,7 @@ public class ValueStoreImpl
 
   @Override
   public CompletableFuture<StoredValue> put(Identifier identifier, StoredValue value) {
-    FORMAT format = valueFactories.get(value.getClass()).defaultFormat();
+    FORMAT format = valueFactories.get(identifier).defaultFormat();
     Path path = Path.of(format.apply(identifier.asPath()));
     byte[] bytes = valueEncoding.serialize(value, format);
 

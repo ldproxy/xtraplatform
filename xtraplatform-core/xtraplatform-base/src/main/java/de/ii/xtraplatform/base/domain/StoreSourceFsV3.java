@@ -75,6 +75,8 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
               .src("api-resources/routes")
               .prefix("routes/results")
               .addExcludes("**/*.definition.json")
+              .addExcludes("**/*.definition.yaml")
+              .addExcludes("**/*.definition.yml")
               .build(),
           new ImmutableStoreSourceFs.Builder()
               .type(Type.FS_KEY)
@@ -82,6 +84,8 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
               .src("api-resources/routes")
               .prefix("routes/definitions")
               .addIncludes("**/*.definition.json")
+              .addIncludes("**/*.definition.yaml")
+              .addIncludes("**/*.definition.yml")
               .build(),
           new ImmutableStoreSourceFs.Builder()
               .type(Type.FS_KEY)
