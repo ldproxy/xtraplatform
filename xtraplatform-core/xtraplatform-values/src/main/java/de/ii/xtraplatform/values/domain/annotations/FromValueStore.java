@@ -23,7 +23,7 @@ public @interface FromValueStore {
 
   boolean cacheValues() default true;
 
-  FORMAT defaultFormat() default FORMAT.YAML;
+  FORMAT defaultFormat() default FORMAT.YML;
 
   FormatAlias[] formatAliases() default {};
 
