@@ -135,10 +135,15 @@ public class ValueStoreImpl
                   }
 
                   Path currentPath = typePath.resolve(file);
+                  // TODO: remove workaround
+                  Path parent =
+                      valueType.equals("codelists") && file.startsWith("entities")
+                          ? Path.of("")
+                          : Objects.requireNonNullElse(file.getParent(), Path.of(""));
                   Identifier identifier =
                       Identifier.from(
                           typePath
-                              .resolve(Objects.requireNonNullElse(file.getParent(), Path.of("")))
+                              .resolve(parent)
                               .resolve(
                                   Files.getNameWithoutExtension(file.getFileName().toString())));
 
