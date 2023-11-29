@@ -42,12 +42,14 @@ public interface StoreSourceFsV3 extends StoreSourceFs {
               .type(Type.FS_KEY)
               .content(Content.ENTITIES)
               .src(OLD_DEFAULT_LOCATION)
+              .addExcludes("entities/codelists/**")
               .addExcludes("entities/**/codelists/**")
               .build(),
           new ImmutableStoreSourceFs.Builder()
               .type(Type.FS_KEY)
               .content(Content.VALUES)
               .src(OLD_DEFAULT_LOCATION)
+              .addIncludes("entities/codelists/**")
               .addIncludes("entities/**/codelists/**")
               .prefix("codelists")
               .build(),
