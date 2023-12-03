@@ -335,7 +335,6 @@ import org.immutables.value.Value;
  *       prefix: html/templates
  * ```
  *     </code>
- * @langDe # Store (neu)
  * @ref:properties {@link de.ii.xtraplatform.base.domain.ImmutableStoreConfiguration}
  * @ref:sourceProperties {@link de.ii.xtraplatform.base.domain.ImmutableStoreSourceDummy}
  */

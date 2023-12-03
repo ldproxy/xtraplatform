@@ -13,6 +13,7 @@ import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,22 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
   String EVENT_TYPE_ENTITIES = "entities";
   String EVENT_TYPE_OVERRIDES = "overrides";
   List<String> EVENT_TYPES = ImmutableList.of(EVENT_TYPE_ENTITIES, EVENT_TYPE_OVERRIDES);
+
+  Comparator<Identifier> COMPARATOR =
+      (id1, id2) -> {
+        int compareType = entityType(id1).compareTo(entityType(id2));
+
+        if (compareType == 0) {
+          if (id2.id().endsWith("-tiles")) {
+            return -1;
+          }
+          if (id1.id().endsWith("-tiles")) {
+            return 1;
+          }
+        }
+
+        return compareType;
+      };
 
   static String entityType(Identifier identifier) {
     if (identifier.path().isEmpty()) {
