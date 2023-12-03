@@ -327,8 +327,6 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                   }
                   return false;
                 })
-            // TODO: set priority per event type (for now alphabetic works:
-            //  defaults < entities < overrides)
             .sorted(Comparator.naturalOrder())
             .collect(Collectors.toList());
 

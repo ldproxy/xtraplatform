@@ -25,7 +25,6 @@ import de.ii.xtraplatform.streams.domain.Event;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ValueCache;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -169,9 +168,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       List<Identifier> identifiers = getIdentifiers(((ReloadEvent) event).filter());
 
       identifiers.stream()
-          // TODO: set priority per entity type (for now alphabetic works:
-          //  codelists < providers < services)
-          .sorted(Comparator.comparing(EntityDataStore::entityType))
+          .sorted(EntityDataStore.COMPARATOR)
           .reduce(
               CompletableFuture.completedFuture((Void) null),
               (completableFuture, identifier) ->

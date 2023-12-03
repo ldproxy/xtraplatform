@@ -44,7 +44,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.AbstractMap;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -359,9 +358,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         .thenCompose(
             ignore ->
                 identifiers().stream()
-                    // TODO: set priority per entity type (for now alphabetic works:
-                    //  codelists < providers < services)
-                    .sorted(Comparator.comparing(EntityDataStore::entityType))
+                    .sorted(EntityDataStore.COMPARATOR)
                     .reduce(
                         CompletableFuture.completedFuture((Void) null),
                         (completableFuture, identifier) ->
