@@ -423,7 +423,7 @@ public interface StoreConfiguration {
                       location ->
                           new ImmutableStoreSourceFs.Builder()
                               .type(Type.FS.key())
-                              .content(Content.ALL)
+                              .content(Content.ENTITIES)
                               .desiredMode(Mode.RO)
                               .src(location)
                               .build())
