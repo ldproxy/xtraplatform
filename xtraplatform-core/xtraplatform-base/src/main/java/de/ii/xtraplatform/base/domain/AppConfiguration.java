@@ -21,6 +21,7 @@ import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.core.server.ServerFactory;
 import io.dropwizard.logging.common.LoggingFactory;
+import io.dropwizard.metrics.common.MetricsFactory;
 import javax.validation.Valid;
 import org.apache.commons.lang3.NotImplementedException;
 import org.immutables.value.Value;
@@ -158,6 +159,11 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   public abstract HttpClientConfiguration getHttpClient();
 
+  @JsonProperty("metrics")
+  @Valid
+  @Override
+  public abstract MetricsConfiguration getMetricsFactory();
+
   /**
    * @langEn See [Web Server](60-server.md).
    * @langDe Siehe [Webserver](60-server.md).
@@ -185,6 +191,12 @@ public abstract class AppConfiguration extends Configuration {
   @JsonIgnore
   @Override
   public synchronized void setLoggingFactory(LoggingFactory factory) {
+    throw new NotImplementedException();
+  }
+
+  @JsonIgnore
+  @Override
+  public void setMetricsFactory(MetricsFactory factory) {
     throw new NotImplementedException();
   }
 

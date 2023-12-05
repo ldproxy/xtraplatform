@@ -299,7 +299,7 @@ import org.immutables.value.Value;
  *     </code>
  * @langEn #### Data directory with old store layout
  *     <p>You could use this if you want to keep using the old layout with `v4`.
- * @langEn #### Datenverzeichnis mit altem Store-Layout
+ * @langDe #### Datenverzeichnis mit altem Store-Layout
  *     <p>Kann benutzt werden falls das alte Layout weiterhin mit `v4` verwendet werden soll.
  * @langAll <code>
  * ```yml
