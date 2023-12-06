@@ -42,6 +42,8 @@ import org.immutables.value.Value;
  *     <p>{@docTable:properties}
  *     <p>## Store Sources
  *     <p>### Options
+ *     <p>These are general options common to all source types. Specific options might be described
+ *     in [Source Types](#source-types).
  *     <p>{@docTable:sourceProperties}
  *     <p>### Source Types
  *     <p>Store sources may have different source types, which allows to integrate any local or
@@ -50,6 +52,10 @@ import org.immutables.value.Value;
  *     <p>Access files from the local file system. `src` must be a path to a directory or a ZIP
  *     file. The path can either be absolute or relative to the data directory. `FS` directory
  *     sources are writable by default.
+ *     <p>#### `S3`
+ *     <p>Access files from any S3 compatible object store. `src` must be a relative path composed
+ *     of a host and a bucket, e.g. `my-minio/demo` or `s3.eu-central-1.amazonaws.com/demo`.
+ *     <p>Additionally an `accessKey` and a `secretKey` have to be specified for the source.
  *     <p>#### `HTTP`
  *     <p>Access files from a web server. `src` must be a valid URL pointing to a ZIP file. Can be
  *     neither writable nor watchable.
@@ -76,13 +82,14 @@ import org.immutables.value.Value;
  *     <p><code>
  * - `CFG` in path `cfg.yml`
  * - `ENTITIES` in path `entities/`
+ * - `VALUES` in path `values/`
  * - `RESOURCES` in path `resources/`
  *     </code>
  *     <p>#### `CFG`
  *     <p>Store sources with content type `CFG` contain a single YAML file with global configuration
  *     settings.
  *     <p>#### `ENTITIES`
- *     <p>Entities make up the user-defined part of the application, for example APIs and Data
+ *     <p>Entities make up the main user-defined part of the application, for example APIs and Data
  *     Providers. The configuration of these entities is defined in YAML files.
  *     <p>Store sources with content type `ENTITIES` are a container for these other content types:
  *     <p><code>
@@ -105,11 +112,18 @@ import org.immutables.value.Value;
  *     <p>Store sources with content type `OVERRIDES` may contain override configurations for
  *     entities that are applied after the instance configuration. The paths have to match the
  *     instance paths, for example `services/foo.yml`.
+ *     <p>#### `VALUES`
+ *     <p>Store sources with content type `VALUES` may contain auxiliary user-defined
+ *     configurations, e.g. codelists. The configurations are defined in YAML or JSON files. The
+ *     paths are made up of a value type and an arbitrary file path, for example
+ *     `codelists/foo/bar.yml`. The actual path patterns are defined by the components that need
+ *     them, their documentation will state something like "are values with type `codelists` and
+ *     path `foo/bar`". Some features may also need a writable source to work properly.
  *     <p>#### `RESOURCES`
  *     <p>Store sources with content type `RESOURCES` may contain any other files that are needed by
- *     the application. Some features may also need a writable source to work properly. The paths
- *     are defined by the components that need them, their documentation will state something like
- *     "are resources with path `foo/bar`".
+ *     the application. The paths are defined by the components that need them, their documentation
+ *     will state something like "are resources with path `foo/bar`". Some features may also need a
+ *     writable source to work properly.
  *     <p>#### `MULTI`
  *     <p>Store sources with content type `MULTI` are a container with a common root that contains a
  *     list of other content types. This type can be used for convenience for example for an
@@ -117,12 +131,21 @@ import org.immutables.value.Value;
  *     <p>### Order
  *     <p>#### `CFG`
  *     <p>Global configuration files are read and merged in the order of the sources on startup.
+ *     <p>In theory every global configuration file could define additional store sources, which in
+ *     turn could contain additional global configuration files. Such chains are not allowed, only
+ *     global configuration files on the first level are considered.
  *     <p>#### `ENTITIES`
  *     <p>Entity configuration files are read in the order of the sources on startup. First all
  *     `DEFAULTS` are read and merged in the order of the sources. Then the `INSTANCES` are created
  *     in order of the sources. If an instance exists in multiple sources, the first one will win
  *     since an instance can only exist once. Duplicates will be logged as error. Last all
  *     `OVERRIDES` are applied to the instances in order of the sources.
+ *     <p>#### `VALUES`
+ *     <p>Value configuration files are read in the order of the sources on startup. If the same
+ *     path exists in multiple sources, the last one will win. When the application wants to write a
+ *     value with a specific path, the sources are checked in reverse order for the first that is
+ *     writable for values with the given prefix. So if more than one source could take the given
+ *     value, the one defined later will win.
  *     <p>#### `RESOURCES`
  *     <p>Resources are only accessed on-demand. When the application wants to read a resource with
  *     a specific path, the sources are checked in reverse order for the existence of that path. So
@@ -146,6 +169,8 @@ import org.immutables.value.Value;
  *     <p>{@docTable:properties}
  *     <p>## Store Sources
  *     <p>### Optionen
+ *     <p>Dies sind allgemeine Optionen, die für alle Source Types gelten. Spezifische Optionen
+ *     können in [Source Types](#source-types) beschrieben sein.
  *     <p>{@docTable:sourceProperties}
  *     <p>### Source Types
  *     <p>Store Sources können verschiedene Source Types haben, was die Integration beliebiger
@@ -154,6 +179,11 @@ import org.immutables.value.Value;
  *     <p>Zugriff auf Dateien aus dem lokalen Dateisystem. `src` muss ein Pfad zu einem Verzeichnis
  *     oder einer ZIP-Datei sein. Der Pfad kann entweder absolut oder relativ zum Datenverzeichnis
  *     sein. `FS` Verzeichnisse sind standardmäßig beschreibbar.
+ *     <p>#### `S3`
+ *     <p>Zugriff auf Dateien aus einem S3-kompatiblen Object-Store. `src` muss ein relativer Pfad
+ *     sein, der aus einem Host und einem Bucket besteht, z.B. `my-minio/demo` oder
+ *     `s3.eu-central-1.amazonaws.com/demo`.
+ *     <p>Außerdem müssen ein `accessKey` und ein `secretKey` für die Store Source angegeben werden.
  *     <p>#### `HTTP`
  *     <p>Zugriff auf Dateien von einem Webserver. `src` muss eine gültige URL sein, die auf eine
  *     ZIP-Datei verweist. Kann nicht beschreibbar sein.
@@ -183,13 +213,14 @@ import org.immutables.value.Value;
  *     <p><code>
  * - `CFG` im Pfad `cfg.yml`
  * - `ENTITIES` im Pfad `entities/`
+ * - `VALUES` im Pfad `values/`
  * - `RESOURCES` im Pfad `resources/`
  *     </code>
  *     <p>#### `CFG`
  *     <p>Store Sources mit dem Content Type `CFG` enthalten eine einzelne YAML-Datei mit globalen
  *     Konfigurations-Einstellungen.
  *     <p>#### `ENTITIES`
- *     <p>Entities bilden den benutzerdefinierten Teil der Anwendung, zum Beispiel APIs und
+ *     <p>Entities bilden den primären benutzerdefinierten Teil der Anwendung, zum Beispiel APIs und
  *     Daten-Provider. Die Konfiguration der Entities erfolgt in YAML-Dateien.
  *     <p>Store Sources mit dem Content Type `ENTITIES` sind ein Container für diese anderen Content
  *     Types:
@@ -215,21 +246,32 @@ import org.immutables.value.Value;
  *     <p>Store Source mit dem Content Type `OVERRIDES` können Override-Konfigurationen für Entities
  *     enthalten, die nach der Instanz-Konfiguration angewendet werden. Die Pfade müssen mit den
  *     Instanz-Pfaden übereinstimmen, zum Beispiel `services/foo.yml`.
+ *     <p>#### `VALUES`
+ *     <p>Store Sources mit dem Content Type `VALUES` können sekundäre benutzerdefinierte
+ *     Konfigurationen enthalten, z.B. Code-Listen. Die Konfiguration der Values erfolgt in YAML-
+ *     oder JSON-Dateien. Die Pfade setzen sich aus einem Value-Typ und einem beliebigen Datei-Pfad
+ *     zusammen, zum Beispiel `codelists/foo/bar.yml`. Die Pfad-Muster werden von den Komponenten
+ *     definiert, die sie benötigen, ihre Dokumentation wird etwas enthalten wie "sind Values mit
+ *     dem Typ `codelists` und Pfad `foo/bar`". Einige Funktionen benötigen möglicherweise auch eine
+ *     beschreibbare Store Source, um richtig zu funktionieren.
  *     <p>#### `RESOURCES`
  *     <p>Store Sources mit dem Content Type `RESOURCES` können alle anderen Dateien enthalten, die
- *     von der Anwendung benötigt werden. Einige Funktionen benötigen möglicherweise auch eine
- *     beschreibbare Store Source, um richtig zu funktionieren. Die Pfade werden von den Komponenten
- *     definiert, die sie benötigen, ihre Dokumentation wird etwas enthalten wie "sind Ressourcen
- *     mit dem Pfad `foo/bar`".
+ *     von der Anwendung benötigt werden. Die Pfade werden von den Komponenten definiert, die sie
+ *     benötigen, ihre Dokumentation wird etwas enthalten wie "sind Ressourcen mit dem Pfad
+ *     `foo/bar`". Einige Funktionen benötigen möglicherweise auch eine beschreibbare Store Source,
+ *     um richtig zu funktionieren.
  *     <p>#### `MULTI`
  *     <p>Store Sources mit dem Content Type `MULTI` sind ein Container mit einer gemeinsamen
  *     Wurzel, die eine Liste von anderen Content Types enthält. Dieser Typ kann der Einfachheit
  *     halber verwendet werden, zum Beispiel für eine `ALL`-ähnliche Store Source mit einer anderen
  *     Verzeichnisstruktur.
- *     <p>### Sortierung
+ *     <p>### Reihenfolge
  *     <p>#### `CFG`
  *     <p>Globale Konfigurationsdateien werden beim Start in der Reihenfolge der Store Sources
  *     gelesen und zusammengeführt.
+ *     <p>Theoretisch könnte jede globale Konfigurationsdateien weitere Store Sources definieren,
+ *     die wiederum weitere globale Konfigurationsdateien enthalten können. Solche Ketten sind nicht
+ *     erlaubt, nur globale Konfigurationsdateien auf der ersten Ebene werden berücksichtigt.
  *     <p>#### `ENTITIES`
  *     <p>Entity-Konfigurationsdateien werden beim Start in der Reihenfolge der Store Sources
  *     gelesen. Zuerst werden alle `DEFAULTS` gelesen und in der Reihenfolge der Store Sources
@@ -237,6 +279,13 @@ import org.immutables.value.Value;
  *     Wenn eine Instanz in mehreren Store Sources existiert, wird nur die erste erstellt da eine
  *     Instanz nur einmal existieren kann. Duplikate werden als Fehler geloggt. Zuletzt werden alle
  *     `OVERRIDES` auf die Instanzen in der Reihenfolge der Store Sources angewendet.
+ *     <p>#### `VALUES`
+ *     <p>Value-Konfigurationsdateien werden beim Start in der Reihenfolge der Store Sources
+ *     gelesen. Wenn eine Pfad in mehreren Store Sources existiert, gewinnt die später definierte
+ *     Store Source. Wenn die Anwendung einen Value mit einem bestimmten Pfad schreiben will, werden
+ *     die Store Sources in umgekehrter Reihenfolge nach der ersten Quelle durchsucht, die für
+ *     Values mit dem angegebenen Präfix beschreibbar ist. Wenn also mehr als eine Quelle für den
+ *     angegebene Pfad in Frage kommt, gewinnt diejenige, die später definiert wurde.
  *     <p>#### `RESOURCES`
  *     <p>Ressourcen werden nur bei Bedarf abgerufen. Wenn die Anwendung eine Ressource mit einem
  *     bestimmten Pfad lesen will, werden die Store Sources in umgekehrter Reihenfolge auf das
@@ -339,8 +388,8 @@ import org.immutables.value.Value;
  * @ref:sourceProperties {@link de.ii.xtraplatform.base.domain.ImmutableStoreSourceDummy}
  */
 @DocFile(
-    path = "application",
-    name = "41-store-new.md",
+    path = "application/20-configuration",
+    name = "10-store-new.md",
     tables = {
       @DocTable(
           name = "properties",

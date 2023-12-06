@@ -117,8 +117,8 @@ import org.immutables.value.Value;
  *     Standard-Einstellung von 30 Sekunden empfohlen.
  */
 @DocFile(
-    path = "application",
-    name = "30-configuration.md",
+    path = "application/20-configuration",
+    name = "README.md",
     tables = {
       @DocTable(
           name = "properties",
@@ -146,6 +146,7 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   public abstract AuthConfiguration getAuth();
 
+  @Deprecated(since = "3.6", forRemoval = true)
   @Valid
   public abstract ManagerConfiguration getManager();
 
