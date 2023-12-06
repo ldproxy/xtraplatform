@@ -305,8 +305,8 @@ import org.immutables.value.Value;
  *     ["Besonderheiten"](README.md#special-cases) eingegangen.
  */
 @DocFile(
-    path = "application",
-    name = "40-store.md",
+    path = "application/20-configuration",
+    name = "00-store.md",
     tables = {
       @DocTable(
           name = "properties",
