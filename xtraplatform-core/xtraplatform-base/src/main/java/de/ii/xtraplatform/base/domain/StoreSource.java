@@ -29,7 +29,7 @@ import org.immutables.value.Value;
 /**
  * @langEn # Store (new)
  *     <p>::: info This is the documentation of the new store that was introduced in `v3.5`. For the
- *     old store that will be removed in `v4.0` see [Store](40-store.md). :::
+ *     old store that will be removed in `v4.0` see [Store](00-store.md). :::
  *     <p>The store represents all files that make up a deployment of ldproxy besides the
  *     application itself. That includes all configuration files but also other resources like file
  *     databases or caches. In the most simple case all of these files will exist in the local data
@@ -155,7 +155,7 @@ import org.immutables.value.Value;
  *     than one source could take the given resource, the one defined later will win.
  * @langDe # Store (neu)
  *     <p>::: info Dies ist die Dokumentation des neuen Stores, der in `v3.5` eingeführt wurde. Für
- *     den alten Store, der in `v4.0` entfernt werden wird, siehe [Store](40-store.md). :::
+ *     den alten Store, der in `v4.0` entfernt werden wird, siehe [Store](00-store.md). :::
  *     <p>Der Store repräsentiert alle Dateien, die ein Deployment von ldproxy ausmachen, außer der
  *     Anwendung selbst. Dazu gehören alle Konfigurationsdateien, aber auch andere Ressourcen wie
  *     File-Datenbanken oder Caches. Im einfachsten Fall existieren alle diese Dateien im lokalen

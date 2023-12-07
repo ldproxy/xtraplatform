@@ -8,12 +8,28 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import de.ii.xtraplatform.docs.DocFile;
+import de.ii.xtraplatform.docs.DocStep;
+import de.ii.xtraplatform.docs.DocStep.Step;
+import de.ii.xtraplatform.docs.DocTable;
+import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import javax.validation.constraints.Min;
 import org.immutables.value.Value;
 
 /**
- * @title BackgroundTasks
+ * @langAll Background Tasks
+ *     <p>## Options
+ *     <p>{@docTable:properties}
  */
+@DocFile(
+    path = "application/20-configuration",
+    name = "90-background-tasks.md",
+    tables = {
+      @DocTable(
+          name = "properties",
+          rows = {@DocStep(type = Step.JSON_PROPERTIES)},
+          columnSet = ColumnSet.JSON_PROPERTIES)
+    })
 @Value.Immutable
 @Value.Modifiable
 @JsonDeserialize(as = ModifiableBackgroundTasksConfiguration.class)

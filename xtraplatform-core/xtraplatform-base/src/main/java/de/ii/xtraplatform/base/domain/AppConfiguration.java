@@ -29,11 +29,11 @@ import org.immutables.value.Value;
 /**
  * @langEn # Configuration
  *     <p>The configuration file `cfg.yml` is located in the data directory (old) or in the [Store
- *     (new)](41-store-new.md).
+ *     (new)](10-store-new.md).
  *     <p>{@docTable:properties}
  * @langDe # Konfiguration
  *     <p>Die Konfigurationsdatei `cfg.yml` befindet sich im Daten-Verzeichnis (alt) oder im [Store
- *     (neu)](41-store-new.md).
+ *     (neu)](10-store-new.md).
  *     <p>{@docTable:properties}
  * @todoEn ### Environment variables Both in `cfg.yml` and in configuration objects, defaults and
  *     overrides, substitutions can be made by environment variables.
@@ -131,16 +131,16 @@ import org.immutables.value.Value;
 public abstract class AppConfiguration extends Configuration {
 
   /**
-   * @langEn See [Store (new)](41-store-new.md).
-   * @langDe Siehe [Store (neu)](41-store-new.md).
+   * @langEn See [Store (new)](10-store-new.md).
+   * @langDe Siehe [Store (neu)](10-store-new.md).
    */
   @JsonProperty("store")
   @Valid
   public abstract StoreConfiguration getStore();
 
   /**
-   * @langEn See [Authorization](65-auth.md).
-   * @langDe Siehe [Autorisierung](65-auth.md).
+   * @langEn See [Authorization](40-auth.md).
+   * @langDe Siehe [Autorisierung](40-auth.md).
    */
   @JsonProperty("auth")
   @Valid
@@ -150,6 +150,10 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   public abstract ManagerConfiguration getManager();
 
+  /**
+   * @langEn See [Background Tasks](90-background-tasks.md).
+   * @langDe Siehe [Background Tasks](90-background-tasks.md).
+   */
   @Valid
   public abstract BackgroundTasksConfiguration getBackgroundTasks();
 
@@ -166,8 +170,8 @@ public abstract class AppConfiguration extends Configuration {
   public abstract MetricsConfiguration getMetricsFactory();
 
   /**
-   * @langEn See [Web Server](60-server.md).
-   * @langDe Siehe [Webserver](60-server.md).
+   * @langEn See [Web Server](30-server.md).
+   * @langDe Siehe [Webserver](30-server.md).
    */
   @JsonProperty("server")
   @Valid
@@ -175,8 +179,8 @@ public abstract class AppConfiguration extends Configuration {
   public abstract ServerConfiguration getServerFactory();
 
   /**
-   * @langEn See [Logging](50-logging.md).
-   * @langDe Siehe [Logging](50-logging.md).
+   * @langEn See [Logging](20-logging.md).
+   * @langDe Siehe [Logging](20-logging.md).
    */
   @JsonProperty("logging")
   @Valid
