@@ -1,8 +1,8 @@
 maturity = 'MATURE'
 
 ext {
-    dropwizardVersion = '3.0.2'
-    jacksonVersion = '2.15.2'
+    dropwizardVersion = '3.0.4'
+    jacksonVersion = '2.15.3'
 }
 
 dependencies {

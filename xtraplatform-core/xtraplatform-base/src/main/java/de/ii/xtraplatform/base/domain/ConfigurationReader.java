@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class ConfigurationReader {
@@ -255,6 +256,7 @@ public class ConfigurationReader {
 
   private static ObjectMapper getMergeMapper(ObjectMapper baseMapper) {
     ObjectMapper mergeMapper = baseMapper.copy().setDefaultMergeable(true);
+    mergeMapper.configOverride(Set.class).setMergeable(false);
     mergeMapper.configOverride(List.class).setMergeable(false);
     mergeMapper.configOverride(Map.class).setMergeable(false);
     mergeMapper.configOverride(Duration.class).setMergeable(false);

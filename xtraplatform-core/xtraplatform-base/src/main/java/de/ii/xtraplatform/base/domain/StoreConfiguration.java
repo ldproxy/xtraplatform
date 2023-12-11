@@ -30,8 +30,8 @@ import org.immutables.value.Value;
 /**
  * @langEn # Store
  *     <p>::: info This is the documentation of the old store that will be removed in `v4.0`. For
- *     the new store that was introduced in `v3.5` see [Store (new)](41-store-new.md). For migration
- *     instructions see [Migration](../migration/README.md). :::
+ *     the new store that was introduced in `v3.5` see [Store (new)](10-store-new.md). For migration
+ *     instructions see [Upgrades](../40-upgrades.md). :::
  *     <p>The store contains configuration objects.
  *     <p>## Configuration
  *     <p><code>
@@ -166,8 +166,8 @@ import org.immutables.value.Value;
  *     ["special-cases"](README.md#special-cases) section.
  * @langDe # Store
  *     <p>::: info Dies ist die Dokumentation des alten Stores der in `v4.0` entfernt wird. Für den
- *     neuen Store, der in `v3.5` eingeführt wurde, siehe [Store (neu)](41-store-new.md). Für Hilfe
- *     bei der Migration, siehe [Migration](../migration/README.md). :::
+ *     neuen Store, der in `v3.5` eingeführt wurde, siehe [Store (neu)](10-store-new.md). Für Hilfe
+ *     bei der Migration, siehe [Aktualisierung](../40-upgrades.md). :::
  *     <p>Der Store enthält Konfigurationsobjekte.
  *     <p>## Konfiguration
  *     <p><code>
@@ -305,8 +305,8 @@ import org.immutables.value.Value;
  *     ["Besonderheiten"](README.md#special-cases) eingegangen.
  */
 @DocFile(
-    path = "application",
-    name = "40-store.md",
+    path = "application/20-configuration",
+    name = "00-store.md",
     tables = {
       @DocTable(
           name = "properties",
@@ -423,7 +423,7 @@ public interface StoreConfiguration {
                       location ->
                           new ImmutableStoreSourceFs.Builder()
                               .type(Type.FS.key())
-                              .content(Content.ALL)
+                              .content(Content.ENTITIES)
                               .desiredMode(Mode.RO)
                               .src(location)
                               .build())

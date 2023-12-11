@@ -105,8 +105,8 @@ import org.immutables.value.Value;
  * @ref:xacmlTable {@link de.ii.xtraplatform.base.domain.ImmutableXacmlJson}
  */
 @DocFile(
-    path = "application",
-    name = "65-auth.md",
+    path = "application/20-configuration",
+    name = "40-auth.md",
     tables = {
       @DocTable(
           name = "properties",

@@ -55,3 +55,8 @@ logging:
   stackTraces: ${LOG_STACK_TRACES:-OFF}
   wiring: ${LOG_WIRING:-OFF}
   appenders: []
+
+metrics:
+  frequency: 1 minute
+  reporters: []
+  reportOnStop: false

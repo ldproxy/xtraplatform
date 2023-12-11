@@ -135,10 +135,15 @@ public class ValueStoreImpl
                   }
 
                   Path currentPath = typePath.resolve(file);
+                  // TODO: remove workaround
+                  Path parent =
+                      valueType.equals("codelists") && file.startsWith("entities")
+                          ? Path.of("")
+                          : Objects.requireNonNullElse(file.getParent(), Path.of(""));
                   Identifier identifier =
                       Identifier.from(
                           typePath
-                              .resolve(Objects.requireNonNullElse(file.getParent(), Path.of("")))
+                              .resolve(parent)
                               .resolve(
                                   Files.getNameWithoutExtension(file.getFileName().toString())));
 
@@ -218,7 +223,7 @@ public class ValueStoreImpl
 
   @Override
   public CompletableFuture<StoredValue> put(Identifier identifier, StoredValue value) {
-    FORMAT format = valueFactories.get(value.getClass()).defaultFormat();
+    FORMAT format = valueFactories.get(identifier).defaultFormat();
     Path path = Path.of(format.apply(identifier.asPath()));
     byte[] bytes = valueEncoding.serialize(value, format);
 
