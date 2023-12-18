@@ -1,3 +1,6 @@
+when:
+  event: [push, tag]
+
 steps:
 
   load-cache:
@@ -16,7 +19,7 @@ steps:
       - ./gradlew checkAll assembleAll -Pbranch=$DRONE_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
     secrets: [ snapshot_user, snapshot_pass]
     when:
-      event: [push, pull_request]
+      event: push
 
   build-release:
     image: openjdk:11-slim
@@ -35,7 +38,6 @@ steps:
     secrets: [ snapshot_user, snapshot_pass]
     when:
       event: push
-#      branch: master
 
   publish-release:
     image: openjdk:11-slim
