@@ -21,7 +21,7 @@ subprojects {
             //target '**/ConfigurationReader.java'
             targetExclude '**/build/generated/**/*'
 
-            googleJavaFormat('1.15.0')
+            googleJavaFormat('1.18.1')
 
             bumpThisNumberIfACustomStepChanges(2)
             custom("errorOnWildcard", {
