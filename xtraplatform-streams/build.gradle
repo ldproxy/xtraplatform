@@ -2,10 +2,10 @@
 maturity = 'MATURE'
 
 dependencies {
-    embeddedExport group: 'org.reactivestreams', name: 'reactive-streams', version: '1.0.4'
+    embeddedExport libs.rs
     //TODO: should be private, but needed for rxjava 2 -> 3 interop in xtraplatform-features-sql
-    embeddedFlatExport group: 'io.reactivex.rxjava3', name: 'rxjava', version: '3.1.5'
-    embeddedFlat group: 'com.github.akarnokd', name: 'rxjava3-extensions', version: '3.1.1'
+    embeddedFlatExport libs.rxjava
+    embeddedFlat libs.rxjava.ext
 }
 
 moduleInfo {

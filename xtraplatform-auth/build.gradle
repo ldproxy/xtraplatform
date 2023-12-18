@@ -1,9 +1,5 @@
 maturity = 'CANDIDATE'
 
-ext {
-    jjwtVersion = '0.11.5'
-}
-
 dependencies {
     provided project(':xtraplatform-web')
     provided project(':xtraplatform-streams')
@@ -13,8 +9,5 @@ dependencies {
     provided project(':xtraplatform-openapi')
     provided project(':xtraplatform-services')
 
-    //TODO: needed for service loader
-    embeddedFlatExport group: 'io.jsonwebtoken', name: 'jjwt-api', version: jjwtVersion
-    embeddedFlatExport group: 'io.jsonwebtoken', name: 'jjwt-impl', version: jjwtVersion
-    embeddedFlatExport group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: jjwtVersion
+    embeddedFlatExport libs.bundles.auth
 }

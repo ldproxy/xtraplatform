@@ -1,0 +1,68 @@
+[versions]
+jjwt = '0.11.5'
+swagger = '2.2.8'
+classgraph = "4.8.138"
+dropwizard = '3.0.4'
+jackson = '2.15.3'
+commons-codec = '1.16.0'
+threeten = '1.5.0'
+jakarta-xml = '2.3.3'
+immutables = '2.8.8'
+dagger = '2.49'
+dagger-auto = '1.0.0-SNAPSHOT'
+minio = '8.5.6'
+cron4j = '2.2.5'
+rxjava = '3.1.5'
+rxjava-ext = '3.1.1'
+rs = '1.0.4'
+
+[libraries]
+# auth
+#TODO: needed for service loader
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
+
+#openapi
+swagger-jaxrs2 = { module = "io.swagger.core.v3:swagger-jaxrs2", version.ref = "swagger" }
+swagger-models = { module = "io.swagger.core.v3:swagger-models", version.ref = "swagger" }
+swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger" }
+swagger-integration = { module = "io.swagger.core.v3:swagger-integration", version.ref = "swagger" }
+swagger-core = { module = "io.swagger.core.v3:swagger-core", version.ref = "swagger" }
+swagger-classgraph = { module = "io.github.classgraph:classgraph", version.ref = "classgraph" }
+
+#runtime
+dropwizard-core = { module = "io.dropwizard:dropwizard-core", version.ref = "dropwizard" }
+dropwizard-views-mustache = { module = "io.dropwizard:dropwizard-views-mustache", version.ref = "dropwizard" }
+dropwizard-client = { module = "io.dropwizard:dropwizard-client", version.ref = "dropwizard" }
+dropwizard-auth = { module = "io.dropwizard:dropwizard-auth", version.ref = "dropwizard" }
+dropwizard-json-logging = { module = "io.dropwizard:dropwizard-json-logging", version.ref = "dropwizard" }
+#TODO: use new default blackbird instead, does not work with modules out of the box
+jackson-afterburner = { module = "com.fasterxml.jackson.module:jackson-module-afterburner", version.ref = "jackson" }
+commons-codec = { module = "commons-codec:commons-codec", version.ref = "commons-codec" }
+threeten-extra = { module = "org.threeten:threeten-extra", version.ref = "threeten" }
+xml-bind-api = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jakarta-xml" }
+jackson-xml = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider", version.ref = "jackson" }
+#TODO: classifier cannot be specified in catalog
+immutables-value = { module = "org.immutables:value", version.ref = "immutables" }
+immutables-encode = { module = "org.immutables:encode", version.ref = "immutables" }
+dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
+dagger-auto = { module = "io.github.azahnen:dagger-auto", version.ref = "dagger-auto" }
+
+#s3
+minio = { module = "io.minio:minio", version.ref = "minio" }
+
+#services
+cron4j = { module = "it.sauronsoftware.cron4j:cron4j", version.ref = "cron4j" }
+
+#streams
+rxjava = { module = "io.reactivex.rxjava3:rxjava", version.ref = "rxjava" }
+rxjava-ext = { module = "com.github.akarnokd:rxjava3-extensions", version.ref = "rxjava-ext" }
+rs = { module = "org.reactivestreams:reactive-streams", version.ref = "rs" }
+
+[bundles]
+auth = ["jjwt-api", "jjwt-impl", "jjwt-jackson"]
+openapi = ["swagger-jaxrs2", "swagger-models", "swagger-annotations", "swagger-integration", "swagger-core", "swagger-classgraph"]
+runtime = ["dropwizard-core", "dropwizard-views-mustache", "dropwizard-client", "dropwizard-auth", "dropwizard-json-logging",
+  "jackson-afterburner", "jackson-xml", "commons-codec", "threeten-extra", "xml-bind-api", "immutables-encode"]
+runtimeFlat = ["dagger", "dagger-auto"]
