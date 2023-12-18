@@ -16,8 +16,10 @@ public interface StaticResourceConstants {
 
   /** The indicator that a bundle exposes additional web resources. */
   String WEB_RESOURCE_VERSION_KEY = "X-Web-Resource-Version";
+
   /** The baseline version for this web resources implementation. */
   String WEB_RESOURCE_BASELINE_VERSION = "1.0";
+
   /** The version in which we added support for {@link #WEB_RESOURCE_DEFAULT_PAGE}. */
   // Version WEB_RESOURCE_VERSION_1_1 = new Version("1.1");
 
@@ -34,6 +36,7 @@ public interface StaticResourceConstants {
 
   /** Constant used to denote that adding caching headers is disabled. */
   long CACHE_TIMEOUT_DISABLED = -1L;
+
   /** Default cache timeout to use. */
   long ONE_WEEK_IN_SECONDS = 604800L;
 
