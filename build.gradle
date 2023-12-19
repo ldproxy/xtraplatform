@@ -1,12 +1,41 @@
-task assembleAll {
-    dependsOn gradle.includedBuilds*.task(':assembleAll')
+buildscript {
+    configurations.all {
+        resolutionStrategy {
+            cacheChangingModulesFor 0, 'seconds'
+            cacheDynamicVersionsFor 0, 'seconds'
+        }
+    }
 }
-task checkAll {
-    dependsOn gradle.includedBuilds*.task(':checkAll')
+
+plugins {
+    alias catalog.plugins.xtraplatform.layer
+    alias catalog.plugins.spotless apply false
 }
-task publishAll {
-    dependsOn gradle.includedBuilds*.task(':publishAll')
+
+allprojects {
+    group = 'de.interactive_instruments'
 }
-task publishToMavenLocalAll {
-    dependsOn gradle.includedBuilds*.task(':publishToMavenLocalAll')
+
+
+version = '6.0.0' + versionSuffix
+
+dependencies {
+    modules subprojects
 }
+
+layer {
+    lowLevel = true
+
+    MATURE {
+        minimumCoverage = 0.0
+        warningsAsErrors = false
+        ignorePmdErrors = true
+    }
+    CANDIDATE {
+        minimumCoverage = 0.0
+    }
+}
+
+apply from: 'formatting.gradle'
+
+apply from: 'composite-tasks.gradle'

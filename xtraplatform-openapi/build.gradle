@@ -1,0 +1,23 @@
+
+maturity = 'MATURE'
+
+dependencies {
+    provided project(':xtraplatform-web')
+
+    embeddedFlatExport libs.bundles.openapi
+}
+
+moduleInfo {
+    exports = [
+            '!io.github.classgraph*',
+            '!nonapi.io.github.classgraph*',
+    ]
+    requires = [
+            'java.logging',
+            'java.xml',
+    ]
+    uses = [
+        'io.swagger.v3.jaxrs2.ext.OpenAPIExtension',
+        'io.swagger.v3.core.converter.ModelConverter',
+    ]
+}

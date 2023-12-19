@@ -1,0 +1,15 @@
+
+maturity = 'MATURE'
+
+dependencies {
+    embeddedExport libs.rs
+    //TODO: should be private, but needed for rxjava 2 -> 3 interop in xtraplatform-features-sql
+    embeddedFlatExport libs.rxjava
+    embeddedFlat libs.rxjava.ext
+}
+
+moduleInfo {
+    requires = [
+            'java.net.http',
+    ]
+}

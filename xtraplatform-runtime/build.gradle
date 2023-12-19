@@ -1,0 +1,41 @@
+maturity = 'MATURE'
+
+dependencies {
+    embeddedExport libs.bundles.runtime
+
+    embeddedExport(variantOf(libs.immutables.value) { classifier('annotations') })
+
+    embeddedFlatExport libs.bundles.runtimeFlat
+
+    //NOTE: define newer versions of transitive deps here if required
+    constraints {
+        /*embeddedExport('org.yaml:snakeyaml:1.33') {
+            because 'critical/high vulnerabilities'
+        }*/
+    }
+}
+
+moduleInfo {
+    requires = [
+            'java.sql',
+            'java.xml',
+            'java.naming', //https jks keystore
+            'jdk.unsupported', //caffeine
+            'static jdk.management', //metrics
+    ]
+    exports = [
+            '!io.dropwizard.logback.shaded*'
+    ]
+    uses = [
+            'ch.qos.logback.classic.spi.Configurator',
+            'org.eclipse.jetty.util.security.CredentialProvider',
+            'javax.validation.valueextraction.ValueExtractor',
+            'javax.validation.ConstraintValidator',
+            '!org.codehaus.stax2.validation*',
+    ]
+    provides = [
+            '!io.dropwizard.jackson.Discoverable': [],
+            '!javax.xml.bind.JAXBContext'        : [],
+            '!org.codehaus.stax2.validation*'    : [],
+    ]
+}

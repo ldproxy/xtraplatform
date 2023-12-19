@@ -1,0 +1,11 @@
+
+maturity = 'MATURE'
+
+dependencies {
+    provided project(':xtraplatform-web')
+    provided project(':xtraplatform-entities')
+    provided project(':xtraplatform-values')
+    provided project(':xtraplatform-openapi')
+
+    embedded libs.cron4j
+}

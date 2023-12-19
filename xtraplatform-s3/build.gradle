@@ -1,0 +1,27 @@
+maturity = 'CANDIDATE'
+
+dependencies {
+    provided project(':xtraplatform-entities')
+    provided project(':xtraplatform-blobs')
+
+    embedded(libs.minio) {
+        exclude module: 'guava'
+        //exclude module: 'commons-compress'
+        exclude module: 'jackson-annotations'
+        exclude module: 'jackson-core'
+        exclude module: 'jackson-databind'
+        exclude module: 'jsr305'
+    }
+}
+
+moduleInfo {
+    exports = [
+            '!org.apache.commons.compress.harmony'
+    ]
+    /*provides = [
+            'de.ii.xtraplatform.base.domain.CfgStoreDriver': ['de.ii.xtraplatform.s3.app.CfgStoreDriverS3'],
+    ]*/
+    additions = [
+            '  provides de.ii.xtraplatform.base.domain.CfgStoreDriver with de.ii.xtraplatform.s3.app.CfgStoreDriverS3;',
+    ]
+}
