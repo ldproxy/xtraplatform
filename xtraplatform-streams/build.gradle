@@ -1,5 +1,8 @@
 
 maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'Reactive Streams.'
+descriptionDe = 'Reactive Streams.'
 
 dependencies {
     embeddedExport libs.rs

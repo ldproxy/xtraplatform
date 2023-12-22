@@ -1,4 +1,8 @@
+
 maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'Basic third party libraries.'
+descriptionDe = 'Grundlegende Third-Party-Libraries.'
 
 dependencies {
     embeddedExport libs.bundles.runtime

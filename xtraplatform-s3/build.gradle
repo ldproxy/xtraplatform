@@ -1,4 +1,8 @@
+
 maturity = 'CANDIDATE'
+maintenance = 'LOW'
+description = 'S3 store sources.'
+descriptionDe = 'S3 Store-Sources.'
 
 dependencies {
     provided project(':xtraplatform-entities')

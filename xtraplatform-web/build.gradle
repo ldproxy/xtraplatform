@@ -1,5 +1,8 @@
 
 maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'HTTP server and client, HTML templates.'
+descriptionDe = 'HTTP Server und Client, HTML-Templates.'
 
 dependencies {
     provided project(':xtraplatform-blobs')
