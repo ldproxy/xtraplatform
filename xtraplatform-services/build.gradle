@@ -1,5 +1,8 @@
 
 maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'Service entities, background tasks.'
+descriptionDe = 'Service-Entities, Background-Tasks.'
 
 dependencies {
     provided project(':xtraplatform-web')

@@ -1,5 +1,8 @@
 
 maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'Resource store.'
+descriptionDe = 'Resource-Store.'
 
 dependencies {
 }

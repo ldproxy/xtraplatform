@@ -1,4 +1,8 @@
+
 maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'Application configuration and launcher'
+descriptionDe = 'Konfiguration und Launcher für die Applikation.'
 
 moduleInfo {
     additions = [

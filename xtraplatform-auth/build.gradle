@@ -1,4 +1,8 @@
+
 maturity = 'CANDIDATE'
+maintenance = 'LOW'
+description = 'Restrict access to resources (OpenID Connect, JWT, XACML JSON).'
+descriptionDe = 'Zugriff auf Ressourcen einschränken (OpenID Connect, JWT, XACML JSON).'
 
 dependencies {
     provided project(':xtraplatform-web')
