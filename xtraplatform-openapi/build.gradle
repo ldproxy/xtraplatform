@@ -1,5 +1,8 @@
 
 maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'OpenAPI definitions and clients.'
+descriptionDe = 'OpenAPI Definitionen und Clients.'
 
 dependencies {
     provided project(':xtraplatform-web')

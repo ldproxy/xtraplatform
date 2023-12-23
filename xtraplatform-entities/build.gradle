@@ -1,5 +1,8 @@
 
 maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'Entity store.'
+descriptionDe = 'Entity-Store.'
 
 dependencies {
     provided project(':xtraplatform-blobs')
