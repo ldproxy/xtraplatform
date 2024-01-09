@@ -26,12 +26,14 @@ public interface EntityData extends StoredValue {
 
   @DocIgnore
   @Value.Default
+  @Value.Auxiliary
   default long getCreatedAt() {
     return Instant.now().toEpochMilli();
   }
 
   @DocIgnore
   @Value.Default
+  @Value.Auxiliary
   default long getLastModified() {
     return Instant.now().toEpochMilli();
   }

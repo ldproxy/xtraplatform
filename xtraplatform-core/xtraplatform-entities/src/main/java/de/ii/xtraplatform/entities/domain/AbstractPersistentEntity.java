@@ -85,7 +85,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     T previous = this.data;
     this.data = data;
 
-    if (Objects.nonNull(previous)) {
+    if (Objects.nonNull(previous) && !Objects.equals(previous.hashCode(), data.hashCode())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("RELOAD DATA {} {}", previous.hashCode(), data.hashCode());
       }
