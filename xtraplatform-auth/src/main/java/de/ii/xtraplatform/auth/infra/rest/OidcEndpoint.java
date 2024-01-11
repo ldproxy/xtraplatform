@@ -37,12 +37,20 @@ import javax.ws.rs.core.UriBuilder;
 @Singleton
 @AutoBind
 public class OidcEndpoint implements Endpoint, LoginHandler {
+  private final URI externalUriRoot;
   private final String servicesPath;
   private final AuthConfiguration authConfig;
   private final Oidc oidc;
 
   @Inject
   public OidcEndpoint(AppContext appContext, ServicesContext servicesContext, Oidc oidc) {
+    this.externalUriRoot =
+        URI.create(
+            new URICustomizer()
+                .setScheme(servicesContext.getUri().getScheme())
+                .setHost(servicesContext.getUri().getHost())
+                .setPort(servicesContext.getUri().getPort())
+                .toString());
     this.servicesPath = servicesContext.getUri().getPath();
     this.authConfig = appContext.getConfiguration().getAuth();
     this.oidc = oidc;
@@ -81,41 +89,25 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
     return logout(containerRequestContext, redirectUri);
   }
 
-  private static URI getCallbackUri(
-      ContainerRequestContext containerRequestContext, String rootPath) {
+  private URI getCallbackUri(String rootPath) {
     String callbackPath = java.nio.file.Path.of(rootPath, "_callback").toString();
-    return containerRequestContext
-        .getUriInfo()
-        .getRequestUriBuilder()
-        .replacePath(callbackPath)
-        .replaceQuery("")
-        .build();
+    return URI.create(new URICustomizer(externalUriRoot).setPath(callbackPath).toString());
   }
 
-  private static URI getCallbackRedirectUri(
-      ContainerRequestContext containerRequestContext, String rootPath, String redirectUri) {
+  private URI getCallbackRedirectUri(String rootPath, String redirectUri) {
     String callbackPath = java.nio.file.Path.of(rootPath, "_callback").toString();
-    return containerRequestContext
-        .getUriInfo()
-        .getRequestUriBuilder()
-        .replacePath(callbackPath)
-        .replaceQuery(null)
-        .queryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI, redirectUri)
-        .build();
+    return URI.create(
+        new URICustomizer(externalUriRoot)
+            .setPath(callbackPath)
+            .addParameter(LoginHandler.PARAM_LOGIN_REDIRECT_URI, redirectUri)
+            .toString());
   }
 
-  private String getStaticUrlPrefix(ContainerRequestContext containerRequestContext) {
-    String staticUrlPrefix = "";
-
-    staticUrlPrefix =
-        new URICustomizer(containerRequestContext.getUriInfo().getRequestUri())
-            .cutPathAfterSegments("rest", "services")
-            .replaceInPath("/rest/services", servicesPath)
-            .ensureLastPathSegment(STATIC_PREFIX)
-            .ensureNoTrailingSlash()
-            .getPath();
-
-    return staticUrlPrefix;
+  private String getStaticUrlPrefix() {
+    return new URICustomizer(externalUriRoot)
+        .setPath(servicesPath)
+        .appendPath(STATIC_PREFIX)
+        .getPath();
   }
 
   @Override
@@ -127,18 +119,14 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
       boolean isCallback,
       String state,
       String token) {
-    /*if (Objects.isNull(redirectUri)) {
-      throw new BadRequestException("no redirect_uri given");
-    }*/
-
-    URI callbackUri = getCallbackUri(containerRequestContext, rootPath);
+    URI callbackUri = getCallbackUri(rootPath);
 
     String redirect =
         isCallback && Objects.isNull(token) && Objects.nonNull(state)
-            ? getCallbackRedirectUri(containerRequestContext, rootPath, state).toString()
+            ? getCallbackRedirectUri(rootPath, state).toString()
             : redirectUri;
 
-    String staticUrlPrefix = getStaticUrlPrefix(containerRequestContext);
+    String staticUrlPrefix = getStaticUrlPrefix();
 
     ResponseBuilder response =
         Response.ok(
