@@ -70,7 +70,8 @@ public class EntityRegistryImpl implements EntityRegistry {
   @Override
   public Optional<EntityState.STATE> getEntityState(String type, String id) {
     // return Optional.ofNullable(entityStates.get(type + id)).map(EntityState::getState);
-    return getEntity(type, id).map(persistentEntity -> ((EntityState) persistentEntity).getState());
+    return getEntity(type, id)
+        .map(persistentEntity -> ((EntityState) persistentEntity).getEntityState());
   }
 
   @Override

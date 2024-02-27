@@ -12,6 +12,7 @@ import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import java.nio.file.Path;
@@ -27,8 +28,9 @@ public class ResourceStoreImpl extends BlobStoreImpl implements ResourceStore, A
   private final CompletableFuture<Void> ready;
 
   @Inject
-  public ResourceStoreImpl(Store store, Lazy<Set<BlobStoreDriver>> drivers) {
-    super(store, drivers, Content.RESOURCES);
+  public ResourceStoreImpl(
+      Store store, VolatileRegistry volatileRegistry, Lazy<Set<BlobStoreDriver>> drivers) {
+    super(store, volatileRegistry, drivers, Content.RESOURCES);
     this.ready = new CompletableFuture<>();
   }
 
