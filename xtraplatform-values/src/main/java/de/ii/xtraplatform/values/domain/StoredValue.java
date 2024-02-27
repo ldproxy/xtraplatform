@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.values.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Optional;
 
 public interface StoredValue {
 
@@ -17,4 +18,7 @@ public interface StoredValue {
   default long storageVersion() {
     return 1L;
   }
+
+  @JsonIgnore
+  Optional<String> getPreHash();
 }

@@ -43,6 +43,7 @@ commons-codec = { module = "commons-codec:commons-codec", version.ref = "commons
 threeten-extra = { module = "org.threeten:threeten-extra", version.ref = "threeten" }
 xml-bind-api = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref = "jakarta-xml" }
 jackson-xml = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-xml-provider", version.ref = "jackson" }
+jackson-smile = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-smile", version.ref = "jackson" }
 #TODO: classifier cannot be specified in catalog
 immutables-value = { module = "org.immutables:value", version.ref = "immutables" }
 immutables-encode = { module = "org.immutables:encode", version.ref = "immutables" }
@@ -64,5 +65,5 @@ rs = { module = "org.reactivestreams:reactive-streams", version.ref = "rs" }
 auth = ["jjwt-api", "jjwt-impl", "jjwt-jackson"]
 openapi = ["swagger-jaxrs2", "swagger-models", "swagger-annotations", "swagger-integration", "swagger-core", "swagger-classgraph"]
 runtime = ["dropwizard-core", "dropwizard-views-mustache", "dropwizard-client", "dropwizard-auth", "dropwizard-json-logging",
-  "jackson-afterburner", "jackson-xml", "commons-codec", "threeten-extra", "xml-bind-api", "immutables-encode"]
+  "jackson-afterburner", "jackson-xml", "jackson-smile", "commons-codec", "threeten-extra", "xml-bind-api", "immutables-encode"]
 runtimeFlat = ["dagger", "dagger-auto"]

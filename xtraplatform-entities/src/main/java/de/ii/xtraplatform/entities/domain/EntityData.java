@@ -25,6 +25,7 @@ public interface EntityData extends StoredValue {
   String getId();
 
   @DocIgnore
+  @JsonIgnore
   @Value.Default
   @Value.Auxiliary
   default long getCreatedAt() {
@@ -32,6 +33,7 @@ public interface EntityData extends StoredValue {
   }
 
   @DocIgnore
+  @JsonIgnore
   @Value.Default
   @Value.Auxiliary
   default long getLastModified() {
@@ -39,6 +41,7 @@ public interface EntityData extends StoredValue {
   }
 
   @DocIgnore
+  @JsonIgnore
   @Value.Default
   default long getEntityStorageVersion() {
     return 1;

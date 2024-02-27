@@ -11,4 +11,6 @@ public interface ValueBuilder<T extends StoredValue> {
   T build();
 
   ValueBuilder<T> from(StoredValue value);
+
+  ValueBuilder<T> preHash(String hashCode);
 }

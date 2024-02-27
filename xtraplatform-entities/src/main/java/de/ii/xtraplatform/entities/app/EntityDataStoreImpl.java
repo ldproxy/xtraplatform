@@ -144,6 +144,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     new ValueDecoderEntityDataMigration(
         eventSourcing, entityFactories, this::addAdditionalEvent));*/
     valueEncoding.addDecoderMiddleware(new ValueDecoderIdValidator());
+    valueEncoding.addDecoderMiddleware(
+        new ValueDecoderEntityPreHash(this::getBuilder, valueEncoding::hash));
 
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
