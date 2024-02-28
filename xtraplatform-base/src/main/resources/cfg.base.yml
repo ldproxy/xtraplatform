@@ -15,6 +15,11 @@ manager:
 auth: {}
 proj: {}
 
+modules:
+  startup: ASYNC
+  minMaturity: CANDIDATE
+  minMaintenance: LOW
+
 server:
   applicationConnectors:
     - type: http

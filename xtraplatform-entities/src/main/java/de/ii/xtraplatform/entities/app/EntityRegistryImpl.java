@@ -10,6 +10,8 @@ package de.ii.xtraplatform.entities.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
 import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.ModulesConfiguration.Startup;
 import de.ii.xtraplatform.entities.domain.EntityFactoriesImpl;
 import de.ii.xtraplatform.entities.domain.EntityFactory;
 import de.ii.xtraplatform.entities.domain.EntityRegistry;
@@ -31,17 +33,19 @@ public class EntityRegistryImpl implements EntityRegistry {
   private static final Logger LOGGER = LoggerFactory.getLogger(EntityRegistryImpl.class);
 
   private final EntityFactoriesImpl entityFactories;
+  private final boolean async;
 
   @Inject
-  public EntityRegistryImpl(Lazy<Set<EntityFactory>> entityFactories) {
+  public EntityRegistryImpl(AppContext appContext, Lazy<Set<EntityFactory>> entityFactories) {
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
+    this.async = appContext.getConfiguration().getModules().getStartup() == Startup.ASYNC;
   }
 
   @Override
   public <T extends PersistentEntity> List<T> getEntitiesForType(Class<T> type) {
     return entityFactories.getAll(type).stream()
         .flatMap(entityFactory -> entityFactory.instances().stream())
-        .filter(persistentEntity -> ((EntityState) persistentEntity).isActive())
+        .filter(persistentEntity -> async || ((EntityState) persistentEntity).isActive())
         .map(type::cast)
         .collect(ImmutableList.toImmutableList());
   }
@@ -52,7 +56,7 @@ public class EntityRegistryImpl implements EntityRegistry {
         .map(entityFactory -> entityFactory.instance(id))
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .filter(persistentEntity -> ((EntityState) persistentEntity).isActive())
+        .filter(persistentEntity -> async || ((EntityState) persistentEntity).isActive())
         .map(type::cast)
         .findFirst();
   }

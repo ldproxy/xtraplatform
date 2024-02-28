@@ -151,6 +151,13 @@ public abstract class AppConfiguration extends Configuration {
   public abstract ManagerConfiguration getManager();
 
   /**
+   * @langEn See [Modules](80-modules.md).
+   * @langDe Siehe [Modules](80-modules.md).
+   */
+  @Valid
+  public abstract ModulesConfiguration getModules();
+
+  /**
    * @langEn See [Background Tasks](90-background-tasks.md).
    * @langDe Siehe [Background Tasks](90-background-tasks.md).
    */

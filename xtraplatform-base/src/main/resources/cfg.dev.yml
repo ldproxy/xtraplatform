@@ -1,4 +1,8 @@
 ---
+modules:
+  minMaturity: PROPOSAL
+  minMaintenance: NONE
+
 logging:
   level: ERROR
   showThirdPartyLoggers: ${LOG_THIRD_PARTY:-ON}
