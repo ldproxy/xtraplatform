@@ -70,6 +70,10 @@ public class VolatileRegistryImpl implements VolatileRegistry {
 
   @Override
   public synchronized void register(Volatile2 dependency) {
+    if (watchers.containsKey(dependency.getUniqueKey())) {
+      return;
+    }
+
     watchers.put(dependency.getUniqueKey(), new ArrayList<>());
 
     onRegister.forEach(listener -> listener.accept(dependency.getUniqueKey(), dependency));

@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.blobs.domain;
 
+import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -15,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
-public interface ResourceStore extends BlobReader, BlobWriter, BlobLocals {
+public interface ResourceStore extends BlobReader, BlobWriter, BlobLocals, Volatile2 {
 
   CompletableFuture<Void> onReady();
 
@@ -80,6 +82,26 @@ public interface ResourceStore extends BlobReader, BlobWriter, BlobLocals {
       @Override
       public Optional<Path> asLocalPath(Path path, boolean writable) throws IOException {
         return delegate.asLocalPath(prefix.resolve(path), writable);
+      }
+
+      @Override
+      public String getUniqueKey() {
+        return String.format("resources/%s", prefix);
+      }
+
+      @Override
+      public State getState() {
+        return delegate.getState();
+      }
+
+      @Override
+      public Optional<String> getMessage() {
+        return delegate.getMessage();
+      }
+
+      @Override
+      public Runnable onStateChange(ChangeHandler handler, boolean initialCall) {
+        return delegate.onStateChange(handler, initialCall);
       }
     };
   }

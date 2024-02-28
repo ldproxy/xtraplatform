@@ -133,7 +133,7 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling implements Bl
   }
 
   private void addSubComponent(BlobStoreDriver driver, StoreSource source) {
-    addSubcomponents(
+    addSubcomponent(
         new AbstractVolatilePolling(volatileRegistry) {
           @Override
           public String getUniqueKey() {

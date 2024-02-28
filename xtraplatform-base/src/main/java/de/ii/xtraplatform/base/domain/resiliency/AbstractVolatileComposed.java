@@ -23,6 +23,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractVolatileComposed.class);
 
   private final Map<String, Volatile2> components;
+  private final Map<String, Set<String>> componentCapabilities;
   private final Map<String, AbstractVolatile> capabilities;
   private State baseState;
 
@@ -30,6 +31,22 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     super(volatileRegistry);
 
     this.components = new LinkedHashMap<>();
+    this.componentCapabilities = new LinkedHashMap<>();
+    this.capabilities =
+        Arrays.stream(capabilities)
+            .map(
+                capability ->
+                    Map.entry(capability, new AbstractVolatile(volatileRegistry, capability) {}))
+            .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+    this.baseState = State.UNAVAILABLE;
+  }
+
+  public AbstractVolatileComposed(
+      String uniqueId, VolatileRegistry volatileRegistry, String... capabilities) {
+    super(volatileRegistry, uniqueId);
+
+    this.components = new LinkedHashMap<>();
+    this.componentCapabilities = new LinkedHashMap<>();
     this.capabilities =
         Arrays.stream(capabilities)
             .map(
@@ -41,29 +58,30 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
 
   @Override
   protected void onVolatileStart() {
-    this.baseState = State.UNAVAILABLE;
-    super.onVolatileStart();
-    for (Volatile2 v : components.values()) {
-      if (v instanceof AbstractVolatile) {
-        LOGGER.debug("START {}", v.getUniqueKey());
-        ((AbstractVolatile) v).onVolatileStart();
-        v.onStateChange(this::onChange, false);
+    if (!isStarted()) {
+      this.baseState = State.UNAVAILABLE;
+      super.onVolatileStart();
+      for (Volatile2 v : components.values()) {
+        if (v instanceof AbstractVolatile) {
+          LOGGER.debug("START {}", v.getUniqueKey());
+          ((AbstractVolatile) v).onVolatileStart();
+          v.onStateChange(this::onChange, false);
+        }
       }
+      checkStates();
     }
-    checkStates();
   }
 
-  protected final void addSubcomponents(Volatile2... subs) {
-    for (Volatile2 v : subs) {
-      this.components.put(v.getUniqueKey(), v);
+  protected final void addSubcomponent(Volatile2 v, String... capabilities) {
+    this.components.put(v.getUniqueKey(), v);
+    this.componentCapabilities.put(v.getUniqueKey(), Set.of(capabilities));
 
-      if (v instanceof AbstractVolatile) {
-        LOGGER.debug("START {}", v.getUniqueKey());
-        ((AbstractVolatile) v).onVolatileStart();
-      }
-      // TODO: if started
-      v.onStateChange(this::onChange, false);
+    if (v instanceof AbstractVolatile) {
+      ((AbstractVolatile) v).onVolatileStart();
     }
+
+    v.onStateChange(this::onChange, false);
+
     checkStates();
   }
 
@@ -161,8 +179,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     boolean atLeastOne = false;
 
     for (Volatile2 dep : components.values()) {
-      if (dep instanceof AbstractVolatile
-          && ((AbstractVolatile) dep).getVolatileCapabilities().contains(capability)) {
+      if (hasCapability(dep, capability)) {
         atLeastOne = true;
 
         if (dep.getState().isLowerThan(lowestState)) {
@@ -183,5 +200,11 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     }
 
     return getComposedState(lowestState, highestState);
+  }
+
+  private boolean hasCapability(Volatile2 dep, String capability) {
+    return componentCapabilities.get(dep.getUniqueKey()).contains(capability)
+        || (dep instanceof AbstractVolatile
+            && ((AbstractVolatile) dep).getVolatileCapabilities().contains(capability));
   }
 }
