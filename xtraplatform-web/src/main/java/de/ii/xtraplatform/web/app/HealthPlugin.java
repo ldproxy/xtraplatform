@@ -30,17 +30,19 @@ public class HealthPlugin implements DropwizardPlugin, HealthChecks {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(HealthPlugin.class);
 
+  private final VolatileRegistry volatileRegistry;
   private HealthCheckRegistry healthCheckRegistry;
 
   @Inject
   public HealthPlugin(VolatileRegistry volatileRegistry) {
-    volatileRegistry.listen(this::register, this::unregister);
+    this.volatileRegistry = volatileRegistry;
   }
 
   @Override
   public void init(AppConfiguration configuration, Environment environment) {
     this.healthCheckRegistry = environment.healthChecks();
     healthCheckRegistry.unregister("deadlocks");
+    volatileRegistry.listen(this::register, this::unregister);
   }
 
   // @Override

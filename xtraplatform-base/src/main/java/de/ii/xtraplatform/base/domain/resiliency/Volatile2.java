@@ -56,6 +56,6 @@ public interface Volatile2 {
   }
 
   default Optional<HealthCheck> asHealthCheck() {
-    return Optional.of(HealthChecks.simple(this::isAvailable, this::getMessage));
+    return Optional.of(HealthChecks.simple(this));
   }
 }

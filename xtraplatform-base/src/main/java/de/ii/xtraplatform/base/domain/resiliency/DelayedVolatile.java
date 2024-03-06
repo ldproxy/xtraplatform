@@ -10,6 +10,7 @@ package de.ii.xtraplatform.base.domain.resiliency;
 import com.codahale.metrics.health.HealthCheck;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 public class DelayedVolatile<T extends Volatile2> extends AbstractVolatile implements Volatile2 {
 
@@ -32,6 +33,23 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatile imple
   }
 
   @Override
+  public State getState() {
+    return isPresent() ? get().getState() : State.UNAVAILABLE;
+  }
+
+  @Override
+  public Optional<String> getMessage() {
+    return isPresent() ? get().getMessage() : Optional.empty();
+  }
+
+  @Override
+  protected Set<String> getVolatileCapabilities() {
+    return isPresent() && get() instanceof AbstractVolatile
+        ? ((AbstractVolatile) get()).getVolatileCapabilities()
+        : Set.of();
+  }
+
+  @Override
   public Optional<HealthCheck> asHealthCheck() {
     return delegateHealth && Objects.nonNull(dependency)
         ? dependency.asHealthCheck()
@@ -45,13 +63,9 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatile imple
 
     this.dependency = volatile2;
 
-    checkStates();
-
     if (volatile2 instanceof AbstractVolatile) {
       ((AbstractVolatile) volatile2).onVolatileStart();
     }
-
-    volatile2.onStateChange((from, to) -> checkStates(), true);
   }
 
   public boolean isPresent() {
@@ -60,17 +74,5 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatile imple
 
   public T get() {
     return dependency;
-  }
-
-  private void checkStates() {
-    State lowestState = Objects.isNull(dependency) ? State.UNAVAILABLE : State.AVAILABLE;
-
-    if (Objects.nonNull(dependency) && dependency.getState().isLowerThan(lowestState)) {
-      lowestState = dependency.getState();
-    }
-
-    if (lowestState != getState()) {
-      setState(lowestState);
-    }
   }
 }

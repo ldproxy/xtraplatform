@@ -42,6 +42,7 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   private static final Logger LOGGER = LoggerFactory.getLogger(VolatileRegistryImpl.class);
 
   private final ScheduledExecutorService executorService;
+  private final Map<String, Volatile2> volatiles;
   private final Map<String, List<ChangeHandler>> watchers;
   private final Map<String, Polling> polls;
   private final Map<String, Integer> intervals;
@@ -58,6 +59,7 @@ public class VolatileRegistryImpl implements VolatileRegistry {
             (ScheduledThreadPoolExecutor)
                 Executors.newScheduledThreadPool(
                     2, new ThreadFactoryBuilder().setNameFormat("volatile.polling-%d").build()));
+    this.volatiles = new ConcurrentHashMap<>();
     this.watchers = new ConcurrentHashMap<>();
     this.polls = new ConcurrentHashMap<>();
     this.intervals = new ConcurrentHashMap<>();
@@ -69,59 +71,66 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   }
 
   @Override
-  public synchronized void register(Volatile2 dependency) {
-    if (watchers.containsKey(dependency.getUniqueKey())) {
-      return;
-    }
+  public void register(Volatile2 dependency) {
+    synchronized (this) {
+      if (volatiles.containsKey(dependency.getUniqueKey())) {
+        return;
+      }
 
-    watchers.put(dependency.getUniqueKey(), new ArrayList<>());
+      volatiles.put(dependency.getUniqueKey(), dependency);
+      watchers.put(dependency.getUniqueKey(), new ArrayList<>());
 
-    onRegister.forEach(listener -> listener.accept(dependency.getUniqueKey(), dependency));
+      onRegister.forEach(listener -> listener.accept(dependency.getUniqueKey(), dependency));
 
-    LOGGER.debug(
-        "Volatile registered: {} {}", dependency.getUniqueKey(), dependency instanceof Polling);
+      LOGGER.debug(
+          "Volatile registered: {} {}", dependency.getUniqueKey(), dependency instanceof Polling);
 
-    if (dependency instanceof Polling) {
-      Polling polling = (Polling) dependency;
-      if (polling.getIntervalMs() > 0) {
-        polling.poll();
+      if (dependency instanceof Polling) {
+        Polling polling = (Polling) dependency;
+        if (polling.getIntervalMs() > 0) {
+          polling.poll();
 
-        polls.put(dependency.getUniqueKey(), polling);
-        intervals.put(dependency.getUniqueKey(), 0);
+          polls.put(dependency.getUniqueKey(), polling);
+          intervals.put(dependency.getUniqueKey(), 0);
 
-        // TODO
-        schedulePoll((polling).getIntervalMs());
+          // TODO
+          schedulePoll((polling).getIntervalMs());
+        }
       }
     }
   }
 
   @Override
   public synchronized void unregister(Volatile2 dependency) {
-    watchers.remove(dependency.getUniqueKey());
+    synchronized (this) {
+      volatiles.remove(dependency.getUniqueKey());
+      watchers.remove(dependency.getUniqueKey());
 
-    onUnRegister.forEach(listener -> listener.accept(dependency.getUniqueKey()));
+      onUnRegister.forEach(listener -> listener.accept(dependency.getUniqueKey()));
 
-    if (dependency instanceof Polling) {
-      polls.remove(dependency.getUniqueKey());
+      if (dependency instanceof Polling) {
+        polls.remove(dependency.getUniqueKey());
+      }
     }
   }
 
-  // TODO: synchronize?
   @Override
   public void change(Volatile2 dependency, State from, State to) {
     String key = dependency.getUniqueKey();
 
     LOGGER.debug("Volatile state changed from {} to {}: {}", from, to, key);
 
-    if (watchers.containsKey(key)) {
-      for (ChangeHandler handler : watchers.get(key)) {
-        if (Objects.nonNull(handler)) {
-          try {
-            handler.change(from, to);
-          } catch (Throwable e) {
-            // ignore
-            if (LOGGER.isDebugEnabled()) {
-              LogContext.errorAsDebug(LOGGER, e, "Error in volatile watcher");
+    synchronized (watchers) {
+      if (watchers.containsKey(key)) {
+        for (ChangeHandler handler : watchers.get(key)) {
+          if (Objects.nonNull(handler)) {
+            try {
+              handler.change(from, to);
+            } catch (Throwable e) {
+              // ignore
+              if (LOGGER.isDebugEnabled()) {
+                LogContext.errorAsDebug(LOGGER, e, "Error in volatile watcher");
+              }
             }
           }
         }
@@ -130,27 +139,32 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   }
 
   @Override
-  public synchronized Runnable watch(Volatile2 dependency, ChangeHandler handler) {
+  public Runnable watch(Volatile2 dependency, ChangeHandler handler) {
     String key = dependency.getUniqueKey();
 
-    if (watchers.containsKey(key)) {
-      watchers.get(key).add(handler);
-      int index = watchers.get(key).size() - 1;
+    synchronized (watchers) {
+      if (watchers.containsKey(key)) {
+        watchers.get(key).add(handler);
+        int index = watchers.get(key).size() - 1;
 
-      return () -> {
-        if (watchers.containsKey(key)) {
-          watchers.get(key).set(index, null);
-        }
-      };
+        return () -> {
+          if (watchers.containsKey(key)) {
+            watchers.get(key).set(index, null);
+          }
+        };
+      }
     }
-
     return () -> {};
   }
 
   @Override
   public void listen(BiConsumer<String, Volatile2> onRegister, Consumer<String> onUnRegister) {
-    this.onRegister.add(onRegister);
-    this.onUnRegister.add(onUnRegister);
+    synchronized (this) {
+      this.onRegister.add(onRegister);
+      this.onUnRegister.add(onUnRegister);
+
+      volatiles.forEach(onRegister);
+    }
   }
 
   private void schedulePoll(int delayMs) {
@@ -175,10 +189,14 @@ public class VolatileRegistryImpl implements VolatileRegistry {
                   String key = entry.getKey();
                   int interval = entry.getValue() - delayMs;
 
-                  LOGGER.debug("Checking {} in {}ms", key, interval);
+                  if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Checking {} in {}ms", key, interval);
+                  }
 
                   if (interval <= 0) {
-                    LOGGER.debug("Checking {} now", key);
+                    if (LOGGER.isTraceEnabled()) {
+                      LOGGER.trace("Checking {} now", key);
+                    }
                     Polling polling = polls.get(key);
                     interval = polling.getIntervalMs();
 

@@ -42,6 +42,23 @@ public interface HealthChecks {
     };
   }
 
+  static HealthCheck simple(Volatile2 vol) {
+    return new HealthCheck() {
+      @Override
+      protected Result check() throws Exception {
+        ResultBuilder builder = Result.builder().withDetail("state", vol.getState());
+
+        if (vol.isAvailable()) {
+          builder.healthy();
+        } else {
+          builder.unhealthy();
+          vol.getMessage().ifPresent(builder::withMessage);
+        }
+        return builder.build();
+      }
+    };
+  }
+
   static HealthCheck composed(
       Supplier<Boolean> healthy,
       Supplier<State> state,
@@ -97,6 +114,7 @@ public interface HealthChecks {
 
         Map<String, SubResult> capabilities =
             vol.getVolatileCapabilities().stream()
+                .sorted()
                 .map(
                     capability ->
                         Map.entry(
@@ -115,6 +133,7 @@ public interface HealthChecks {
 
           Map<String, SubResult> components =
               avol.getComponents().stream()
+                  .sorted()
                   .map(
                       key ->
                           Map.entry(
@@ -123,6 +142,7 @@ public interface HealthChecks {
                                   .healthy(avol.getComponent(key).isAvailable())
                                   .state(avol.getComponent(key).getState())
                                   .message(avol.getComponent(key).getMessage().orElse(null))
+                                  .capabilities(avol.getComponentCapabilities(key))
                                   .build()))
                   .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -143,5 +163,8 @@ public interface HealthChecks {
     @JsonInclude(value = Include.NON_NULL)
     @Nullable
     String getMessage();
+
+    @JsonInclude(value = Include.NON_EMPTY)
+    Set<String> getCapabilities();
   }
 }

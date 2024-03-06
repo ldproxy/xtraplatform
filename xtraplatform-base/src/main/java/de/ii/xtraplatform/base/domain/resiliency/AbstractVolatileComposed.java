@@ -7,13 +7,15 @@
  */
 package de.ii.xtraplatform.base.domain.resiliency;
 
-import com.google.common.collect.ImmutableMap;
+import com.codahale.metrics.health.HealthCheck;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,35 +27,31 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   private final Map<String, Volatile2> components;
   private final Map<String, Set<String>> componentCapabilities;
   private final Map<String, AbstractVolatile> capabilities;
+  private final boolean noHealth;
   private State baseState;
 
   public AbstractVolatileComposed(VolatileRegistry volatileRegistry, String... capabilities) {
-    super(volatileRegistry);
-
-    this.components = new LinkedHashMap<>();
-    this.componentCapabilities = new LinkedHashMap<>();
-    this.capabilities =
-        Arrays.stream(capabilities)
-            .map(
-                capability ->
-                    Map.entry(capability, new AbstractVolatile(volatileRegistry, capability) {}))
-            .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
-    this.baseState = State.UNAVAILABLE;
+    this(null, volatileRegistry, false, capabilities);
   }
 
   public AbstractVolatileComposed(
-      String uniqueId, VolatileRegistry volatileRegistry, String... capabilities) {
+      String uniqueId,
+      VolatileRegistry volatileRegistry,
+      boolean noHealth,
+      String... capabilities) {
     super(volatileRegistry, uniqueId);
 
     this.components = new LinkedHashMap<>();
     this.componentCapabilities = new LinkedHashMap<>();
-    this.capabilities =
-        Arrays.stream(capabilities)
-            .map(
-                capability ->
-                    Map.entry(capability, new AbstractVolatile(volatileRegistry, capability) {}))
-            .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+    this.capabilities = new LinkedHashMap<>();
+    this.noHealth = noHealth;
     this.baseState = State.UNAVAILABLE;
+
+    Arrays.stream(capabilities)
+        .forEach(
+            capability ->
+                this.capabilities.putIfAbsent(
+                    capability, new AbstractVolatile(volatileRegistry, capability) {}));
   }
 
   @Override
@@ -72,9 +70,29 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     }
   }
 
+  protected void onVolatileStarted() {
+    this.baseState = State.AVAILABLE;
+    checkStates();
+  }
+
+  @Override
+  public Optional<HealthCheck> asHealthCheck() {
+    return noHealth ? Optional.empty() : VolatileComposed.super.asHealthCheck();
+  }
+
   protected final void addSubcomponent(Volatile2 v, String... capabilities) {
-    this.components.put(v.getUniqueKey(), v);
-    this.componentCapabilities.put(v.getUniqueKey(), Set.of(capabilities));
+    addSubcomponent(v.getUniqueKey(), v, capabilities);
+  }
+
+  protected final void addSubcomponent(String localKey, Volatile2 v, String... capabilities) {
+    this.components.put(localKey, v);
+    this.componentCapabilities.put(localKey, Set.of(capabilities));
+
+    for (String cap : capabilities) {
+      if (!this.capabilities.containsKey(cap)) {
+        this.capabilities.put(cap, new AbstractVolatile(volatileRegistry, cap) {});
+      }
+    }
 
     if (v instanceof AbstractVolatile) {
       ((AbstractVolatile) v).onVolatileStart();
@@ -82,12 +100,13 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
 
     v.onStateChange(this::onChange, false);
 
-    checkStates();
+    // checkStates();
   }
 
-  protected void onVolatileStarted() {
-    this.baseState = State.AVAILABLE;
-    checkStates();
+  protected final void addCapability(String capability) {
+    if (!this.capabilities.containsKey(capability)) {
+      this.capabilities.put(capability, new AbstractVolatile(volatileRegistry, capability) {});
+    }
   }
 
   @Override
@@ -119,13 +138,16 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     return components.get(subKey);
   }
 
-  protected State getComposedState(State lowest, State highest) {
-    if (lowest == State.AVAILABLE) {
-      return State.AVAILABLE;
-    } else if (State.UNAVAILABLE.isLowerThan(highest)) {
-      return State.LIMITED;
-    }
-    return State.UNAVAILABLE;
+  protected final boolean hasComponent(String subKey) {
+    return components.containsKey(subKey);
+  }
+
+  protected final boolean hasCapability(String subKey) {
+    return capabilities.containsKey(subKey);
+  }
+
+  protected final Set<String> getComponentCapabilities(String subKey) {
+    return componentCapabilities.getOrDefault(subKey, Set.of());
   }
 
   private void onChange(State from, State to) {
@@ -137,73 +159,90 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   private void checkStates() {
-    State lowestState = baseState;
-    State highestState = State.UNAVAILABLE;
-
-    State newState = reconcile(lowestState, highestState);
-
-    for (Map.Entry<String, AbstractVolatile> entry : capabilities.entrySet()) {
-      String capability = entry.getKey();
-      AbstractVolatile vol = entry.getValue();
-
-      State newState2 = reconcile(lowestState, highestState, capability);
-
-      if (newState2 != vol.getState()) {
-        vol.setState(newState2);
-      }
-
-      if (newState2.isLowerThan(newState)) {
-        newState = newState2;
-      }
+    if (!isStarted() || baseState != State.AVAILABLE) {
+      return;
     }
+
+    State newState =
+        capabilities.isEmpty() ? reconcileStateComponents(null) : reconcileStateCapabilities();
 
     if (newState != getState()) {
       setState(newState);
     }
   }
 
-  private State reconcile(State lowestState, State highestState) {
-    for (Volatile2 dep : components.values()) {
-      if (dep.getState().isLowerThan(lowestState)) {
-        lowestState = dep.getState();
+  protected State reconcileStateCapabilities() {
+    State composedState = State.AVAILABLE;
+
+    for (Map.Entry<String, AbstractVolatile> entry : capabilities.entrySet()) {
+      String capability = entry.getKey();
+      AbstractVolatile vol = entry.getValue();
+
+      State capabilityState = reconcileStateComponents(capability);
+
+      if (capabilityState != vol.getState()) {
+        vol.setState(capabilityState);
       }
-      if (highestState.isLowerThan(dep.getState())) {
-        highestState = dep.getState();
+
+      if (capabilityState.isLowerThan(composedState)) {
+        composedState = reconcileState(capabilityState, composedState, true);
       }
     }
 
-    return getComposedState(lowestState, highestState);
+    return composedState;
   }
 
-  private State reconcile(State lowestState, State highestState, String capability) {
+  protected State reconcileStateComponents(@Nullable String capability) {
+    State newLowestState = State.AVAILABLE;
+    State newHighestState = State.UNAVAILABLE;
     boolean atLeastOne = false;
 
-    for (Volatile2 dep : components.values()) {
-      if (hasCapability(dep, capability)) {
+    for (String localKey : components.keySet()) {
+      Volatile2 dep = getComponent(localKey);
+      if (Objects.isNull(capability) || hasCapability(localKey, dep, capability)) {
         atLeastOne = true;
 
-        if (dep.getState().isLowerThan(lowestState)) {
-          lowestState = dep.getState();
+        if (dep.getState().isLowerThan(newLowestState)) {
+          newLowestState = dep.getState();
         }
-        if (highestState.isLowerThan(dep.getState())) {
-          highestState = dep.getState();
+        if (newHighestState.isLowerThan(dep.getState())) {
+          newHighestState = dep.getState();
         }
       }
     }
 
     if (!atLeastOne) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.error(
-            "No component with capability '{}' found for volatile: {}", capability, getUniqueKey());
-      }
-      return State.UNAVAILABLE;
+      return reconcileStateNoComponents(capability);
     }
 
-    return getComposedState(lowestState, highestState);
+    return reconcileState(newLowestState, newHighestState, false);
   }
 
-  private boolean hasCapability(Volatile2 dep, String capability) {
-    return componentCapabilities.get(dep.getUniqueKey()).contains(capability)
+  protected State reconcileState(State lowest, State highest, boolean allowLimited) {
+    if (lowest == State.AVAILABLE) {
+      return State.AVAILABLE;
+    } else if (allowLimited && State.UNAVAILABLE.isLowerThan(highest)) {
+      return State.LIMITED;
+    }
+    return State.UNAVAILABLE;
+  }
+
+  protected State reconcileStateNoComponents(@Nullable String capability) {
+    if (LOGGER.isDebugEnabled()) {
+      if (Objects.nonNull(capability)) {
+        LOGGER.warn(
+            "No components with capability '{}' found for volatile: {}",
+            capability,
+            getUniqueKey());
+      } else {
+        LOGGER.warn("No components found for volatile: {}", getUniqueKey());
+      }
+    }
+    return State.UNAVAILABLE;
+  }
+
+  private boolean hasCapability(String localKey, Volatile2 dep, String capability) {
+    return componentCapabilities.get(localKey).contains(capability)
         || (dep instanceof AbstractVolatile
             && ((AbstractVolatile) dep).getVolatileCapabilities().contains(capability));
   }

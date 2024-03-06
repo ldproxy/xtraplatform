@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.docs.DocFile;
 import de.ii.xtraplatform.docs.DocStep;
@@ -62,6 +63,12 @@ public interface ModulesConfiguration {
   @Value.Default
   default Startup getStartup() {
     return Startup.ASYNC;
+  }
+
+  @JsonIgnore
+  @Value.Derived
+  default boolean isStartupAsync() {
+    return getStartup() == Startup.ASYNC;
   }
 
   /**

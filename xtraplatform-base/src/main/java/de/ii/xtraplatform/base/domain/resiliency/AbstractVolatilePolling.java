@@ -9,7 +9,6 @@ package de.ii.xtraplatform.base.domain.resiliency;
 
 import de.ii.xtraplatform.base.domain.resiliency.Volatile2.Polling;
 import de.ii.xtraplatform.base.domain.util.Tuple;
-import java.util.Objects;
 
 public abstract class AbstractVolatilePolling extends AbstractVolatile
     implements Volatile2, Polling {
@@ -26,9 +25,7 @@ public abstract class AbstractVolatilePolling extends AbstractVolatile
   public final void poll() {
     Tuple<State, String> result = check();
 
-    if (!Objects.equals(result.first(), getState())) {
-      setMessage(result.second());
-      setState(result.first());
-    }
+    setState(result.first());
+    setMessage(result.second());
   }
 }

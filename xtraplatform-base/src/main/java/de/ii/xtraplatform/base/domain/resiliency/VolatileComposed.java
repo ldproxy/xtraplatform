@@ -8,11 +8,13 @@
 package de.ii.xtraplatform.base.domain.resiliency;
 
 import com.codahale.metrics.health.HealthCheck;
+import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import de.ii.xtraplatform.base.domain.util.Tuple;
 import java.util.Optional;
 import java.util.Set;
 
+@AutoMultiBind
 public interface VolatileComposed extends Volatile2 {
 
   Set<String> getVolatileCapabilities();

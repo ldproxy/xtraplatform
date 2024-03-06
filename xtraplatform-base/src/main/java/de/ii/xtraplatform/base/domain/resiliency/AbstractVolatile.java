@@ -14,11 +14,11 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractVolatile implements Volatile2 {
+public abstract class AbstractVolatile implements Volatile2, VolatileRegistered {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractVolatile.class);
 
-  private final VolatileRegistry volatileRegistry;
+  protected final VolatileRegistry volatileRegistry;
 
   private final String uniqueKey;
   private final Set<String> capabilities;
@@ -78,11 +78,18 @@ public abstract class AbstractVolatile implements Volatile2 {
     return unwatch;
   }
 
-  protected final void setState(State state) {
-    State from = this.state;
-    this.state = state;
+  @Override
+  public VolatileRegistry getVolatileRegistry() {
+    return volatileRegistry;
+  }
 
-    volatileRegistry.change(this, from, state);
+  protected final void setState(State state) {
+    if (state != this.state) {
+      State from = this.state;
+      this.state = state;
+
+      volatileRegistry.change(this, from, state);
+    }
   }
 
   protected final void setMessage(String message) {
