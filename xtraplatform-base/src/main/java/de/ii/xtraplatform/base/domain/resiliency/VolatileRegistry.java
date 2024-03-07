@@ -26,5 +26,7 @@ public interface VolatileRegistry {
 
   Runnable watch(Volatile2 dependency, ChangeHandler handler);
 
+  void onAvailable(Runnable runnable, Volatile2... volatiles);
+
   void listen(BiConsumer<String, Volatile2> onRegister, Consumer<String> onUnRegister);
 }

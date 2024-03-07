@@ -15,6 +15,7 @@ import java.util.Optional;
 
 @AutoMultiBind
 public interface Volatile2 {
+
   enum State {
     UNAVAILABLE,
     LIMITED,
@@ -57,5 +58,41 @@ public interface Volatile2 {
 
   default Optional<HealthCheck> asHealthCheck() {
     return Optional.of(HealthChecks.simple(this));
+  }
+
+  static Volatile2 available(String uniqueKey) {
+    return fixed(uniqueKey, State.AVAILABLE, Optional.empty());
+  }
+
+  static Volatile2 limited(String uniqueKey, Optional<String> message) {
+    return fixed(uniqueKey, State.LIMITED, message);
+  }
+
+  static Volatile2 unavailable(String uniqueKey, Optional<String> message) {
+    return fixed(uniqueKey, State.UNAVAILABLE, message);
+  }
+
+  static Volatile2 fixed(String uniqueKey, State state, Optional<String> message) {
+    return new Volatile2() {
+      @Override
+      public String getUniqueKey() {
+        return uniqueKey;
+      }
+
+      @Override
+      public State getState() {
+        return state;
+      }
+
+      @Override
+      public Optional<String> getMessage() {
+        return message;
+      }
+
+      @Override
+      public Runnable onStateChange(ChangeHandler handler, boolean initialCall) {
+        return () -> {};
+      }
+    };
   }
 }

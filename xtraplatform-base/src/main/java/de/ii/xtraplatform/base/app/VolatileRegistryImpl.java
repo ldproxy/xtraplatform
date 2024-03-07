@@ -158,6 +158,36 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   }
 
   @Override
+  public void onAvailable(Runnable runnable, Volatile2... volatiles) {
+    Map<String, State> states = new ConcurrentHashMap<>();
+    List<Runnable> unwatchs = new ArrayList<>();
+    for (Volatile2 vol : volatiles) {
+      states.put(vol.getUniqueKey(), vol.getState());
+    }
+    if (states.values().stream().allMatch(state -> state == State.AVAILABLE)) {
+      LOGGER.debug("ONAVAI1");
+      runnable.run();
+      return;
+    }
+    for (Volatile2 vol : volatiles) {
+      unwatchs.add(
+          watch(
+              vol,
+              (from, to) -> {
+                synchronized (watchers) {
+                  LOGGER.debug("ONAVAI2");
+                  states.put(vol.getUniqueKey(), to);
+                  if (states.values().stream().allMatch(state -> state == State.AVAILABLE)) {
+                    LOGGER.debug("ONAVAI3");
+                    runnable.run();
+                    unwatchs.forEach(Runnable::run);
+                  }
+                }
+              }));
+    }
+  }
+
+  @Override
   public void listen(BiConsumer<String, Volatile2> onRegister, Consumer<String> onUnRegister) {
     synchronized (this) {
       this.onRegister.add(onRegister);
