@@ -20,6 +20,7 @@ import de.ii.xtraplatform.blobs.domain.BlobReader;
 import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
 import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
+import de.ii.xtraplatform.blobs.domain.BlobWriterReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -34,7 +35,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BlobStoreImpl implements BlobStore {
+public class BlobStoreImpl implements BlobStore, BlobWriterReader {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BlobStoreImpl.class);
 
@@ -245,6 +246,98 @@ public class BlobStoreImpl implements BlobStore {
 
     LOGGER.error(
         "Cannot delete {} at '{}', no writable source found.", contentType.getPrefix(), path);
+  }
+
+  @Override
+  public boolean has(Path path, boolean writable) throws IOException {
+    if (!writable) {
+      return has(path);
+    }
+
+    for (BlobSource source : blobWriters) {
+      if (source.canHandle(path)) {
+        return source.has(path);
+      }
+    }
+
+    return false;
+  }
+
+  @Override
+  public Optional<InputStream> content(Path path, boolean writable) throws IOException {
+    if (!writable) {
+      return content(path);
+    }
+
+    for (BlobSource source : blobWriters) {
+      if (source.canHandle(path)) {
+        return source.content(path);
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<Blob> get(Path path, boolean writable) throws IOException {
+    if (!writable) {
+      return get(path);
+    }
+
+    for (BlobSource source : blobWriters) {
+      if (source.canHandle(path)) {
+        return source.get(path);
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
+  public long size(Path path, boolean writable) throws IOException {
+    if (!writable) {
+      return size(path);
+    }
+
+    for (BlobSource source : blobWriters) {
+      if (source.canHandle(path)) {
+        return source.size(path);
+      }
+    }
+
+    return -1;
+  }
+
+  @Override
+  public long lastModified(Path path, boolean writable) throws IOException {
+    if (!writable) {
+      return lastModified(path);
+    }
+
+    for (BlobSource source : blobWriters) {
+      if (source.canHandle(path)) {
+        return source.lastModified(path);
+      }
+    }
+
+    return -1;
+  }
+
+  @Override
+  public Stream<Path> walk(
+      Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher, boolean writable)
+      throws IOException {
+    if (!writable) {
+      return walk(path, maxDepth, matcher);
+    }
+
+    for (BlobSource source : blobWriters) {
+      if (source.canHandle(path)) {
+        return source.walk(path, maxDepth, matcher);
+      }
+    }
+
+    return Stream.empty();
   }
 
   @Override
