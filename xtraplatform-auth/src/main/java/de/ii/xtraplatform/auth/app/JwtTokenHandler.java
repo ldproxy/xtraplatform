@@ -20,7 +20,6 @@ import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.IdentityProvider;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.Jwt;
 import de.ii.xtraplatform.base.domain.LogContext;
-import de.ii.xtraplatform.base.domain.StoreSourceFsV3;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
@@ -67,7 +66,6 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private final ResourceStore keyStore;
   private final AuthConfiguration authConfig;
   private final Oidc oidc;
-  private final boolean isOldStoreAndReadOnly;
   private Key signingKey;
   private IdentityProvider claimsProvider;
   private JwtParser parser;
@@ -77,9 +75,6 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     this.authConfig = appContext.getConfiguration().getAuth();
     this.keyStore = blobStore.with(RESOURCES_JWT);
     this.oidc = oidc;
-    this.isOldStoreAndReadOnly =
-        appContext.getConfiguration().getStore().getSources(appContext.getDataDir()).stream()
-            .anyMatch(source -> StoreSourceFsV3.isOldDefaultStore(source) && !source.isWritable());
   }
 
   @Override
@@ -132,7 +127,8 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     JwtBuilder jwtBuilder =
         Jwts.builder()
             .setSubject(user.getName())
-            .claim(authConfig.getUserRoleKey(), user.getRole().toString())
+            .claim(
+                authConfig.getJwt().get().getClaims().getPermissions(), user.getRole().toString())
             .claim("rememberMe", rememberMe)
             .claim("roles", "")
             .claim("scope", "")
@@ -223,10 +219,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
       User user =
           ImmutableUser.builder()
               .name(read(claimsJws, claimsProvider.getClaims().getUserName()))
-              .role(
-                  Role.fromString(
-                      Optional.ofNullable(read(claimsJws, authConfig.getUserRoleKey()))
-                          .orElse("USER")))
+              .role(Role.fromString(Optional.ofNullable(read(claimsJws, "role")).orElse("USER")))
               .audience(readList(claimsJws, claimsProvider.getClaims().getAudience()))
               .scopes(readList(claimsJws, claimsProvider.getClaims().getScopes()))
               .permissions(readList(claimsJws, claimsProvider.getClaims().getPermissions()))
@@ -299,13 +292,11 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
     // TODO: either throw in put when no writable source or return true if written
-    if (!isOldStoreAndReadOnly) {
-      try {
-        keyStore.put(SIGNING_KEY_PATH, new ByteArrayInputStream(key.getEncoded()));
-      } catch (IOException e) {
-        LogContext.error(
-            LOGGER, e, "Could not save JWT signing key, tokens will be invalidated on restart");
-      }
+    try {
+      keyStore.put(SIGNING_KEY_PATH, new ByteArrayInputStream(key.getEncoded()));
+    } catch (IOException e) {
+      LogContext.error(
+          LOGGER, e, "Could not save JWT signing key, tokens will be invalidated on restart");
     }
 
     return key;

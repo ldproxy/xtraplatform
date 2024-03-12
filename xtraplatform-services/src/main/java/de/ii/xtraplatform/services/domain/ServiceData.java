@@ -75,15 +75,6 @@ public interface ServiceData extends EntityData, AutoEntity {
   @Override
   Optional<Boolean> getAuto();
 
-  /**
-   * @langEn When `auto: true`, this will persist the generated options to the configuration file.
-   * @langDe Wenn `auto: true` ist, die generierten Optionen in die Konfigurationsdatei
-   *     persistieren.
-   */
-  @JsonProperty(value = "autoPersist", access = JsonProperty.Access.WRITE_ONLY)
-  @Override
-  Optional<Boolean> getAutoPersist();
-
   @JsonIgnore
   @Value.Derived
   @Value.Auxiliary

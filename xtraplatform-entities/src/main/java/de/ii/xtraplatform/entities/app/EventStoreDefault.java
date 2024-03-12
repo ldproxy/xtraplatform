@@ -18,7 +18,6 @@ import de.ii.xtraplatform.base.domain.StoreFilters;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Mode;
-import de.ii.xtraplatform.base.domain.StoreSourceFsV3;
 import de.ii.xtraplatform.entities.domain.EntityDataDefaultsStore;
 import de.ii.xtraplatform.entities.domain.EntityEvent;
 import de.ii.xtraplatform.entities.domain.EventFilter;
@@ -89,9 +88,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
     sources.forEach(
         source -> {
           Optional<EventStoreDriver> driver =
-              findDriver(
-                  source,
-                  source.getContent() != Content.ALL && !StoreSourceFsV3.isOldDefaultStore(source));
+              findDriver(source, source.getContent() != Content.ALL);
 
           driver.ifPresent(eventStoreDriver -> load(source, eventStoreDriver, startupFilter));
         });

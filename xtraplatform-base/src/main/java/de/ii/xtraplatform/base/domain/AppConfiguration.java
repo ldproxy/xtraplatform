@@ -10,8 +10,6 @@ package de.ii.xtraplatform.base.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import de.ii.xtraplatform.base.domain.StoreSource.Content;
-import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.docs.DocFile;
 import de.ii.xtraplatform.docs.DocStep;
 import de.ii.xtraplatform.docs.DocStep.Step;
@@ -28,43 +26,45 @@ import org.immutables.value.Value;
 
 /**
  * @langEn # Configuration
- *     <p>The configuration file `cfg.yml` is located in the data directory (old) or in the [Store
- *     (new)](10-store-new.md).
+ *     <p>The configuration file `cfg.yml` is located in the [Store (new)](10-store-new.md).
  *     <p>{@docTable:properties}
  * @langDe # Konfiguration
- *     <p>Die Konfigurationsdatei `cfg.yml` befindet sich im Daten-Verzeichnis (alt) oder im [Store
- *     (neu)](10-store-new.md).
+ *     <p>Die Konfigurationsdatei `cfg.yml` befindet sich im [Store (neu)](10-store-new.md).
  *     <p>{@docTable:properties}
- * @todoEn ### Environment variables Both in `cfg.yml` and in configuration objects, defaults and
- *     overrides, substitutions can be made by environment variables.
+ * @todoEn ### Environment variables
+ *     <p>Both in `cfg.yml` and in entity instances, defaults and overrides, substitutions can be
+ *     made by environment variables.
  *     <p>Such an expression `${NAME}` in one of these files is replaced by the value of the
  *     environment variable `NAME`. If the variable is not set, `null` is used. You can also specify
  *     a default value in case the variable is not set. This would look like `${NAME:-VALUE}`.
- *     <p>In `cfg.yml` you can use this mechanism e.g. to define an additional directory depending
- *     on an environment variable:
+ *     <p>In `cfg.yml` you can use this mechanism e.g. to define an additional store source
+ *     depending on an environment variable:
  *     <p><code>
  * ```yml
  * store:
- *   additionalLocations:
- *     - env/${DEPLOYMENT_ENV:-production}
+ *   sources:
+ *     - type: FS
+ *       src: env/${DEPLOYMENT_ENV:-production}
  * ```
  * </code>
  *     <p>To load the files from the above example into `env/test`, you would then have to set the
  *     environment variable `DEPLOYMENT_ENV=test`. If this is not set, the directory
  *     `env/production` would be loaded.
- * @todoDe ### Umgebungsvariablen Sowohl in der `cfg.yml` als auch in Konfigurationsobjekten,
- *     Defaults und Overrides können Ersetzungen durch Umgebungsvariablen vorgenommen werden.
+ * @todoDe ### Umgebungsvariablen
+ *     <p>Sowohl in der `cfg.yml` als auch in Entity Instanzen, Defaults und Overrides können
+ *     Ersetzungen durch Umgebungsvariablen vorgenommen werden.
  *     <p>Ein solcher Ausdruck `${NAME}` in einer dieser Dateien wird durch den Wert der
  *     Umgebungsvariable `NAME` ersetzt. Ist die Variable nicht gesetzt, wird `null` eingesetzt. Man
  *     kann auch einen Default-Wert angeben, für den Fall, dass die Variable nicht gesetzt ist. Das
  *     sähe dann so `${NAME:-WERT}` aus.
- *     <p>In der `cfg.yml` kann man diesen Mechanismus z.B. verwenden, um ein zusätzliches
- *     Verzeichnis anhängig von einer Umgebungsvariable zu definieren:
+ *     <p>In der `cfg.yml` kann man diesen Mechanismus z.B. verwenden, um eine zusätzliche
+ *     Store-Source anhängig von einer Umgebungsvariable zu definieren:
  *     <p><code>
  * ```yml
  * store:
- *   additionalLocations:
- *     - env/${DEPLOYMENT_ENV:-production}
+ *   sources:
+ *     - type: FS
+ *       src: env/${DEPLOYMENT_ENV:-production}
  * ```
  * </code>
  *     <p>Um die Dateien aus obigem Beispiel in `env/test` zu laden, müsste man dann die
@@ -146,10 +146,6 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   public abstract AuthConfiguration getAuth();
 
-  @Deprecated(since = "3.6", forRemoval = true)
-  @Valid
-  public abstract ManagerConfiguration getManager();
-
   /**
    * @langEn See [Modules](80-modules.md).
    * @langDe Siehe [Modules](80-modules.md).
@@ -163,10 +159,6 @@ public abstract class AppConfiguration extends Configuration {
    */
   @Valid
   public abstract BackgroundTasksConfiguration getBackgroundTasks();
-
-  @Deprecated(since = "3.3")
-  @Valid
-  public abstract ProjConfiguration getProj();
 
   @Valid
   public abstract HttpClientConfiguration getHttpClient();
@@ -210,29 +202,5 @@ public abstract class AppConfiguration extends Configuration {
   @Override
   public void setMetricsFactory(MetricsFactory factory) {
     throw new NotImplementedException();
-  }
-
-  @Deprecated(since = "3.3")
-  @Value.Check
-  public AppConfiguration backwardsCompatibility() {
-    if (getProj().getLocation().isPresent()) {
-      return new ImmutableAppConfiguration.Builder()
-          .from(this)
-          .proj(ModifiableProjConfiguration.create())
-          .store(
-              new ImmutableStoreConfiguration.Builder()
-                  .from(getStore())
-                  .addSources(
-                      new ImmutableStoreSourceFs.Builder()
-                          .type(Type.FS.key())
-                          .content(Content.RESOURCES)
-                          .src(getProj().getLocation().get())
-                          .prefix("proj")
-                          .build())
-                  .build())
-          .build();
-    }
-
-    return this;
   }
 }

@@ -45,10 +45,6 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
   private static final FORMAT DEFAULT_FORMAT = FORMAT.YML;
 
-  @Deprecated
-  private static final FORMAT DESER_FORMAT_LEGACY =
-      FORMAT.JSON; // old configuration files without file extension are JSON
-
   private final Map<FORMAT, ObjectMapper> mappers;
   private final List<ValueDecoderMiddleware<byte[]>> decoderPreProcessor;
   private final List<ValueDecoderMiddleware<T>> decoderMiddleware;
@@ -153,10 +149,12 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     if (isNull(payload)) {
       return null;
     }
+    if (Objects.equals(format, FORMAT.NONE)) {
+      throw new IllegalStateException("No format given");
+    }
 
     byte[] rawData = payload;
-    FORMAT payloadFormat = Objects.equals(format, FORMAT.NONE) ? DESER_FORMAT_LEGACY : format;
-    ObjectMapper objectMapper = getMapper(payloadFormat);
+    ObjectMapper objectMapper = getMapper(format);
     T data = null;
 
     for (ValueDecoderMiddleware<byte[]> preProcessor : decoderPreProcessor) {

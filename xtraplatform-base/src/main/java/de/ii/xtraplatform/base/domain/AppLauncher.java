@@ -123,7 +123,7 @@ public class AppLauncher implements AppContext {
     ServiceLoader<CfgStoreDriver> services = ServiceLoader.load(CfgStoreDriver.class);
     services.iterator().forEachRemaining(this.drivers::add);
 
-    Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources(dataDir));
+    Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources());
 
     this.cfg = configurationReader.loadMergedConfig(cfgs, env);
 

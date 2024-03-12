@@ -61,7 +61,9 @@ public class TokenAuthenticator implements Authenticator<String, User> {
         String name = (String) userInfo.get(userInfoProvider.getClaims().getUserName());
         Role role =
             Role.fromString(
-                Optional.ofNullable((String) userInfo.get(authConfig.getUserRoleKey()))
+                Optional.ofNullable(
+                        (String)
+                            userInfo.get(authConfig.getJwt().get().getClaims().getPermissions()))
                     .orElse("USER"));
         List<String> scopes =
             userInfo.get(userInfoProvider.getClaims().getPermissions()) instanceof String

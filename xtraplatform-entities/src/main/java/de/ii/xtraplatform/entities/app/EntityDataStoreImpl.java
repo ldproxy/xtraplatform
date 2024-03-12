@@ -598,42 +598,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       }
     }
 
-    if (entityData instanceof AutoEntity) {
-      AutoEntity autoEntity = (AutoEntity) entityData;
-      if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
-        hydratedData = hydrate(identifier, hydratedData);
-
-        if (!isEventStoreReadOnly) {
-          try {
-            Map<String, Object> map = asMap(identifier, hydratedData);
-
-            Map<String, Object> withoutDefaults =
-                defaultsStore.subtractDefaults(
-                    identifier, entityData.getEntitySubType(), map, ImmutableList.of());
-
-            putPartialWithoutTrigger(identifier, withoutDefaults).join();
-            LOGGER.info(
-                "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-                EntityDataStore.entityType(identifier),
-                entityData.getId());
-          } catch (IOException e) {
-            LogContext.error(
-                LOGGER,
-                e,
-                "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved",
-                EntityDataStore.entityType(identifier),
-                entityData.getId());
-          }
-
-        } else {
-          LOGGER.warn(
-              "Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
-              EntityDataStore.entityType(identifier),
-              entityData.getId());
-        }
-      }
-    }
-
     hydratedData = hydrate(identifier, hydratedData);
 
     if (LOGGER.isDebugEnabled(MARKER.DUMP)
