@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -158,33 +160,38 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   }
 
   @Override
-  public void onAvailable(Runnable runnable, Volatile2... volatiles) {
+  public CompletionStage<Void> onAvailable(Volatile2... volatiles) {
+    CompletableFuture<Void> onAvailable = new CompletableFuture<>();
     Map<String, State> states = new ConcurrentHashMap<>();
     List<Runnable> unwatchs = new ArrayList<>();
-    for (Volatile2 vol : volatiles) {
-      states.put(vol.getUniqueKey(), vol.getState());
-    }
-    if (states.values().stream().allMatch(state -> state == State.AVAILABLE)) {
-      LOGGER.debug("ONAVAI1");
-      runnable.run();
-      return;
-    }
-    for (Volatile2 vol : volatiles) {
-      unwatchs.add(
-          watch(
-              vol,
-              (from, to) -> {
-                synchronized (watchers) {
-                  LOGGER.debug("ONAVAI2");
+
+    synchronized (this) {
+      for (Volatile2 vol : volatiles) {
+        states.put(vol.getUniqueKey(), vol.getState());
+      }
+
+      if (states.values().stream().allMatch(state -> state == State.AVAILABLE)) {
+        LOGGER.debug("ONAVAI1 {}", String.join(",", states.keySet()));
+        onAvailable.complete(null);
+        return onAvailable;
+      }
+
+      for (Volatile2 vol : volatiles) {
+        unwatchs.add(
+            watch(
+                vol,
+                (from, to) -> {
+                  LOGGER.debug("ONAVAI2 {}", vol.getUniqueKey());
                   states.put(vol.getUniqueKey(), to);
                   if (states.values().stream().allMatch(state -> state == State.AVAILABLE)) {
-                    LOGGER.debug("ONAVAI3");
-                    runnable.run();
+                    LOGGER.debug("ONAVAI3 {}", vol.getUniqueKey());
+                    onAvailable.complete(null);
                     unwatchs.forEach(Runnable::run);
                   }
-                }
-              }));
+                }));
+      }
     }
+    return onAvailable;
   }
 
   @Override

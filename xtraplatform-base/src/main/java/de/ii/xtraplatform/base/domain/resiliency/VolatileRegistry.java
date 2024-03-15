@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.base.domain.resiliency;
 
 import de.ii.xtraplatform.base.domain.resiliency.Volatile2.State;
+import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -26,7 +27,7 @@ public interface VolatileRegistry {
 
   Runnable watch(Volatile2 dependency, ChangeHandler handler);
 
-  void onAvailable(Runnable runnable, Volatile2... volatiles);
+  CompletionStage<Void> onAvailable(Volatile2... volatiles);
 
   void listen(BiConsumer<String, Volatile2> onRegister, Consumer<String> onUnRegister);
 }

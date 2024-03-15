@@ -7,9 +7,10 @@
  */
 package de.ii.xtraplatform.values.domain;
 
+import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
 import java.util.concurrent.CompletableFuture;
 
-public interface ValueStore {
+public interface ValueStore extends Volatile2 {
 
   <U extends StoredValue> KeyValueStore<U> forTypeWritable(Class<U> type);
 

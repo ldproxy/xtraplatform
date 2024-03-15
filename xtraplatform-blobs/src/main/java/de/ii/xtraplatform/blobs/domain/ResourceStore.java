@@ -85,7 +85,7 @@ public interface ResourceStore extends BlobReader, BlobWriter, BlobLocals, Volat
 
     @Override
     public String getUniqueKey() {
-      return String.format("resources/%s", prefix);
+      return delegate.getUniqueKey();
     }
 
     @Override

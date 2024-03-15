@@ -32,6 +32,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -65,8 +66,8 @@ public class DropwizardProvider implements AppLifeCycle {
   }
 
   @Override
-  public void onStart() {
-    Thread.currentThread().setName("startup");
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
+    // Thread.currentThread().setName("startup");
 
     try {
       init();
@@ -74,6 +75,8 @@ public class DropwizardProvider implements AppLifeCycle {
       LogContext.error(LOGGER, ex, "Error during initializing of {}", appContext.getName());
       System.exit(1);
     }
+
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -104,7 +107,6 @@ public class DropwizardProvider implements AppLifeCycle {
 
     environment.jersey().register(new JacksonJaxbXMLProvider());
 
-    // TODO: starts the web server, move to WebServer???
     appContext.getConfiguration().getServerFactory().build(environment);
 
     plugins.get().stream()

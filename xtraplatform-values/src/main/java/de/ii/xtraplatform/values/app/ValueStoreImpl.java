@@ -14,6 +14,8 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatile;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
 import de.ii.xtraplatform.blobs.domain.BlobStoreFactory;
 import de.ii.xtraplatform.values.api.ValueDecoderEnvVarSubstitution;
@@ -40,6 +42,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -51,7 +54,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind(interfaces = {ValueStore.class, AppLifeCycle.class})
-public class ValueStoreImpl
+public class ValueStoreImpl extends AbstractVolatile
     implements ValueStore, KeyValueStore<StoredValue>, ValueCache<StoredValue>, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ValueStoreImpl.class);
@@ -69,7 +72,9 @@ public class ValueStoreImpl
       AppContext appContext,
       Jackson jackson,
       BlobStoreFactory blobStoreFactory,
-      ValueFactories valueFactories) {
+      ValueFactories valueFactories,
+      VolatileRegistry volatileRegistry) {
+    super(volatileRegistry);
     this.blobStore = blobStoreFactory.createBlobStore(Content.VALUES);
     this.valueFactories = valueFactories;
     this.valueEncoding =
@@ -88,12 +93,18 @@ public class ValueStoreImpl
   }
 
   @Override
-  public int getPriority() {
-    return 55;
+  public String getUniqueKey() {
+    return "app/store/values2";
   }
 
   @Override
-  public void onStart() {
+  public int getPriority() {
+    return 30;
+  }
+
+  @Override
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
+    onVolatileStart();
     blobStore.start();
 
     LOGGER.debug("Loading values");
@@ -177,6 +188,9 @@ public class ValueStoreImpl
     LOGGER.debug("Loaded values");
 
     ready.complete(null);
+    setState(State.AVAILABLE);
+
+    return CompletableFuture.completedFuture(null);
   }
 
   protected ValueBuilder<StoredValue> getBuilder(Identifier identifier) {

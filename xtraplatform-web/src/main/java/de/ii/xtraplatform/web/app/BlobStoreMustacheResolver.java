@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -45,7 +47,7 @@ public class BlobStoreMustacheResolver implements PartialMustacheResolver, AppLi
   }
 
   @Override
-  public void onStart() {
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
     try (Stream<Path> paths =
         templateStore.walk(Path.of(""), 1, (path, pathAttributes) -> pathAttributes.isValue())) {
       for (Iterator<Path> it = paths.iterator(); it.hasNext(); ) {
@@ -62,6 +64,8 @@ public class BlobStoreMustacheResolver implements PartialMustacheResolver, AppLi
     } catch (IOException e) {
       // ignore
     }
+
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override

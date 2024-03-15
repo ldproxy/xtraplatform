@@ -18,6 +18,7 @@ import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -36,13 +37,15 @@ public class ResourceStoreImpl extends BlobStoreImpl implements ResourceStore, A
 
   @Override
   public int getPriority() {
-    return 50;
+    return 20;
   }
 
   @Override
-  public void onStart() {
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
     super.start();
     ready.complete(null);
+
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override

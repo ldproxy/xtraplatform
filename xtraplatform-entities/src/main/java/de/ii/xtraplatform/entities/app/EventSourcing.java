@@ -25,6 +25,7 @@ import de.ii.xtraplatform.streams.domain.Event;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ValueCache;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
+import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -251,9 +252,9 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
   private void onEmit(EntityEvent event) throws Throwable {
     Identifier key = event.identifier();
-    ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(event.format());
+    FORMAT payloadFormat = FORMAT.fromString(event.format());
 
-    if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN) {
+    if (payloadFormat == FORMAT.NONE || payloadFormat == FORMAT.UNKNOWN) {
       if (queue.containsKey(key)) {
         queue.remove(key).complete(null);
       }

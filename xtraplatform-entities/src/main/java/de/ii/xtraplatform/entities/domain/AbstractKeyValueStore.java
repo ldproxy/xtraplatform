@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatile;
 import de.ii.xtraplatform.entities.app.EventSourcing;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.KeyValueStore;
@@ -18,9 +19,14 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractKeyValueStore<T> implements KeyValueStore<T> {
+public abstract class AbstractKeyValueStore<T> extends AbstractVolatile
+    implements KeyValueStore<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractKeyValueStore.class);
+
+  protected AbstractKeyValueStore() {
+    super(null);
+  }
 
   protected abstract EventSourcing<T> getEventSourcing();
 

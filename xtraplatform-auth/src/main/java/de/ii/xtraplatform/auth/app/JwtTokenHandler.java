@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
@@ -78,7 +80,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   }
 
   @Override
-  public void onStart() {
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
     // TODO
     long clockSkew = 3600;
 
@@ -93,6 +95,8 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
         oidc.isEnabled() && oidc instanceof SigningKeyResolver
             ? createParser(null, (SigningKeyResolver) oidc, claimsProvider, clockSkew)
             : createParser(signingKey, null, claimsProvider, clockSkew);
+
+    return CompletableFuture.completedFuture(null);
   }
 
   private static JwtParser createParser(

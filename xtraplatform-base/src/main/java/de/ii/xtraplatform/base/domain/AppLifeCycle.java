@@ -8,6 +8,8 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 @AutoMultiBind
 public interface AppLifeCycle {
@@ -16,7 +18,9 @@ public interface AppLifeCycle {
     return 1000;
   }
 
-  default void onStart() {}
+  default CompletionStage<Void> onStart(boolean isStartupAsync) {
+    return CompletableFuture.completedFuture(null);
+  }
 
   default void onStop() {}
 }

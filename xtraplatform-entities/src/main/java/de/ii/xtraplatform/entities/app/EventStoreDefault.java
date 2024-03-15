@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -74,11 +76,11 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
 
   @Override
   public int getPriority() {
-    return 20;
+    return 10;
   }
 
   @Override
-  public void onStart() {
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
     EventFilter startupFilter = getStartupFilter();
     List<StoreSource> sources = findSources();
 
@@ -110,6 +112,8 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                     .ifPresent(eventStoreDriver -> watch(source, eventStoreDriver));
               });
     }
+
+    return CompletableFuture.completedFuture(null);
   }
 
   private void load(StoreSource storeSource, EventStoreDriver driver, EventFilter startupFilter) {

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public interface EntityDataDefaultsStore extends MergeableKeyValueStore<Map<String, Object>> {
   String EVENT_TYPE = "defaults";
@@ -27,4 +28,6 @@ public interface EntityDataDefaultsStore extends MergeableKeyValueStore<Map<Stri
   Optional<Map<String, Object>> getAllDefaults(Identifier identifier, Optional<String> subType);
 
   EntityDataBuilder<EntityData> getBuilder(Identifier identifier);
+
+  CompletableFuture<Void> onReady();
 }

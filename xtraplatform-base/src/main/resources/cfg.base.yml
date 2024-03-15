@@ -10,10 +10,7 @@ store:
     - ${STORE_SOURCE_5:-type: EMPTY}
 
 backgroundTasks: {}
-manager:
-  enabled: ${MANAGER:-ON}
 auth: {}
-proj: {}
 
 modules:
   startup: ASYNC
