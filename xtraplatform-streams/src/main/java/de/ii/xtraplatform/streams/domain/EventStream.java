@@ -31,7 +31,9 @@ public class EventStream<T extends Event> {
     this.eventStream =
         Flowable.create(
             emitter -> {
-              eventQueue.forEach(emitter::onNext);
+              while (!eventQueue.isEmpty()) {
+                emitter.onNext(eventQueue.remove());
+              }
               this.emitter = emitter;
             },
             BackpressureStrategy.BUFFER);

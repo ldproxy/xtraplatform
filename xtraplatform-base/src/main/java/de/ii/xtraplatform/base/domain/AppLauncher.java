@@ -72,8 +72,8 @@ public class AppLauncher implements AppContext {
     this.startupExecutor =
         // MoreExecutors.getExitingExecutorService(
         (ThreadPoolExecutor)
-            Executors.newFixedThreadPool(
-                8, new ThreadFactoryBuilder().setNameFormat("startup-%d").build()); // );
+            Executors.newCachedThreadPool(
+                new ThreadFactoryBuilder().setNameFormat("startup-%d").build()); // );
     ;
   }
 
@@ -227,6 +227,8 @@ public class AppLauncher implements AppContext {
                 // ignore
               }
             });
+
+    startupExecutor.shutdownNow();
 
     LOGGER.info("Stopped {}", name);
     LOGGER.info("--------------------------------------------------");
