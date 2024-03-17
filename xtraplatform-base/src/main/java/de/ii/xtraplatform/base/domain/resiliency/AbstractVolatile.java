@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.base.domain.resiliency;
 
+import com.codahale.metrics.health.HealthCheck;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,6 +20,7 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractVolatile.class);
 
   protected final VolatileRegistry volatileRegistry;
+  private final boolean noHealth;
 
   private final String uniqueKey;
   private final Set<String> capabilities;
@@ -30,9 +32,22 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
     this(volatileRegistry, null);
   }
 
+  protected AbstractVolatile(VolatileRegistry volatileRegistry, boolean noHealth) {
+    this(volatileRegistry, noHealth, null);
+  }
+
   protected AbstractVolatile(
       VolatileRegistry volatileRegistry, String uniqueKey, String... capabilities) {
+    this(volatileRegistry, false, uniqueKey, capabilities);
+  }
+
+  protected AbstractVolatile(
+      VolatileRegistry volatileRegistry,
+      boolean noHealth,
+      String uniqueKey,
+      String... capabilities) {
     this.volatileRegistry = volatileRegistry;
+    this.noHealth = noHealth;
     this.uniqueKey = uniqueKey;
     this.capabilities = Set.of(capabilities);
     this.state = State.UNAVAILABLE;
@@ -76,6 +91,11 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
     }
 
     return unwatch;
+  }
+
+  @Override
+  public Optional<HealthCheck> asHealthCheck() {
+    return noHealth ? Optional.empty() : Volatile2.super.asHealthCheck();
   }
 
   @Override

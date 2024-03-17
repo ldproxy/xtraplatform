@@ -8,6 +8,10 @@
 package de.ii.xtraplatform.base.domain.resiliency;
 
 public class VolatileUnavailableException extends RuntimeException {
+  public VolatileUnavailableException() {
+    super();
+  }
+
   public VolatileUnavailableException(String s) {
     super(s);
   }
