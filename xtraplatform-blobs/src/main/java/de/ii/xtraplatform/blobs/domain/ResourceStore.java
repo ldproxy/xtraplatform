@@ -8,6 +8,8 @@
 package de.ii.xtraplatform.blobs.domain;
 
 import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistered;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +19,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
-public interface ResourceStore extends BlobReader, BlobWriter, BlobLocals, Volatile2 {
+public interface ResourceStore
+    extends BlobReader, BlobWriter, BlobLocals, Volatile2, VolatileRegistered {
 
   CompletableFuture<Void> onReady();
 
@@ -164,6 +167,11 @@ public interface ResourceStore extends BlobReader, BlobWriter, BlobLocals, Volat
         Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher, boolean writable)
         throws IOException {
       return delegateWriter.walk(prefix.resolve(path), maxDepth, matcher, writable);
+    }
+
+    @Override
+    public VolatileRegistry getVolatileRegistry() {
+      return delegate.getVolatileRegistry();
     }
   }
 }
