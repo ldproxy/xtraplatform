@@ -61,7 +61,6 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
       super.onVolatileStart();
       for (Volatile2 v : components.values()) {
         if (v instanceof AbstractVolatile) {
-          LOGGER.debug("START {}", v.getUniqueKey());
           ((AbstractVolatile) v).onVolatileStart();
           v.onStateChange(this::onChange, false);
         }

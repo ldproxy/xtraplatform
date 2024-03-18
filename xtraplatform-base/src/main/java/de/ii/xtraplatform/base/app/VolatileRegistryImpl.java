@@ -11,6 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
 import de.ii.xtraplatform.base.domain.resiliency.Volatile2.Polling;
 import de.ii.xtraplatform.base.domain.resiliency.Volatile2.State;
@@ -85,7 +86,9 @@ public class VolatileRegistryImpl implements VolatileRegistry {
       onRegister.forEach(listener -> listener.accept(dependency.getUniqueKey(), dependency));
 
       LOGGER.debug(
-          "Volatile registered: {} {}", dependency.getUniqueKey(), dependency instanceof Polling);
+          "Volatile registered: {} {}",
+          dependency.getUniqueKey(),
+          dependency instanceof Polling ? "(polling)" : "");
 
       if (dependency instanceof Polling) {
         Polling polling = (Polling) dependency;
@@ -120,7 +123,9 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   public void change(Volatile2 dependency, State from, State to) {
     String key = dependency.getUniqueKey();
 
-    LOGGER.debug("Volatile state changed from {} to {}: {}", from, to, key);
+    if (LOGGER.isDebugEnabled(MARKER.DI)) {
+      LOGGER.debug("Volatile state changed from {} to {}: {}", from, to, key);
+    }
 
     synchronized (watchers) {
       if (watchers.containsKey(key)) {
@@ -171,7 +176,6 @@ public class VolatileRegistryImpl implements VolatileRegistry {
       }
 
       if (states.values().stream().allMatch(state -> state == State.AVAILABLE)) {
-        LOGGER.debug("ONAVAI1 {}", String.join(",", states.keySet()));
         onAvailable.complete(null);
         return onAvailable;
       }
@@ -181,10 +185,8 @@ public class VolatileRegistryImpl implements VolatileRegistry {
             watch(
                 vol,
                 (from, to) -> {
-                  LOGGER.debug("ONAVAI2 {}", vol.getUniqueKey());
                   states.put(vol.getUniqueKey(), to);
                   if (states.values().stream().allMatch(state -> state == State.AVAILABLE)) {
-                    LOGGER.debug("ONAVAI3 {}", vol.getUniqueKey());
                     onAvailable.complete(null);
                     unwatchs.forEach(Runnable::run);
                   }
@@ -207,14 +209,14 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   private void schedulePoll(int delayMs) {
     if (delayMs > 0 && currentRate > delayMs || currentRate <= 0) {
       if (Objects.nonNull(currentSchedule)) {
-        LOGGER.debug("Cancelling current polling schedule");
+        // LOGGER.debug("Cancelling current polling schedule");
         currentSchedule.cancel(false);
       }
 
       this.currentRate = delayMs;
-
-      LOGGER.debug("Scheduling polling every {}ms", delayMs);
-
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
+        LOGGER.debug("Scheduling polling every {}ms", delayMs);
+      }
       this.currentSchedule =
           executorService.scheduleWithFixedDelay(
               () -> {

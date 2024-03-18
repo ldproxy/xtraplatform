@@ -48,7 +48,6 @@ public class HealthPlugin implements DropwizardPlugin, HealthChecks {
   // @Override
   public void register(String name, HealthCheck check) {
     if (!healthCheckRegistry.getNames().contains(name)) {
-      LOGGER.debug("CHECK {}", name);
       healthCheckRegistry.register(name, check);
     }
   }
@@ -58,7 +57,6 @@ public class HealthPlugin implements DropwizardPlugin, HealthChecks {
   }
 
   public void unregister(String name) {
-    LOGGER.debug("CHECKDEL {}", name);
     healthCheckRegistry.unregister(name);
   }
 }

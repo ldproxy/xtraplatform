@@ -57,7 +57,6 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
 
   protected synchronized void onVolatileStart() {
     if (!started) {
-      LOGGER.debug("START {}", getUniqueKey());
       volatileRegistry.register(this);
       this.started = true;
     }
