@@ -32,6 +32,13 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
   @Override
   protected void onStarted() {
     super.onStarted();
+
+    onStateChange(
+        (from, to) -> {
+          LOGGER.info("Service with id '{}' state changed: {}", getId(), getState());
+        },
+        true);
+
     LOGGER.info("Service with id '{}' started successfully.", getId());
   }
 

@@ -35,6 +35,11 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   public AbstractVolatileComposed(
+      VolatileRegistry volatileRegistry, boolean noHealth, String... capabilities) {
+    this(null, volatileRegistry, noHealth, capabilities);
+  }
+
+  public AbstractVolatileComposed(
       String uniqueId,
       VolatileRegistry volatileRegistry,
       boolean noHealth,

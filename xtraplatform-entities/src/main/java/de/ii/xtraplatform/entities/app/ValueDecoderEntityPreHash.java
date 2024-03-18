@@ -57,7 +57,7 @@ public class ValueDecoderEntityPreHash implements ValueDecoderMiddleware<EntityD
 
       builder.preHash(hash);
 
-      LOGGER.debug("PROC {} {}", identifier, hash);
+      // LOGGER.debug("PROC {} {}", identifier, hash);
 
       return builder.build();
     }

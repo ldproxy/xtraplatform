@@ -33,7 +33,7 @@ class JwtTokenHandlerSpec extends Specification {
             isEnabled() >> false
         }
 
-        jwtTokenHandler = new JwtTokenHandler(ac, Stub(ResourceStore), oidc)
+        jwtTokenHandler = new JwtTokenHandler(ac, Stub(ResourceStore), oidc, null)
         jwtTokenHandler.onStart(false)
     }
 

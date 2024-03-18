@@ -85,10 +85,13 @@ public class VolatileRegistryImpl implements VolatileRegistry {
 
       onRegister.forEach(listener -> listener.accept(dependency.getUniqueKey(), dependency));
 
-      LOGGER.debug(
-          "Volatile registered: {} {}",
-          dependency.getUniqueKey(),
-          dependency instanceof Polling ? "(polling)" : "");
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
+        LOGGER.debug(
+            MARKER.DI,
+            "Volatile registered: {} {}",
+            dependency.getUniqueKey(),
+            dependency instanceof Polling ? "(polling)" : "");
+      }
 
       if (dependency instanceof Polling) {
         Polling polling = (Polling) dependency;
@@ -124,7 +127,7 @@ public class VolatileRegistryImpl implements VolatileRegistry {
     String key = dependency.getUniqueKey();
 
     if (LOGGER.isDebugEnabled(MARKER.DI)) {
-      LOGGER.debug("Volatile state changed from {} to {}: {}", from, to, key);
+      LOGGER.debug(MARKER.DI, "Volatile state changed from {} to {}: {}", from, to, key);
     }
 
     synchronized (watchers) {
@@ -215,7 +218,7 @@ public class VolatileRegistryImpl implements VolatileRegistry {
 
       this.currentRate = delayMs;
       if (LOGGER.isDebugEnabled(MARKER.DI)) {
-        LOGGER.debug("Scheduling polling every {}ms", delayMs);
+        LOGGER.debug(MARKER.DI, "Scheduling polling every {}ms", delayMs);
       }
       this.currentSchedule =
           executorService.scheduleWithFixedDelay(

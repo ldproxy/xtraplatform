@@ -20,6 +20,7 @@ import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.IdentityProvider;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.Jwt;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
@@ -68,19 +69,29 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private final ResourceStore keyStore;
   private final AuthConfiguration authConfig;
   private final Oidc oidc;
+  private final VolatileRegistry volatileRegistry;
   private Key signingKey;
   private IdentityProvider claimsProvider;
   private JwtParser parser;
 
   @Inject
-  public JwtTokenHandler(AppContext appContext, ResourceStore blobStore, Oidc oidc) {
+  public JwtTokenHandler(
+      AppContext appContext,
+      ResourceStore blobStore,
+      Oidc oidc,
+      VolatileRegistry volatileRegistry) {
     this.authConfig = appContext.getConfiguration().getAuth();
     this.keyStore = blobStore.with(RESOURCES_JWT);
     this.oidc = oidc;
+    this.volatileRegistry = volatileRegistry;
   }
 
   @Override
   public CompletionStage<Void> onStart(boolean isStartupAsync) {
+    if (isStartupAsync) {
+      volatileRegistry.onAvailable(keyStore).toCompletableFuture().join();
+    }
+
     // TODO
     long clockSkew = 3600;
 
