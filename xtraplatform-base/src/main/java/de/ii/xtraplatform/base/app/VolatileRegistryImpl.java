@@ -25,11 +25,13 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -44,7 +46,8 @@ public class VolatileRegistryImpl implements VolatileRegistry {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VolatileRegistryImpl.class);
 
-  private final ScheduledExecutorService executorService;
+  private final ExecutorService changeExecutor;
+  private final ScheduledExecutorService pollingExecutor;
   private final Map<String, Volatile2> volatiles;
   private final Map<String, List<ChangeHandler>> watchers;
   private final Map<String, Polling> polls;
@@ -57,7 +60,12 @@ public class VolatileRegistryImpl implements VolatileRegistry {
 
   @Inject
   VolatileRegistryImpl() {
-    this.executorService =
+    this.changeExecutor =
+        MoreExecutors.getExitingExecutorService(
+            (ThreadPoolExecutor)
+                Executors.newCachedThreadPool(
+                    new ThreadFactoryBuilder().setNameFormat("volatile.changes-%d").build()));
+    this.pollingExecutor =
         MoreExecutors.getExitingScheduledExecutorService(
             (ScheduledThreadPoolExecutor)
                 Executors.newScheduledThreadPool(
@@ -81,7 +89,6 @@ public class VolatileRegistryImpl implements VolatileRegistry {
       }
 
       volatiles.put(dependency.getUniqueKey(), dependency);
-      watchers.put(dependency.getUniqueKey(), new ArrayList<>());
 
       onRegister.forEach(listener -> listener.accept(dependency.getUniqueKey(), dependency));
 
@@ -134,14 +141,17 @@ public class VolatileRegistryImpl implements VolatileRegistry {
       if (watchers.containsKey(key)) {
         for (ChangeHandler handler : watchers.get(key)) {
           if (Objects.nonNull(handler)) {
-            try {
-              handler.change(from, to);
-            } catch (Throwable e) {
-              // ignore
-              if (LOGGER.isDebugEnabled()) {
-                LogContext.errorAsDebug(LOGGER, e, "Error in volatile watcher");
-              }
-            }
+            changeExecutor.submit(
+                () -> {
+                  try {
+                    handler.change(from, to);
+                  } catch (Throwable e) {
+                    // ignore
+                    if (LOGGER.isDebugEnabled()) {
+                      LogContext.errorAsDebug(LOGGER, e, "Error in volatile watcher");
+                    }
+                  }
+                });
           }
         }
       }
@@ -153,18 +163,18 @@ public class VolatileRegistryImpl implements VolatileRegistry {
     String key = dependency.getUniqueKey();
 
     synchronized (watchers) {
-      if (watchers.containsKey(key)) {
-        watchers.get(key).add(handler);
-        int index = watchers.get(key).size() - 1;
-
-        return () -> {
-          if (watchers.containsKey(key)) {
-            watchers.get(key).set(index, null);
-          }
-        };
+      if (!watchers.containsKey(key)) {
+        watchers.put(key, new ArrayList<>());
       }
+      watchers.get(key).add(handler);
+      int index = watchers.get(key).size() - 1;
+
+      return () -> {
+        if (watchers.containsKey(key)) {
+          watchers.get(key).set(index, null);
+        }
+      };
     }
-    return () -> {};
   }
 
   @Override
@@ -221,7 +231,7 @@ public class VolatileRegistryImpl implements VolatileRegistry {
         LOGGER.debug(MARKER.DI, "Scheduling polling every {}ms", delayMs);
       }
       this.currentSchedule =
-          executorService.scheduleWithFixedDelay(
+          pollingExecutor.scheduleWithFixedDelay(
               () -> {
                 while (!cancelTasks.isEmpty()) {
                   cancelTasks.remove().run();
@@ -242,13 +252,8 @@ public class VolatileRegistryImpl implements VolatileRegistry {
                     Polling polling = polls.get(key);
                     interval = polling.getIntervalMs();
 
-                    Future<?> future = executorService.submit(polling::poll);
+                    Future<?> future = pollingExecutor.submit(polling::poll);
                     cancelTasks.add(() -> future.cancel(true));
-
-                    // Runnable cancelTask = () -> future.cancel(true);
-                    // executorService.schedule(cancelTask, 1000, TimeUnit.MILLISECONDS);
-
-                    // polling.poll();
                   }
 
                   intervals.put(key, interval);
