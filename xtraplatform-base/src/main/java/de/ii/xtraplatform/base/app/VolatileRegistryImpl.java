@@ -108,7 +108,6 @@ public class VolatileRegistryImpl implements VolatileRegistry {
           polls.put(dependency.getUniqueKey(), polling);
           intervals.put(dependency.getUniqueKey(), 0);
 
-          // TODO
           schedulePoll((polling).getIntervalMs());
         }
       }
@@ -259,7 +258,7 @@ public class VolatileRegistryImpl implements VolatileRegistry {
                   intervals.put(key, interval);
                 }
               },
-              0,
+              delayMs,
               delayMs,
               TimeUnit.MILLISECONDS);
     }
