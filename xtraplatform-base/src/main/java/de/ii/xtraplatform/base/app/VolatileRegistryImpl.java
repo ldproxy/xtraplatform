@@ -178,6 +178,11 @@ public class VolatileRegistryImpl implements VolatileRegistry {
 
   @Override
   public CompletionStage<Void> onAvailable(Volatile2... volatiles) {
+    return onAvailable(List.of(volatiles));
+  }
+
+  @Override
+  public CompletionStage<Void> onAvailable(Iterable<Volatile2> volatiles) {
     CompletableFuture<Void> onAvailable = new CompletableFuture<>();
     Map<String, State> states = new ConcurrentHashMap<>();
     List<Runnable> unwatchs = new ArrayList<>();

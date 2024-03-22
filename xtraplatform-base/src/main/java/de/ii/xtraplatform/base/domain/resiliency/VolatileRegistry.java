@@ -29,5 +29,7 @@ public interface VolatileRegistry {
 
   CompletionStage<Void> onAvailable(Volatile2... volatiles);
 
+  CompletionStage<Void> onAvailable(Iterable<Volatile2> volatiles);
+
   void listen(BiConsumer<String, Volatile2> onRegister, Consumer<String> onUnRegister);
 }

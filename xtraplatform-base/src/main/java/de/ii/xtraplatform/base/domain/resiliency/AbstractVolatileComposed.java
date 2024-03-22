@@ -9,6 +9,7 @@ package de.ii.xtraplatform.base.domain.resiliency;
 
 import com.codahale.metrics.health.HealthCheck;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
+import de.ii.xtraplatform.base.domain.util.Tuple;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,6 +30,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   private final Map<String, AbstractVolatile> capabilities;
   private final boolean noHealth;
   private State baseState;
+  private boolean ready;
 
   public AbstractVolatileComposed(VolatileRegistry volatileRegistry, String... capabilities) {
     this(null, volatileRegistry, false, capabilities);
@@ -74,9 +76,39 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     }
   }
 
-  protected void onVolatileStarted() {
-    this.baseState = State.AVAILABLE;
+  protected Tuple<State, String> volatileInit() {
+    LOGGER.debug("INIT {}", getUniqueKey());
+    return Tuple.of(State.AVAILABLE, null);
+  }
+
+  protected void onComponentsAvailable() {
+    Tuple<State, String> result = volatileInit();
+
+    if (Objects.nonNull(result.second())) {
+      setMessage(result.second());
+    }
+
+    this.baseState = result.first();
     checkStates();
+  }
+
+  protected void onVolatileStarted() {
+    this.ready = true;
+    checkStates();
+
+    /*volatileRegistry
+    .onAvailable(components.values())
+    .thenRun(
+        () -> {
+          Tuple<State, String> result = volatileInit();
+
+          if (Objects.nonNull(result.second())) {
+            setMessage(result.second());
+          }
+
+          this.baseState = result.first();
+          checkStates();
+        });*/
   }
 
   @Override
@@ -163,8 +195,15 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   private void checkStates() {
-    if (!isStarted() || baseState != State.AVAILABLE) {
+    if (!isStarted()) {
       return;
+    }
+    if (baseState != State.AVAILABLE) {
+      if (ready && components.values().stream().allMatch(Volatile2::isAvailable)) {
+        onComponentsAvailable();
+      } else {
+        return;
+      }
     }
 
     State newState =

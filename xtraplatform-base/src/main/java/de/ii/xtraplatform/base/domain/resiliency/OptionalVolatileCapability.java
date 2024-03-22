@@ -7,4 +7,37 @@
  */
 package de.ii.xtraplatform.base.domain.resiliency;
 
-public interface OptionalVolatileCapability<T> extends OptionalCapability<T>, Volatile2 {}
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
+import java.util.Optional;
+
+public interface OptionalVolatileCapability<T> extends OptionalCapability<T>, Volatile2 {
+
+  static <T> OptionalVolatileCapability<T> unsupported(Class<T> clazz) {
+    return new OptionalVolatileCapability<T>() {
+      @Override
+      public boolean isSupported() {
+        return false;
+      }
+
+      @Override
+      public T get() {
+        return null;
+      }
+
+      @Override
+      public State getState() {
+        return State.UNAVAILABLE;
+      }
+
+      @Override
+      public Optional<String> getMessage() {
+        return Optional.empty();
+      }
+
+      @Override
+      public Runnable onStateChange(ChangeHandler handler, boolean initialCall) {
+        return () -> {};
+      }
+    };
+  }
+}
