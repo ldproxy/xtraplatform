@@ -30,6 +30,7 @@ import javax.inject.Singleton;
 /**
  * @author zahnen
  */
+// TODO: not used anymore?
 @Singleton
 @AutoBind
 public class ExternalBearerAuthProvider implements AuthProvider<User>, DropwizardPlugin {

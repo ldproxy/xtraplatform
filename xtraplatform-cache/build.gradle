@@ -1,0 +1,9 @@
+
+maturity = 'PROPOSAL'
+maintenance = 'NONE'
+description = 'Cache.'
+descriptionDe = 'Cache.'
+
+dependencies {
+    provided project(':xtraplatform-values')
+}
