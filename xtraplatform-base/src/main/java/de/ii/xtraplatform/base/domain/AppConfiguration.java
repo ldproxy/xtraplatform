@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.docs.DocFile;
+import de.ii.xtraplatform.docs.DocIgnore;
 import de.ii.xtraplatform.docs.DocStep;
 import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
@@ -131,8 +132,8 @@ import org.immutables.value.Value;
 public abstract class AppConfiguration extends Configuration {
 
   /**
-   * @langEn See [Store (new)](10-store-new.md).
-   * @langDe Siehe [Store (neu)](10-store-new.md).
+   * @langEn See [Store](10-store-new.md).
+   * @langDe Siehe [Store](10-store-new.md).
    */
   @JsonProperty("store")
   @Valid
@@ -149,7 +150,9 @@ public abstract class AppConfiguration extends Configuration {
   /**
    * @langEn See [Modules](80-modules.md).
    * @langDe Siehe [Modules](80-modules.md).
+   * @since v4.0
    */
+  @JsonProperty("modules")
   @Valid
   public abstract ModulesConfiguration getModules();
 
@@ -163,6 +166,7 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   public abstract HttpClientConfiguration getHttpClient();
 
+  @DocIgnore
   @JsonProperty("metrics")
   @Valid
   @Override

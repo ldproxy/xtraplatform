@@ -53,11 +53,16 @@ public interface ModulesConfiguration {
   }
 
   /**
-   * @en The maximum number of threads available for background processes. If requests are to be
-   *     answered efficiently at all times, the value should not exceed half of the CPU cores.
-   * @de Die maximale Anzahl an Threads, die für Hintergrundprozesse zur Verfügung stehen. Falls zu
-   *     jeder Zeit Requests performant beantwortet können werden sollen, sollte der Wert die Hälfte
-   *     der CPU-Kerne nicht überschreiten.
+   * @en When `ASYNC` modules will start in parallel and dependencies are resolved event-driven.
+   *     That also means the startup will not fail on recoverable errors, e.g. when an external
+   *     resource is missing but might arrive later. When `SYNC`, startup behaves like in v3.x, i.e.
+   *     modules will start sequentially in a fixed order and any errors will abort the startup.
+   * @de Wenn `ASYNC` werden die Module parallel gestartet und die Auflösung von Abhängigkeiten
+   *     passiert ereignisgesteuert. D.h. auch, dass der Start bei behebbaren Fehlern nicht
+   *     fehlschlägt, z.B. wenn eine externe Ressource fehlt aber später verfügbar sein könnte. Wenn
+   *     `SYNC` verhält sich der Start wie in v3.x, die Module werden sequentiell in einer festen
+   *     Reihenfolge gestartet und bei Fehlern wird der Start abgebrochen.
+   * @since v4.0
    * @default ASYNC
    */
   @Value.Default
@@ -72,12 +77,12 @@ public interface ModulesConfiguration {
   }
 
   /**
-   * @en The maximum number of threads available for background processes. If requests are to be
-   *     answered efficiently at all times, the value should not exceed half of the CPU cores.
-   * @de Die maximale Anzahl an Threads, die für Hintergrundprozesse zur Verfügung stehen. Falls zu
-   *     jeder Zeit Requests performant beantwortet können werden sollen, sollte der Wert die Hälfte
-   *     der CPU-Kerne nicht überschreiten.
-   * @default ASYNC
+   * @en The minimum maturity of modules that should be loaded, all other modules will be ignored.
+   *     Possible values are `PROPOSAL`, `CANDIDATE` and `MATURE`.
+   * @de Die minimale Maturity von Modulen die geladen werden sollen, all anderen Module werden
+   *     ignoriert. Möglich Werte sind `PROPOSAL`, `CANDIDATE` und `MATURE`.
+   * @since v4.0
+   * @default CANDIDATE
    */
   @Value.Default
   default Maturity getMinMaturity() {
@@ -85,12 +90,12 @@ public interface ModulesConfiguration {
   }
 
   /**
-   * @en The maximum number of threads available for background processes. If requests are to be
-   *     answered efficiently at all times, the value should not exceed half of the CPU cores.
-   * @de Die maximale Anzahl an Threads, die für Hintergrundprozesse zur Verfügung stehen. Falls zu
-   *     jeder Zeit Requests performant beantwortet können werden sollen, sollte der Wert die Hälfte
-   *     der CPU-Kerne nicht überschreiten.
-   * @default ASYNC
+   * @en The minimum maintenance level of modules that should be loaded, all other modules will be
+   *     ignored. Possible values are `NONE`, `LOW` and `FULL`.
+   * @de Der minimale Maintenance-Level von Modulen die geladen werden sollen, all anderen Module
+   *     werden ignoriert. Möglich Werte sind `NONE`, `LOW` und `FULL`.
+   * @since v4.0
+   * @default LOW
    */
   @Value.Default
   default Maintenance getMinMaintenance() {

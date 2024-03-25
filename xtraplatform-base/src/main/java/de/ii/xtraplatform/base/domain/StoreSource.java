@@ -27,7 +27,7 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
- * @langEn # Store (new)
+ * @langEn # Store
  *     <p>The store represents all files that make up a deployment of ldproxy besides the
  *     application itself. That includes all configuration files but also other resources like file
  *     databases or caches. In the most simple case all of these files will exist in the local data
@@ -151,7 +151,7 @@ import org.immutables.value.Value;
  *     application wants to write a resource with a specific path, the sources are checked in
  *     reverse order for the first that is writable for resources with the given prefix. So if more
  *     than one source could take the given resource, the one defined later will win.
- * @langDe # Store (neu)
+ * @langDe # Store
  *     <p>Der Store repräsentiert alle Dateien, die ein Deployment von ldproxy ausmachen, außer der
  *     Anwendung selbst. Dazu gehören alle Konfigurationsdateien, aber auch andere Ressourcen wie
  *     File-Datenbanken oder Caches. Im einfachsten Fall existieren alle diese Dateien im lokalen
