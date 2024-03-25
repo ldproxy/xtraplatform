@@ -20,5 +20,5 @@ public interface StoredValue {
   }
 
   @JsonIgnore
-  Optional<String> getPreHash();
+  Optional<String> getStableHash();
 }

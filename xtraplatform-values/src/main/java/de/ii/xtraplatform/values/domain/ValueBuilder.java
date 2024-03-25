@@ -12,5 +12,5 @@ public interface ValueBuilder<T extends StoredValue> {
 
   ValueBuilder<T> from(StoredValue value);
 
-  ValueBuilder<T> preHash(String hashCode);
+  ValueBuilder<T> stableHash(String hashCode);
 }

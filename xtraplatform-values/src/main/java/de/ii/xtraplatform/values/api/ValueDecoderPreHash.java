@@ -41,7 +41,7 @@ public class ValueDecoderPreHash<T extends StoredValue> implements ValueDecoderM
 
     builder.from(data);
 
-    builder.preHash(hash);
+    builder.stableHash(hash);
 
     LOGGER.debug("PROC {} {}", identifier, hash);
 
