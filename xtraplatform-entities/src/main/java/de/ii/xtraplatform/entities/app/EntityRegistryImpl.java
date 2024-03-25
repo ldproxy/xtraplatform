@@ -16,6 +16,7 @@ import de.ii.xtraplatform.entities.domain.EntityFactoriesImpl;
 import de.ii.xtraplatform.entities.domain.EntityFactory;
 import de.ii.xtraplatform.entities.domain.EntityRegistry;
 import de.ii.xtraplatform.entities.domain.EntityState;
+import de.ii.xtraplatform.entities.domain.EntityState.STATE;
 import de.ii.xtraplatform.entities.domain.PersistentEntity;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +46,10 @@ public class EntityRegistryImpl implements EntityRegistry {
   public <T extends PersistentEntity> List<T> getEntitiesForType(Class<T> type) {
     return entityFactories.getAll(type).stream()
         .flatMap(entityFactory -> entityFactory.instances().stream())
-        .filter(persistentEntity -> async || ((EntityState) persistentEntity).isActive())
+        .filter(
+            persistentEntity ->
+                (async && ((EntityState) persistentEntity).getEntityState() != STATE.DISABLED)
+                    || ((EntityState) persistentEntity).isActive())
         .map(type::cast)
         .collect(ImmutableList.toImmutableList());
   }
@@ -56,7 +60,10 @@ public class EntityRegistryImpl implements EntityRegistry {
         .map(entityFactory -> entityFactory.instance(id))
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .filter(persistentEntity -> async || ((EntityState) persistentEntity).isActive())
+        .filter(
+            persistentEntity ->
+                (async && ((EntityState) persistentEntity).getEntityState() != STATE.DISABLED)
+                    || ((EntityState) persistentEntity).isActive())
         .map(type::cast)
         .findFirst();
   }

@@ -7,7 +7,6 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -52,8 +51,6 @@ public interface ServiceData extends EntityData, AutoEntity {
    *     erreichbar ist und Hintergrundprozesse nicht laufen.
    * @default true
    */
-  @JsonProperty("enabled")
-  @JsonAlias("shouldStart")
   @Value.Default
   default boolean getEnabled() {
     return true;

@@ -274,7 +274,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   protected void onStartupFailure(Throwable throwable) {}
 
   protected boolean shouldRegister() {
-    return true;
+    return getData() != null && getData().getEnabled();
   }
 
   protected void checkForStartupCancel() throws InterruptedException {
