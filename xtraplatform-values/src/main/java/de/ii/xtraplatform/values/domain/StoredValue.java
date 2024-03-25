@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.values.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.Optional;
+import javax.annotation.Nullable;
 
 public interface StoredValue {
 
@@ -20,5 +20,6 @@ public interface StoredValue {
   }
 
   @JsonIgnore
-  Optional<String> getStableHash();
+  @Nullable
+  String getStableHash();
 }
