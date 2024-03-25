@@ -146,11 +146,7 @@ public class ValueStoreImpl extends AbstractVolatile
                   }
 
                   Path currentPath = typePath.resolve(file);
-                  // TODO: remove workaround
-                  Path parent =
-                      valueType.equals("codelists") && file.startsWith("entities")
-                          ? Path.of("")
-                          : Objects.requireNonNullElse(file.getParent(), Path.of(""));
+                  Path parent = Objects.requireNonNullElse(file.getParent(), Path.of(""));
                   Identifier identifier =
                       Identifier.from(
                           typePath
@@ -191,6 +187,97 @@ public class ValueStoreImpl extends AbstractVolatile
     setState(State.AVAILABLE);
 
     return CompletableFuture.completedFuture(null);
+  }
+
+  void reload(List<Path> filter) {
+    LOGGER.debug("Reloading values");
+
+    valueFactories
+        .getTypes()
+        .forEach(
+            valueType -> {
+              ValueFactory valueFactory = valueFactories.get(valueType);
+              Path typePath = Path.of(valueFactory.type());
+              int count = 0;
+
+              valueTypes.put(
+                  valueFactory.valueClass(),
+                  KeyValueStore.TYPE_SPLITTER.splitToList(valueFactory.type()));
+
+              try (Stream<Path> paths =
+                  blobStore.walk(
+                      typePath,
+                      8,
+                      (path, attributes) -> attributes.isValue() && !attributes.isHidden())) {
+                List<Path> files = paths.sorted().collect(Collectors.toList());
+
+                for (Path file : files) {
+                  String extension = Files.getFileExtension(file.getFileName().toString());
+                  ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(extension);
+
+                  if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN
+                      && valueFactory.formatAliases().containsKey(extension)) {
+                    payloadFormat = valueFactory.formatAliases().get(extension);
+                  }
+
+                  if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN) {
+                    return;
+                  }
+
+                  if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Loading value: {} {} {}", valueType, file, payloadFormat);
+                  }
+
+                  Path currentPath = typePath.resolve(file);
+                  Path parent = Objects.requireNonNullElse(file.getParent(), Path.of(""));
+                  Path identifierPath =
+                      typePath
+                          .resolve(parent)
+                          .resolve(Files.getNameWithoutExtension(file.getFileName().toString()));
+                  Identifier identifier = Identifier.from(identifierPath);
+
+                  if (!filter.isEmpty() && filter.stream().noneMatch(identifierPath::startsWith)) {
+                    if (LOGGER.isTraceEnabled()) {
+                      LOGGER.trace("Skipping value, not included: {}", identifierPath);
+                    }
+                    continue;
+                  }
+
+                  try {
+                    byte[] bytes = blobStore.content(currentPath).get().readAllBytes();
+                    long lm = blobStore.lastModified(currentPath);
+
+                    StoredValue value =
+                        valueEncoding.deserialize(identifier, bytes, payloadFormat, true);
+
+                    this.memCache.put(identifier, value);
+                    this.lastModified.put(identifier, lm == -1 ? Instant.now().toEpochMilli() : lm);
+
+                    if (memCache.containsKey(identifier)
+                        && !Objects.equals(memCache.get(identifier), value)) {
+                      count++;
+                    } else {
+                      if (LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("Not counting value, not changed: {}", identifierPath);
+                      }
+                    }
+                  } catch (IOException e) {
+                    LogContext.error(LOGGER, e, "Could not reload value from {}", currentPath);
+                  }
+                }
+
+              } catch (IOException e) {
+                LogContext.error(LOGGER, e, "Could not reload values with type {}", valueType);
+              }
+
+              if (count > 0) {
+                LOGGER.info("Reloaded {} {}", count, valueType);
+              } else {
+                LOGGER.debug("Reloaded {} {}", count, valueType);
+              }
+            });
+
+    LOGGER.debug("Reloaded values");
   }
 
   protected ValueBuilder<StoredValue> getBuilder(Identifier identifier) {

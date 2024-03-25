@@ -6,4 +6,5 @@ descriptionDe = 'Value-Store.'
 
 dependencies {
     provided project(':xtraplatform-blobs')
+    provided project(':xtraplatform-web')
 }
