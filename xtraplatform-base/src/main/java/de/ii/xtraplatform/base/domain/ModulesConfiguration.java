@@ -17,7 +17,7 @@ import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import org.immutables.value.Value;
 
 /**
- * @langAll Modules
+ * @langAll # Modules
  *     <p>## Options
  *     <p>{@docTable:properties}
  */

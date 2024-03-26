@@ -27,10 +27,10 @@ import org.immutables.value.Value;
 
 /**
  * @langEn # Configuration
- *     <p>The configuration file `cfg.yml` is located in the [Store (new)](10-store-new.md).
+ *     <p>The configuration file `cfg.yml` is located in the [Store](10-store-new.md).
  *     <p>{@docTable:properties}
  * @langDe # Konfiguration
- *     <p>Die Konfigurationsdatei `cfg.yml` befindet sich im [Store (neu)](10-store-new.md).
+ *     <p>Die Konfigurationsdatei `cfg.yml` befindet sich im [Store](10-store-new.md).
  *     <p>{@docTable:properties}
  * @todoEn ### Environment variables
  *     <p>Both in `cfg.yml` and in entity instances, defaults and overrides, substitutions can be
@@ -140,6 +140,15 @@ public abstract class AppConfiguration extends Configuration {
   public abstract StoreConfiguration getStore();
 
   /**
+   * @langEn See [Logging](20-logging.md).
+   * @langDe Siehe [Logging](20-logging.md).
+   */
+  @JsonProperty("logging")
+  @Valid
+  @Override
+  public abstract LoggingConfiguration getLoggingFactory();
+
+  /**
    * @langEn See [Authorization](40-auth.md).
    * @langDe Siehe [Autorisierung](40-auth.md).
    */
@@ -180,15 +189,6 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   @Override
   public abstract ServerConfiguration getServerFactory();
-
-  /**
-   * @langEn See [Logging](20-logging.md).
-   * @langDe Siehe [Logging](20-logging.md).
-   */
-  @JsonProperty("logging")
-  @Valid
-  @Override
-  public abstract LoggingConfiguration getLoggingFactory();
 
   @JsonIgnore
   @Override
