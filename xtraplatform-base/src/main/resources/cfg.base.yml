@@ -9,13 +9,13 @@ store:
     - ${STORE_SOURCE_4:-type: EMPTY}
     - ${STORE_SOURCE_5:-type: EMPTY}
 
-backgroundTasks: {}
-auth: {}
+backgroundTasks: { }
+auth: { }
 
 modules:
-  startup: ASYNC
-  minMaturity: CANDIDATE
-  minMaintenance: LOW
+  startup: ${STARTUP:-ASYNC}
+  minMaturity: ${MIN_MATURITY:-CANDIDATE}
+  minMaintenance: ${MIN_MAINTENANCE:-LOW}
 
 server:
   applicationConnectors:
@@ -30,7 +30,7 @@ server:
   requestLog:
     type: classic
     timeZone: Europe/Berlin
-    appenders: []
+    appenders: [ ]
   shutdownGracePeriod: 5s
   enableThreadNameFilter: false
   registerDefaultExceptionMappers: false
@@ -56,9 +56,9 @@ logging:
   configDumps: ${LOG_CONFIG_DUMPS:-OFF}
   stackTraces: ${LOG_STACK_TRACES:-OFF}
   wiring: ${LOG_WIRING:-OFF}
-  appenders: []
+  appenders: [ ]
 
 metrics:
   frequency: 1 minute
-  reporters: []
+  reporters: [ ]
   reportOnStop: false

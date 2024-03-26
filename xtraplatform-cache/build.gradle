@@ -1,6 +1,6 @@
 
-maturity = 'PROPOSAL'
-maintenance = 'NONE'
+maturity = 'MATURE'
+maintenance = 'FULL'
 description = 'Cache.'
 descriptionDe = 'Cache.'
 

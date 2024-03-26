@@ -28,7 +28,9 @@ import de.ii.xtraplatform.values.domain.ValueEncoding;
 import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -149,7 +151,18 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
           onEmit(entityEvent);
         }
       } catch (Throwable e) {
-        LogContext.error(LOGGER, e, "Cannot load '{}'", entityEvent.asPath());
+        if (e instanceof NoSuchElementException
+            && Objects.nonNull(e.getMessage())
+            && e.getMessage().contains("providers/feature/")) {
+          LOGGER.error(
+              "Cannot load '{}', feature provider type not supported: {}",
+              entityEvent.asPath(),
+              e.getMessage()
+                  .substring(e.getMessage().indexOf("providers/feature/") + 18)
+                  .toUpperCase(Locale.ROOT));
+        } else {
+          LogContext.error(LOGGER, e, "Cannot load '{}'", entityEvent.asPath());
+        }
       }
 
     } else if (event instanceof StateChangeEvent) {

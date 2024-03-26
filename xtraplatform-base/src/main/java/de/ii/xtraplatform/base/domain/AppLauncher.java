@@ -112,7 +112,7 @@ public class AppLauncher implements AppContext {
     return uri;
   }
 
-  public void init(String[] args, Map<String, ByteSource> baseConfigs) throws IOException {
+  public String init(String[] args, Map<String, ByteSource> baseConfigs) throws IOException {
     this.dataDir =
         getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
     this.tmpDir = dataDir.resolve(TMP_DIR_NAME).toAbsolutePath();
@@ -160,16 +160,27 @@ public class AppLauncher implements AppContext {
     } else {
       this.uri = URI.create(externalUrl.replace("rest/services/", "").replace("rest/services", ""));
     }
+
+    return String.format(
+        "%s_%s", cfg.getModules().getMinMaturity(), cfg.getModules().getMinMaintenance());
   }
 
-  public void start(App modules) {
+  public void start(App modules, List<String> skipped) {
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Startup mode: {}", cfg.getModules().getStartup());
+      LOGGER.debug(
+          "Module constraints: [minMaturity: {}, minMaintenance: {}]",
+          cfg.getModules().getMinMaturity(),
+          cfg.getModules().getMinMaintenance());
+      if (!skipped.isEmpty()) {
+        LOGGER.debug("Skipped modules: {}", skipped);
+      }
+    }
+
     modules.lifecycle().get().stream()
         .sorted(Comparator.comparingInt(AppLifeCycle::getPriority))
         .forEach(
             lifecycle -> {
-              /*if (lifecycle.getPriority() > 210) {
-                return;
-              }*/
               if (lifecycle.getPriority() == 0
                   || !getConfiguration().getModules().isStartupAsync()) {
                 start(lifecycle);

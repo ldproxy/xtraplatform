@@ -1,0 +1,9 @@
+maturity = 'MATURE'
+maintenance = 'FULL'
+replacementFor = 'xtraplatform-auth'
+description = 'Fallback replacement for xtraplatform-auth if that is excluded due to minMaturity or minMaintenance.'
+
+dependencies {
+    provided project(':xtraplatform-auth')
+    provided project(':xtraplatform-web')
+}
