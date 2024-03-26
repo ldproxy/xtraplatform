@@ -86,7 +86,8 @@ public interface ModulesConfiguration {
   /**
    * @langEn The minimum maturity of modules that should be loaded, all other modules will be
    *     ignored. Possible values are `PROPOSAL`, `CANDIDATE` and `MATURE`. See [Module
-   *     Lifecycle](../../references/modules.md) for a list of all modules and their classifications.
+   *     Lifecycle](../../references/modules.md) for a list of all modules and their
+   *     classifications.
    * @langDe Die minimale Maturity von Modulen die geladen werden sollen, all anderen Module werden
    *     ignoriert. Möglich Werte sind `PROPOSAL`, `CANDIDATE` und `MATURE`. Siehe
    *     [Modul-Lebenszyklus](../../references/modules.md) für eine Liste aller Module und ihrer
@@ -102,7 +103,8 @@ public interface ModulesConfiguration {
   /**
    * @langEn The minimum maintenance level of modules that should be loaded, all other modules will
    *     be ignored. Possible values are `NONE`, `LOW` and `FULL`. See [Module
-   *     Lifecycle](../../references/modules.md) for a list of all modules and their classifications.
+   *     Lifecycle](../../references/modules.md) for a list of all modules and their
+   *     classifications.
    * @langDe Der minimale Maintenance-Level von Modulen die geladen werden sollen, all anderen
    *     Module werden ignoriert. Möglich Werte sind `NONE`, `LOW` und `FULL`. Siehe
    *     [Modul-Lebenszyklus](../../references/modules.md) für eine Liste aller Module und ihrer
