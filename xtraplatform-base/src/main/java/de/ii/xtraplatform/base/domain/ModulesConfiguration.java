@@ -60,11 +60,11 @@ public interface ModulesConfiguration {
   }
 
   /**
-   * @en When `ASYNC` modules will start in parallel and dependencies are resolved event-driven.
+   * @langEn When `ASYNC` modules will start in parallel and dependencies are resolved event-driven.
    *     That also means the startup will not fail on recoverable errors, e.g. when an external
    *     resource is missing but might arrive later. When `SYNC`, startup behaves like in v3.x, i.e.
    *     modules will start sequentially in a fixed order and any errors will abort the startup.
-   * @de Wenn `ASYNC` werden die Module parallel gestartet und die Auflösung von Abhängigkeiten
+   * @langDe Wenn `ASYNC` werden die Module parallel gestartet und die Auflösung von Abhängigkeiten
    *     passiert ereignisgesteuert. D.h. auch, dass der Start bei behebbaren Fehlern nicht
    *     fehlschlägt, z.B. wenn eine externe Ressource fehlt aber später verfügbar sein könnte. Wenn
    *     `SYNC` verhält sich der Start wie in v3.x, die Module werden sequentiell in einer festen
@@ -84,10 +84,10 @@ public interface ModulesConfiguration {
   }
 
   /**
-   * @en The minimum maturity of modules that should be loaded, all other modules will be ignored.
-   *     Possible values are `PROPOSAL`, `CANDIDATE` and `MATURE`. See [Module
+   * @langEn The minimum maturity of modules that should be loaded, all other modules will be
+   *     ignored. Possible values are `PROPOSAL`, `CANDIDATE` and `MATURE`. See [Module
    *     Lifecycle](../references/modules.md) for a list of all modules and their classifications.
-   * @de Die minimale Maturity von Modulen die geladen werden sollen, all anderen Module werden
+   * @langDe Die minimale Maturity von Modulen die geladen werden sollen, all anderen Module werden
    *     ignoriert. Möglich Werte sind `PROPOSAL`, `CANDIDATE` und `MATURE`. Siehe
    *     [Modul-Lebenszyklus](../references/modules.md) für eine Liste aller Module und ihrer
    *     Klassifikationen.
@@ -100,11 +100,11 @@ public interface ModulesConfiguration {
   }
 
   /**
-   * @en The minimum maintenance level of modules that should be loaded, all other modules will be
-   *     ignored. Possible values are `NONE`, `LOW` and `FULL`. See [Module
+   * @langEn The minimum maintenance level of modules that should be loaded, all other modules will
+   *     be ignored. Possible values are `NONE`, `LOW` and `FULL`. See [Module
    *     Lifecycle](../references/modules.md) for a list of all modules and their classifications.
-   * @de Der minimale Maintenance-Level von Modulen die geladen werden sollen, all anderen Module
-   *     werden ignoriert. Möglich Werte sind `NONE`, `LOW` und `FULL`. Siehe
+   * @langDe Der minimale Maintenance-Level von Modulen die geladen werden sollen, all anderen
+   *     Module werden ignoriert. Möglich Werte sind `NONE`, `LOW` und `FULL`. Siehe
    *     [Modul-Lebenszyklus](../references/modules.md) für eine Liste aller Module und ihrer
    *     Klassifikationen.
    * @since v4.0
