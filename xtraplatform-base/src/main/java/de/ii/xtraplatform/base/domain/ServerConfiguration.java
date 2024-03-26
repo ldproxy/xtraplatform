@@ -101,7 +101,7 @@ import io.dropwizard.core.server.DefaultServerFactory;
  * </code>
  *     <p>
  */
-@DocFile(path = "application/20-configuration", name = "100-server.md")
+@DocFile(path = "application/20-configuration", name = "99-server.md")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = ServerConfiguration.class)
 public class ServerConfiguration extends DefaultServerFactory {
 

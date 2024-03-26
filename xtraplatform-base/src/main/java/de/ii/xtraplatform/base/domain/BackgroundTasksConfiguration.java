@@ -17,8 +17,11 @@ import javax.validation.constraints.Min;
 import org.immutables.value.Value;
 
 /**
- * @langAll Background Tasks
+ * @langEn # Background Tasks
  *     <p>## Options
+ *     <p>{@docTable:properties}
+ * @langDe # Background Tasks
+ *     <p>## Optionen
  *     <p>{@docTable:properties}
  */
 @DocFile(

@@ -168,7 +168,9 @@ public abstract class AppConfiguration extends Configuration {
   /**
    * @langEn See [Background Tasks](90-background-tasks.md).
    * @langDe Siehe [Background Tasks](90-background-tasks.md).
+   * @since v3.0
    */
+  @JsonProperty("backgroundTasks")
   @Valid
   public abstract BackgroundTasksConfiguration getBackgroundTasks();
 
