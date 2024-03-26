@@ -23,6 +23,7 @@ import org.immutables.value.Value;
  * @langDe # Background Tasks
  *     <p>## Optionen
  *     <p>{@docTable:properties}
+ * @ref:cfgProperties {@link de.ii.xtraplatform.base.domain.ImmutableBackgroundTasksConfiguration}
  */
 @DocFile(
     path = "application/20-configuration",
@@ -30,7 +31,10 @@ import org.immutables.value.Value;
     tables = {
       @DocTable(
           name = "properties",
-          rows = {@DocStep(type = Step.JSON_PROPERTIES)},
+          rows = {
+            @DocStep(type = Step.TAG_REFS, params = "{@ref:cfgProperties}"),
+            @DocStep(type = Step.JSON_PROPERTIES)
+          },
           columnSet = ColumnSet.JSON_PROPERTIES)
     })
 @Value.Immutable
