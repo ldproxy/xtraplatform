@@ -1,9 +1,9 @@
 [versions]
 jjwt = '0.11.5'
-swagger = '2.2.8'
-classgraph = "4.8.138"
-dropwizard = '3.0.4'
-jackson = '2.15.3'
+swagger = '2.2.21'
+classgraph = "4.8.165"
+dropwizard = '3.0.7'
+jackson = '2.16.1'
 commons-codec = '1.16.0'
 threeten = '1.5.0'
 jakarta-xml = '2.3.3'
@@ -12,7 +12,7 @@ dagger = '2.49'
 dagger-auto = '0.9.1'
 minio = '8.5.6'
 cron4j = '2.2.5'
-rxjava = '3.1.5'
+rxjava = '3.1.8'
 rxjava-ext = '3.1.1'
 rs = '1.0.4'
 
