@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
 @Singleton
 @AutoBind
 @Hidden
-@Path("/services/")
+@Path("/")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
 public class ServicesEndpoint implements Endpoint {
 
@@ -247,7 +247,7 @@ public class ServicesEndpoint implements Endpoint {
                 .getPath()
                 .replace(id, String.format("%s/v%d", id, apiVersion));
         if (getExternalUri().isPresent()) {
-          redirectPath = redirectPath.replace("/rest/services", getExternalUri().get().getPath());
+          redirectPath = getExternalUri().get().getPath() + redirectPath;
         }
         URI redirectUri =
             containerRequestContext
