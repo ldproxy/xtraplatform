@@ -27,14 +27,14 @@ import io.dropwizard.core.server.DefaultServerFactory;
  * </code>
  *     <p>## External URL
  *     <p>If the application is run behind another web server, e.g. for HTTPS or to change the path
- *     where the services are accessible (`/rest/services`), the external URL must be configured.
+ *     where the services are accessible, the external URL must be configured.
  *     <p>A common use case would be to use *Apache HTTP Server* to set up a *ProxyPass* from
- *     `https://example.org/ldproxy` to `http://ldproxy-host:7080/rest/services`. Then the following
- *     would need to be configured:
+ *     `https://example.org/ldproxy` to `http://ldproxy-host:7080`. Then the following would need to
+ *     be configured:
  *     <p><code>
  * ```yaml
  * server:
- *   externalUrl: https://example.org/ldproxy/
+ *   externalUrl: https://example.org/ldproxy
  * ```
  * </code>
  *     <p>## Request-Logging
@@ -70,15 +70,15 @@ import io.dropwizard.core.server.DefaultServerFactory;
  * </code>
  *     <p>## Externe URL
  *     <p>Wenn die Applikation hinter einem weiteren Webserver betrieben wird, z.B. für HTTPS oder
- *     um den Pfad zu ändern, unter dem die Dienste erreichbar sind (`/rest/services`), muss die
- *     externe URL konfiguriert werden.
+ *     um den Pfad zu ändern, unter dem die Dienste erreichbar sind, muss die externe URL
+ *     konfiguriert werden.
  *     <p>Ein verbreiteter Anwendungsfall wäre mittels *Apache HTTP Server* ein *ProxyPass* von
- *     `https://example.org/ldproxy` nach `http://ldproxy-host:7080/rest/services` einzurichten.
- *     Dann müsste folgendes konfiguriert werden:
+ *     `https://example.org/ldproxy` nach `http://ldproxy-host:7080` einzurichten. Dann müsste
+ *     folgendes konfiguriert werden:
  *     <p><code>
  * ```yaml
  * server:
- *   externalUrl: https://example.org/ldproxy/
+ *   externalUrl: https://example.org/ldproxy
  * ```
  * </code>
  *     <p>## Request-Logging

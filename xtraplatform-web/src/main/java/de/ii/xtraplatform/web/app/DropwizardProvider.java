@@ -48,7 +48,7 @@ public class DropwizardProvider implements AppLifeCycle {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
   private static final String[] DW_ARGS = {XtraplatformCommand.CMD, "cfg.yml"};
-  static final String JERSEY_ENDPOINT = "/rest/*";
+  static final String JERSEY_ENDPOINT = "/*";
 
   private final AppContext appContext;
   private final Lazy<Set<DropwizardPlugin>> plugins;
