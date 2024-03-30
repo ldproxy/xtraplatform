@@ -8,7 +8,6 @@
 package de.ii.xtraplatform.services.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import com.google.common.base.Strings;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.services.domain.ServicesContext;
 import java.net.URI;
@@ -23,19 +22,7 @@ public class ServicesContextImpl implements ServicesContext {
 
   @Inject
   ServicesContextImpl(AppContext appContext) {
-    String externalUrl = appContext.getConfiguration().getServerFactory().getExternalUrl();
-
-    if (Strings.isNullOrEmpty(externalUrl)) {
-      this.uri = appContext.getUri().resolve("/rest/services");
-      return;
-    }
-
-    String uri =
-        externalUrl.endsWith("/")
-            ? externalUrl.substring(0, externalUrl.length() - 1)
-            : externalUrl;
-
-    this.uri = URI.create(uri);
+    this.uri = appContext.getUri();
   }
 
   @Override
