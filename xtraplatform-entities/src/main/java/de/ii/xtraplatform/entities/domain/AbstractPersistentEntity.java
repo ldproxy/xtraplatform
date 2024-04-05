@@ -10,6 +10,9 @@ package de.ii.xtraplatform.entities.domain;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatileComposed;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileComposed;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.entities.app.ChangingDataImpl;
 import java.util.List;
 import java.util.Objects;
@@ -28,7 +31,8 @@ import org.slf4j.MDC;
  * @author zahnen
  */
 public abstract class AbstractPersistentEntity<T extends EntityData>
-    implements PersistentEntity, Reloadable, EntityState {
+    extends AbstractVolatileComposed
+    implements PersistentEntity, Reloadable, EntityState, VolatileComposed {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPersistentEntity.class);
 
@@ -51,7 +55,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   private EntityState.STATE state;
   private EntityState.STATE previousState;
 
-  public AbstractPersistentEntity(T data) {
+  public AbstractPersistentEntity(
+      T data, VolatileRegistry volatileRegistry, String... capabilities) {
+    super(volatileRegistry, capabilities);
     this.executorService =
         MoreExecutors.getExitingExecutorService(
             (ThreadPoolExecutor)
@@ -255,7 +261,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     return true;
   }
 
-  protected void onStarted() {}
+  protected void onStarted() {
+    onVolatileStarted();
+  }
 
   protected void onReloaded() {}
 
@@ -266,7 +274,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   protected void onStartupFailure(Throwable throwable) {}
 
   protected boolean shouldRegister() {
-    return true;
+    return getData() != null && getData().getEnabled();
   }
 
   protected void checkForStartupCancel() throws InterruptedException {
@@ -301,7 +309,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   }
 
   @Override
-  public EntityState.STATE getState() {
+  public EntityState.STATE getEntityState() {
     return state;
   }
 
@@ -324,5 +332,10 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   @Override
   public void addListener(Consumer<EntityState> listener) {
     stateChangeListeners.add(listener);
+  }
+
+  @Override
+  public String getUniqueKey() {
+    return String.format("entities/%s/%s", getType(), getId());
   }
 }

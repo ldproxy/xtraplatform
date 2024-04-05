@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.values.domain;
 
 import com.google.common.collect.ImmutableMap;
+import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public interface Values<T> {
+public interface Values<T> extends Volatile2 {
 
   List<Identifier> identifiers(String... path);
 

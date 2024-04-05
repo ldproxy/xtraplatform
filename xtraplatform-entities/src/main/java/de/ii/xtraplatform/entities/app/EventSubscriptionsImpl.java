@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.entities.app;
 
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.entities.domain.EntityEvent;
 import de.ii.xtraplatform.entities.domain.EventStoreSubscriber;
@@ -20,8 +22,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,13 +34,17 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
 
   private final Map<String, EventStream<Event>> eventStreams;
   private final Reactive.Runner streamRunner;
-  private final ScheduledExecutorService executorService;
+  private final ExecutorService executorService;
   private boolean isStarted;
 
   protected EventSubscriptionsImpl(Reactive.Runner streamRunner) {
     this.eventStreams = new ConcurrentHashMap<>();
     this.streamRunner = streamRunner;
-    this.executorService = new ScheduledThreadPoolExecutor(1);
+    this.executorService =
+        MoreExecutors.getExitingExecutorService(
+            (ThreadPoolExecutor)
+                Executors.newFixedThreadPool(
+                    1, new ThreadFactoryBuilder().setNameFormat("events-%d").build()));
   }
 
   @Override

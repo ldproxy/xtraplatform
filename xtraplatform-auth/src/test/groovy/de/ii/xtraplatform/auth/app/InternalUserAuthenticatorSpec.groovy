@@ -13,6 +13,7 @@ import de.ii.xtraplatform.base.domain.AppContext
 import de.ii.xtraplatform.auth.domain.User
 import de.ii.xtraplatform.base.domain.AppConfiguration
 import de.ii.xtraplatform.base.domain.ModifiableAuthConfiguration
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry
 import de.ii.xtraplatform.values.domain.Identifier
 import de.ii.xtraplatform.values.domain.ValueEncoding
 import de.ii.xtraplatform.entities.domain.EntityData
@@ -197,6 +198,21 @@ class InternalUserAuthenticatorSpec extends Specification {
 
         @Override
         CompletableFuture<Boolean> delete(Identifier identifier) {
+            return null
+        }
+
+        @Override
+        State getState() {
+            return null
+        }
+
+        @Override
+        Optional<String> getMessage() {
+            return null
+        }
+
+        @Override
+        Runnable onStateChange(VolatileRegistry.ChangeHandler handler, boolean initialCall) {
             return null
         }
     }

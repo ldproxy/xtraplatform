@@ -7,6 +7,9 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import com.codahale.metrics.health.HealthCheck;
+import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
@@ -17,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
 public interface EntityStoreDecorator<T extends EntityData, U extends T>
-    extends EntityDataStore<U> {
+    extends EntityDataStore<U>, Volatile2 {
 
   EntityDataStore<T> getDecorated();
 
@@ -125,5 +128,30 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
   default EntityDataBuilder<EntityData> getBuilder(
       Identifier identifier, Optional<String> entitySubtype) {
     return getDecorated().getBuilder(identifier, entitySubtype);
+  }
+
+  @Override
+  default String getUniqueKey() {
+    return getDecorated().getUniqueKey();
+  }
+
+  @Override
+  default State getState() {
+    return getDecorated().getState();
+  }
+
+  @Override
+  default Optional<String> getMessage() {
+    return getDecorated().getMessage();
+  }
+
+  @Override
+  default Runnable onStateChange(ChangeHandler handler, boolean initialCall) {
+    return getDecorated().onStateChange(handler, initialCall);
+  }
+
+  @Override
+  default Optional<HealthCheck> asHealthCheck() {
+    return getDecorated().asHealthCheck();
   }
 }

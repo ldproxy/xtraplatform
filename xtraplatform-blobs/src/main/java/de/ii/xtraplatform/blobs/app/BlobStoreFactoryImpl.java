@@ -11,6 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
 import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import de.ii.xtraplatform.blobs.domain.BlobStoreFactory;
@@ -23,16 +24,19 @@ import javax.inject.Singleton;
 public class BlobStoreFactoryImpl implements BlobStoreFactory {
 
   private final Store store;
+  private final VolatileRegistry volatileRegistry;
   private final Lazy<Set<BlobStoreDriver>> drivers;
 
   @Inject
-  BlobStoreFactoryImpl(Store store, Lazy<Set<BlobStoreDriver>> drivers) {
+  BlobStoreFactoryImpl(
+      Store store, VolatileRegistry volatileRegistry, Lazy<Set<BlobStoreDriver>> drivers) {
     this.store = store;
+    this.volatileRegistry = volatileRegistry;
     this.drivers = drivers;
   }
 
   @Override
   public BlobStore createBlobStore(Content contentType) {
-    return new BlobStoreImpl(store, drivers, contentType);
+    return new BlobStoreImpl(store, volatileRegistry, drivers, contentType);
   }
 }

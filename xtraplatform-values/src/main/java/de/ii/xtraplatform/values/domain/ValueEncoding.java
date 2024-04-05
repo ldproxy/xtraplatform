@@ -25,7 +25,8 @@ public interface ValueEncoding<T> {
     JSON,
     YML,
     YAML,
-    UNKNOWN /*, ION*/;
+    SMILE,
+    UNKNOWN;
 
     public static FORMAT fromString(String format) {
       if (Objects.isNull(format)) {
@@ -73,4 +74,6 @@ public interface ValueEncoding<T> {
 
   T deserialize(Identifier identifier, byte[] payload, FORMAT format, boolean ignoreCache)
       throws IOException;
+
+  String hash(T data);
 }

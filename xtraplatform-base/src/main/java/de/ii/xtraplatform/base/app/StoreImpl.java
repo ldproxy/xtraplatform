@@ -48,7 +48,7 @@ public class StoreImpl implements Store {
     this.dataDirectory = dataDirectory;
     this.storeConfiguration = storeConfiguration;
     this.sources =
-        storeConfiguration.getSources(dataDirectory).stream()
+        storeConfiguration.getSources().stream()
             .filter(source -> source.getContent() != Content.NONE)
             .collect(Collectors.toUnmodifiableList());
     info();

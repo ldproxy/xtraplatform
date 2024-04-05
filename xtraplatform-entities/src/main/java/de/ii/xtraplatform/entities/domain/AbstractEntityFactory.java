@@ -10,13 +10,13 @@ package de.ii.xtraplatform.entities.domain;
 import com.google.common.collect.ImmutableSet;
 import de.ii.xtraplatform.base.domain.LogContext;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,8 +36,8 @@ public abstract class AbstractEntityFactory<
 
   public AbstractEntityFactory(FactoryAssisted<T, U> assistedFactory) {
     this.assistedFactory = assistedFactory;
-    this.instances = new LinkedHashMap<>();
-    this.instanceConfigurationHashes = new LinkedHashMap<>();
+    this.instances = new ConcurrentHashMap<>();
+    this.instanceConfigurationHashes = new ConcurrentHashMap<>();
     this.entityListeners = new ArrayList<>();
     this.entityGoneListeners = new ArrayList<>();
   }
@@ -59,8 +59,10 @@ public abstract class AbstractEntityFactory<
     }
 
     U entity = assistedFactory.create((T) entityData);
-    instances.put(entityData.getId(), entity);
-    instanceConfigurationHashes.put(entityData.getId(), entityData.hashCode());
+    synchronized (this) {
+      instances.put(entityData.getId(), entity);
+      instanceConfigurationHashes.put(entityData.getId(), entityData.hashCode());
+    }
     entity.onValidate();
     entity.onPostRegistration();
     entityListeners.forEach(listener -> listener.accept(entity));
@@ -99,7 +101,9 @@ public abstract class AbstractEntityFactory<
 
         try {
           instance.setData((T) entityData);
-          instanceConfigurationHashes.put(id, entityData.hashCode());
+          synchronized (this) {
+            instanceConfigurationHashes.put(id, entityData.hashCode());
+          }
           reloaded.complete(instance);
         } catch (Throwable e) {
           LogContext.error(LOGGER, e, "Could not reload configuration");
@@ -123,8 +127,10 @@ public abstract class AbstractEntityFactory<
       U entity = instances.get(id);
       entity.onInvalidate();
       entity.onPostUnregistration();
-      instances.remove(id);
-      instanceConfigurationHashes.remove(id);
+      synchronized (this) {
+        instances.remove(id);
+        instanceConfigurationHashes.remove(id);
+      }
       entityGoneListeners.forEach(listener -> listener.accept(entity));
     }
   }

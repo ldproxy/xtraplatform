@@ -27,9 +27,7 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
- * @langEn # Store (new)
- *     <p>::: info This is the documentation of the new store that was introduced in `v3.5`. For the
- *     old store that will be removed in `v4.0` see [Store](00-store.md). :::
+ * @langEn # Store
  *     <p>The store represents all files that make up a deployment of ldproxy besides the
  *     application itself. That includes all configuration files but also other resources like file
  *     databases or caches. In the most simple case all of these files will exist in the local data
@@ -153,9 +151,7 @@ import org.immutables.value.Value;
  *     application wants to write a resource with a specific path, the sources are checked in
  *     reverse order for the first that is writable for resources with the given prefix. So if more
  *     than one source could take the given resource, the one defined later will win.
- * @langDe # Store (neu)
- *     <p>::: info Dies ist die Dokumentation des neuen Stores, der in `v3.5` eingeführt wurde. Für
- *     den alten Store, der in `v4.0` entfernt werden wird, siehe [Store](00-store.md). :::
+ * @langDe # Store
  *     <p>Der Store repräsentiert alle Dateien, die ein Deployment von ldproxy ausmachen, außer der
  *     Anwendung selbst. Dazu gehören alle Konfigurationsdateien, aber auch andere Ressourcen wie
  *     File-Datenbanken oder Caches. Im einfachsten Fall existieren alle diese Dateien im lokalen
@@ -417,10 +413,6 @@ import org.immutables.value.Value;
   @JsonSubTypes.Type(value = StoreSourceGitlab.class, name = StoreSourceGitlab.KEY),
   @JsonSubTypes.Type(value = StoreSourceDefault.class, name = StoreSourceDefault.KEY),
   @JsonSubTypes.Type(value = StoreSourceEmpty.class, name = Type.EMPTY_KEY),
-  @JsonSubTypes.Type(value = StoreSourceFsV3.class, name = StoreSourceFsV3.KEY),
-  @JsonSubTypes.Type(value = StoreSourceFsV3Auto.class, name = StoreSourceFsV3Auto.KEY),
-  @JsonSubTypes.Type(value = StoreSourceHttpV3.class, name = StoreSourceHttpV3.KEY),
-  @JsonSubTypes.Type(value = StoreSourceGithubV3.class, name = StoreSourceGithubV3.KEY),
   @JsonSubTypes.Type(value = StoreSourceS3.class, name = "S3"),
 })
 public interface StoreSource {

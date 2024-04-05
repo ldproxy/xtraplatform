@@ -36,6 +36,9 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
         int compareType = entityType(id1).compareTo(entityType(id2));
 
         if (compareType == 0) {
+          if (id1.id().endsWith("-tiles") && id2.id().endsWith("-tiles")) {
+            return 0;
+          }
           if (id2.id().endsWith("-tiles")) {
             return -1;
           }

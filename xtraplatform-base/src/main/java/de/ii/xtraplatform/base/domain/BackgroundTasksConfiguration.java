@@ -17,9 +17,13 @@ import javax.validation.constraints.Min;
 import org.immutables.value.Value;
 
 /**
- * @langAll Background Tasks
+ * @langEn # Background Tasks
  *     <p>## Options
  *     <p>{@docTable:properties}
+ * @langDe # Background Tasks
+ *     <p>## Optionen
+ *     <p>{@docTable:properties}
+ * @ref:cfgProperties {@link de.ii.xtraplatform.base.domain.ImmutableBackgroundTasksConfiguration}
  */
 @DocFile(
     path = "application/20-configuration",
@@ -27,7 +31,10 @@ import org.immutables.value.Value;
     tables = {
       @DocTable(
           name = "properties",
-          rows = {@DocStep(type = Step.JSON_PROPERTIES)},
+          rows = {
+            @DocStep(type = Step.TAG_REFS, params = "{@ref:cfgProperties}"),
+            @DocStep(type = Step.JSON_PROPERTIES)
+          },
           columnSet = ColumnSet.JSON_PROPERTIES)
     })
 @Value.Immutable
@@ -36,12 +43,13 @@ import org.immutables.value.Value;
 public interface BackgroundTasksConfiguration {
 
   /**
-   * @en The maximum number of threads available for background processes. If requests are to be
+   * @langEn The maximum number of threads available for background processes. If requests are to be
    *     answered efficiently at all times, the value should not exceed half of the CPU cores.
-   * @de Die maximale Anzahl an Threads, die für Hintergrundprozesse zur Verfügung stehen. Falls zu
-   *     jeder Zeit Requests performant beantwortet können werden sollen, sollte der Wert die Hälfte
-   *     der CPU-Kerne nicht überschreiten.
-   * @default `1`
+   * @langDe Die maximale Anzahl an Threads, die für Hintergrundprozesse zur Verfügung stehen. Falls
+   *     zu jeder Zeit Requests performant beantwortet können werden sollen, sollte der Wert die
+   *     Hälfte der CPU-Kerne nicht überschreiten.
+   * @since v3.0
+   * @default 1
    */
   @Min(1)
   @Value.Default

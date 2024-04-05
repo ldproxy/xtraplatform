@@ -9,12 +9,17 @@ package de.ii.xtraplatform.blobs.app;
 
 import static de.ii.xtraplatform.base.domain.util.LambdaWithException.mayThrow;
 
+import com.codahale.metrics.health.HealthCheck;
 import com.google.common.collect.Lists;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatileComposedPolling;
+import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatilePolling;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
+import de.ii.xtraplatform.base.domain.util.Tuple;
 import de.ii.xtraplatform.blobs.domain.Blob;
 import de.ii.xtraplatform.blobs.domain.BlobReader;
 import de.ii.xtraplatform.blobs.domain.BlobSource;
@@ -35,11 +40,13 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BlobStoreImpl implements BlobStore, BlobWriterReader {
+public class BlobStoreImpl extends AbstractVolatileComposedPolling
+    implements BlobStore, BlobWriterReader {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BlobStoreImpl.class);
 
   private final Store store;
+  private final VolatileRegistry volatileRegistry;
   private final Lazy<Set<BlobStoreDriver>> drivers;
 
   private final List<BlobSource> blobReaders;
@@ -47,8 +54,14 @@ public class BlobStoreImpl implements BlobStore, BlobWriterReader {
   private final boolean isReadOnly;
   private final Content contentType;
 
-  public BlobStoreImpl(Store store, Lazy<Set<BlobStoreDriver>> drivers, Content contentType) {
+  public BlobStoreImpl(
+      Store store,
+      VolatileRegistry volatileRegistry,
+      Lazy<Set<BlobStoreDriver>> drivers,
+      Content contentType) {
+    super(volatileRegistry, "read", "write");
     this.store = store;
+    this.volatileRegistry = volatileRegistry;
     this.drivers = drivers;
     this.blobReaders = new ArrayList<>();
     this.blobWriters = new ArrayList<>();
@@ -57,7 +70,24 @@ public class BlobStoreImpl implements BlobStore, BlobWriterReader {
   }
 
   @Override
+  public String getUniqueKey() {
+    return String.format("app/store/%s", contentType.getPrefix());
+  }
+
+  @Override
+  public int getIntervalMs() {
+    return 5000;
+  }
+
+  @Override
+  public Tuple<State, String> check() {
+    return Tuple.of(State.AVAILABLE, null);
+  }
+
+  @Override
   public void start() {
+    onVolatileStart();
+
     List<StoreSource> sources = findSources();
 
     Lists.reverse(sources)
@@ -68,6 +98,8 @@ public class BlobStoreImpl implements BlobStore, BlobWriterReader {
               blobStoreDriver.ifPresent(
                   driver -> {
                     try {
+                      addSubComponent(driver, source);
+
                       BlobSource blobSource = driver.init(source, contentType);
 
                       blobReaders.add(blobSource);
@@ -98,6 +130,41 @@ public class BlobStoreImpl implements BlobStore, BlobWriterReader {
                     }
                   });
             });
+
+    onVolatileStarted();
+  }
+
+  private void addSubComponent(BlobStoreDriver driver, StoreSource source) {
+    addSubcomponent(
+        new AbstractVolatilePolling(volatileRegistry) {
+          @Override
+          public String getUniqueKey() {
+            return source.getLabel();
+          }
+
+          @Override
+          public int getIntervalMs() {
+            return BlobStoreImpl.this.getIntervalMs();
+          }
+
+          @Override
+          public Tuple<State, String> check() {
+            if (driver.isAvailable(source)) {
+              return Tuple.of(State.AVAILABLE, null);
+            }
+            return Tuple.of(State.UNAVAILABLE, null);
+          }
+
+          @Override
+          protected Set<String> getVolatileCapabilities() {
+            return source.isWritable() ? Set.of("read", "write") : Set.of("read");
+          }
+
+          @Override
+          public Optional<HealthCheck> asHealthCheck() {
+            return Optional.empty();
+          }
+        });
   }
 
   private List<StoreSource> findSources() {

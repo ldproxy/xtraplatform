@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.services.domain;
 
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.entities.domain.AbstractPersistentEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +20,8 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
     implements Service {
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractService.class);
 
-  public AbstractService(T data) {
-    super(data);
+  public AbstractService(T data, VolatileRegistry volatileRegistry) {
+    super(data, volatileRegistry);
   }
 
   @Override
@@ -30,6 +31,14 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
 
   @Override
   protected void onStarted() {
+    super.onStarted();
+
+    onStateChange(
+        (from, to) -> {
+          LOGGER.info("Service with id '{}' state changed: {}", getId(), getState());
+        },
+        true);
+
     LOGGER.info("Service with id '{}' started successfully.", getId());
   }
 

@@ -53,6 +53,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -75,6 +76,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   private final ValueEncodingJacksonWithNesting<EntityData> valueEncodingEntity;
   private final EventSourcing<Map<String, Object>> eventSourcing;
   private final EventStore eventStore;
+  private final CompletableFuture<Void> ready;
 
   @Inject
   public EntityDataDefaultsStoreImpl(
@@ -84,6 +86,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       Lazy<Set<EntityFactory>> entityFactories) {
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.eventStore = eventStore;
+    this.ready = new CompletableFuture<>();
     this.valueEncoding =
         new ValueEncodingJacksonWithNesting<>(
             jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
@@ -174,12 +177,14 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
   @Override
   public int getPriority() {
-    return 30;
+    return 200;
   }
 
   @Override
-  public void onStart() {
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
     eventSourcing.start();
+
+    return CompletableFuture.completedFuture(null);
   }
 
   private List<ReplayEvent> processReplayEvent(ReplayEvent event) {
@@ -446,6 +451,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
             });
 
+    ready.complete(null);
+
     return super.onListenStart();
   }
 
@@ -497,5 +504,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             });
 
     return CompletableFuture.completedFuture(defaults);
+  }
+
+  @Override
+  public CompletableFuture<Void> onReady() {
+    return ready;
   }
 }

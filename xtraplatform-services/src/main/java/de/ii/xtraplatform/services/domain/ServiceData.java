@@ -7,7 +7,6 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -52,8 +51,6 @@ public interface ServiceData extends EntityData, AutoEntity {
    *     erreichbar ist und Hintergrundprozesse nicht laufen.
    * @default true
    */
-  @JsonProperty("enabled")
-  @JsonAlias("shouldStart")
   @Value.Default
   default boolean getEnabled() {
     return true;
@@ -74,15 +71,6 @@ public interface ServiceData extends EntityData, AutoEntity {
   @JsonProperty(value = "auto", access = JsonProperty.Access.WRITE_ONLY)
   @Override
   Optional<Boolean> getAuto();
-
-  /**
-   * @langEn When `auto: true`, this will persist the generated options to the configuration file.
-   * @langDe Wenn `auto: true` ist, die generierten Optionen in die Konfigurationsdatei
-   *     persistieren.
-   */
-  @JsonProperty(value = "autoPersist", access = JsonProperty.Access.WRITE_ONLY)
-  @Override
-  Optional<Boolean> getAutoPersist();
 
   @JsonIgnore
   @Value.Derived

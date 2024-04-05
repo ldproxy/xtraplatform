@@ -13,9 +13,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.hash.Hashing;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
@@ -32,7 +34,6 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO: make default format and supported formats configurable
 public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ValueEncodingJackson.class);
@@ -44,12 +45,7 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
   private static final FORMAT DEFAULT_FORMAT = FORMAT.YML;
 
-  @Deprecated
-  private static final FORMAT DESER_FORMAT_LEGACY =
-      FORMAT.JSON; // old configuration files without file extension are JSON
-
-  private final Map<FORMAT, ObjectMapper>
-      mappers; // TODO: use smile/ion mapper for distributed store
+  private final Map<FORMAT, ObjectMapper> mappers;
   private final List<ValueDecoderMiddleware<byte[]>> decoderPreProcessor;
   private final List<ValueDecoderMiddleware<T>> decoderMiddleware;
 
@@ -79,6 +75,13 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
+    ObjectMapper smileMapper =
+        jackson
+            .getNewObjectMapper(new SmileFactory())
+            .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
+            .setDefaultMergeable(true)
+            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+
     if (failOnUnknownProperties) {
       jsonMapper.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
       yamlMapper.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -88,7 +91,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
         ImmutableMap.of(
             FORMAT.JSON, jsonMapper,
             FORMAT.YML, yamlMapper,
-            FORMAT.YAML, yamlMapper);
+            FORMAT.YAML, yamlMapper,
+            FORMAT.SMILE, smileMapper);
 
     this.decoderMiddleware = new ArrayList<>();
     this.decoderPreProcessor = new ArrayList<>();
@@ -107,7 +111,6 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     return DEFAULT_FORMAT;
   }
 
-  // TODO: default serialization format should depend on EventStore implementation
   @Override
   public final byte[] serialize(T data) {
     try {
@@ -146,10 +149,12 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     if (isNull(payload)) {
       return null;
     }
+    if (Objects.equals(format, FORMAT.NONE)) {
+      throw new IllegalStateException("No format given");
+    }
 
     byte[] rawData = payload;
-    FORMAT payloadFormat = Objects.equals(format, FORMAT.NONE) ? DESER_FORMAT_LEGACY : format;
-    ObjectMapper objectMapper = getMapper(payloadFormat);
+    ObjectMapper objectMapper = getMapper(format);
     T data = null;
 
     for (ValueDecoderMiddleware<byte[]> preProcessor : decoderPreProcessor) {
@@ -195,5 +200,13 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     String payloadString = new String(payload, StandardCharsets.UTF_8);
     return JSON_EMPTY.matcher(payloadString).matches()
         || YAML_EMPTY.matcher(payloadString).matches();
+  }
+
+  @Override
+  @SuppressWarnings("UnstableApiUsage")
+  public final String hash(T data) {
+    byte[] bytes = serialize(data, FORMAT.SMILE);
+
+    return Hashing.murmur3_128().hashBytes(bytes).toString();
   }
 }

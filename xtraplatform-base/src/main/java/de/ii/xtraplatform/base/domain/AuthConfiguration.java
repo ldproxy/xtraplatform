@@ -7,9 +7,7 @@
  */
 package de.ii.xtraplatform.base.domain;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -22,7 +20,6 @@ import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import de.ii.xtraplatform.docs.DocVar;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 /**
@@ -200,118 +197,9 @@ import org.immutables.value.Value;
 @Value.Modifiable
 @JsonDeserialize(as = ModifiableAuthConfiguration.class)
 public interface AuthConfiguration {
-
-  @DocIgnore
-  @Deprecated(since = "3.5")
-  @Nullable
-  String getJwtSigningKey();
-
-  @DocIgnore
-  @Deprecated(since = "3.5")
-  @Nullable
-  String getUserNameKey();
-
-  @DocIgnore
-  @Deprecated(since = "3.5")
-  @JsonIgnore
-  @Value.Derived
-  default String getUserRoleKey() {
-    return "role";
-  }
-
-  @DocIgnore
-  @Deprecated(since = "3.5")
-  @JsonAlias("userScopesKey")
-  @Nullable
-  String getUserPermissionsKey();
-
-  @DocIgnore
-  @Deprecated(since = "3.5")
-  Optional<String> getUserInfoEndpoint();
-
-  @DocIgnore
-  @Deprecated(since = "3.5")
-  @JsonAlias("externalDynamicAuthorizationEndpoint")
-  Optional<String> getXacmlJsonEndpoint();
-
   // TODO: could be replaced with property obligations
   @DocIgnore
   Optional<String> getPostProcessingEndpoint();
-
-  @DocIgnore
-  @Deprecated(since = "3.5")
-  @Nullable
-  String getXacmlJsonVersion();
-
-  @DocIgnore
-  @Deprecated(since = "3.5")
-  @Nullable
-  String getXacmlJsonMediaType();
-
-  // TODO
-  /*@Deprecated(since = "3.5")
-  @Value.Check
-  default AuthConfiguration backwardsCompatibility() {
-
-    if (Objects.nonNull(getUserNameKey()) || Objects.nonNull(getUserPermissionsKey())) {
-      ImmutableClaims.Builder builder = new ImmutableClaims.Builder();
-      if (Objects.nonNull(getUserNameKey())) {
-        builder.userName(getUserNameKey());
-      }
-      if (Objects.nonNull(getUserPermissionsKey())) {
-        builder.permissions(getUserPermissionsKey());
-      }
-
-      return new ImmutableAuthConfiguration.Builder()
-          .from(this)
-          .claims(builder.build())
-          .userNameKey(null)
-          .userPermissionsKey(null)
-          .build();
-    }
-
-    if (Objects.nonNull(getJwtSigningKey()) || getUserInfoEndpoint().isPresent()) {
-      ImmutableSimple.Builder builder = new ImmutableSimple.Builder();
-      if (Objects.nonNull(getJwtSigningKey())) {
-        builder.jwtSigningKey(getJwtSigningKey());
-      }
-      if (getUserInfoEndpoint().isPresent()) {
-        builder.userInfoEndpoint(getUserInfoEndpoint().get());
-      }
-
-      return new ImmutableAuthConfiguration.Builder()
-          .from(this)
-          .simple(builder.build())
-          .jwtSigningKey(null)
-          .userInfoEndpoint(Optional.empty())
-          .build();
-    }
-
-    if (getXacmlJsonEndpoint().isPresent()
-        || Objects.nonNull(getXacmlJsonVersion())
-        || Objects.nonNull(getXacmlJsonMediaType())) {
-      ImmutableXacmlJson.Builder builder = new ImmutableXacmlJson.Builder();
-      if (getXacmlJsonEndpoint().isPresent()) {
-        builder.endpoint(getXacmlJsonEndpoint().get());
-      }
-      if (Objects.nonNull(getXacmlJsonVersion())) {
-        builder.version(XacmlJsonVersion.fromString(getXacmlJsonVersion()));
-      }
-      if (Objects.nonNull(getUserPermissionsKey())) {
-        builder.mediaType(getXacmlJsonMediaType());
-      }
-
-      return new ImmutableAuthConfiguration.Builder()
-          .from(this)
-          .xacmlJson(builder.build())
-          .xacmlJsonEndpoint(Optional.empty())
-          .xacmlJsonVersion(null)
-          .xacmlJsonMediaType(null)
-          .build();
-    }
-
-    return this;
-  }*/
 
   default Optional<Oidc> getOidc() {
     return getProviders().values().stream()

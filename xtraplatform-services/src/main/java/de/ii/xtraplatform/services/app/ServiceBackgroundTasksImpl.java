@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.inject.Inject;
@@ -70,8 +72,10 @@ public class ServiceBackgroundTasksImpl implements ServiceBackgroundTasks, AppLi
   }
 
   @Override
-  public void onStart() {
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
     tasks.get().forEach(task -> task.setTrigger(this::onServiceReload));
+
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override

@@ -11,6 +11,8 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
@@ -44,6 +46,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +55,11 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.inject.Inject;
@@ -81,6 +88,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private final Supplier<Void> blobStoreReady;
   private final Supplier<Void> valueStoreReady;
   private final boolean noDefaults;
+  private final boolean asyncStartup;
+  private final ExecutorService executorService;
 
   @Inject
   public EntityDataStoreImpl(
@@ -134,6 +143,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.blobStoreReady = blobStore.onReady()::join;
     this.valueStoreReady = valueStore.onReady()::join;
     this.noDefaults = noDefaults;
+    this.asyncStartup = appContext.getConfiguration().getModules().isStartupAsync();
+    this.executorService =
+        MoreExecutors.getExitingExecutorService(
+            (ThreadPoolExecutor)
+                Executors.newCachedThreadPool(
+                    new ThreadFactoryBuilder().setNameFormat("entity.lifecycle-%d").build()));
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
     valueEncoding.addDecoderMiddleware(
@@ -144,6 +159,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     new ValueDecoderEntityDataMigration(
         eventSourcing, entityFactories, this::addAdditionalEvent));*/
     valueEncoding.addDecoderMiddleware(new ValueDecoderIdValidator());
+    valueEncoding.addDecoderMiddleware(
+        new ValueDecoderEntityPreHash(this::getBuilder, valueEncoding::hash));
 
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
@@ -168,12 +185,15 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   public int getPriority() {
-    return 40;
+    return 210;
   }
 
   @Override
-  public void onStart() {
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
+    defaultsStore.onReady().join();
     eventSourcing.start();
+
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -356,15 +376,58 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
               return CompletableFuture.completedFuture(null);
             })
         .thenCompose(
-            ignore ->
-                identifiers().stream()
-                    .sorted(EntityDataStore.COMPARATOR)
+            ignore -> {
+              if (asyncStartup) {
+                List<List<Identifier>> groups =
+                    identifiers().stream()
+                        .sorted(EntityDataStore.COMPARATOR)
+                        .reduce(
+                            new ArrayList<>(),
+                            (list, identifier) -> {
+                              if (list.isEmpty()
+                                  || EntityDataStore.COMPARATOR.compare(
+                                          list.get(list.size() - 1)
+                                              .get(list.get(list.size() - 1).size() - 1),
+                                          identifier)
+                                      != 0) {
+                                ArrayList<Identifier> newList = new ArrayList<>();
+                                newList.add(identifier);
+                                list.add(newList);
+                              } else {
+                                list.get(list.size() - 1).add(identifier);
+                              }
+                              return list;
+                            },
+                            (l1, l2) -> l1);
+
+                return groups.stream()
                     .reduce(
-                        CompletableFuture.completedFuture((Void) null),
-                        (completableFuture, identifier) ->
+                        CompletableFuture.completedFuture(null),
+                        (completableFuture, identifiers) ->
                             completableFuture.thenCompose(
-                                ignore2 -> onCreate(identifier, get(identifier))),
-                        (first, second) -> first.thenCompose(ignore2 -> second)))
+                                ignore2 ->
+                                    CompletableFuture.allOf(
+                                        identifiers.stream()
+                                            .map(
+                                                identifier ->
+                                                    CompletableFuture.runAsync(
+                                                        () ->
+                                                            onCreate(identifier, get(identifier))
+                                                                .join(),
+                                                        executorService))
+                                            .toArray(CompletableFuture[]::new))),
+                        (first, second) -> first.thenCompose(ignore2 -> second));
+              }
+
+              return identifiers().stream()
+                  .sorted(EntityDataStore.COMPARATOR)
+                  .reduce(
+                      CompletableFuture.completedFuture((Void) null),
+                      (completableFuture, identifier) ->
+                          completableFuture.thenCompose(
+                              ignore2 -> onCreate(identifier, get(identifier))),
+                      (first, second) -> first.thenCompose(ignore2 -> second));
+            })
         .thenCompose(entity -> CompletableFuture.completedFuture(null));
   }
 
@@ -593,42 +656,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             new String(valueEncoding.serialize(entityData), StandardCharsets.UTF_8));
       } catch (Throwable e) {
         // ignore
-      }
-    }
-
-    if (entityData instanceof AutoEntity) {
-      AutoEntity autoEntity = (AutoEntity) entityData;
-      if (autoEntity.isAuto() && autoEntity.isAutoPersist()) {
-        hydratedData = hydrate(identifier, hydratedData);
-
-        if (!isEventStoreReadOnly) {
-          try {
-            Map<String, Object> map = asMap(identifier, hydratedData);
-
-            Map<String, Object> withoutDefaults =
-                defaultsStore.subtractDefaults(
-                    identifier, entityData.getEntitySubType(), map, ImmutableList.of());
-
-            putPartialWithoutTrigger(identifier, withoutDefaults).join();
-            LOGGER.info(
-                "Entity of type '{}' with id '{}' is in autoPersist mode, generated configuration was saved.",
-                EntityDataStore.entityType(identifier),
-                entityData.getId());
-          } catch (IOException e) {
-            LogContext.error(
-                LOGGER,
-                e,
-                "Entity of type '{}' with id '{}' is in autoPersist mode, but generated configuration could not be saved",
-                EntityDataStore.entityType(identifier),
-                entityData.getId());
-          }
-
-        } else {
-          LOGGER.warn(
-              "Entity of type '{}' with id '{}' is in autoPersist mode, but was not persisted because the store is read only.",
-              EntityDataStore.entityType(identifier),
-              entityData.getId());
-        }
       }
     }
 

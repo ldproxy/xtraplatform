@@ -25,6 +25,7 @@ public interface EntityData extends StoredValue {
   String getId();
 
   @DocIgnore
+  @JsonIgnore
   @Value.Default
   @Value.Auxiliary
   default long getCreatedAt() {
@@ -32,6 +33,7 @@ public interface EntityData extends StoredValue {
   }
 
   @DocIgnore
+  @JsonIgnore
   @Value.Default
   @Value.Auxiliary
   default long getLastModified() {
@@ -39,6 +41,7 @@ public interface EntityData extends StoredValue {
   }
 
   @DocIgnore
+  @JsonIgnore
   @Value.Default
   default long getEntityStorageVersion() {
     return 1;
@@ -54,4 +57,16 @@ public interface EntityData extends StoredValue {
   @DocIgnore
   @JsonIgnore
   Optional<String> getEntitySubType();
+
+  /**
+   * @langEn Option to disable the entity, which means it will not be available to other entities
+   *     and background tasks will not be running.
+   * @langDe Option um die Entity zu deaktivieren, was bedeutet, dass sie für andere Entities nicht
+   *     verfügbar ist und Hintergrundprozesse nicht laufen.
+   * @default true
+   */
+  @Value.Default
+  default boolean getEnabled() {
+    return true;
+  }
 }

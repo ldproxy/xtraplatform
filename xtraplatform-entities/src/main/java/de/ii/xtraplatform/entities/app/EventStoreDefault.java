@@ -18,7 +18,6 @@ import de.ii.xtraplatform.base.domain.StoreFilters;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Mode;
-import de.ii.xtraplatform.base.domain.StoreSourceFsV3;
 import de.ii.xtraplatform.entities.domain.EntityDataDefaultsStore;
 import de.ii.xtraplatform.entities.domain.EntityEvent;
 import de.ii.xtraplatform.entities.domain.EventFilter;
@@ -38,6 +37,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -75,11 +76,11 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
 
   @Override
   public int getPriority() {
-    return 20;
+    return 10;
   }
 
   @Override
-  public void onStart() {
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
     EventFilter startupFilter = getStartupFilter();
     List<StoreSource> sources = findSources();
 
@@ -89,9 +90,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
     sources.forEach(
         source -> {
           Optional<EventStoreDriver> driver =
-              findDriver(
-                  source,
-                  source.getContent() != Content.ALL && !StoreSourceFsV3.isOldDefaultStore(source));
+              findDriver(source, source.getContent() != Content.ALL);
 
           driver.ifPresent(eventStoreDriver -> load(source, eventStoreDriver, startupFilter));
         });
@@ -113,6 +112,8 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                     .ifPresent(eventStoreDriver -> watch(source, eventStoreDriver));
               });
     }
+
+    return CompletableFuture.completedFuture(null);
   }
 
   private void load(StoreSource storeSource, EventStoreDriver driver, EventFilter startupFilter) {

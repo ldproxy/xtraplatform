@@ -9,7 +9,6 @@ package de.ii.xtraplatform.web.app;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.health.HealthCheck;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -33,6 +32,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -66,8 +66,8 @@ public class DropwizardProvider implements AppLifeCycle {
   }
 
   @Override
-  public void onStart() {
-    Thread.currentThread().setName("startup");
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
+    // Thread.currentThread().setName("startup");
 
     try {
       init();
@@ -75,6 +75,8 @@ public class DropwizardProvider implements AppLifeCycle {
       LogContext.error(LOGGER, ex, "Error during initializing of {}", appContext.getName());
       System.exit(1);
     }
+
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -84,17 +86,6 @@ public class DropwizardProvider implements AppLifeCycle {
     Environment environment = initEnvironment();
 
     environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-
-    environment
-        .healthChecks()
-        .register(
-            "store",
-            new HealthCheck() {
-              @Override
-              protected Result check() throws Exception {
-                return Result.builder().healthy().withDetail("foo", "bar").build();
-              }
-            });
 
     // TODO: per parameter
     environment.getObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
@@ -116,7 +107,6 @@ public class DropwizardProvider implements AppLifeCycle {
 
     environment.jersey().register(new JacksonJaxbXMLProvider());
 
-    // TODO: starts the web server, move to WebServer???
     appContext.getConfiguration().getServerFactory().build(environment);
 
     plugins.get().stream()

@@ -14,6 +14,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
@@ -36,6 +37,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -54,6 +58,7 @@ public class AppLauncher implements AppContext {
   private final String name;
   private final String version;
   private final Set<CfgStoreDriver> drivers;
+  private final ExecutorService startupExecutor;
   private Constants.ENV env;
   private Path dataDir;
   private Path tmpDir;
@@ -64,6 +69,12 @@ public class AppLauncher implements AppContext {
     this.name = name;
     this.version = version;
     this.drivers = new HashSet<>();
+    this.startupExecutor =
+        // MoreExecutors.getExitingExecutorService(
+        (ThreadPoolExecutor)
+            Executors.newCachedThreadPool(
+                new ThreadFactoryBuilder().setNameFormat("startup-%d").build()); // );
+    ;
   }
 
   @Override
@@ -101,7 +112,7 @@ public class AppLauncher implements AppContext {
     return uri;
   }
 
-  public void init(String[] args, Map<String, ByteSource> baseConfigs) throws IOException {
+  public String init(String[] args, Map<String, ByteSource> baseConfigs) throws IOException {
     this.dataDir =
         getDataDir(args).orElseThrow(() -> new IllegalArgumentException("No data directory found"));
     this.tmpDir = dataDir.resolve(TMP_DIR_NAME).toAbsolutePath();
@@ -123,7 +134,7 @@ public class AppLauncher implements AppContext {
     ServiceLoader<CfgStoreDriver> services = ServiceLoader.load(CfgStoreDriver.class);
     services.iterator().forEachRemaining(this.drivers::add);
 
-    Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources(dataDir));
+    Map<String, InputStream> cfgs = getCfgs(cfg.getStore().getSources());
 
     this.cfg = configurationReader.loadMergedConfig(cfgs, env);
 
@@ -153,27 +164,62 @@ public class AppLauncher implements AppContext {
               : externalUrl;
       this.uri = URI.create(uri);
     }
+
+    return String.format(
+        "%s_%s", cfg.getModules().getMinMaturity(), cfg.getModules().getMinMaintenance());
   }
 
-  public void start(App modules) {
+  public void start(App modules, List<String> skipped) {
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Startup mode: {}", cfg.getModules().getStartup());
+      LOGGER.debug(
+          "Module constraints: [minMaturity: {}, minMaintenance: {}]",
+          cfg.getModules().getMinMaturity(),
+          cfg.getModules().getMinMaintenance());
+      if (!skipped.isEmpty()) {
+        LOGGER.debug("Skipped modules: {}", skipped);
+      }
+    }
+
     modules.lifecycle().get().stream()
         .sorted(Comparator.comparingInt(AppLifeCycle::getPriority))
         .forEach(
             lifecycle -> {
-              if (LOGGER.isDebugEnabled(MARKER.DI)) {
-                LOGGER.debug(
-                    MARKER.DI,
-                    "Starting {} ({})",
-                    lifecycle.getClass().getSimpleName(),
-                    lifecycle.getPriority());
-              }
-              try {
-                lifecycle.onStart();
-              } catch (Throwable e) {
-                LogContext.error(
-                    LOGGER, e, "Error starting {}", lifecycle.getClass().getSimpleName());
+              if (lifecycle.getPriority() == 0
+                  || !getConfiguration().getModules().isStartupAsync()) {
+                start(lifecycle);
+              } else {
+                startupExecutor.submit(() -> start(lifecycle));
               }
             });
+  }
+
+  private void start(AppLifeCycle lifecycle) {
+    if (LOGGER.isDebugEnabled(MARKER.DI)) {
+      LOGGER.debug(
+          MARKER.DI,
+          "Starting {} ({})",
+          lifecycle.getClass().getSimpleName(),
+          lifecycle.getPriority());
+    }
+    try {
+      lifecycle.onStart(cfg.getModules().isStartupAsync()).toCompletableFuture().get();
+    } catch (Throwable e) {
+      LogContext.error(
+          LOGGER,
+          e,
+          "Error starting {} ({})",
+          lifecycle.getClass().getSimpleName(),
+          lifecycle.getPriority());
+      return;
+    }
+    if (LOGGER.isDebugEnabled(MARKER.DI)) {
+      LOGGER.debug(
+          MARKER.DI,
+          "Started {} ({})",
+          lifecycle.getClass().getSimpleName(),
+          lifecycle.getPriority());
+    }
   }
 
   public void stop(App modules) {
@@ -196,6 +242,8 @@ public class AppLauncher implements AppContext {
                 // ignore
               }
             });
+
+    startupExecutor.shutdownNow();
 
     LOGGER.info("Stopped {}", name);
     LOGGER.info("--------------------------------------------------");

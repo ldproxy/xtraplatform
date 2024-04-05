@@ -25,14 +25,14 @@ public interface EntityState {
 
   String getEntityType();
 
-  STATE getState();
+  STATE getEntityState();
 
   STATE getPreviousState();
 
   void addListener(Consumer<EntityState> listener);
 
   default boolean isActive() {
-    return getState() == STATE.ACTIVE
-        || (getState() == STATE.RELOADING && getPreviousState() == STATE.ACTIVE);
+    return getEntityState() == STATE.ACTIVE
+        || (getEntityState() == STATE.RELOADING && getPreviousState() == STATE.ACTIVE);
   }
 }

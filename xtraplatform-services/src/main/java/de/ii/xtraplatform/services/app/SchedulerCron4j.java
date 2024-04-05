@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,8 +68,10 @@ public class SchedulerCron4j implements Scheduler, AppLifeCycle {
   }
 
   @Override
-  public void onStart() {
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
     scheduler.start();
+
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override

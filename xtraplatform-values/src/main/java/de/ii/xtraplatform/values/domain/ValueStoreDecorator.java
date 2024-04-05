@@ -7,15 +7,20 @@
  */
 package de.ii.xtraplatform.values.domain;
 
+import com.codahale.metrics.health.HealthCheck;
 import com.google.common.collect.ObjectArrays;
+import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
+import de.ii.xtraplatform.values.app.ValueStoreImpl;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U> {
+public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U>, Volatile2 {
 
   KeyValueStore<T> getDecorated();
 
@@ -118,5 +123,30 @@ public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U> {
   @Override
   default long lastModified(String id, String... path) {
     return getDecorated().lastModified(id, transformPath(path));
+  }
+
+  @Override
+  default String getUniqueKey() {
+    return ((ValueStoreImpl) getDecorated()).getUniqueKey();
+  }
+
+  @Override
+  default State getState() {
+    return ((ValueStoreImpl) getDecorated()).getState();
+  }
+
+  @Override
+  default Optional<String> getMessage() {
+    return ((ValueStoreImpl) getDecorated()).getMessage();
+  }
+
+  @Override
+  default Runnable onStateChange(ChangeHandler handler, boolean initialCall) {
+    return ((ValueStoreImpl) getDecorated()).onStateChange(handler, initialCall);
+  }
+
+  @Override
+  default Optional<HealthCheck> asHealthCheck() {
+    return Optional.empty();
   }
 }

@@ -22,6 +22,7 @@ import org.immutables.value.Value;
 /**
  * @author zahnen
  */
+// TODO: make value
 @Entity(type = User.ENTITY_TYPE, data = UserData.class)
 public class User extends AbstractPersistentEntity<User.UserData> {
 
@@ -29,7 +30,7 @@ public class User extends AbstractPersistentEntity<User.UserData> {
 
   @AssistedInject
   public User(@Assisted UserData data) {
-    super(data);
+    super(data, null);
   }
 
   @Override

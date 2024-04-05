@@ -7,7 +7,9 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.DatabindContext;
@@ -37,6 +39,7 @@ import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.JacksonSubTypeIds.JacksonSubType;
 import io.dropwizard.jackson.CaffeineModule;
 import io.dropwizard.jackson.FuzzyEnumModule;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -45,6 +48,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.threeten.extra.Interval;
 
 /**
  * @author zahnen
@@ -90,6 +94,7 @@ public class JacksonProvider implements Jackson {
                 .registerModule(new CaffeineModule())
                 .registerModule(new FuzzyEnumModule())
                 .registerModule(new JavaTimeModule())
+                .addMixIn(Interval.class, IntervalMixin.class)
                 .setDefaultMergeable(false)
                 .setHandlerInstantiator(dynamicHandlerInstantiator);
     // TODO: use new default blackbird instead, does not work with modules out of the box
@@ -126,6 +131,20 @@ public class JacksonProvider implements Jackson {
               });
     }
     return idMapping;
+  }
+
+  public abstract static class IntervalMixin {
+    IntervalMixin(
+        @JsonProperty("start") Instant startInclusive, @JsonProperty("end") Instant endExclusive) {}
+
+    @JsonIgnore
+    abstract boolean isEmpty();
+
+    @JsonIgnore
+    abstract boolean isUnboundedStart();
+
+    @JsonIgnore
+    abstract boolean isUnboundedEnd();
   }
 
   // TODO: needs to be in domain to access this

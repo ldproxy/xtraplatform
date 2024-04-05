@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -107,7 +109,7 @@ public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
   }
 
   @Override
-  public void onStart() {
+  public CompletionStage<Void> onStart(boolean isStartupAsync) {
     if (authConfig.getOidc().isPresent()) {
       String endpoint = authConfig.getOidc().get().getEndpoint();
       try {
@@ -119,21 +121,25 @@ public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
             && !oidcConfiguration1.getGrantTypes().contains("authorization_code")) {
           LOGGER.error(
               "OpenID Connect endpoint does not support Authorization Code Flow: {}", endpoint);
-          return;
+          return CompletableFuture.failedFuture(new RuntimeException());
         }
 
         this.oidcConfiguration = Optional.of(oidcConfiguration1);
         this.enabled = true;
       } catch (Throwable e) {
         LogContext.error(LOGGER, e, "Could not parse OpenID Connect configuration at {}", endpoint);
-        return;
+        return CompletableFuture.failedFuture(e);
       }
 
-      loadSigningKeys();
+      if (!loadSigningKeys()) {
+        return CompletableFuture.failedFuture(new RuntimeException());
+      }
     }
+
+    return CompletableFuture.completedFuture(null);
   }
 
-  private void loadSigningKeys() {
+  private boolean loadSigningKeys() {
     if (oidcConfiguration.isPresent()) {
       String certsEndpoint = oidcConfiguration.get().getJwksEndpoint().toString();
       try {
@@ -176,9 +182,10 @@ public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
       } catch (Throwable e) {
         LogContext.error(
             LOGGER, e, "Could not parse OpenID Connect certificates at {}", certsEndpoint);
-        return;
+        return false;
       }
     }
+    return true;
   }
 
   private static Key parseRsaKey(String n, String e)
