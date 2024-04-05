@@ -77,7 +77,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   protected Tuple<State, String> volatileInit() {
-    LOGGER.debug("INIT {}", getUniqueKey());
+    // LOGGER.debug("INIT {}", getUniqueKey());
     return Tuple.of(State.AVAILABLE, null);
   }
 
