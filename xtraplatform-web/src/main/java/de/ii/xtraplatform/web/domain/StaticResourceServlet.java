@@ -5,14 +5,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.web.app;
+package de.ii.xtraplatform.web.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import de.ii.xtraplatform.web.domain.StaticResourceReader;
 import de.ii.xtraplatform.web.domain.StaticResourceReader.CachedResource;
 import java.io.IOException;
 import java.net.URISyntaxException;

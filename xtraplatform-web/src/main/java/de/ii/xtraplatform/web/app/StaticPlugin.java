@@ -13,6 +13,8 @@ import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import de.ii.xtraplatform.web.domain.ServletRegistration;
 import de.ii.xtraplatform.web.domain.StaticResourceHandler;
+import de.ii.xtraplatform.web.domain.StaticResourceReaderJar;
+import de.ii.xtraplatform.web.domain.StaticResourceServlet;
 import de.ii.xtraplatform.web.domain.StaticResources;
 import io.dropwizard.core.setup.Environment;
 import java.util.HashMap;

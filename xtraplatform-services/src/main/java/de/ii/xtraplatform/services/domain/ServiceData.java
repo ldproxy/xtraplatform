@@ -22,7 +22,7 @@ public interface ServiceData extends EntityData, AutoEntity {
 
   @Override
   default Optional<String> getEntitySubType() {
-    return Optional.of(getServiceType());
+    return Optional.of(getServiceType().toLowerCase());
   }
 
   String getServiceType();

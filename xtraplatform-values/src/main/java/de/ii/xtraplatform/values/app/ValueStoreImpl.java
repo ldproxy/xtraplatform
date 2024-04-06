@@ -250,9 +250,6 @@ public class ValueStoreImpl extends AbstractVolatile
                     StoredValue value =
                         valueEncoding.deserialize(identifier, bytes, payloadFormat, true);
 
-                    this.memCache.put(identifier, value);
-                    this.lastModified.put(identifier, lm == -1 ? Instant.now().toEpochMilli() : lm);
-
                     if (memCache.containsKey(identifier)
                         && !Objects.equals(memCache.get(identifier), value)) {
                       count++;
@@ -261,6 +258,9 @@ public class ValueStoreImpl extends AbstractVolatile
                         LOGGER.trace("Not counting value, not changed: {}", identifierPath);
                       }
                     }
+
+                    this.memCache.put(identifier, value);
+                    this.lastModified.put(identifier, lm == -1 ? Instant.now().toEpochMilli() : lm);
                   } catch (IOException e) {
                     LogContext.error(LOGGER, e, "Could not reload value from {}", currentPath);
                   }
