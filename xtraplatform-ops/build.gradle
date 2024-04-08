@@ -1,0 +1,9 @@
+maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'Operations dashboard and API.'
+descriptionDe = 'Operations-Dashboard und API.'
+
+dependencies {
+    provided project(':xtraplatform-web')
+    provided project(':xtraplatform-openapi')
+}

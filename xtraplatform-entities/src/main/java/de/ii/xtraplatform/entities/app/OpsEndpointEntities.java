@@ -1,0 +1,83 @@
+/*
+ * Copyright 2021 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+package de.ii.xtraplatform.entities.app;
+
+import static de.ii.xtraplatform.entities.domain.EntityDataStore.entityType;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.azahnen.dagger.annotations.AutoBind;
+import com.google.common.collect.ImmutableMap;
+import de.ii.xtraplatform.base.domain.Jackson;
+import de.ii.xtraplatform.entities.domain.EntityDataStore;
+import de.ii.xtraplatform.entities.domain.EntityRegistry;
+import de.ii.xtraplatform.entities.domain.EntityState;
+import de.ii.xtraplatform.entities.domain.EntityState.STATE;
+import de.ii.xtraplatform.ops.domain.OpsEndpoint;
+import de.ii.xtraplatform.values.domain.Identifier;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.ws.rs.GET;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+@Singleton
+@AutoBind
+public class OpsEndpointEntities implements OpsEndpoint {
+  private final EntityDataStore<?> entityDataStore;
+  private final EntityRegistry entityRegistry;
+  private final ObjectMapper objectMapper;
+
+  @Inject
+  public OpsEndpointEntities(
+      EntityDataStore<?> entityDataStore, EntityRegistry entityRegistry, Jackson jackson) {
+    this.entityDataStore = entityDataStore;
+    this.entityRegistry = entityRegistry;
+    this.objectMapper = jackson.getDefaultObjectMapper();
+  }
+
+  @Override
+  public String getEntrypoint() {
+    return "entities";
+  }
+
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getEntities() throws JsonProcessingException {
+    LinkedHashMap<String, List<Map<String, String>>> entities =
+        entityDataStore.identifiers().stream()
+            .sorted(Comparator.naturalOrder())
+            .collect(
+                Collectors.groupingBy(
+                    EntityDataStore::entityType,
+                    LinkedHashMap::new,
+                    Collectors.mapping(this::getEntityInfo, Collectors.toList())));
+
+    return Response.ok(objectMapper.writeValueAsString(entities)).build();
+  }
+
+  private ImmutableMap<String, String> getEntityInfo(Identifier identifier) {
+    Optional<EntityState.STATE> state =
+        entityRegistry.getEntityState(entityType(identifier), identifier.id());
+    Optional<String> entitySubType = entityDataStore.get(identifier).getEntitySubType();
+    return ImmutableMap.of(
+        "id",
+        identifier.id(),
+        "status",
+        state.orElse(STATE.UNKNOWN).name(),
+        "subType",
+        entitySubType.orElse(""));
+  }
+}

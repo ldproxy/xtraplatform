@@ -5,10 +5,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.web.app;
+package de.ii.xtraplatform.web.domain;
 
 import com.google.common.io.Resources;
-import de.ii.xtraplatform.web.domain.StaticResourceReader;
+import de.ii.xtraplatform.web.app.ResourceURL;
 import java.net.URL;
 import java.util.Optional;
 
