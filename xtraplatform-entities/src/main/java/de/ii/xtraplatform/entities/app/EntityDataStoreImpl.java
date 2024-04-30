@@ -645,8 +645,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   private EntityData hydrateData(Identifier identifier, EntityData entityData) {
-    EntityData hydratedData = entityData;
-
     if (LOGGER.isDebugEnabled(MARKER.DUMP)) {
       try {
         LOGGER.debug(
@@ -659,7 +657,11 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       }
     }
 
-    hydratedData = hydrate(identifier, hydratedData);
+    if (!entityData.getEnabled()) {
+      return entityData;
+    }
+
+    EntityData hydratedData = hydrate(identifier, entityData);
 
     if (LOGGER.isDebugEnabled(MARKER.DUMP)
         && entityData instanceof AutoEntity
