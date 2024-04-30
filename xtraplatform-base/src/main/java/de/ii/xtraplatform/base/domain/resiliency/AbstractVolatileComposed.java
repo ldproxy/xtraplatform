@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractVolatileComposed.class);
 
+  private final Map<String, Volatile2> initComponents;
   private final Map<String, Volatile2> components;
   private final Map<String, Set<String>> componentCapabilities;
   private final Map<String, AbstractVolatile> capabilities;
@@ -48,6 +50,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
       String... capabilities) {
     super(volatileRegistry, uniqueId);
 
+    this.initComponents = new LinkedHashMap<>();
     this.components = new LinkedHashMap<>();
     this.componentCapabilities = new LinkedHashMap<>();
     this.capabilities = new LinkedHashMap<>();
@@ -81,7 +84,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     return Tuple.of(State.AVAILABLE, null);
   }
 
-  protected void onComponentsAvailable() {
+  protected void onInitComponentsAvailable() {
     Tuple<State, String> result = volatileInit();
 
     if (Objects.nonNull(result.second())) {
@@ -117,12 +120,25 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   protected final void addSubcomponent(Volatile2 v, String... capabilities) {
-    addSubcomponent(v.getUniqueKey(), v, capabilities);
+    addSubcomponent(v.getUniqueKey(), v, false, capabilities);
+  }
+
+  protected final void addSubcomponent(Volatile2 v, boolean neededForInit, String... capabilities) {
+    addSubcomponent(v.getUniqueKey(), v, neededForInit, capabilities);
   }
 
   protected final void addSubcomponent(String localKey, Volatile2 v, String... capabilities) {
+    addSubcomponent(localKey, v, false, capabilities);
+  }
+
+  protected final void addSubcomponent(
+      String localKey, Volatile2 v, boolean neededForInit, String... capabilities) {
     this.components.put(localKey, v);
     this.componentCapabilities.put(localKey, Set.of(capabilities));
+
+    if (neededForInit) {
+      this.initComponents.put(localKey, v);
+    }
 
     for (String cap : capabilities) {
       if (!this.capabilities.containsKey(cap)) {
@@ -142,6 +158,14 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   protected final void addCapability(String capability) {
     if (!this.capabilities.containsKey(capability)) {
       this.capabilities.put(capability, new AbstractVolatile(volatileRegistry, capability) {});
+    }
+  }
+
+  protected final void addCapability(String capability, boolean noComponents) {
+    addCapability(capability);
+
+    if (noComponents) {
+      addSubcomponent(Volatile2.available(capability), capability);
     }
   }
 
@@ -167,7 +191,10 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   protected final Set<String> getComponents() {
-    return components.keySet();
+    return components.entrySet().stream()
+        .filter(entry -> !(entry.getValue() instanceof VolatileFixed))
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toSet());
   }
 
   protected final Volatile2 getComponent(String subKey) {
@@ -199,11 +226,10 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
       return;
     }
     if (baseState != State.AVAILABLE) {
-      if (ready && components.values().stream().allMatch(Volatile2::isAvailable)) {
-        onComponentsAvailable();
-      } else {
-        return;
+      if (ready && initComponents.values().stream().allMatch(Volatile2::isAvailable)) {
+        onInitComponentsAvailable();
       }
+      return;
     }
 
     State newState =

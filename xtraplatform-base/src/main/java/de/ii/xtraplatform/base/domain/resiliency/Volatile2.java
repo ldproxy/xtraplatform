@@ -73,26 +73,39 @@ public interface Volatile2 {
   }
 
   static Volatile2 fixed(String uniqueKey, State state, Optional<String> message) {
-    return new Volatile2() {
-      @Override
-      public String getUniqueKey() {
-        return uniqueKey;
-      }
+    return new VolatileFixed(uniqueKey, state, message);
+  }
 
-      @Override
-      public State getState() {
-        return state;
-      }
+  class VolatileFixed implements Volatile2 {
 
-      @Override
-      public Optional<String> getMessage() {
-        return message;
-      }
+    private final String uniqueKey;
+    private final State state;
+    private final Optional<String> message;
 
-      @Override
-      public Runnable onStateChange(ChangeHandler handler, boolean initialCall) {
-        return () -> {};
-      }
-    };
+    public VolatileFixed(String uniqueKey, State state, Optional<String> message) {
+      this.uniqueKey = uniqueKey;
+      this.state = state;
+      this.message = message;
+    }
+
+    @Override
+    public String getUniqueKey() {
+      return uniqueKey;
+    }
+
+    @Override
+    public State getState() {
+      return state;
+    }
+
+    @Override
+    public Optional<String> getMessage() {
+      return message;
+    }
+
+    @Override
+    public Runnable onStateChange(ChangeHandler handler, boolean initialCall) {
+      return () -> {};
+    }
   }
 }
