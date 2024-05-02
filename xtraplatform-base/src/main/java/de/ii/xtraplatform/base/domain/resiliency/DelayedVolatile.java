@@ -85,9 +85,9 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatile imple
   }
 
   public synchronized void set(T volatile2) {
-    if (Objects.nonNull(this.dependency)) {
+    /*if (Objects.nonNull(this.dependency)) {
       throw new IllegalStateException("DelayedVolatile already initialized");
-    }
+    }*/
 
     this.dependency = volatile2;
 
@@ -99,6 +99,13 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatile imple
       Runnable unwatch = volatile2.onStateChange(params.first(), params.second());
       unwatchs.add(unwatch);
     }
+  }
+
+  public synchronized void reset() {
+    // this.dependency = null;
+    changeHandlers.clear();
+    unwatchs.forEach(Runnable::run);
+    unwatchs.clear();
   }
 
   public boolean isPresent() {
