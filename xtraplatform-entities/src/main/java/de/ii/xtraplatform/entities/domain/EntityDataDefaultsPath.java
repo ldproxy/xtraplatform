@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.immutables.value.Value;
@@ -38,6 +39,20 @@ public interface EntityDataDefaultsPath {
         }
         if (identifier.path().size() > i + 1) {
           pathSegments = identifier.path().subList(i + 1, identifier.path().size());
+        }
+      } else if (identifier.path().get(i).contains(".")) {
+        int firstDot = identifier.path().get(i).indexOf(".");
+        if (entityTypes.contains(identifier.path().get(i).substring(0, firstDot))) {
+          found = true;
+          defaultsPath.setEntityType(identifier.path().get(i).substring(0, firstDot));
+          pathSegments = DOT_SPLITTER.splitToList(identifier.path().get(i).substring(firstDot + 1));
+          if (i > 0) {
+            defaultsPath.setGroups(identifier.path().subList(0, i));
+          }
+          if (identifier.path().size() > i + 1) {
+            pathSegments = new ArrayList<>(pathSegments);
+            pathSegments.addAll(identifier.path().subList(i + 1, identifier.path().size()));
+          }
         }
       }
     }

@@ -27,7 +27,7 @@ public interface EventFilter {
 
     if (!getEntityTypes().contains("*")) {
       if (identifier.path().isEmpty() || !containsEntityType(identifier.path())) {
-        if ((!isDefault(event) || !getEntityTypes().contains(identifier.id()))) {
+        if ((!isDefault(event) || !containsEntityType(identifier.id()))) {
           return false;
         }
       }
@@ -82,6 +82,19 @@ public interface EventFilter {
     }
 
     return -1;
+  }
+
+  default boolean containsEntityType(String id) {
+    if (getEntityTypes().contains(id)) {
+      return true;
+    } else if (id.contains(".")) {
+      String entityType = id.substring(0, id.indexOf("."));
+      if (getEntityTypes().contains(entityType)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   static EventFilter fromPath(Path path) {

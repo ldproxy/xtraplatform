@@ -30,6 +30,7 @@ import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent;
 import de.ii.xtraplatform.streams.domain.Reactive;
 import de.ii.xtraplatform.values.api.ValueEncodingJackson;
 import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
+import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -283,6 +284,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                                   .deleted(true)
                                   .identifier(event.identifier())
                                   .payload(ValueEncodingJackson.YAML_NULL)
+                                  .format(FORMAT.YAML.name())
                                   .build());
                       if (deleted && LOGGER.isTraceEnabled()) {
                         LOGGER.trace(
@@ -304,6 +306,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                                           .addPath(event.identifier().id())
                                           .build())
                                   .payload(ValueEncodingJackson.YAML_NULL)
+                                  .format(FORMAT.YAML.name())
                                   .build());
                       if (deleted && LOGGER.isTraceEnabled()) {
                         LOGGER.trace("DELETING {} {}", event.identifier().path(), id);
@@ -319,6 +322,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                                       .path(event.identifier().path())
                                       .build())
                               .payload(ValueEncodingJackson.YAML_NULL)
+                              .format(FORMAT.YAML.name())
                               .build());
                     }
                     return true;
