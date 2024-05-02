@@ -7,7 +7,6 @@
  */
 package de.ii.xtraplatform.auth.infra.rest;
 
-import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.app.ImmutableUserData;
 import de.ii.xtraplatform.auth.app.PasswordHash;
 import de.ii.xtraplatform.auth.app.User;
@@ -48,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * @author zahnen
  */
 @Singleton
-@AutoBind
+// @AutoBind
 @RolesAllowed({Role.Minimum.ADMIN})
 @Path("/admin/users")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)

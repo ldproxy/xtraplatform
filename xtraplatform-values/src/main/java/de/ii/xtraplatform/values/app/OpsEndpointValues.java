@@ -49,7 +49,7 @@ public class OpsEndpointValues implements OpsEndpoint {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getEntities() throws JsonProcessingException {
+  public Response getValues() throws JsonProcessingException {
     Map<String, List<Map<String, String>>> values =
         valueFactories.getTypes().stream()
             .sorted(Comparator.naturalOrder())

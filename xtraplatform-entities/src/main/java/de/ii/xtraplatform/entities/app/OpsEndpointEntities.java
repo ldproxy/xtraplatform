@@ -15,15 +15,17 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.entities.domain.EntityDataStore;
+import de.ii.xtraplatform.entities.domain.EntityFactories;
+import de.ii.xtraplatform.entities.domain.EntityFactory;
 import de.ii.xtraplatform.entities.domain.EntityRegistry;
 import de.ii.xtraplatform.entities.domain.EntityState;
 import de.ii.xtraplatform.entities.domain.EntityState.STATE;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
 import de.ii.xtraplatform.values.domain.Identifier;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -38,13 +40,18 @@ import javax.ws.rs.core.Response;
 public class OpsEndpointEntities implements OpsEndpoint {
   private final EntityDataStore<?> entityDataStore;
   private final EntityRegistry entityRegistry;
+  private final EntityFactories entityFactories;
   private final ObjectMapper objectMapper;
 
   @Inject
   public OpsEndpointEntities(
-      EntityDataStore<?> entityDataStore, EntityRegistry entityRegistry, Jackson jackson) {
+      EntityDataStore<?> entityDataStore,
+      EntityRegistry entityRegistry,
+      EntityFactories entityFactories,
+      Jackson jackson) {
     this.entityDataStore = entityDataStore;
     this.entityRegistry = entityRegistry;
+    this.entityFactories = entityFactories;
     this.objectMapper = jackson.getDefaultObjectMapper();
   }
 
@@ -56,14 +63,23 @@ public class OpsEndpointEntities implements OpsEndpoint {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public Response getEntities() throws JsonProcessingException {
-    LinkedHashMap<String, List<Map<String, String>>> entities =
-        entityDataStore.identifiers().stream()
+    Map<String, List<Map<String, String>>> entities =
+        entityFactories.getTypes().stream()
+            .filter(entityType -> !Objects.equals(entityType, "users"))
             .sorted(Comparator.naturalOrder())
-            .collect(
-                Collectors.groupingBy(
-                    EntityDataStore::entityType,
-                    LinkedHashMap::new,
-                    Collectors.mapping(this::getEntityInfo, Collectors.toList())));
+            .map(
+                entityType -> {
+                  EntityFactory entityFactory = entityFactories.get(entityType);
+                  List<Map<String, String>> entityInfos =
+                      entityDataStore.identifiers().stream()
+                          .sorted(Comparator.naturalOrder())
+                          .filter(identifier -> entityType.equals(entityType(identifier)))
+                          .map(this::getEntityInfo)
+                          .collect(Collectors.toList());
+
+                  return Map.entry(entityFactory.type(), entityInfos);
+                })
+            .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
 
     return Response.ok(objectMapper.writeValueAsString(entities)).build();
   }
