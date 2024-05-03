@@ -19,7 +19,7 @@ public interface EntityData extends StoredValue {
   /**
    * @langEn Unique identifier of the entity, has to match the filename. Allowed characters are
    *     (A-Z, a-z), numbers (0-9), underscore and hyphen.
-   * @langDe Eindeutiger Identifikator der Entity, muss dem Dateinamen entsprechen. Erlaubt sind
+   * @langDe Eindeutiger Identifikator des Entities, muss dem Dateinamen entsprechen. Erlaubt sind
    *     Buchstaben (A-Z, a-z), Ziffern (0-9), der Unterstrich ("_") und der Bindestrich ("-").
    */
   String getId();
