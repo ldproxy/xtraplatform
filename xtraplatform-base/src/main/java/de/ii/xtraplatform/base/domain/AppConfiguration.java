@@ -184,8 +184,8 @@ public abstract class AppConfiguration extends Configuration {
   public abstract MetricsConfiguration getMetricsFactory();
 
   /**
-   * @langEn See [Web Server](30-server.md).
-   * @langDe Siehe [Webserver](30-server.md).
+   * @langEn See [Web Server](99-server.md).
+   * @langDe Siehe [Webserver](99-server.md).
    */
   @JsonProperty("server")
   @Valid
