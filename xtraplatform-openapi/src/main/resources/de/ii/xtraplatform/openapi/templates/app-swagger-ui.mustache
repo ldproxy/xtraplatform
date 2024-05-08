@@ -20,7 +20,8 @@
     plugins: [
       HideInfoUrlPartsPlugin,
     ],
-    layout: "BaseLayout",
+    layout: "BaseLayout",{{#showCommonExtensions}}
+    showCommonExtensions: true,{{/showCommonExtensions}}
   }, globalThis._swaggerUiCfg))
 
   if (globalThis._swaggerUiAuth) {
