@@ -12,6 +12,7 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import com.codahale.metrics.servlets.PingServlet;
 import com.codahale.metrics.servlets.ThreadDumpServlet;
 import com.github.azahnen.dagger.annotations.AutoBind;
+import com.google.common.io.Resources;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
@@ -90,6 +91,15 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   }
 
   @GET
+  @Path("/api")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getApi() throws IOException {
+    return Response.ok(
+            Resources.toByteArray(Resources.getResource(this.getClass(), "/openapi.json")))
+        .build();
+  }
+
+  @GET
   @Path("/api/info")
   public Response getInfo() {
     return Response.ok(
@@ -105,8 +115,9 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
                 + "\",\n"
                 + "  \"env\": \""
                 + appContext.getEnvironment()
-                + "\",\n"
-                + "  \"status\": \"HEALTHY\"\n"
+                + "\"\n"
+                // + "\",\n"
+                // + "  \"status\": \"HEALTHY\"\n"
                 + "}")
         .build();
   }
@@ -179,25 +190,26 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
       @Context HttpServletRequest request,
       @Context HttpServletResponse response)
       throws ServletException, IOException {
-    LOGGER.debug("FILE {}", path);
+    // LOGGER.debug("FILE {}", path);
     staticServlet.service(request, response);
   }
 
   @GET
-  @Path("/{path: .+}")
+  @Path("/{path: .*}")
   public void getRoute(
       @PathParam("path") String path,
       @Context HttpServletRequest request,
       @Context HttpServletResponse response)
       throws ServletException, IOException {
-    LOGGER.debug("ROUTE {}", path);
+    // LOGGER.debug("ROUTE {}", path);
     if (!path.contains(".") && request instanceof Request) {
+      String newPath =
+          path.isBlank() ? "/index.html" : ((Request) request).getPathInContext() + ".html";
+
       ((Request) request).setServletPathMapping(null);
-      ((Request) request)
-          .setContext(
-              ((Request) request).getContext(), ((Request) request).getPathInContext() + ".html");
+      ((Request) request).setContext(((Request) request).getContext(), newPath);
     }
-    LOGGER.debug("FILE {}", request.getPathInfo());
+    // LOGGER.debug("FILE {}", request.getPathInfo());
     staticServlet.service(request, response);
   }
 }
