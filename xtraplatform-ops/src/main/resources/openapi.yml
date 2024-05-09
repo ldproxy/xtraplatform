@@ -1,0 +1,71 @@
+openapi: 3.1.0
+info:
+  title: Operations API
+  version: 4.0.0
+servers:
+  - url: http://localhost:7081/api
+paths:
+  /info:
+    get:
+      summary: Deployment Info
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+  /health:
+    get:
+      summary: Health Checks
+      parameters:
+        - in: query
+          name: pretty
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+  /metrics:
+    get:
+      summary: Metrics
+      parameters:
+        - in: query
+          name: pretty
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+  /ping:
+    get:
+      summary: Metrics
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - pong
+  /threads:
+    get:
+      summary: Metrics
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/plain:
+              schema:
+                type: string
