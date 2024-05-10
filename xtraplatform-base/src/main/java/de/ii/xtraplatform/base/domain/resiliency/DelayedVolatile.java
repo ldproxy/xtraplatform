@@ -39,7 +39,7 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatileCompos
 
   @Override
   public Optional<String> getMessage() {
-    return isPresent() ? super.getMessage() : Optional.empty();
+    return isPresent() ? dependency.getMessage() : Optional.empty();
   }
 
   @Override
