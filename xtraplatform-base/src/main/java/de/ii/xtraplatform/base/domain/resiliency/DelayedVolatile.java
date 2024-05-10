@@ -8,19 +8,13 @@
 package de.ii.xtraplatform.base.domain.resiliency;
 
 import com.codahale.metrics.health.HealthCheck;
-import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
-import de.ii.xtraplatform.base.domain.util.Tuple;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
-public class DelayedVolatile<T extends Volatile2> extends AbstractVolatile implements Volatile2 {
+public class DelayedVolatile<T extends Volatile2> extends AbstractVolatileComposed
+    implements Volatile2 {
 
   private final boolean delegateHealth;
-  private final List<Tuple<ChangeHandler, Boolean>> changeHandlers;
-  private final List<Runnable> unwatchs;
   private T dependency;
 
   public DelayedVolatile(
@@ -33,48 +27,19 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatile imple
       String uniqueKey,
       boolean delegateHealth,
       String... capabilities) {
-    super(volatileRegistry, uniqueKey, capabilities);
+    super(uniqueKey, volatileRegistry, false, capabilities);
 
     this.delegateHealth = delegateHealth;
-    this.changeHandlers = new ArrayList<>();
-    this.unwatchs = new ArrayList<>();
   }
 
   @Override
   public State getState() {
-    return isPresent() ? get().getState() : State.UNAVAILABLE;
+    return isPresent() ? super.getState() : State.UNAVAILABLE;
   }
 
   @Override
   public Optional<String> getMessage() {
-    return isPresent() ? get().getMessage() : Optional.empty();
-  }
-
-  @Override
-  public Runnable onStateChange(ChangeHandler handler, boolean initialCall) {
-    return isPresent()
-        ? get().onStateChange(handler, initialCall)
-        : delayedOnStateChange(handler, initialCall);
-  }
-
-  private synchronized Runnable delayedOnStateChange(ChangeHandler handler, boolean initialCall) {
-    changeHandlers.add(Tuple.of(handler, initialCall));
-    int index = changeHandlers.size();
-
-    return () -> {
-      if (isPresent()) {
-        unwatchs.get(index).run();
-      } else {
-        changeHandlers.remove(index);
-      }
-    };
-  }
-
-  @Override
-  protected Set<String> getVolatileCapabilities() {
-    return isPresent() && get() instanceof AbstractVolatile
-        ? ((AbstractVolatile) get()).getVolatileCapabilities()
-        : Set.of();
+    return isPresent() ? super.getMessage() : Optional.empty();
   }
 
   @Override
@@ -85,27 +50,11 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatile imple
   }
 
   public synchronized void set(T volatile2) {
-    /*if (Objects.nonNull(this.dependency)) {
-      throw new IllegalStateException("DelayedVolatile already initialized");
-    }*/
+    addSubcomponent("delayed", volatile2, false, getVolatileCapabilities().toArray(new String[0]));
 
     this.dependency = volatile2;
 
-    if (volatile2 instanceof AbstractVolatile) {
-      ((AbstractVolatile) volatile2).onVolatileStart();
-    }
-
-    for (Tuple<ChangeHandler, Boolean> params : changeHandlers) {
-      Runnable unwatch = volatile2.onStateChange(params.first(), params.second());
-      unwatchs.add(unwatch);
-    }
-  }
-
-  public synchronized void reset() {
-    // this.dependency = null;
-    changeHandlers.clear();
-    unwatchs.forEach(Runnable::run);
-    unwatchs.clear();
+    onVolatileStarted();
   }
 
   public boolean isPresent() {
