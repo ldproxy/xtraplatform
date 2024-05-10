@@ -18,6 +18,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -39,6 +40,7 @@ public class StaticResourceServlet extends HttpServlet {
   private final Charset defaultCharset;
   private final StaticResourceReader resourceReader;
   private final Optional<String> rootRedirect;
+  private final Set<String> noCacheExtensions;
 
   /**
    * Creates a new {@code AssetServlet} that serves static assets loaded from {@code resourceURL}
@@ -61,6 +63,7 @@ public class StaticResourceServlet extends HttpServlet {
       String uriPath,
       Charset defaultCharset,
       StaticResourceReader resourceReader,
+      Set<String> noCacheExtensions,
       Optional<String> rootRedirect) {
     final String trimmedPath = SLASHES.trimFrom(resourcePath);
     this.resourcePath = trimmedPath.isEmpty() ? trimmedPath : trimmedPath + '/';
@@ -69,6 +72,17 @@ public class StaticResourceServlet extends HttpServlet {
     this.defaultCharset = defaultCharset;
     this.resourceReader = resourceReader;
     this.rootRedirect = rootRedirect;
+    this.noCacheExtensions = noCacheExtensions;
+  }
+
+  public StaticResourceServlet(
+      String resourcePath,
+      String uriPath,
+      Charset defaultCharset,
+      StaticResourceReader resourceReader,
+      Set<String> noCacheExtensions) {
+    this(
+        resourcePath, uriPath, defaultCharset, resourceReader, noCacheExtensions, Optional.of("/"));
   }
 
   public StaticResourceServlet(
@@ -76,7 +90,7 @@ public class StaticResourceServlet extends HttpServlet {
       String uriPath,
       Charset defaultCharset,
       StaticResourceReader resourceReader) {
-    this(resourcePath, uriPath, defaultCharset, resourceReader, Optional.of("/"));
+    this(resourcePath, uriPath, defaultCharset, resourceReader, Set.of(), Optional.of("/"));
   }
 
   @Override
@@ -96,7 +110,8 @@ public class StaticResourceServlet extends HttpServlet {
         return;
       }
 
-      final CachedResource cachedAsset = loadAsset(builder.toString());
+      String assetPath = builder.toString();
+      final CachedResource cachedAsset = loadAsset(assetPath);
       if (cachedAsset == null) {
         resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         return;
@@ -105,6 +120,11 @@ public class StaticResourceServlet extends HttpServlet {
       if (isCachedClientSide(req, cachedAsset)) {
         resp.sendError(HttpServletResponse.SC_NOT_MODIFIED);
         return;
+      }
+
+      if (assetPath.contains(".")
+          && noCacheExtensions.contains(assetPath.substring(assetPath.lastIndexOf('.') + 1))) {
+        resp.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
       }
 
       resp.setDateHeader(HttpHeaders.LAST_MODIFIED, cachedAsset.getLastModified());

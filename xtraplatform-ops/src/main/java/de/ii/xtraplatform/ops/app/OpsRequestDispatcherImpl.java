@@ -71,7 +71,11 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
 
     this.staticServlet =
         new StaticResourceServlet(
-            "/dashboard", "/", null, new StaticResourceReaderJar(this.getClass()));
+            "/dashboard",
+            "/",
+            null,
+            new StaticResourceReaderJar(this.getClass()),
+            Set.of("txt", "html"));
   }
 
   @Override
@@ -184,7 +188,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   }
 
   @GET
-  @Path("/{path: .+\\.(?:html|js|css|json|woff2)}")
+  @Path("/{path: .+\\.(?:html|js|css|json|woff2|txt)}")
   public void getFile(
       @PathParam("path") String path,
       @Context HttpServletRequest request,
