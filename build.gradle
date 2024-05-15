@@ -17,7 +17,7 @@ allprojects {
 }
 
 
-version = '6.0.0' + versionSuffix
+version = '6.1.0' + versionSuffix
 
 dependencies {
     modules subprojects
