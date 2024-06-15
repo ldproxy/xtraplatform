@@ -190,7 +190,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
       LOGGER.trace("Deleting blob at {}", filePath);
     }
 
-    Files.delete(filePath);
+    Files.deleteIfExists(filePath);
   }
 
   // TODO: remote sources might provide readable locals, but never writable ones
