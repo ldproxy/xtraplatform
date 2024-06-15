@@ -42,7 +42,8 @@ public class LogContext {
     STACKTRACE,
     DUMP,
     DI,
-    S3;
+    S3,
+    JOBS;
 
     @Override
     public String toString() {
