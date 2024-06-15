@@ -254,6 +254,10 @@ public class SchedulerCron4j implements Scheduler, AppLifeCycle {
     String threadName = "bg-task-" + threadNum;
     Thread.currentThread().setName(threadName);
 
+    if (taskCron4j.getTask().isSilent()) {
+      return;
+    }
+
     Task task = taskCron4j.getTask();
     task.logContext();
     String partialSuffix =

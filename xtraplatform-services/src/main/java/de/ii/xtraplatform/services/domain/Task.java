@@ -20,6 +20,8 @@ public interface Task {
 
   int getMaxPartials();
 
+  boolean isSilent();
+
   void run(TaskContext taskContext);
 
   default void logContext() {

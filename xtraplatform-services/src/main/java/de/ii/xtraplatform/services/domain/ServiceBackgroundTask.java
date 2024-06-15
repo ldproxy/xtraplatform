@@ -39,23 +39,33 @@ public interface ServiceBackgroundTask<T extends Service> {
   }
 
   default Task getTask(T service, String label) {
-    return new BoundTask<>(service, label, getMaxPartials(service), this::run);
+    return new BoundTask<>(service, label, getMaxPartials(service), isSilent(), this::run);
   }
 
   default void setTrigger(Consumer<T> trigger) {}
+
+  default boolean isSilent() {
+    return false;
+  }
 
   class BoundTask<T extends Service> implements Task {
 
     private final T service;
     private final String label;
     private final int maxPartials;
+    private final boolean silent;
     private final BiConsumer<T, TaskContext> runnable;
 
     public BoundTask(
-        T service, String label, int maxPartials, BiConsumer<T, TaskContext> runnable) {
+        T service,
+        String label,
+        int maxPartials,
+        boolean silent,
+        BiConsumer<T, TaskContext> runnable) {
       this.service = service;
       this.label = label;
       this.maxPartials = maxPartials;
+      this.silent = silent;
       this.runnable = runnable;
     }
 
@@ -72,6 +82,11 @@ public interface ServiceBackgroundTask<T extends Service> {
     @Override
     public int getMaxPartials() {
       return maxPartials;
+    }
+
+    @Override
+    public boolean isSilent() {
+      return silent;
     }
 
     @Override
