@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public interface JobQueue {
 
-  void push(BaseJob job, boolean head);
+  void push(BaseJob job, boolean untake);
 
   default void push(BaseJob job) {
     push(job, false);

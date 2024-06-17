@@ -51,13 +51,14 @@ public class JobQueueSimple implements JobQueue {
   }
 
   @Override
-  public synchronized void push(BaseJob job, boolean head) {
+  public synchronized void push(BaseJob job, boolean untake) {
     if (!queues.containsKey(job.getType())) {
       queues.put(job.getType(), new ArrayDeque<>());
     }
     if (job instanceof Job) {
-      if (head) {
-        queues.get(job.getType()).addFirst((Job) job);
+      if (untake) {
+        takenQueue.remove(job);
+        queues.get(job.getType()).addFirst(((Job) job).reset());
       } else {
         queues.get(job.getType()).add((Job) job);
       }
@@ -78,8 +79,8 @@ public class JobQueueSimple implements JobQueue {
       queues.put(type, new ArrayDeque<>());
     }
     if (!queues.get(type).isEmpty()) {
-      Job job = queues.get(type).remove();
-      takenQueue.add(job.started(executor));
+      Job job = queues.get(type).remove().started(executor);
+      takenQueue.add(job);
 
       return Optional.of(job);
     }

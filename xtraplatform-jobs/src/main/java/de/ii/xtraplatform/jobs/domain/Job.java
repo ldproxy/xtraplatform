@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.jobs.domain;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.OptionalLong;
 import org.immutables.value.Value;
@@ -31,8 +32,24 @@ public interface Job extends BaseJob {
         .build();
   }
 
+  default Job reset() {
+    return new ImmutableJob.Builder()
+        .from(this)
+        .executor(Optional.empty())
+        .startedAt(OptionalLong.empty())
+        .build();
+  }
+
   default Job with(String jobSetId) {
     return new ImmutableJob.Builder().from(this).partOf(jobSetId).build();
+  }
+
+  default Job with(BaseJob... followUps) {
+    return new ImmutableJob.Builder().from(this).addFollowUps(followUps).build();
+  }
+
+  default Job with(Collection<? extends BaseJob> followUps) {
+    return new ImmutableJob.Builder().from(this).addAllFollowUps(followUps).build();
   }
 
   Optional<String> getExecutor();

@@ -38,7 +38,7 @@ public class JobQueueRedis implements JobQueue {
   }
 
   @Override
-  public synchronized void push(BaseJob job, boolean head) {
+  public synchronized void push(BaseJob job, boolean untake) {
     if (job instanceof Job) {
       // TODO: LPUSH xtraplatform:jobs:queue and HMSET xtraplatform:jobs:job:<id>
     } else if (job instanceof JobSet) {
