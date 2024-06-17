@@ -82,7 +82,8 @@ public interface JobSet extends BaseJob {
   AtomicInteger getCurrent();
 
   default int getPercent() {
-    return Math.round(((float) Math.max(getCurrent().get(), 0) / getTotal().get()) * 100);
+    int total = getTotal().get();
+    return total == 0 ? 100 : Math.round(((float) Math.max(getCurrent().get(), 0) / total) * 100);
   }
 
   default boolean isDone() {

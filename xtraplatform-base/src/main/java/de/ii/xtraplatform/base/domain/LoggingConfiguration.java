@@ -278,10 +278,12 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
     this.wiring = wiring;
   }
 
+  @JsonProperty
   public boolean isJobs() {
     return jobs;
   }
 
+  @JsonProperty
   public void setJobs(boolean jobs) {
     this.jobs = jobs;
   }

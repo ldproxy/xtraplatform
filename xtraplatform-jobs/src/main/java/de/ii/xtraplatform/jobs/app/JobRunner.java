@@ -108,6 +108,10 @@ public class JobRunner implements AppLifeCycle {
                 if (optionalJob.get().getPartOf().isPresent()) {
                   JobSet jobSet = jobQueue.getSet(optionalJob.get().getPartOf().get());
 
+                  if (jobSet.getEntity().isPresent()) {
+                    LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.getEntity().get());
+                  }
+
                   if (shouldSuspend(jobSet, processor)) {
                     if (logJobsTrace()) {
                       LOGGER.trace(
@@ -208,7 +212,15 @@ public class JobRunner implements AppLifeCycle {
             processor.process(job, jobSet.orElse(null), jobQueue::push);
 
             if (jobSet.isPresent()) {
-              jobSetConcurrency.get(jobSet.get().getId()).decrementAndGet();
+              int active = jobSetConcurrency.get(jobSet.get().getId()).decrementAndGet();
+
+              if (logJobsTrace()) {
+                LOGGER.trace(
+                    MARKER.JOBS,
+                    "Decreased concurrency for job set to {} ({})",
+                    active,
+                    jobSet.get().getId());
+              }
             }
           } catch (Throwable e) {
             LOGGER.error("Error while processing job", e);
