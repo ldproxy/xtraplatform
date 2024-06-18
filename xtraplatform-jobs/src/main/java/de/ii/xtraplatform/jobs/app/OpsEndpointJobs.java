@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.Jackson;
+import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
@@ -72,11 +73,16 @@ public class OpsEndpointJobs implements OpsEndpoint {
   @Produces(MediaType.APPLICATION_JSON)
   public synchronized Response takeJob(Map<String, String> executor)
       throws JsonProcessingException {
-    LOGGER.debug("Taking job: {}", executor);
-
     Optional<Job> job = jobQueue.take(executor.get("type"), executor.get("id"));
 
     if (job.isPresent()) {
+      if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
+        LOGGER.trace(
+            MARKER.JOBS,
+            "Job {} taken by remote executor {}",
+            job.get().getId(),
+            executor.get("id"));
+      }
       return Response.ok(objectMapper.writeValueAsString(job.get())).build();
     }
 
@@ -88,9 +94,11 @@ public class OpsEndpointJobs implements OpsEndpoint {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public synchronized Response closeJob(Map<String, String> jobRef) throws JsonProcessingException {
-    LOGGER.debug("Closing job: {}", jobRef);
-
     if (jobQueue.done(jobRef.get("id"))) {
+      if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
+        LOGGER.trace(MARKER.JOBS, "Job {} marked as done by remote executor", jobRef.get("id"));
+      }
+
       return Response.noContent().build();
     }
 
