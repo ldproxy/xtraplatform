@@ -42,6 +42,14 @@ public interface JobSet extends BaseJob {
     return new ImmutableJobSet.Builder().from(this).addFollowUps(followUps).build();
   }
 
+  default JobSet with(String description, Object details) {
+    return new ImmutableJobSet.Builder()
+        .from(this)
+        .description(description)
+        .details(details)
+        .build();
+  }
+
   default List<BaseJob> done(Job job) {
     if (getSetup().isPresent() && Objects.equals(job.getId(), getSetup().get().getId())) {
       return List.of();
