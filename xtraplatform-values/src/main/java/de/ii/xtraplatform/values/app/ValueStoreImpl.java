@@ -379,6 +379,11 @@ public class ValueStoreImpl extends AbstractVolatile
   }
 
   @Override
+  public BlobStore asBlobStore() {
+    return blobStore;
+  }
+
+  @Override
   public <U extends StoredValue> KeyValueStore<U> forTypeWritable(Class<U> type) {
     return new ValueStoreDecorator<StoredValue, U>() {
 

@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.values.domain;
 
 import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
+import de.ii.xtraplatform.blobs.domain.BlobStore;
 import java.util.concurrent.CompletableFuture;
 
 public interface ValueStore extends Volatile2 {
@@ -17,4 +18,6 @@ public interface ValueStore extends Volatile2 {
   <U extends StoredValue> Values<U> forType(Class<U> type);
 
   CompletableFuture<Void> onReady();
+
+  BlobStore asBlobStore();
 }

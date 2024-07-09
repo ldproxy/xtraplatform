@@ -201,7 +201,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
     }
 
     if (writable || has(path)) {
-      Path filePath = full(path);
+      Path filePath = full(path).normalize();
 
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("Providing writable local blob at {}", filePath);
