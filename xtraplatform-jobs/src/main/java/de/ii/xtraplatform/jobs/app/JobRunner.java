@@ -18,6 +18,7 @@ import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobProcessor;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
+import de.ii.xtraplatform.jobs.domain.JobResult;
 import de.ii.xtraplatform.jobs.domain.JobSet;
 import java.time.Duration;
 import java.time.Instant;
@@ -147,6 +148,25 @@ public class JobRunner implements AppLifeCycle {
         1,
         TimeUnit.SECONDS);
 
+    // check for orphaned jobs every minute
+    polling.scheduleAtFixedRate(
+        () -> {
+          for (Job job : jobQueue.getTaken()) {
+            // TODO: also update vector progress, remove raster check
+            if (job.getType().equals("tile-seeding:raster:png")
+                && job.getUpdatedAt().get()
+                    < Instant.now().minus(Duration.ofMinutes(1)).toEpochMilli()) {
+              if (logJobsDebug()) {
+                LOGGER.debug(MARKER.JOBS, "Found orphaned job, adding to queue again: {}", job);
+              }
+              jobQueue.push(job, true);
+            }
+          }
+        },
+        1,
+        1,
+        TimeUnit.MINUTES);
+
     // log progress for active job sets every 5 seconds
     polling.scheduleAtFixedRate(
         () -> {
@@ -200,34 +220,41 @@ public class JobRunner implements AppLifeCycle {
           Instant start = Instant.now();
           Optional<JobSet> jobSet = job.getPartOf().map(jobQueue::getSet);
 
-          try {
-            if (jobSet.isPresent() && jobSet.get().getEntity().isPresent()) {
-              LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.get().getEntity().get());
-            }
-
-            if (logJobsTrace()) {
-              LOGGER.trace(MARKER.JOBS, "Processing job: {}", job);
-            }
-
-            processor.process(job, jobSet.orElse(null), jobQueue::push);
-
-            if (jobSet.isPresent()) {
-              int active = jobSetConcurrency.get(jobSet.get().getId()).decrementAndGet();
-
-              if (logJobsTrace()) {
-                LOGGER.trace(
-                    MARKER.JOBS,
-                    "Decreased concurrency for job set to {} ({})",
-                    active,
-                    jobSet.get().getId());
-              }
-            }
-          } catch (Throwable e) {
-            LOGGER.error("Error while processing job", e);
-            jobQueue.error(job.getId(), e.getMessage());
+          if (jobSet.isPresent() && jobSet.get().getEntity().isPresent()) {
+            LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.get().getEntity().get());
           }
 
-          jobQueue.done(job.getId());
+          if (logJobsTrace()) {
+            LOGGER.trace(MARKER.JOBS, "Processing job: {}", job);
+          }
+
+          JobResult result;
+          try {
+            result = processor.process(job, jobSet.orElse(null), jobQueue::push);
+          } catch (Throwable e) {
+            result = JobResult.error(e.getMessage());
+          }
+
+          if (jobSet.isPresent()) {
+            int active = jobSetConcurrency.get(jobSet.get().getId()).decrementAndGet();
+
+            if (logJobsTrace()) {
+              LOGGER.trace(
+                  MARKER.JOBS,
+                  "Decreased concurrency for job set to {} ({})",
+                  active,
+                  jobSet.get().getId());
+            }
+          }
+
+          if (result.isSuccess()) {
+            jobQueue.done(job.getId());
+          } else if (result.isFailure()) {
+            boolean retry = jobQueue.error(job.getId(), result.getError().get(), result.isRetry());
+            if (!retry) {
+              LOGGER.error("Error while processing job: {}", result.getError().get());
+            }
+          }
 
           if (jobSet.isPresent()) {
             if (jobSet.get().isDone()) {
@@ -237,8 +264,12 @@ public class JobRunner implements AppLifeCycle {
           }
 
           if (logJobsTrace()) {
-            long duration = Instant.now().toEpochMilli() - start.toEpochMilli();
-            LOGGER.trace(MARKER.JOBS, "Processed job in {}: {}", pretty(duration), job);
+            if (result.isOnHold()) {
+              LOGGER.trace(MARKER.JOBS, "Postponed job: {}", job);
+            } else {
+              long duration = Instant.now().toEpochMilli() - start.toEpochMilli();
+              LOGGER.trace(MARKER.JOBS, "Processed job in {}: {}", pretty(duration), job);
+            }
           }
         });
   }

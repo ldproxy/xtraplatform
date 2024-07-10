@@ -11,6 +11,8 @@ import com.fasterxml.uuid.Generators;
 import com.fasterxml.uuid.NoArgGenerator;
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.immutables.value.Value;
 
 public interface BaseJob {
@@ -33,4 +35,35 @@ public interface BaseJob {
   OptionalInt getTimeout();
 
   OptionalInt getRetries();
+
+  // TODO: progress wrapper?
+
+  @Value.Default
+  default AtomicLong getStartedAt() {
+    return new AtomicLong(-1);
+  }
+
+  @Value.Default
+  default AtomicLong getUpdatedAt() {
+    return new AtomicLong(-1);
+  }
+
+  @Value.Default
+  default AtomicInteger getTotal() {
+    return new AtomicInteger(0);
+  }
+
+  @Value.Default
+  default AtomicInteger getCurrent() {
+    return new AtomicInteger(0);
+  }
+
+  default int getPercent() {
+    int total = getTotal().get();
+    return total == 0 ? 100 : Math.round(((float) Math.max(getCurrent().get(), 0) / total) * 100);
+  }
+
+  default boolean isDone() {
+    return getTotal().get() == getCurrent().get();
+  }
 }

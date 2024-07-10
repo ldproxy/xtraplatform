@@ -73,7 +73,7 @@ public class JobQueueRedis implements JobQueue {
   }
 
   @Override
-  public synchronized boolean error(String jobId, String error) {
+  public synchronized boolean error(String jobId, String error, boolean retry) {
     // TODO: retry logic
     return false;
   }

@@ -18,7 +18,7 @@ public interface JobProcessor<T, U> {
 
   int getConcurrency(JobSet jobSet);
 
-  void process(Job job, JobSet jobSet, Consumer<Job> pushJob);
+  JobResult process(Job job, JobSet jobSet, Consumer<Job> pushJob);
 
   Class<T> getDetailsType();
 

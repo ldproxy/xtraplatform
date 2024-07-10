@@ -16,7 +16,9 @@ import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
+import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -24,6 +26,8 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -89,14 +93,48 @@ public class OpsEndpointJobs implements OpsEndpoint {
     return Response.noContent().build();
   }
 
-  // TODO: id in path?
+  @POST
+  @Path("/{jobId}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  public synchronized Response updateJob(
+      @PathParam("jobId") String jobId, Map<String, String> progress)
+      throws JsonProcessingException {
+    Optional<Job> job =
+        jobQueue.getTaken().stream()
+            .filter(job1 -> Objects.equals(job1.getId(), jobId))
+            .findFirst();
+
+    if (job.isPresent()) {
+      job.get().getUpdatedAt().set(Instant.now().toEpochMilli());
+      if (progress.containsKey("current")) {
+        job.get().getCurrent().set(Integer.parseInt(progress.get("current")));
+      }
+    }
+
+    return Response.noContent().build();
+  }
+
   @DELETE
+  @Path("/{jobId}")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  public synchronized Response closeJob(Map<String, String> jobRef) throws JsonProcessingException {
-    if (jobQueue.done(jobRef.get("id"))) {
+  public synchronized Response closeJob(
+      @PathParam("jobId") String jobId, Map<String, String> result) throws JsonProcessingException {
+    if (result.containsKey("error") && Objects.nonNull(result.get("error"))) {
+      boolean retry =
+          jobQueue.error(jobId, result.get("error"), Boolean.parseBoolean(result.get("retry")));
+
       if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
-        LOGGER.trace(MARKER.JOBS, "Job {} marked as done by remote executor", jobRef.get("id"));
+        LOGGER.trace(
+            MARKER.JOBS, "Job {} marked as error by remote executor (retry: {})", jobId, retry);
+      }
+
+      return Response.noContent().build();
+    }
+
+    if (jobQueue.done(jobId)) {
+      if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
+        LOGGER.trace(MARKER.JOBS, "Job {} marked as done by remote executor", jobId);
       }
 
       return Response.noContent().build();

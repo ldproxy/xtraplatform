@@ -10,7 +10,7 @@ package de.ii.xtraplatform.jobs.domain;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.OptionalLong;
+import java.util.concurrent.atomic.AtomicLong;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -28,7 +28,7 @@ public interface Job extends BaseJob {
     return new ImmutableJob.Builder()
         .from(this)
         .executor(executor)
-        .startedAt(Instant.now().getEpochSecond())
+        .startedAt(new AtomicLong(Instant.now().getEpochSecond()))
         .build();
   }
 
@@ -36,8 +36,20 @@ public interface Job extends BaseJob {
     return new ImmutableJob.Builder()
         .from(this)
         .executor(Optional.empty())
-        .startedAt(OptionalLong.empty())
+        .startedAt(new AtomicLong(-1))
         .build();
+  }
+
+  default Job retry(String error) {
+    return new ImmutableJob.Builder()
+        .from(this)
+        .retries(this.getRetries().orElse(0) + 1)
+        .addErrors(error)
+        .build();
+  }
+
+  default Job failed(String error) {
+    return new ImmutableJob.Builder().from(this).addErrors(error).build();
   }
 
   default Job with(String jobSetId) {
@@ -55,6 +67,4 @@ public interface Job extends BaseJob {
   Optional<String> getExecutor();
 
   Optional<String> getPartOf();
-
-  OptionalLong getStartedAt();
 }

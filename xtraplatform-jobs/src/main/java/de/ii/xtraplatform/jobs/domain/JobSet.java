@@ -80,21 +80,4 @@ public interface JobSet extends BaseJob {
   Optional<Job> getSetup();
 
   Optional<Job> getCleanup();
-
-  // TODO: progress wrapper?
-
-  AtomicLong getStartedAt();
-
-  AtomicInteger getTotal();
-
-  AtomicInteger getCurrent();
-
-  default int getPercent() {
-    int total = getTotal().get();
-    return total == 0 ? 100 : Math.round(((float) Math.max(getCurrent().get(), 0) / total) * 100);
-  }
-
-  default boolean isDone() {
-    return getTotal().get() == getCurrent().get();
-  }
 }

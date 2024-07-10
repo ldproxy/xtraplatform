@@ -14,7 +14,6 @@ import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
 import de.ii.xtraplatform.jobs.domain.JobSet;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
@@ -23,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
@@ -38,6 +38,7 @@ public class JobQueueSimple implements JobQueue {
   private final Map<String, Deque<Job>> queues;
   private final Queue<Job> openQueue;
   private final List<Job> takenQueue;
+  private final List<Job> errorQueue;
 
   @Inject
   JobQueueSimple(AppContext appContext) {
@@ -45,7 +46,8 @@ public class JobQueueSimple implements JobQueue {
     this.jobSets = new ConcurrentHashMap<>();
     this.queues = new ConcurrentHashMap<>();
     this.openQueue = new ArrayDeque<>();
-    this.takenQueue = new ArrayList<>();
+    this.takenQueue = new CopyOnWriteArrayList<>();
+    this.errorQueue = new CopyOnWriteArrayList<>();
 
     // TODO: housekeeping
   }
@@ -115,8 +117,25 @@ public class JobQueueSimple implements JobQueue {
   }
 
   @Override
-  public synchronized boolean error(String jobId, String error) {
-    // TODO: retry logic
+  public synchronized boolean error(String jobId, String error, boolean retry) {
+    Optional<Job> job =
+        takenQueue.stream().filter(job1 -> Objects.equals(job1.getId(), jobId)).findFirst();
+
+    if (job.isPresent()) {
+      takenQueue.remove(job.get());
+
+      if (retry) {
+        int retries = job.get().getRetries().orElse(0);
+        if (retries < 3) {
+          push(job.get().retry(error), true);
+
+          return true;
+        }
+      }
+
+      errorQueue.add(job.get().failed(error));
+    }
+
     return false;
   }
 
