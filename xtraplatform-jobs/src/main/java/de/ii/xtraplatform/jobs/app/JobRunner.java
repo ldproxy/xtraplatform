@@ -151,16 +151,25 @@ public class JobRunner implements AppLifeCycle {
     // check for orphaned jobs every minute
     polling.scheduleAtFixedRate(
         () -> {
+          long oneMinuteAgo = Instant.now().minus(Duration.ofMinutes(1)).getEpochSecond();
+
+          if (logJobsTrace()) {
+            LOGGER.trace(MARKER.JOBS, "Checking for orphaned jobs (updatedAt < {})", oneMinuteAgo);
+          }
+
           for (Job job : jobQueue.getTaken()) {
             // TODO: also update vector progress, remove raster check
             if (job.getType().equals("tile-seeding:raster:png")
-                && job.getUpdatedAt().get()
-                    < Instant.now().minus(Duration.ofMinutes(1)).toEpochMilli()) {
+                && job.getUpdatedAt().get() < oneMinuteAgo) {
               if (logJobsDebug()) {
                 LOGGER.debug(MARKER.JOBS, "Found orphaned job, adding to queue again: {}", job);
               }
               jobQueue.push(job, true);
             }
+          }
+
+          if (logJobsTrace()) {
+            LOGGER.trace(MARKER.JOBS, "Finished checking for orphaned jobs");
           }
         },
         1,

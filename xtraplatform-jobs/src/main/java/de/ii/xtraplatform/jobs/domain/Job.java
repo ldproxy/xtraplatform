@@ -29,6 +29,7 @@ public interface Job extends BaseJob {
         .from(this)
         .executor(executor)
         .startedAt(new AtomicLong(Instant.now().getEpochSecond()))
+        .updatedAt(new AtomicLong(Instant.now().getEpochSecond()))
         .build();
   }
 
@@ -37,6 +38,7 @@ public interface Job extends BaseJob {
         .from(this)
         .executor(Optional.empty())
         .startedAt(new AtomicLong(-1))
+        .updatedAt(new AtomicLong(-1))
         .build();
   }
 

@@ -105,7 +105,7 @@ public class OpsEndpointJobs implements OpsEndpoint {
             .findFirst();
 
     if (job.isPresent()) {
-      job.get().getUpdatedAt().set(Instant.now().toEpochMilli());
+      job.get().getUpdatedAt().set(Instant.now().getEpochSecond());
       if (progress.containsKey("current")) {
         job.get().getCurrent().set(Integer.parseInt(progress.get("current")));
       }
