@@ -83,7 +83,7 @@
     },
     "/ping": {
       "get": {
-        "summary": "Metrics",
+        "summary": "Ping",
         "responses": {
           "200": {
             "description": "successful operation",
@@ -103,7 +103,7 @@
     },
     "/threads": {
       "get": {
-        "summary": "Metrics",
+        "summary": "Threads",
         "responses": {
           "200": {
             "description": "successful operation",
@@ -111,6 +111,23 @@
               "text/plain": {
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs": {
+      "get": {
+        "summary": "Jobs",
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
                 }
               }
             }
