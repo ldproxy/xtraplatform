@@ -94,6 +94,11 @@ public class JobQueueRedis implements JobQueue {
   }
 
   @Override
+  public Collection<Job> getFailed() {
+    return List.of();
+  }
+
+  @Override
   public JobSet getSet(String setId) {
     return null;
   }

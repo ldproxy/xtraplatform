@@ -14,7 +14,7 @@ import org.immutables.value.Value;
 public interface JobResult {
 
   static JobResult success() {
-    return new ImmutableJobResult.Builder().onHold(false).build();
+    return new ImmutableJobResult.Builder().build();
   }
 
   static JobResult onHold() {
@@ -29,12 +29,15 @@ public interface JobResult {
     return new ImmutableJobResult.Builder().error(error).build();
   }
 
-  boolean isOnHold();
-
   Optional<String> getError();
 
   @Value.Default
   default boolean isRetry() {
+    return false;
+  }
+
+  @Value.Default
+  default boolean isOnHold() {
     return false;
   }
 

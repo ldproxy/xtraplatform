@@ -155,6 +155,11 @@ public class JobQueueSimple implements JobQueue {
   }
 
   @Override
+  public Collection<Job> getFailed() {
+    return errorQueue;
+  }
+
+  @Override
   public JobSet getSet(String setId) {
     return jobSets.get(setId);
   }

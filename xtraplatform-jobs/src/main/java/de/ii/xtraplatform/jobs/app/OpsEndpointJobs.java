@@ -61,7 +61,14 @@ public class OpsEndpointJobs implements OpsEndpoint {
   public Response getJobs() throws JsonProcessingException {
     Map<String, Object> jobs =
         Map.of(
-            "sets", jobQueue.getSets(), "open", jobQueue.getOpen(), "taken", jobQueue.getTaken());
+            "sets",
+            jobQueue.getSets(),
+            "open",
+            jobQueue.getOpen(),
+            "taken",
+            jobQueue.getTaken(),
+            "failed",
+            jobQueue.getFailed());
 
     try {
       String s = objectMapper.writeValueAsString(jobs);

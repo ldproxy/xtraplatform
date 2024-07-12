@@ -32,5 +32,7 @@ public interface JobQueue {
 
   Collection<Job> getTaken();
 
+  Collection<Job> getFailed();
+
   JobSet getSet(String setId);
 }
