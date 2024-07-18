@@ -176,18 +176,23 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
 
   @Override
   public State getState(String capability) {
-    return capabilities.get(capability).getState();
+    return capabilities.containsKey(capability)
+        ? capabilities.get(capability).getState()
+        : State.UNAVAILABLE;
   }
 
   @Override
   public Optional<String> getMessage(String capability) {
-    return capabilities.get(capability).getMessage();
+    return capabilities.containsKey(capability)
+        ? capabilities.get(capability).getMessage()
+        : Optional.empty();
   }
 
   @Override
   public Runnable onStateChange(String capability, ChangeHandler handler, boolean initialCall) {
-    // TODO
-    return capabilities.get(capability).onStateChange(handler, initialCall);
+    return capabilities.containsKey(capability)
+        ? capabilities.get(capability).onStateChange(handler, initialCall)
+        : () -> {};
   }
 
   protected final Set<String> getComponents() {
