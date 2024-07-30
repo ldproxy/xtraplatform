@@ -10,6 +10,7 @@ package de.ii.xtraplatform.values.domain;
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
 import java.util.Map;
+import java.util.Optional;
 
 @AutoMultiBind
 public interface ValueFactory {
@@ -25,4 +26,8 @@ public interface ValueFactory {
   FORMAT defaultFormat();
 
   Map<String, FORMAT> formatAliases();
+
+  default Optional<AutoValueFactory<? extends AutoValue, ?, ?>> auto() {
+    return Optional.empty();
+  }
 }
