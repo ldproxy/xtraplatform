@@ -87,7 +87,7 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
   // TODO
   @Override
   default U get(Identifier identifier) {
-    return null; // getDecorated().get(identifier);
+    return (U) getDecorated().get(identifier);
   }
 
   // TODO
