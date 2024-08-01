@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public interface EntityStoreDecorator<T extends EntityData, U extends T>
     extends EntityDataStore<U>, Volatile2 {
@@ -65,7 +66,13 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
 
   @Override
   default List<Identifier> identifiers(String... path) {
-    return getDecorated().identifiers(transformPath(path));
+    return getDecorated().identifiers().stream()
+        .filter(
+            identifier ->
+                Identifier.JOINER
+                    .join(identifier.path())
+                    .endsWith(Identifier.JOINER.join(transformPath(path))))
+        .collect(Collectors.toList());
   }
 
   // TODO: transformPath
