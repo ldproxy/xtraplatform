@@ -68,11 +68,6 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
     return getDecorated().identifiers(transformPath(path));
   }
 
-  @Override
-  default List<Identifier> allIdentifiers() {
-    return getDecorated().allIdentifiers();
-  }
-
   // TODO: transformPath
   @Override
   default boolean has(Identifier identifier) {

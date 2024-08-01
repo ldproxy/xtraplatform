@@ -126,11 +126,6 @@ class InternalUserAuthenticatorSpec extends Specification {
         }
 
         @Override
-        List<Identifier> allIdentifiers() {
-            return null
-        }
-
-        @Override
         EntityData fromMap(Identifier identifier, Map<String, Object> entityData) throws IOException {
             return null 
         }

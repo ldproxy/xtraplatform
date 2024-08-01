@@ -287,11 +287,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   @Override
-  public List<Identifier> allIdentifiers() {
-    return getEventSourcing().getAllIdentifiers();
-  }
-
-  @Override
   public EntityDataBuilder<EntityData> getBuilder(
       Identifier identifier, Optional<String> entitySubtype) {
     return entitySubtype.isPresent()

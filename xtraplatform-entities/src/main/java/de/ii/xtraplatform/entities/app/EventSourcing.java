@@ -26,7 +26,6 @@ import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ValueCache;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
 import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -215,10 +214,6 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
             identifier ->
                 path.length == 0 || Objects.equals(ImmutableList.copyOf(path), identifier.path()))
         .collect(Collectors.toList());
-  }
-
-  public List<Identifier> getAllIdentifiers() {
-    return new ArrayList<>(cache.keySet());
   }
 
   public CompletableFuture<T> pushMutationEvent(Identifier identifier, T data) {

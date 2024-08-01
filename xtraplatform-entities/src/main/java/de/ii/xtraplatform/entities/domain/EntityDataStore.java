@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -86,10 +87,8 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
         .build();
   }
 
-  List<Identifier> allIdentifiers();
-
-  default List<String> allIds() {
-    return allIdentifiers().stream().map(Identifier::id).collect(Collectors.toList());
+  default Set<String> allIds() {
+    return identifiers().stream().map(Identifier::id).collect(Collectors.toSet());
   }
 
   default boolean hasAny(String id) {
@@ -97,7 +96,7 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
   }
 
   default Identifier fullIdentifier(String id) {
-    return allIdentifiers().stream()
+    return identifiers().stream()
         .filter(identifier -> Objects.equals(identifier.id(), id))
         .findFirst()
         .orElse(null);
