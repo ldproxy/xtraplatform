@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.jobs.domain;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,8 +26,8 @@ public interface JobSet extends BaseJob {
         .description(description)
         .details(details)
         .startedAt(new AtomicLong())
-        .total(new AtomicInteger())
-        .current(new AtomicInteger())
+        .total(new AtomicInteger(-1))
+        .current(new AtomicInteger(0))
         .build();
   }
 
@@ -50,6 +51,11 @@ public interface JobSet extends BaseJob {
         .build();
   }
 
+  default void start() {
+    getStartedAt().set(Instant.now().getEpochSecond());
+    getTotal().set(0);
+  }
+
   default List<BaseJob> done(Job job) {
     if (getSetup().isPresent() && Objects.equals(job.getId(), getSetup().get().getId())) {
       return List.of();
@@ -59,7 +65,8 @@ public interface JobSet extends BaseJob {
       return getFollowUps();
     }
 
-    getCurrent().incrementAndGet();
+    // getCurrent().incrementAndGet();
+    getUpdatedAt().set(Instant.now().getEpochSecond());
 
     if (isDone()) {
       return getCleanup().isPresent() ? List.of(getCleanup().get()) : getFollowUps();

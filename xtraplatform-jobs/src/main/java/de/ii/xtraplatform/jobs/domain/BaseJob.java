@@ -60,7 +60,15 @@ public interface BaseJob {
 
   default int getPercent() {
     int total = getTotal().get();
-    return total == 0 ? 100 : Math.round(((float) Math.max(getCurrent().get(), 0) / total) * 100);
+
+    if (total == 0) {
+      if (getStartedAt().get() <= 0) {
+        return 0;
+      }
+      return 100;
+    }
+
+    return (int) (((float) Math.max(getCurrent().get(), 0) / total) * 100);
   }
 
   default boolean isDone() {

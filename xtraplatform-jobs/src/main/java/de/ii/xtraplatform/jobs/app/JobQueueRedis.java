@@ -73,6 +73,13 @@ public class JobQueueRedis implements JobQueue {
   }
 
   @Override
+  public boolean doneSet(String jobSetId) {
+    // TODO: HDEL xtraplatform:jobs:set:<id>
+
+    return false;
+  }
+
+  @Override
   public synchronized boolean error(String jobId, String error, boolean retry) {
     // TODO: retry logic
     return false;

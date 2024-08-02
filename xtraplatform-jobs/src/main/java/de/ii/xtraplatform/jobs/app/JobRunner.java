@@ -171,6 +171,15 @@ public class JobRunner implements AppLifeCycle {
           if (logJobsTrace()) {
             LOGGER.trace(MARKER.JOBS, "Finished checking for orphaned jobs");
           }
+
+          // remove done job sets older than one hour
+          long oneHourAgo = Instant.now().minus(Duration.ofHours(1)).getEpochSecond();
+
+          for (JobSet jobSet : jobQueue.getSets()) {
+            if (jobSet.isDone() && jobSet.getUpdatedAt().get() < oneHourAgo) {
+              jobQueue.doneSet(jobSet.getId());
+            }
+          }
         },
         1,
         1,
@@ -241,7 +250,7 @@ public class JobRunner implements AppLifeCycle {
           try {
             result = processor.process(job, jobSet.orElse(null), jobQueue::push);
           } catch (Throwable e) {
-            result = JobResult.error(e.getMessage());
+            result = JobResult.error(e.getClass() + e.getMessage());
           }
 
           if (jobSet.isPresent()) {

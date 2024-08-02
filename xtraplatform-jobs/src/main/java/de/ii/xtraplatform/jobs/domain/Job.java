@@ -10,6 +10,7 @@ package de.ii.xtraplatform.jobs.domain;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.immutables.value.Value;
 
@@ -20,8 +21,13 @@ public interface Job extends BaseJob {
     return new ImmutableJob.Builder().type(type).details(details).build();
   }
 
-  static Job of(String type, Object details, String partOf) {
-    return new ImmutableJob.Builder().type(type).details(details).partOf(partOf).build();
+  static Job of(String type, Object details, String partOf, int total) {
+    return new ImmutableJob.Builder()
+        .type(type)
+        .details(details)
+        .partOf(partOf)
+        .total(new AtomicInteger(total))
+        .build();
   }
 
   default Job started(String executor) {

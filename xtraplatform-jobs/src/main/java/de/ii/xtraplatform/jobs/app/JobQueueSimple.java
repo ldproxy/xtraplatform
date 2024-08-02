@@ -117,6 +117,11 @@ public class JobQueueSimple implements JobQueue {
   }
 
   @Override
+  public synchronized boolean doneSet(String jobSetId) {
+    return jobSets.remove(jobSetId) != null;
+  }
+
+  @Override
   public synchronized boolean error(String jobId, String error, boolean retry) {
     Optional<Job> job =
         takenQueue.stream().filter(job1 -> Objects.equals(job1.getId(), jobId)).findFirst();
@@ -134,6 +139,16 @@ public class JobQueueSimple implements JobQueue {
       }
 
       errorQueue.add(job.get().failed(error));
+
+      if (job.get().getPartOf().isPresent()) {
+        String setId = job.get().getPartOf().get();
+
+        if (jobSets.containsKey(setId)) {
+          List<BaseJob> followUps = jobSets.get(setId).done(job.get());
+          followUps.forEach(this::push);
+          // TODO: if done, mark for removal
+        }
+      }
     }
 
     return false;

@@ -24,6 +24,8 @@ public interface JobQueue {
 
   boolean done(String jobId);
 
+  boolean doneSet(String jobSetId);
+
   boolean error(String jobId, String error, boolean retry);
 
   Collection<JobSet> getSets();

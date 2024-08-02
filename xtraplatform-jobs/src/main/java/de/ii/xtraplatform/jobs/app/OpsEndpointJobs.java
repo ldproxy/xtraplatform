@@ -15,6 +15,7 @@ import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
+import de.ii.xtraplatform.jobs.domain.JobSet;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
 import java.time.Instant;
 import java.util.Map;
@@ -115,6 +116,11 @@ public class OpsEndpointJobs implements OpsEndpoint {
       job.get().getUpdatedAt().set(Instant.now().getEpochSecond());
       if (progress.containsKey("current")) {
         job.get().getCurrent().set(Integer.parseInt(progress.get("current")));
+      }
+
+      if (job.get().getPartOf().isPresent()) {
+        JobSet set = jobQueue.getSet(job.get().getPartOf().get());
+        set.getUpdatedAt().set(Instant.now().getEpochSecond());
       }
     }
 
