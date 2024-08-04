@@ -16,8 +16,11 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * id maybe TYPE/ORG/ID, in that case a multitenant middleware would handle splitting into path and
@@ -82,6 +85,21 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
         .path(entityGroup(identifier))
         .addPath(entityType(identifier))
         .build();
+  }
+
+  default Set<String> allIds() {
+    return identifiers().stream().map(Identifier::id).collect(Collectors.toSet());
+  }
+
+  default boolean hasAny(String id) {
+    return allIds().contains(id);
+  }
+
+  default Identifier fullIdentifier(String id) {
+    return identifiers().stream()
+        .filter(identifier -> Objects.equals(identifier.id(), id))
+        .findFirst()
+        .orElse(null);
   }
 
   EntityData fromMap(Identifier identifier, Map<String, Object> entityData) throws IOException;
