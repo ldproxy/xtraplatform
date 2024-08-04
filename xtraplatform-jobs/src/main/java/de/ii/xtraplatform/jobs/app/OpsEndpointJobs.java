@@ -17,7 +17,6 @@ import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
 import de.ii.xtraplatform.jobs.domain.JobSet;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -113,14 +112,14 @@ public class OpsEndpointJobs implements OpsEndpoint {
             .findFirst();
 
     if (job.isPresent()) {
-      job.get().getUpdatedAt().set(Instant.now().getEpochSecond());
-      if (progress.containsKey("current")) {
-        job.get().getCurrent().set(Integer.parseInt(progress.get("current")));
-      }
+      int delta = progress.containsKey("delta") ? Integer.parseInt(progress.get("delta")) : 0;
 
-      if (job.get().getPartOf().isPresent()) {
+      job.get().update(delta);
+
+      if (delta > 0 && job.get().getPartOf().isPresent()) {
         JobSet set = jobQueue.getSet(job.get().getPartOf().get());
-        set.getUpdatedAt().set(Instant.now().getEpochSecond());
+        set.update(delta);
+        set.getDetails().update(progress);
       }
     }
 

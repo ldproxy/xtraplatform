@@ -32,7 +32,13 @@ public interface JobProgress {
       return 100;
     }
 
-    return (int) (((float) Math.max(getCurrent().get(), 0) / total) * 100);
+    int current = getCurrent().get();
+
+    if (current >= total) {
+      return 100;
+    }
+
+    return (int) ((((float) Math.max(current, 0)) / total) * 100);
   }
 
   default boolean isDone() {

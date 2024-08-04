@@ -9,6 +9,7 @@ package de.ii.xtraplatform.jobs.domain;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,7 +19,15 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface JobSet extends BaseJob {
 
-  static JobSet of(String type, String entity, String label, String description, Object details) {
+  interface JobSetDetails {
+    void update(Map<String, String> parameters);
+  }
+
+  @Override
+  JobSetDetails getDetails();
+
+  static JobSet of(
+      String type, String entity, String label, String description, JobSetDetails details) {
     return new ImmutableJobSet.Builder()
         .type(type)
         .entity(entity)
@@ -43,7 +52,7 @@ public interface JobSet extends BaseJob {
     return new ImmutableJobSet.Builder().from(this).addFollowUps(followUps).build();
   }
 
-  default JobSet with(String description, Object details) {
+  default JobSet with(String description, JobSetDetails details) {
     return new ImmutableJobSet.Builder()
         .from(this)
         .description(description)

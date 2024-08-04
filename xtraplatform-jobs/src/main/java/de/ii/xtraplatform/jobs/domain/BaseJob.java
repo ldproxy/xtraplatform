@@ -9,6 +9,7 @@ package de.ii.xtraplatform.jobs.domain;
 
 import com.fasterxml.uuid.Generators;
 import com.fasterxml.uuid.NoArgGenerator;
+import java.time.Instant;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,10 +69,29 @@ public interface BaseJob {
       return 100;
     }
 
-    return (int) (((float) Math.max(getCurrent().get(), 0) / total) * 100);
+    if (total == -1) {
+      return 0;
+    }
+
+    int current = getCurrent().get();
+
+    if (current >= total) {
+      return 100;
+    }
+
+    return (int) ((((float) Math.max(current, 0)) / total) * 100);
   }
 
   default boolean isDone() {
     return getTotal().get() == getCurrent().get();
+  }
+
+  default void init(int delta) {
+    getTotal().addAndGet(delta);
+  }
+
+  default void update(int delta) {
+    getCurrent().addAndGet(delta);
+    getUpdatedAt().set(Instant.now().getEpochSecond());
   }
 }
