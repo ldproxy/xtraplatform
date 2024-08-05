@@ -22,6 +22,7 @@ import de.ii.xtraplatform.jobs.domain.JobResult;
 import de.ii.xtraplatform.jobs.domain.JobSet;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -79,21 +80,23 @@ public class JobRunner implements AppLifeCycle {
     this.activeThreads = threadPoolExecutor::getActiveCount;
 
     this.jobSetConcurrency =
-        new LinkedHashMap<>() {
-          // delete the oldest entry if the map size exceeds 1023
-          @Override
-          protected boolean removeEldestEntry(Map.Entry<String, AtomicInteger> eldest) {
-            return size() > 1023;
-          }
-        };
+        Collections.synchronizedMap(
+            new LinkedHashMap<>() {
+              // delete the oldest entry if the map size exceeds 1023
+              @Override
+              protected boolean removeEldestEntry(Map.Entry<String, AtomicInteger> eldest) {
+                return size() > 1023;
+              }
+            });
     this.jobSetConcurrencyMax =
-        new LinkedHashMap<>() {
-          // delete the oldest entry if the map size exceeds 1023
-          @Override
-          protected boolean removeEldestEntry(Map.Entry<String, Integer> eldest) {
-            return size() > 1023;
-          }
-        };
+        Collections.synchronizedMap(
+            new LinkedHashMap<>() {
+              // delete the oldest entry if the map size exceeds 1023
+              @Override
+              protected boolean removeEldestEntry(Map.Entry<String, Integer> eldest) {
+                return size() > 1023;
+              }
+            });
   }
 
   @Override
