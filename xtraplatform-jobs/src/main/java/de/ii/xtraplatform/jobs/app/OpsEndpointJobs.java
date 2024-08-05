@@ -17,6 +17,7 @@ import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
 import de.ii.xtraplatform.jobs.domain.JobSet;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -58,17 +60,15 @@ public class OpsEndpointJobs implements OpsEndpoint {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getJobs() throws JsonProcessingException {
-    Map<String, Object> jobs =
-        Map.of(
-            "sets",
-            jobQueue.getSets(),
-            "open",
-            jobQueue.getOpen(),
-            "taken",
-            jobQueue.getTaken(),
-            "failed",
-            jobQueue.getFailed());
+  public Response getJobs(@QueryParam("debug") boolean debug) throws JsonProcessingException {
+    Map<String, Object> jobs = new LinkedHashMap<>();
+    jobs.put("sets", jobQueue.getSets());
+
+    if (debug) {
+      jobs.put("open", jobQueue.getOpen());
+      jobs.put("taken", jobQueue.getTaken());
+      jobs.put("failed", jobQueue.getFailed());
+    }
 
     try {
       String s = objectMapper.writeValueAsString(jobs);
