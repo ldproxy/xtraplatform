@@ -49,7 +49,7 @@ paths:
                 type: object
   /ping:
     get:
-      summary: Metrics
+      summary: Ping
       responses:
         '200':
           description: successful operation
@@ -61,7 +61,7 @@ paths:
                   - pong
   /threads:
     get:
-      summary: Metrics
+      summary: Threads
       responses:
         '200':
           description: successful operation
@@ -69,3 +69,13 @@ paths:
             text/plain:
               schema:
                 type: string
+  /jobs:
+    get:
+      summary: Jobs
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object

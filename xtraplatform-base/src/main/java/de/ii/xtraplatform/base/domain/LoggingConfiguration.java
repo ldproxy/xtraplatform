@@ -98,6 +98,7 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
   private boolean configDumps;
   private boolean stackTraces;
   private boolean wiring;
+  private boolean jobs;
 
   public LoggingConfiguration() {
     super();
@@ -112,6 +113,7 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
     this.configDumps = false;
     this.stackTraces = false;
     this.wiring = false;
+    this.jobs = false;
   }
 
   public List<ILoggingEvent> configure(
@@ -162,7 +164,8 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
                 s3,
                 configDumps,
                 stackTraces,
-                wiring));
+                wiring,
+                jobs));
   }
 
   @JsonProperty("showThirdPartyLoggers")
@@ -273,6 +276,16 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
   @JsonProperty
   public void setWiring(boolean wiring) {
     this.wiring = wiring;
+  }
+
+  @JsonProperty
+  public boolean isJobs() {
+    return jobs;
+  }
+
+  @JsonProperty
+  public void setJobs(boolean jobs) {
+    this.jobs = jobs;
   }
 
   @JsonProperty("type")

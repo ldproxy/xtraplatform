@@ -32,6 +32,7 @@ public class LoggingFilter extends TurboFilter {
   private boolean configDumps;
   private boolean stackTraces;
   private boolean wiring;
+  private boolean jobs;
 
   public LoggingFilter(
       boolean showThirdPartyLoggers,
@@ -44,7 +45,8 @@ public class LoggingFilter extends TurboFilter {
       boolean s3,
       boolean configDumps,
       boolean stackTraces,
-      boolean wiring) {
+      boolean wiring,
+      boolean jobs) {
     this.showThirdPartyLoggers = showThirdPartyLoggers;
     this.apiRequests = apiRequests;
     this.apiRequestUsers = apiRequestUsers;
@@ -56,6 +58,7 @@ public class LoggingFilter extends TurboFilter {
     this.configDumps = configDumps;
     this.stackTraces = stackTraces;
     this.wiring = wiring;
+    this.jobs = jobs;
   }
 
   @Override
@@ -101,6 +104,10 @@ public class LoggingFilter extends TurboFilter {
 
     if (wiring && Objects.equals(marker, MARKER.DI)) {
       return FilterReply.ACCEPT;
+    }
+
+    if (Objects.equals(marker, MARKER.JOBS)) {
+      return jobs ? FilterReply.ACCEPT : FilterReply.NEUTRAL;
     }
 
     if (Objects.isNull(marker) && (showThirdPartyLoggers || logger.getName().startsWith("de.ii"))) {
@@ -204,5 +211,13 @@ public class LoggingFilter extends TurboFilter {
 
   public void setWiring(boolean wiring) {
     this.wiring = wiring;
+  }
+
+  public boolean isJobs() {
+    return jobs;
+  }
+
+  public void setJobs(boolean jobs) {
+    this.jobs = jobs;
   }
 }

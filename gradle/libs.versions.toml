@@ -15,6 +15,7 @@ cron4j = '2.2.5'
 rxjava = '3.1.8'
 rxjava-ext = '3.1.1'
 rs = '1.0.4'
+uuid = '5.0.0'
 
 [libraries]
 # auth
@@ -52,6 +53,9 @@ dagger-auto = { module = "io.github.azahnen:dagger-auto", version.ref = "dagger-
 
 #s3
 minio = { module = "io.minio:minio", version.ref = "minio" }
+
+#jobs
+uuid = { module = "com.fasterxml.uuid:java-uuid-generator", version.ref = "uuid" }
 
 #services
 cron4j = { module = "it.sauronsoftware.cron4j:cron4j", version.ref = "cron4j" }

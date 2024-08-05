@@ -33,6 +33,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   private final boolean noHealth;
   private State baseState;
   private boolean ready;
+  private boolean initialized;
 
   public AbstractVolatileComposed(VolatileRegistry volatileRegistry, String... capabilities) {
     this(null, volatileRegistry, false, capabilities);
@@ -85,6 +86,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   protected void onInitComponentsAvailable() {
+    this.initialized = true;
     Tuple<State, String> result = volatileInit();
 
     if (Objects.nonNull(result.second())) {
@@ -231,7 +233,9 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
       return;
     }
     if (baseState != State.AVAILABLE) {
-      if (ready && initComponents.values().stream().allMatch(Volatile2::isAvailable)) {
+      if (ready
+          && !initialized
+          && initComponents.values().stream().allMatch(Volatile2::isAvailable)) {
         onInitComponentsAvailable();
       }
       return;

@@ -27,6 +27,8 @@ public interface AppContext {
 
   URI getUri();
 
+  String getInstanceName();
+
   default boolean isDevEnv() {
     return getEnvironment() == ENV.DEVELOPMENT;
   }

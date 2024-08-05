@@ -1,0 +1,11 @@
+
+maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'Job queue.'
+descriptionDe = 'Job-Queue.'
+
+dependencies {
+    provided project(':xtraplatform-ops')
+
+    embeddedFlat(libs.uuid)
+}

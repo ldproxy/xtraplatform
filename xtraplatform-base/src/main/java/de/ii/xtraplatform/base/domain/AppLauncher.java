@@ -23,7 +23,9 @@ import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -108,6 +110,11 @@ public class AppLauncher implements AppContext {
   }
 
   @Override
+  public String getInstanceName() {
+    return String.format("%s@%s", name, getRealHostName());
+  }
+
+  @Override
   public URI getUri() {
     return uri;
   }
@@ -156,13 +163,10 @@ public class AppLauncher implements AppContext {
     String externalUrl = getConfiguration().getServerFactory().getExternalUrl();
     if (Strings.isNullOrEmpty(externalUrl)) {
       this.uri =
-          URI.create(String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort()));
+          URI.create(
+              String.format("%s://%s:%d/", getScheme(), getHostName(), getApplicationPort()));
     } else {
-      String uri =
-          externalUrl.endsWith("/")
-              ? externalUrl.substring(0, externalUrl.length() - 1)
-              : externalUrl;
-      this.uri = URI.create(uri);
+      this.uri = URI.create(externalUrl.endsWith("/") ? externalUrl : externalUrl + "/");
     }
 
     return String.format(
@@ -363,6 +367,25 @@ public class AppLauncher implements AppContext {
         .map(URI::create)
         .map(URI::getHost)
         .orElse("localhost");
+  }
+
+  private String getRealHostName() {
+    String host = System.getenv("HOSTNAME");
+
+    if (Objects.nonNull(host)) {
+      return host;
+    }
+
+    try {
+      String result = InetAddress.getLocalHost().getHostName();
+      if (!Strings.isNullOrEmpty(result)) {
+        return result;
+      }
+    } catch (UnknownHostException e) {
+      // failed;  try alternate means.
+    }
+
+    return "UNKNOWN";
   }
 
   private int getApplicationPort() {
