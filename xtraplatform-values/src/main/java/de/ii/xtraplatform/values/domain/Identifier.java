@@ -31,8 +31,10 @@ public interface Identifier extends Comparable<Identifier> {
     ImmutableIdentifier.Builder builder =
         ImmutableIdentifier.builder().id(path.getFileName().toString());
 
-    for (Path element : path.getParent()) {
-      builder.addPath(element.toString());
+    if (path.getNameCount() > 1) {
+      for (Path element : path.getParent()) {
+        builder.addPath(element.toString());
+      }
     }
 
     return builder.build();
