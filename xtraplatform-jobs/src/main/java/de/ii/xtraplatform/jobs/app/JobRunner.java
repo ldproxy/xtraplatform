@@ -256,7 +256,7 @@ public class JobRunner implements AppLifeCycle {
             result = JobResult.error(e.getClass() + e.getMessage());
           }
 
-          if (jobSet.isPresent()) {
+          if (jobSet.isPresent() && jobSetConcurrency.containsKey(jobSet.get().getId())) {
             int active = jobSetConcurrency.get(jobSet.get().getId()).decrementAndGet();
 
             if (logJobsTrace()) {
