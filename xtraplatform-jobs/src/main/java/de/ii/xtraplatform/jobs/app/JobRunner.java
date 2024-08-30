@@ -23,9 +23,8 @@ import de.ii.xtraplatform.jobs.domain.JobSet;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -36,7 +35,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -57,8 +55,7 @@ public class JobRunner implements AppLifeCycle {
   private final String executorName;
   private final int maxThreads;
   private final Supplier<Integer> activeThreads;
-  private final Map<String, AtomicInteger> jobSetConcurrency;
-  private final Map<String, Integer> jobSetConcurrencyMax;
+  private final Set<String> activeJobSets;
 
   @Inject
   JobRunner(AppContext appContext, JobQueue jobQueue, Lazy<Set<JobProcessor<?, ?>>> processors) {
@@ -78,25 +75,7 @@ public class JobRunner implements AppLifeCycle {
     this.executorName = appContext.getInstanceName();
     this.maxThreads = threadPoolExecutor.getMaximumPoolSize();
     this.activeThreads = threadPoolExecutor::getActiveCount;
-
-    this.jobSetConcurrency =
-        Collections.synchronizedMap(
-            new LinkedHashMap<>() {
-              // delete the oldest entry if the map size exceeds 1023
-              @Override
-              protected boolean removeEldestEntry(Map.Entry<String, AtomicInteger> eldest) {
-                return size() > 1023;
-              }
-            });
-    this.jobSetConcurrencyMax =
-        Collections.synchronizedMap(
-            new LinkedHashMap<>() {
-              // delete the oldest entry if the map size exceeds 1023
-              @Override
-              protected boolean removeEldestEntry(Map.Entry<String, Integer> eldest) {
-                return size() > 1023;
-              }
-            });
+    this.activeJobSets = Collections.synchronizedSet(new LinkedHashSet<>());
   }
 
   @Override
@@ -116,28 +95,7 @@ public class JobRunner implements AppLifeCycle {
                     LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.getEntity().get());
                   }
 
-                  if (shouldSuspend(jobSet, processor)) {
-                    if (logJobsTrace()) {
-                      LOGGER.trace(
-                          MARKER.JOBS,
-                          "Max concurrency reached, suspending job set ({})",
-                          optionalJob.get().getPartOf().get());
-                    }
-
-                    jobQueue.push(optionalJob.get(), true);
-
-                    break;
-                  }
-
-                  int active = jobSetConcurrency.get(jobSet.getId()).incrementAndGet();
-
-                  if (logJobsTrace()) {
-                    LOGGER.trace(
-                        MARKER.JOBS,
-                        "Increased concurrency for job set to {} ({})",
-                        active,
-                        jobSet.getId());
-                  }
+                  activeJobSets.add(jobSet.getId());
                 }
 
                 run(processor, optionalJob.get());
@@ -192,8 +150,8 @@ public class JobRunner implements AppLifeCycle {
     polling.scheduleAtFixedRate(
         () -> {
           if (logJobsDebug()) {
-            jobSetConcurrency.forEach(
-                (jobSetId, concurrency) -> {
+            activeJobSets.forEach(
+                (jobSetId) -> {
                   JobSet jobSet = jobQueue.getSet(jobSetId);
                   if (Objects.nonNull(jobSet)) {
                     if (jobSet.getEntity().isPresent()) {
@@ -214,25 +172,6 @@ public class JobRunner implements AppLifeCycle {
         TimeUnit.SECONDS);
 
     return AppLifeCycle.super.onStart(isStartupAsync);
-  }
-
-  private boolean shouldSuspend(JobSet jobSet, JobProcessor<?, ?> processor) {
-    if (!jobSetConcurrencyMax.containsKey(jobSet.getId())) {
-      jobSetConcurrencyMax.put(jobSet.getId(), processor.getConcurrency(jobSet));
-      if (logJobsTrace()) {
-        LOGGER.trace(
-            MARKER.JOBS,
-            "Max concurrency for job set is {} ({})",
-            jobSetConcurrencyMax.get(jobSet.getId()),
-            jobSet.getId());
-      }
-    }
-
-    if (!jobSetConcurrency.containsKey(jobSet.getId())) {
-      jobSetConcurrency.put(jobSet.getId(), new AtomicInteger(0));
-    }
-
-    return jobSetConcurrency.get(jobSet.getId()).get() >= jobSetConcurrencyMax.get(jobSet.getId());
   }
 
   private void run(JobProcessor<?, ?> processor, Job job) {
@@ -256,18 +195,6 @@ public class JobRunner implements AppLifeCycle {
             result = JobResult.error(e.getClass() + e.getMessage());
           }
 
-          if (jobSet.isPresent() && jobSetConcurrency.containsKey(jobSet.get().getId())) {
-            int active = jobSetConcurrency.get(jobSet.get().getId()).decrementAndGet();
-
-            if (logJobsTrace()) {
-              LOGGER.trace(
-                  MARKER.JOBS,
-                  "Decreased concurrency for job set to {} ({})",
-                  active,
-                  jobSet.get().getId());
-            }
-          }
-
           if (result.isSuccess()) {
             jobQueue.done(job.getId());
           } else if (result.isFailure()) {
@@ -279,8 +206,7 @@ public class JobRunner implements AppLifeCycle {
 
           if (jobSet.isPresent()) {
             if (jobSet.get().isDone()) {
-              jobSetConcurrency.remove(jobSet.get().getId());
-              jobSetConcurrencyMax.remove(jobSet.get().getId());
+              activeJobSets.remove(jobSet.get().getId());
             }
           }
 

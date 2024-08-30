@@ -50,6 +50,11 @@ public interface BaseJob {
   }
 
   @Value.Default
+  default AtomicLong getFinishedAt() {
+    return new AtomicLong(-1);
+  }
+
+  @Value.Default
   default AtomicInteger getTotal() {
     return new AtomicInteger(0);
   }

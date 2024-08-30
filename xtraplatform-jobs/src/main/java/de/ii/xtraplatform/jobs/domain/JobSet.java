@@ -77,7 +77,8 @@ public interface JobSet extends BaseJob {
     // getCurrent().incrementAndGet();
     getUpdatedAt().set(Instant.now().getEpochSecond());
 
-    if (isDone()) {
+    if (isDone() && getFinishedAt().get() == -1) {
+      getFinishedAt().set(Instant.now().getEpochSecond());
       return getCleanup().isPresent() ? List.of(getCleanup().get()) : getFollowUps();
     }
 
