@@ -21,6 +21,7 @@ import io.dropwizard.core.Configuration;
 import io.dropwizard.core.server.ServerFactory;
 import io.dropwizard.logging.common.LoggingFactory;
 import io.dropwizard.metrics.common.MetricsFactory;
+import java.util.Map;
 import javax.validation.Valid;
 import org.apache.commons.lang3.NotImplementedException;
 import org.immutables.value.Value;
@@ -191,6 +192,14 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   @Override
   public abstract ServerConfiguration getServerFactory();
+
+  /**
+   * @langEn See [Substitutions](95-substitutions.md).
+   * @langDe Siehe [Substitutionen](95-substitutions.md).
+   */
+  @JsonProperty("substitutions")
+  @Valid
+  public abstract Map<String, Object> getSubstitutions();
 
   @JsonIgnore
   @Override

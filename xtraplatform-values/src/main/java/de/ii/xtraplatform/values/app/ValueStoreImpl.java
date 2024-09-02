@@ -14,6 +14,7 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
+import de.ii.xtraplatform.base.domain.Substitutions;
 import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatile;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
@@ -71,6 +72,7 @@ public class ValueStoreImpl extends AbstractVolatile
   public ValueStoreImpl(
       AppContext appContext,
       Jackson jackson,
+      Substitutions substitutions,
       BlobStoreFactory blobStoreFactory,
       ValueFactories valueFactories,
       VolatileRegistry volatileRegistry) {
@@ -88,7 +90,7 @@ public class ValueStoreImpl extends AbstractVolatile
     valueEncoding.getMapper(FORMAT.YAML).setDefaultMergeable(false);
     valueEncoding.getMapper(FORMAT.JSON).setDefaultMergeable(false);
 
-    valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
+    valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution(substitutions));
     valueEncoding.addDecoderMiddleware(new ValueDecoderWithBuilder<>(this::getBuilder, this));
   }
 

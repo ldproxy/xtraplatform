@@ -8,9 +8,9 @@
 package de.ii.xtraplatform.values.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.ii.xtraplatform.base.domain.Substitutions;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
-import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.text.StringSubstitutor;
@@ -19,8 +19,8 @@ public class ValueDecoderEnvVarSubstitution implements ValueDecoderMiddleware<by
 
   private final StringSubstitutor substitutor;
 
-  public ValueDecoderEnvVarSubstitution() {
-    this.substitutor = new EnvironmentVariableSubstitutor(false, true);
+  public ValueDecoderEnvVarSubstitution(Substitutions substitutions) {
+    this.substitutor = substitutions.getSubstitutor(false, true);
   }
 
   @Override
