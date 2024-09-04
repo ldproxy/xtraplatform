@@ -49,11 +49,7 @@ public class BlobStoreMustacheResolver implements PartialMustacheResolver, AppLi
 
   @Override
   public CompletionStage<Void> onStart(boolean isStartupAsync) {
-    if (isStartupAsync) {
-      templateStore.onReady().thenRunAsync(this::init, Executors.newSingleThreadExecutor());
-    } else {
-      init();
-    }
+    templateStore.onReady().thenRunAsync(this::init, Executors.newSingleThreadExecutor()).join();
 
     return CompletableFuture.completedFuture(null);
   }
