@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -48,21 +49,10 @@ public class BlobStoreMustacheResolver implements PartialMustacheResolver, AppLi
 
   @Override
   public CompletionStage<Void> onStart(boolean isStartupAsync) {
-    try (Stream<Path> paths =
-        templateStore.walk(Path.of(""), 1, (path, pathAttributes) -> pathAttributes.isValue())) {
-      for (Iterator<Path> it = paths.iterator(); it.hasNext(); ) {
-        Path path = it.next();
-
-        try {
-          Optional<Path> localPath = templateStore.asLocalPath(path, false);
-
-          localPaths.put(path, localPath);
-        } catch (IOException e) {
-          // ignore
-        }
-      }
-    } catch (IOException e) {
-      // ignore
+    if (isStartupAsync) {
+      templateStore.onReady().thenRunAsync(this::init, Executors.newSingleThreadExecutor());
+    } else {
+      init();
     }
 
     return CompletableFuture.completedFuture(null);
@@ -103,5 +93,24 @@ public class BlobStoreMustacheResolver implements PartialMustacheResolver, AppLi
       return Path.of(templateName.substring(1));
     }
     return Path.of(templateName);
+  }
+
+  private void init() {
+    try (Stream<Path> paths =
+        templateStore.walk(Path.of(""), 1, (path, pathAttributes) -> pathAttributes.isValue())) {
+      for (Iterator<Path> it = paths.iterator(); it.hasNext(); ) {
+        Path path = it.next();
+
+        try {
+          Optional<Path> localPath = templateStore.asLocalPath(path, false);
+
+          localPaths.put(path, localPath);
+        } catch (IOException e) {
+          // ignore
+        }
+      }
+    } catch (IOException e) {
+      // ignore
+    }
   }
 }
