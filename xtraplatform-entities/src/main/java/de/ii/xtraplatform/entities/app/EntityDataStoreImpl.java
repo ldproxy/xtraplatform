@@ -19,6 +19,7 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
+import de.ii.xtraplatform.base.domain.Substitutions;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.entities.domain.AbstractMergeableKeyValueStore;
 import de.ii.xtraplatform.entities.domain.AutoEntity;
@@ -96,6 +97,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       AppContext appContext,
       EventStore eventStore,
       Jackson jackson,
+      Substitutions substitutions,
       Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore,
       ResourceStore blobStore,
@@ -104,6 +106,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         appContext,
         eventStore,
         jackson,
+        substitutions,
         entityFactories,
         defaultsStore,
         blobStore,
@@ -116,6 +119,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       AppContext appContext,
       EventStore eventStore,
       Jackson jackson,
+      Substitutions substitutions,
       Lazy<Set<EntityFactory>> entityFactories,
       EntityDataDefaultsStore defaultsStore,
       ResourceStore blobStore,
@@ -150,7 +154,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                 Executors.newCachedThreadPool(
                     new ThreadFactoryBuilder().setNameFormat("entity.lifecycle-%d").build()));
 
-    valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
+    valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution(substitutions));
     valueEncoding.addDecoderMiddleware(
         new ValueDecoderWithBuilder<>(this::getBuilder, eventSourcing));
     valueEncoding.addDecoderMiddleware(

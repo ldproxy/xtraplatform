@@ -20,6 +20,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.Substitutions;
 import de.ii.xtraplatform.entities.domain.AbstractMergeableKeyValueStore;
 import de.ii.xtraplatform.entities.domain.EntityData;
 import de.ii.xtraplatform.entities.domain.EntityDataBuilder;
@@ -83,6 +84,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       AppContext appContext,
       EventStore eventStore,
       Jackson jackson,
+      Substitutions substitutions,
       Lazy<Set<EntityFactory>> entityFactories) {
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.eventStore = eventStore;
@@ -101,7 +103,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             Optional.empty(),
             Optional.of(biConsumerMayThrow(this::validateDefaults)));
 
-    valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution());
+    valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution(substitutions));
     valueEncoding.addDecoderMiddleware(new ValueDecoderBase<>(this::getDefaults, eventSourcing));
     // eventSourcing.start();
 
