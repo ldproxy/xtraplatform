@@ -20,7 +20,7 @@ import org.immutables.value.Value;
 public abstract class BuildableMap<T extends Buildable<T>, U extends BuildableBuilder<T>>
     extends ForwardingMap<String, T> {
 
-  abstract static class Builder {}
+  public abstract static class Builder {}
 
   @Value.Derived
   Map<String, T> getDelegate() {
