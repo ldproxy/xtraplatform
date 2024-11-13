@@ -7,12 +7,14 @@
   "reviewersFromCodeOwners": true,
   "prHourlyLimit": 10,
   "branchNameStrict": true,
+  "branchPrefix": "renovate-",
   "labels": ["dependencies"],
   "enabledManagers": ["gradle", "gradle-wrapper"],
   "includePaths": [
     "gradle/libs.versions.toml",
     "gradle/plugins.versions.toml",
-    "gradle/wrapper/gradle-wrapper.properties"
+    "gradle/wrapper/gradle-wrapper.properties",
+    "settings.gradle"
   ],
   "baseBranches": ["master"],
   "packageRules": [
