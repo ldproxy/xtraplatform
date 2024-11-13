@@ -1,37 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":disableDependencyDashboard"],
-  "schedule": ["after 10pm", "before 6am"],
-  "timezone": "Europe/Berlin",
-  "configMigration": true,
-  "reviewersFromCodeOwners": true,
-  "prHourlyLimit": 10,
-  "branchNameStrict": true,
-  "branchPrefix": "renovate-",
-  "labels": ["dependencies"],
-  "enabledManagers": ["gradle", "gradle-wrapper"],
-  "includePaths": [
-    "gradle/libs.versions.toml",
-    "gradle/plugins.versions.toml",
-    "gradle/wrapper/gradle-wrapper.properties",
-    "settings.gradle"
-  ],
-  "baseBranches": ["master"],
+  "extends": ["ldproxy/renovate-config:xtraplatform"],
   "packageRules": [
-    {
-      "matchBaseBranches": ["/^maintenance-.*/"],
-      "matchUpdateTypes": ["major", "minor"],
-      "enabled": false
-    },
-    {
-      "matchManagers": ["gradle-wrapper"],
-      "labels": ["build-dependencies"]
-    },
-    {
-      "groupName": "plugins",
-      "matchFileNames": ["gradle/plugins.versions.toml", "settings.gradle"],
-      "labels": ["build-dependencies"]
-    },
     {
       "groupName": "dropwizard",
       "matchPackageNames": ["io.dropwizard:*"],
