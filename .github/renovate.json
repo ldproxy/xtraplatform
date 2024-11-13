@@ -29,7 +29,7 @@
     },
     {
       "groupName": "plugins",
-      "matchFileNames": ["gradle/plugins.versions.toml"],
+      "matchFileNames": ["gradle/plugins.versions.toml", "settings.gradle"],
       "labels": ["build-dependencies"]
     },
     {
@@ -40,7 +40,7 @@
     {
       "groupName": "jackson",
       "matchPackageNames": ["com.fasterxml.jackson.*"],
-      "allowedVersions": "< 2.18.0"
+      "allowedVersions": "< 2.17.3"
     },
     {
       "groupName": "jjwt",
