@@ -1,0 +1,62 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":disableDependencyDashboard"],
+  "schedule": ["after 10pm", "before 6am"],
+  "timezone": "Europe/Berlin",
+  "configMigration": true,
+  "reviewersFromCodeOwners": true,
+  "prHourlyLimit": 10,
+  "branchNameStrict": true,
+  "branchPrefix": "renovate-",
+  "labels": ["dependencies"],
+  "enabledManagers": ["gradle", "gradle-wrapper"],
+  "includePaths": [
+    "gradle/libs.versions.toml",
+    "gradle/plugins.versions.toml",
+    "gradle/wrapper/gradle-wrapper.properties",
+    "settings.gradle"
+  ],
+  "baseBranches": ["master"],
+  "packageRules": [
+    {
+      "matchBaseBranches": ["/^maintenance-.*/"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["gradle-wrapper"],
+      "labels": ["build-dependencies"]
+    },
+    {
+      "groupName": "plugins",
+      "matchFileNames": ["gradle/plugins.versions.toml", "settings.gradle"],
+      "labels": ["build-dependencies"]
+    },
+    {
+      "groupName": "dropwizard",
+      "matchPackageNames": ["io.dropwizard:*"],
+      "allowedVersions": "< 4.0.0"
+    },
+    {
+      "groupName": "jackson",
+      "matchPackageNames": ["com.fasterxml.jackson.*"],
+      "allowedVersions": "< 2.17.3"
+    },
+    {
+      "groupName": "jjwt",
+      "matchPackageNames": ["io.jsonwebtoken:*"]
+    },
+    {
+      "groupName": "swagger",
+      "matchPackageNames": ["io.swagger.core.v3:*"]
+    },
+    {
+      "groupName": "immutables",
+      "matchPackageNames": ["org.immutables:*"]
+    },
+    {
+      "matchPackageNames": ["jakarta.xml.bind:jakarta.xml.bind-api"],
+      "allowedVersions": "< 3.0.0"
+    }
+  ]
+}
