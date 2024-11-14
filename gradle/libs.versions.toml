@@ -15,7 +15,7 @@ cron4j = '2.2.5'
 rxjava = '3.1.8'
 rxjava-ext = '3.1.1'
 rs = '1.0.4'
-uuid = '5.0.0'
+uuid = '5.1.0'
 
 [libraries]
 # auth
