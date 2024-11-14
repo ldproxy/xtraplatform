@@ -27,6 +27,10 @@
     {
       "matchPackageNames": ["jakarta.xml.bind:jakarta.xml.bind-api"],
       "allowedVersions": "< 3.0.0"
+    },
+    {
+      "matchPackageNames": ["com.google.dagger:dagger"],
+      "allowedVersions": "< 2.50"
     }
   ]
 }
