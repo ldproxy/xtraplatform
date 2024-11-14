@@ -2,7 +2,7 @@ package de.ii.xtraplatform.streams.domain
 
 
 import de.ii.xtraplatform.streams.app.ReactiveRx
-import de.ii.xtraplatform.streams.domain.Reactive.SinkReduced
+import de.ii.xtraplatform.streams.domain.Reactive.Sink
 import de.ii.xtraplatform.streams.domain.Reactive.Source
 import de.ii.xtraplatform.streams.domain.Reactive.Transformer
 import spock.lang.Shared
@@ -29,7 +29,7 @@ class ReactiveRxSpec extends Specification {
     def "success"() {
         given:
         Reactive.Stream<Integer> stream = Source.iterable(1..5)
-                .to(SinkReduced.head())
+                .to(Sink.head())
 
         when:
         def result = runStream(stream)
@@ -100,7 +100,7 @@ class ReactiveRxSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerThrowingAtIndex(2))
-                .to(SinkReduced.ignore())
+                .to(Sink.ignore())
                 .withResult([:] as Map<String, Object>)
                 .handleError((result, throwable) -> { throw new IllegalStateException() })
 
@@ -116,7 +116,7 @@ class ReactiveRxSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerLogging())
-                .to(SinkReduced.ignore())
+                .to(Sink.ignore())
                 .withResult([success: true] as Map<String, Object>)
                 .handleError((result, throwable) -> { result.error = throwable; return result; })
 
@@ -132,7 +132,7 @@ class ReactiveRxSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerLogging())
-                .to(SinkReduced.ignore())
+                .to(Sink.ignore())
                 .withResult([success: true, ids: []] as Map<String, Object>)
                 .handleError((result, throwable) -> { result.error = throwable; return result; })
                 .handleItem((result, id) -> {
@@ -153,7 +153,7 @@ class ReactiveRxSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerLogging())
-                .to(SinkReduced.ignore())
+                .to(Sink.ignore())
                 .withResult([success: true, ids: []] as Map<String, Object>)
                 .handleError((result, throwable) -> { result.error = throwable;
                     result.success = false; return result; })
@@ -173,7 +173,7 @@ class ReactiveRxSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerLogging())
-                .to(SinkReduced.ignore())
+                .to(Sink.ignore())
                 .withResult([success: false] as Map<String, Object>)
                 .handleError((result, throwable) -> { result.error = throwable; return result; })
                 .handleEnd(result -> { result.success = true; return result; })
@@ -190,7 +190,7 @@ class ReactiveRxSpec extends Specification {
         given:
         Reactive.Stream<Map<String, Object>> stream = Source.iterable(1..5)
                 .via(transformerLogging())
-                .to(SinkReduced.ignore())
+                .to(Sink.ignore())
                 .withResult([success: false] as Map<String, Object>)
                 .handleError((result, throwable) -> { result.error = throwable; return result; })
                 .handleEnd(result -> { throw new IllegalStateException() })
@@ -220,8 +220,8 @@ class ReactiveRxSpec extends Specification {
         })*/
     }
 
-    static SinkReduced<Integer, Void> sinkThrowingAtIndex(int index) {
-        return SinkReduced.foreach((Integer i) -> {
+    static Sink<Integer> sinkThrowingAtIndex(int index) {
+        return Sink.foreach((Integer i) -> {
             if (i == index) throw new IllegalStateException()
             println(i + " sink")
         })
