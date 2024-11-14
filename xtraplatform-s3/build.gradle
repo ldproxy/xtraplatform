@@ -10,6 +10,7 @@ dependencies {
 
     embedded(libs.minio) {
         exclude module: 'guava'
+        exclude module: 'commons-codec'
         //exclude module: 'commons-compress'
         exclude module: 'jackson-annotations'
         exclude module: 'jackson-core'
