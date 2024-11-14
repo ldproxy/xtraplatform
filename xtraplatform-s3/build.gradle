@@ -12,6 +12,7 @@ dependencies {
         exclude module: 'guava'
         exclude module: 'commons-codec'
         //exclude module: 'commons-compress'
+        exclude module: 'commons-lang3'
         exclude module: 'jackson-annotations'
         exclude module: 'jackson-core'
         exclude module: 'jackson-databind'
