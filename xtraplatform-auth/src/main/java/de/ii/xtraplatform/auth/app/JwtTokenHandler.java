@@ -113,14 +113,11 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private static JwtParser createParser(
       Key key, SigningKeyResolver keyResolver, IdentityProvider claimsProvider, long clockSkew) {
     JwtParserBuilder jwtParserBuilder =
-        Jwts.parserBuilder()
-            .setAllowedClockSkewSeconds(clockSkew)
-            .deserializeJsonWith(
-                new JacksonDeserializer(listType(claimsProvider.getClaims().getAudience())))
-            .deserializeJsonWith(
-                new JacksonDeserializer(listType(claimsProvider.getClaims().getScopes())))
-            .deserializeJsonWith(
-                new JacksonDeserializer(listType(claimsProvider.getClaims().getPermissions())));
+        Jwts.parser()
+            .clockSkewSeconds(clockSkew)
+            .json(new JacksonDeserializer(listType(claimsProvider.getClaims().getAudience())))
+            .json(new JacksonDeserializer(listType(claimsProvider.getClaims().getScopes())))
+            .json(new JacksonDeserializer(listType(claimsProvider.getClaims().getPermissions())));
 
     if (Objects.nonNull(keyResolver)) {
       jwtParserBuilder.setSigningKeyResolver(keyResolver);
@@ -230,7 +227,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   @Override
   public Optional<User> parseToken(String token) {
     try {
-      Claims claimsJws = parser.parseClaimsJws(token).getBody();
+      Claims claimsJws = parser.parseSignedClaims(token).getPayload();
       User user =
           ImmutableUser.builder()
               .name(read(claimsJws, claimsProvider.getClaims().getUserName()))
@@ -256,7 +253,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   public <T> Optional<T> parseTokenClaim(String token, String name, Class<T> type) {
     if (Objects.nonNull(signingKey)) {
       try {
-        Claims claimsJws = parser.parseClaimsJws(token).getBody();
+        Claims claimsJws = parser.parseSignedClaims(token).getPayload();
 
         return Optional.ofNullable(claimsJws.get(name, type));
 

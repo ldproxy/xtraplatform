@@ -1,0 +1,10 @@
+[versions]
+xtraplatform-build = "5.4.0-refactor-SNAPSHOT"
+spotless = "6.25.0"
+
+[plugins]
+xtraplatform-application = { id = "de.interactive_instruments.xtraplatform-application", version.ref = "xtraplatform.build" }
+xtraplatform-layer = { id = "de.interactive_instruments.xtraplatform-layer", version.ref = "xtraplatform.build" }
+xtraplatform-composite = { id = "de.interactive_instruments.xtraplatform-composite", version.ref = "xtraplatform.build" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+

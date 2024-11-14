@@ -251,7 +251,7 @@ public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
   }
 
   @Override
-  public Key resolveSigningKey(JwsHeader jwsHeader, String s) {
+  public Key resolveSigningKey(JwsHeader jwsHeader, byte[] bytes) {
     return getSigningKey(jwsHeader.getKeyId());
   }
 
