@@ -1,21 +1,10 @@
-buildscript {
-    configurations.all {
-        resolutionStrategy {
-            cacheChangingModulesFor 0, 'seconds'
-            cacheDynamicVersionsFor 0, 'seconds'
-        }
-    }
-}
-
 plugins {
-    alias catalog.plugins.xtraplatform.layer
-    alias catalog.plugins.spotless apply false
+    id "de.interactive_instruments.xtraplatform-layer"
 }
 
 allprojects {
     group = 'de.interactive_instruments'
 }
-
 
 version = '6.3.0' + versionSuffix
 
@@ -35,7 +24,3 @@ layer {
         minimumCoverage = 0.0
     }
 }
-
-apply from: 'formatting.gradle'
-
-apply from: 'composite-tasks.gradle'

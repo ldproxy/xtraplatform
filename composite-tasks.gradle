@@ -1,5 +1,0 @@
-task checkAll { dependsOn subprojects*.tasks*.findByPath('check') }
-task assembleAll { dependsOn subprojects*.tasks*.findByPath('assemble') }
-task publishAll { dependsOn allprojects*.tasks*.findByPath('publish') }
-task publishToMavenLocalAll { dependsOn allprojects*.tasks*.findByPath('publishToMavenLocal') }
-tasks.clean { dependsOn subprojects*.tasks*.findByPath('clean') }
