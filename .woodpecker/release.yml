@@ -1,0 +1,18 @@
+when:
+  event: [tag]
+
+steps:
+
+  build:
+    image: openjdk:11-slim
+    commands:
+      - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
+      - ./gradlew check assemble -Prelease=true -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
+    secrets: [ snapshot_user, snapshot_pass]
+
+  publish:
+    image: openjdk:11-slim
+    commands:
+      - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
+      - ./gradlew publish -Prelease=true -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
+    secrets: [ snapshot_user, snapshot_pass]
