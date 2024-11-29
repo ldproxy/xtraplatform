@@ -7,9 +7,10 @@ descriptionDe = 'Grundlegende Third-Party-Libraries.'
 dependencies {
     embeddedExport libs.bundles.runtime
 
-    embeddedExport(variantOf(libs.immutables.value) { classifier('annotations') })
+    embeddedFlatExport xtraplatform.bundles.annotations
 
-    embeddedFlatExport libs.bundles.runtimeFlat
+    //TODO: should be contained in xtraplatform.bundles.annotations, but catalogs do not support classifiers
+    embeddedExport(variantOf(xtraplatform.immutables.value) { classifier('annotations') })
 
     //NOTE: define newer versions of transitive deps here if required
     constraints {

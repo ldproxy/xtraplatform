@@ -1,12 +1,12 @@
 pluginManagement {
     repositories {
+        gradlePluginPortal()
         maven {
             url "https://dl.interactive-instruments.de/repository/maven-releases/"
         }
         maven {
             url "https://dl.interactive-instruments.de/repository/maven-snapshots/"
         }
-        gradlePluginPortal()
     }
 }
 
@@ -20,16 +20,10 @@ buildscript {
 }
 
 plugins {
-    id "de.interactive_instruments.xtraplatform-settings" version "6.0.1"
+    id "de.interactive_instruments.xtraplatform-settings" version "6.1.0-SNAPSHOT"
 }
 
 rootProject.name = 'xtraplatform-core'
-
-rootDir.listFiles().each { file ->
-    if (file.isDirectory() && file.name.startsWith('xtraplatform-')) {
-        include file.name
-    }
-}
 
 if (hasProperty('build-plugins')) {
     includeBuild "../xtraplatform-build"
