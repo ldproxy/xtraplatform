@@ -15,7 +15,6 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.collect.ImmutableList;
-import com.sun.nio.file.SensitivityWatchEventModifier;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.StoreSource;
@@ -180,9 +179,7 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
               throws IOException {
             WatchKey watchKey =
                 dir.register(
-                    watchService,
-                    new WatchEvent.Kind[] {ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE},
-                    SensitivityWatchEventModifier.HIGH);
+                    watchService, new WatchEvent.Kind[] {ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE});
             keys.put(watchKey, ImmutableList.of(rootDir, dir));
             return FileVisitResult.CONTINUE;
           }

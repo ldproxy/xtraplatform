@@ -29,6 +29,7 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -59,6 +61,7 @@ public class AppLauncher implements AppContext {
 
   private final String name;
   private final String version;
+  private final long appStart;
   private final Set<CfgStoreDriver> drivers;
   private final ExecutorService startupExecutor;
   private Constants.ENV env;
@@ -70,6 +73,7 @@ public class AppLauncher implements AppContext {
   public AppLauncher(String name, String version) {
     this.name = name;
     this.version = version;
+    this.appStart = Instant.now().toEpochMilli();
     this.drivers = new HashSet<>();
     this.startupExecutor =
         // MoreExecutors.getExitingExecutorService(
@@ -129,6 +133,7 @@ public class AppLauncher implements AppContext {
     ConfigurationReader configurationReader = new ConfigurationReader(baseConfigs);
 
     List<ILoggingEvent> buffer = configurationReader.loadMergedLogging(Optional.empty(), env);
+    long initStart = Instant.now().toEpochMilli();
 
     LOGGER.info("--------------------------------------------------");
     LOGGER.info("Starting {} v{}", name, version);
@@ -148,6 +153,10 @@ public class AppLauncher implements AppContext {
     cfg.getLoggingFactory().configure(new MetricRegistry(), "xtraplatform", Optional.of(buffer));
 
     if (LOGGER.isDebugEnabled()) {
+      getStartTime(args)
+          .ifPresent(start -> LOGGER.debug("Boostrap duration: {}ms", appStart - start));
+      LOGGER.debug("Init duration: {}ms", initStart - appStart);
+
       LOGGER.debug("Data directory: {}", dataDir);
       LOGGER.debug("Environment: {}", env);
       LOGGER.debug("Base configurations: {}", configurationReader.getBaseConfigs(env).keySet());
@@ -269,6 +278,13 @@ public class AppLauncher implements AppContext {
     }
 
     return Optional.of(dataDir);
+  }
+
+  private OptionalLong getStartTime(String[] args) {
+    return Arrays.stream(args)
+        .filter(s -> s.startsWith("--start-time="))
+        .mapToLong(s -> Long.parseLong(s.substring(s.indexOf('=') + 1)))
+        .findFirst();
   }
 
   private Constants.ENV parseEnvironment() {
