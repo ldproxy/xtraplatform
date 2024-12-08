@@ -120,6 +120,7 @@ public class ResourceURL {
         }
       case "file":
       case "bundle":
+      case "jrt":
         URLConnection connection = null;
         try {
           connection = resourceURL.openConnection();
