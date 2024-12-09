@@ -4,14 +4,14 @@ when:
 steps:
 
   build:
-    image: openjdk:11-slim
+    image: eclipse-temurin:17
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew check assemble -Pbranch=$DRONE_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
     secrets: [ snapshot_user, snapshot_pass]
 
   publish-snapshot:
-    image: openjdk:11-slim
+    image: eclipse-temurin:17
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew publish -Pbranch=$DRONE_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
