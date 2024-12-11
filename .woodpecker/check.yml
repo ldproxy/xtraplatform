@@ -50,3 +50,8 @@ steps:
       - ls -laR /tmp/cache
     volumes:
       - /tmp/cache:/tmp/cache
+
+  log2:
+    image: eclipse-temurin:21
+    commands:
+      - ls -laR /root
