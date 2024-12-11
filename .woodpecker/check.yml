@@ -20,7 +20,7 @@ steps:
       - export GRADLE_OPTS="-Dorg.gradle.daemon=false"
       - export GRADLE_USER_HOME=$${CI_WORKSPACE}/.gradle
       - export
-      - ./gradlew check assemble -Pbranch=$CI_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
+      - ./gradlew check assemble -Pbranch=$CI_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS -PforceCache
       - ls -la .gradle
       - du -h --max-depth=1 .gradle
     secrets: [ snapshot_user, snapshot_pass]
@@ -30,7 +30,7 @@ steps:
     commands:
       - export GRADLE_OPTS="-Dorg.gradle.daemon=false"
       - export GRADLE_USER_HOME=$${CI_WORKSPACE}/.gradle
-      - ./gradlew publish -Pbranch=$CI_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
+      - ./gradlew publish -Pbranch=$CI_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS -PforceCache
     secrets: [ snapshot_user, snapshot_pass]
 
   after:
