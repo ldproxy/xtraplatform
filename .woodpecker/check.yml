@@ -3,16 +3,39 @@ when:
 
 steps:
 
+  before:
+    image: meltwater/drone-cache
+    settings:
+      backend: "filesystem"
+      restore: true
+      #cache_key: "volume"
+      mount: [ '.gradle' ]
+    volumes:
+      - /tmp/cache:/tmp/cache
+
   build:
-    image: eclipse-temurin:17
+    image: eclipse-temurin:21
     commands:
+      - export GRADLE_OPTS="-Dorg.gradle.daemon=false"
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew check assemble -Pbranch=$DRONE_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
+      - ls -l .gradle
     secrets: [ snapshot_user, snapshot_pass]
 
   publish-snapshot:
-    image: eclipse-temurin:17
+    image: eclipse-temurin:21
     commands:
+      - export GRADLE_OPTS="-Dorg.gradle.daemon=false"
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew publish -Pbranch=$DRONE_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
     secrets: [ snapshot_user, snapshot_pass]
+
+  after:
+    image: meltwater/drone-cache
+    settings:
+      backend: "filesystem"
+      rebuild: true
+      #cache_key: "volume"
+      mount: [ '.gradle' ]
+    volumes:
+      - /tmp/cache:/tmp/cache
