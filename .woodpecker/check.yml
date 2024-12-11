@@ -48,3 +48,5 @@ steps:
     image: eclipse-temurin:21
     commands:
       - ls -laR /tmp/cache
+    volumes:
+      - /tmp/cache:/tmp/cache
