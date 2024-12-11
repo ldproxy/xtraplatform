@@ -46,4 +46,5 @@ steps:
 
   log:
     image: eclipse-temurin:21
+    commands:
       - ls -laR /tmp/cache
