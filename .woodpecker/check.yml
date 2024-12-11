@@ -9,6 +9,7 @@ steps:
       backend: "filesystem"
       restore: true
       #cache_key: "volume"
+      cache_key: '{{ .Repo.Name }}_{{ checksum "gradle/libs.versions.toml" }}_{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}'
       mount: [ '.gradle' ]
     volumes:
       - /tmp/cache:/tmp/cache
@@ -17,17 +18,19 @@ steps:
     image: eclipse-temurin:21
     commands:
       - export GRADLE_OPTS="-Dorg.gradle.daemon=false"
-      - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
-      - ./gradlew check assemble -Pbranch=$DRONE_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
-      - ls -l .gradle
+      - export GRADLE_USER_HOME=$${CI_WORKSPACE}/.gradle
+      - export
+      - ./gradlew check assemble -Pbranch=$CI_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
+      - ls -la .gradle
+      - du -h --max-depth=1 .gradle
     secrets: [ snapshot_user, snapshot_pass]
 
   publish-snapshot:
     image: eclipse-temurin:21
     commands:
       - export GRADLE_OPTS="-Dorg.gradle.daemon=false"
-      - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
-      - ./gradlew publish -Pbranch=$DRONE_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
+      - export GRADLE_USER_HOME=$${CI_WORKSPACE}/.gradle
+      - ./gradlew publish -Pbranch=$CI_COMMIT_BRANCH -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
     secrets: [ snapshot_user, snapshot_pass]
 
   after:
@@ -36,6 +39,11 @@ steps:
       backend: "filesystem"
       rebuild: true
       #cache_key: "volume"
+      cache_key: '{{ .Repo.Name }}_{{ checksum "gradle/libs.versions.toml" }}_{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}'
       mount: [ '.gradle' ]
     volumes:
       - /tmp/cache:/tmp/cache
+
+  log:
+    image: eclipse-temurin:21
+      - ls -laR /tmp/cache
