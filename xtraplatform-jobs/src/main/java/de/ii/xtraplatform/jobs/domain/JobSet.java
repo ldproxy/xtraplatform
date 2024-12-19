@@ -21,6 +21,8 @@ public interface JobSet extends BaseJob {
 
   interface JobSetDetails {
     void update(Map<String, String> parameters);
+
+    void reset(Job job);
   }
 
   @Override

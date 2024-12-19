@@ -45,6 +45,7 @@ public interface Job extends BaseJob {
         .executor(Optional.empty())
         .startedAt(new AtomicLong(-1))
         .updatedAt(new AtomicLong(-1))
+        .current(new AtomicInteger(0))
         .build();
   }
 

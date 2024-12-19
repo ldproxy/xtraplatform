@@ -60,6 +60,14 @@ public class JobQueueSimple implements JobQueue {
     if (job instanceof Job) {
       if (untake) {
         takenQueue.remove(job);
+        if (((Job) job).getPartOf().isPresent()) {
+          String setId = ((Job) job).getPartOf().get();
+
+          if (jobSets.containsKey(setId)) {
+            jobSets.get(setId).update(-(job.getCurrent().get()));
+            jobSets.get(setId).getDetails().reset((Job) job);
+          }
+        }
         queues.get(job.getType()).addFirst(((Job) job).reset());
       } else {
         queues.get(job.getType()).add((Job) job);
