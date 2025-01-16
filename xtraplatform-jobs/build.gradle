@@ -6,6 +6,6 @@ descriptionDe = 'Job-Queue.'
 
 dependencies {
     provided project(':xtraplatform-ops')
-
+    provided project(':xtraplatform-openapi')
     embeddedFlat(libs.uuid)
 }

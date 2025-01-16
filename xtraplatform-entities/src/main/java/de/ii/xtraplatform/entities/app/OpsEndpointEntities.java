@@ -22,6 +22,11 @@ import de.ii.xtraplatform.entities.domain.EntityState;
 import de.ii.xtraplatform.entities.domain.EntityState.STATE;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
 import de.ii.xtraplatform.values.domain.Identifier;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +36,12 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+@Path("/api/entities")
 @Singleton
 @AutoBind
 public class OpsEndpointEntities implements OpsEndpoint {
@@ -62,6 +69,21 @@ public class OpsEndpointEntities implements OpsEndpoint {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Get all entities", description = "Returns a list of all entities")
+  @ApiResponses(
+      value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Successful operation",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema =
+                        @Schema(
+                            example =
+                                "{\n  \"providers\" : [ {\n    \"id\" : \"testOpenApi\",\n    \"status\" : \"ACTIVE\",\n    \"subType\" : \"feature/wfs\"\n  } ],\n  \"services\" : [ {\n    \"id\" : \"testOpenApi\",\n    \"status\" : \"ACTIVE\",\n    \"subType\" : \"ogc_api\"\n  } ]\n}"))),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+      })
   public Response getEntities() throws JsonProcessingException {
     Map<String, List<Map<String, String>>> entities =
         entityFactories.getTypes().stream()

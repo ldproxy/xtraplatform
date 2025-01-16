@@ -1,4 +1,3 @@
-
 maturity = 'MATURE'
 maintenance = 'FULL'
 description = 'Entity store.'
@@ -10,4 +9,5 @@ dependencies {
     provided project(':xtraplatform-streams')
     provided project(':xtraplatform-values')
     provided project(':xtraplatform-web')
+    provided project(':xtraplatform-openapi')
 }

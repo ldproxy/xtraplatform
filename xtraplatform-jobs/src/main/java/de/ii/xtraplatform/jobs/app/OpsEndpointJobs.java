@@ -17,6 +17,11 @@ import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
 import de.ii.xtraplatform.jobs.domain.JobSet;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -37,6 +42,7 @@ import javax.ws.rs.core.Response.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Path("/api/jobs")
 @Singleton
 @AutoBind
 public class OpsEndpointJobs implements OpsEndpoint {
@@ -60,6 +66,18 @@ public class OpsEndpointJobs implements OpsEndpoint {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Get all jobs", description = "Returns a list of all jobs")
+  @ApiResponses(
+      value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Successful operation",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(example = "{\n  \"sets\" : [ ]\n}"))),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+      })
   public Response getJobs(@QueryParam("debug") boolean debug) throws JsonProcessingException {
     Map<String, Object> jobs = new LinkedHashMap<>();
     jobs.put("sets", jobQueue.getSets());
@@ -82,6 +100,13 @@ public class OpsEndpointJobs implements OpsEndpoint {
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Take a job", description = "Takes a job from the queue")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Job taken successfully"),
+        @ApiResponse(responseCode = "204", description = "No content"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+      })
   public synchronized Response takeJob(Map<String, String> executor)
       throws JsonProcessingException {
     Optional<Job> job = jobQueue.take(executor.get("type"), executor.get("id"));
@@ -103,6 +128,12 @@ public class OpsEndpointJobs implements OpsEndpoint {
   @POST
   @Path("/{jobId}")
   @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Update a job", description = "Updates the progress of a job")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "204", description = "No content"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+      })
   public synchronized Response updateJob(
       @PathParam("jobId") String jobId, Map<String, String> progress)
       throws JsonProcessingException {
@@ -130,6 +161,13 @@ public class OpsEndpointJobs implements OpsEndpoint {
   @Path("/{jobId}")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Close a job", description = "Closes a job and marks it as done or error")
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "204", description = "No content"),
+        @ApiResponse(responseCode = "404", description = "Job not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+      })
   public synchronized Response closeJob(
       @PathParam("jobId") String jobId, Map<String, String> result) throws JsonProcessingException {
     if (result.containsKey("error") && Objects.nonNull(result.get("error"))) {
