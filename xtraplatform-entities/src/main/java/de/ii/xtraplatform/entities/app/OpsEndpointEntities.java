@@ -62,6 +62,17 @@ public class OpsEndpointEntities implements OpsEndpoint {
     this.objectMapper = jackson.getDefaultObjectMapper();
   }
 
+  public class EntityResponse {
+    public List<Entity> providers;
+    public List<Entity> services;
+
+    public static class Entity {
+      public String id;
+      public String status;
+      public String subType;
+    }
+  }
+
   @Override
   public String getEntrypoint() {
     return "entities";
@@ -80,6 +91,7 @@ public class OpsEndpointEntities implements OpsEndpoint {
                     mediaType = "application/json",
                     schema =
                         @Schema(
+                            implementation = EntityResponse.class,
                             example =
                                 "{\n  \"providers\" : [ {\n    \"id\" : \"testOpenApi\",\n    \"status\" : \"ACTIVE\",\n    \"subType\" : \"feature/wfs\"\n  } ],\n  \"services\" : [ {\n    \"id\" : \"testOpenApi\",\n    \"status\" : \"ACTIVE\",\n    \"subType\" : \"ogc_api\"\n  } ]\n}"))),
         @ApiResponse(responseCode = "500", description = "Internal server error")
