@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -46,6 +47,10 @@ import org.slf4j.LoggerFactory;
 @Singleton
 @AutoBind
 public class OpsEndpointJobs implements OpsEndpoint {
+  public class JobResponse {
+    public List<JobSet> sets;
+    public List<Job> open;
+  }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OpsEndpointJobs.class);
 
@@ -75,7 +80,10 @@ public class OpsEndpointJobs implements OpsEndpoint {
             content =
                 @Content(
                     mediaType = "application/json",
-                    schema = @Schema(example = "{\n  \"sets\" : [ ]\n}"))),
+                    schema =
+                        @Schema(
+                            implementation = JobResponse.class,
+                            example = "{\n  \"sets\" : [ ]\n}"))),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
   public Response getJobs(@QueryParam("debug") boolean debug) throws JsonProcessingException {

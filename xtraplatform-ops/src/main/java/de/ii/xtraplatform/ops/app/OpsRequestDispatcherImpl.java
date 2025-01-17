@@ -282,6 +282,10 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
     metricsServlet.service(request, response);
   }
 
+  public enum PingResponse {
+    PONG
+  }
+
   @GET
   @Path("/api/ping")
   @Operation(
@@ -292,7 +296,10 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
         @ApiResponse(
             responseCode = "200",
             description = "Successful operation",
-            content = @Content(mediaType = "text/plain", schema = @Schema(example = "pong"))),
+            content =
+                @Content(
+                    mediaType = "text/plain",
+                    schema = @Schema(implementation = PingResponse.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
   public void getPing(@Context HttpServletRequest request, @Context HttpServletResponse response)
