@@ -18,6 +18,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
 import de.ii.xtraplatform.web.domain.StaticResourceReaderJar;
 import de.ii.xtraplatform.web.domain.StaticResourceServlet;
+import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.jaxrs2.Reader;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -96,6 +97,9 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
     this.objectMapper = new ObjectMapper();
     this.objectMapper.setSerializationInclusion(
         com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL);
+
+    ModelConverters.getInstance().addConverter(new CustomModelConverter());
+
     this.reader = new Reader(new OpenAPI());
     Set<Class<?>> endpointClasses =
         subEndpoints.get().stream().map(OpsEndpoint::getClass).collect(Collectors.toSet());
