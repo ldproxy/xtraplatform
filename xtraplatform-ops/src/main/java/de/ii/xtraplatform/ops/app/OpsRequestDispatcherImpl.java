@@ -21,8 +21,6 @@ import de.ii.xtraplatform.web.domain.StaticResourceServlet;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.jaxrs2.Reader;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -48,7 +46,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -262,25 +259,55 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
     healthCheckServlet.service(request, response);
   }
 
+  public class MetricsResponse {
+    public String version;
+    public Map<String, Gauge> gauges;
+    public Map<String, Counter> counters;
+    public Map<String, Histogram> histograms;
+    public Map<String, Meter> meters;
+    public Map<String, Timer> timers;
+
+    public static class Gauge {
+      public Object value;
+    }
+
+    public static class Counter {
+      public long count;
+    }
+
+    public static class Histogram {
+      public long count;
+      public double value;
+    }
+
+    public static class Meter {
+      public long count;
+      public double value;
+    }
+
+    public static class Timer {
+      public long count;
+      public double value;
+    }
+  }
+
   @GET
   @Path("/api/metrics")
   @Operation(summary = "Get metrics", description = "Returns the metrics of the application")
   @ApiResponses(
       value = {
-        @ApiResponse(responseCode = "200", description = "Successful operation"),
+        @ApiResponse(
+            responseCode = "200",
+            description = "Successful operation",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = MetricsResponse.class))),
         @ApiResponse(responseCode = "400", description = "Bad request"),
         @ApiResponse(responseCode = "401", description = "Unauthorized"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  public void getMetrics(
-      @Parameter(in = ParameterIn.QUERY, description = "Uptime of the JVM")
-          @QueryParam("jvm.attributes.uptime")
-          Integer uptime,
-      @Parameter(in = ParameterIn.QUERY, description = "Total used memory of the JVM")
-          @QueryParam("jvm.memory.total.used")
-          Integer memoryUsed,
-      @Context HttpServletRequest request,
-      @Context HttpServletResponse response)
+  public void getMetrics(@Context HttpServletRequest request, @Context HttpServletResponse response)
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
     metricsServlet.service(request, response);
