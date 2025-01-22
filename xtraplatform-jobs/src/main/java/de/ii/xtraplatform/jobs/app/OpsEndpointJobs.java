@@ -72,7 +72,10 @@ public class OpsEndpointJobs implements OpsEndpoint {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Get all jobs", description = "Returns a list of all jobs")
+  @Operation(
+      summary = "Get all jobs",
+      description =
+          "Returns a set containing one or more jobs along with their respective progress statuses.")
   @ApiResponses(
       value = {
         @ApiResponse(

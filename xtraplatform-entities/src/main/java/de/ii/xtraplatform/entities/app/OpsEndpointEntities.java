@@ -80,7 +80,10 @@ public class OpsEndpointEntities implements OpsEndpoint {
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Get all entities", description = "Returns a list of all entities")
+  @Operation(
+      summary = "Get all entities",
+      description =
+          "Returns a list of all entities with their statuses. The keys of the returned object are the type of the entity.")
   @ApiResponses(
       value = {
         @ApiResponse(
