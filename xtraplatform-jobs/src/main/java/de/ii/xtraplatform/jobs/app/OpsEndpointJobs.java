@@ -18,6 +18,7 @@ import de.ii.xtraplatform.jobs.domain.JobQueue;
 import de.ii.xtraplatform.jobs.domain.JobSet;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -167,7 +168,6 @@ public class OpsEndpointJobs implements OpsEndpoint {
 
   @DELETE
   @Path("/{jobId}")
-  @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Close a job", description = "Closes a job and marks it as done or error")
   @ApiResponses(
@@ -177,7 +177,8 @@ public class OpsEndpointJobs implements OpsEndpoint {
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
   public synchronized Response closeJob(
-      @PathParam("jobId") String jobId, Map<String, String> result) throws JsonProcessingException {
+      @PathParam("jobId") String jobId, @Parameter(hidden = true) Map<String, String> result)
+      throws JsonProcessingException {
     if (result.containsKey("error") && Objects.nonNull(result.get("error"))) {
       boolean retry =
           jobQueue.error(jobId, result.get("error"), Boolean.parseBoolean(result.get("retry")));

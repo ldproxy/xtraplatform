@@ -101,6 +101,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
     Info info =
         new Info()
             .title("Dashboard API")
+            .version("1.0.0")
             .description("This is an example description for the API.");
     this.openAPI.setInfo(info);
   }
@@ -367,7 +368,10 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
         @ApiResponse(responseCode = "400", description = "Bad request"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  public void postTasks(@Context HttpServletRequest request, @Context HttpServletResponse response)
+  public void postTasks(
+      @PathParam("task") String task,
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response)
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
     if (request instanceof Request) {
