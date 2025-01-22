@@ -19,6 +19,7 @@ import de.ii.xtraplatform.ops.domain.OpsEndpoint;
 import de.ii.xtraplatform.web.domain.StaticResourceReaderJar;
 import de.ii.xtraplatform.web.domain.StaticResourceServlet;
 import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.jaxrs2.Reader;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -70,7 +71,6 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   private final StaticResourceServlet staticServlet;
   private final Lazy<Set<OpsEndpoint>> subEndpoints;
   private Servlet tasksServlet;
-  private final ObjectMapper objectMapper;
   private final Reader reader;
   private final OpenAPI openAPI;
 
@@ -90,10 +90,6 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
             null,
             new StaticResourceReaderJar(this.getClass()),
             Set.of("txt", "html"));
-
-    this.objectMapper = new ObjectMapper();
-    this.objectMapper.setSerializationInclusion(
-        com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL);
 
     ModelConverters.getInstance().addConverter(new CustomModelConverter());
 
@@ -131,7 +127,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   @Produces(MediaType.APPLICATION_JSON)
   public Response getApi() throws IOException {
 
-    String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(openAPI);
+    String json = Json.pretty().writeValueAsString(openAPI);
 
     return Response.ok(json).build();
     /*
@@ -268,6 +264,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
     public Map<String, Timer> timers;
 
     public static class Gauge {
+      @Schema(oneOf = {String.class, Integer.class})
       public Object value;
     }
 
