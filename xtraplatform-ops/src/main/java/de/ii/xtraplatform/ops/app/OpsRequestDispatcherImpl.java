@@ -124,6 +124,9 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
 
   @GET
   @Path("/api")
+  @Operation(
+      summary = "Retrieve OpenAPI Definition",
+      description = "Provides the OpenAPI definition for the application.")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getApi() throws IOException {
 
@@ -290,7 +293,10 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
 
   @GET
   @Path("/api/metrics")
-  @Operation(summary = "Get metrics", description = "Returns the metrics of the application")
+  @Operation(
+      summary = "Get metrics",
+      description =
+          "Returns the metrics of the application containing the five metric types: Gauges, Counters, Histograms, Meters, and Timers.")
   @ApiResponses(
       value = {
         @ApiResponse(
@@ -407,37 +413,13 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
     return subEndpoint.get();
   }
 
-  @GET
-  @Path("/{path: .+\\.(?:html|js|css|json|woff2|txt)}")
-  @Operation(summary = "Get file", description = "Returns a static file based on the path")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "Successful operation"),
-        @ApiResponse(responseCode = "404", description = "File not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-      })
-  public void getFile(
-      @PathParam("path") String path,
-      @Context HttpServletRequest request,
-      @Context HttpServletResponse response)
+  public void getFile(String path, HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
     // LOGGER.debug("FILE {}", path);
     staticServlet.service(request, response);
   }
 
-  @GET
-  @Path("/{path: .*}")
-  @Operation(summary = "Get route", description = "Returns a route based on the path")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "Successful operation"),
-        @ApiResponse(responseCode = "404", description = "Route not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-      })
-  public void getRoute(
-      @PathParam("path") String path,
-      @Context HttpServletRequest request,
-      @Context HttpServletResponse response)
+  public void getRoute(String path, HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
     // LOGGER.debug("ROUTE {}", path);
     if (!path.contains(".") && request instanceof Request) {
