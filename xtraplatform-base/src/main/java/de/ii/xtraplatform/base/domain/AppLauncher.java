@@ -172,8 +172,7 @@ public class AppLauncher implements AppContext {
     String externalUrl = getConfiguration().getServerFactory().getExternalUrl();
     if (Strings.isNullOrEmpty(externalUrl)) {
       this.uri =
-          URI.create(
-              String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort()));
+          URI.create(String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort()));
     } else {
       this.uri =
           URI.create(
