@@ -40,6 +40,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +91,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   public CompletionStage<Void> onStart(boolean isStartupAsync) {
     if (isStartupAsync) {
       volatileRegistry.onAvailable(keyStore).toCompletableFuture().join();
+      volatileRegistry.onAvailable(oidc).toCompletableFuture().join();
     }
 
     // TODO
@@ -220,8 +222,8 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
       } else {
         return List.of(listString);
       }
-    } else if (entry instanceof List) {
-      return ((List<Object>) entry).stream().map(Object::toString).collect(Collectors.toList());
+    } else if (entry instanceof Collection<?>) {
+      return ((Collection<?>) entry).stream().map(Object::toString).collect(Collectors.toList());
     } else {
       throw new IllegalArgumentException("List or string expected at " + key);
     }

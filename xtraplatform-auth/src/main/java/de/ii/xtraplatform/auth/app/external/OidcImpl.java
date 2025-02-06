@@ -20,6 +20,8 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.Login;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatile;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.web.domain.Http;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.jsonwebtoken.Claims;
@@ -50,7 +52,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
+public class OidcImpl extends AbstractVolatile implements Oidc, AppLifeCycle, SigningKeyResolver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OidcImpl.class);
 
@@ -92,7 +94,8 @@ public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
   private boolean enabled;
 
   @Inject
-  public OidcImpl(AppContext appContext, Http http) {
+  public OidcImpl(AppContext appContext, Http http, VolatileRegistry volatileRegistry) {
+    super(volatileRegistry, "app/oidc");
     this.authConfig = appContext.getConfiguration().getAuth();
     this.httpClient = http.getDefaultClient();
     this.objectMapper =
@@ -110,6 +113,8 @@ public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
 
   @Override
   public CompletionStage<Void> onStart(boolean isStartupAsync) {
+    onVolatileStart();
+
     if (authConfig.getOidc().isPresent()) {
       String endpoint = authConfig.getOidc().get().getEndpoint();
       try {
@@ -128,13 +133,17 @@ public class OidcImpl implements Oidc, AppLifeCycle, SigningKeyResolver {
         this.enabled = true;
       } catch (Throwable e) {
         LogContext.error(LOGGER, e, "Could not parse OpenID Connect configuration at {}", endpoint);
+        setMessage("Could not initialize OIDC: " + e.getMessage());
         return CompletableFuture.failedFuture(e);
       }
 
       if (!loadSigningKeys()) {
+        setMessage("Could not initialize OIDC: could not load signing keys");
         return CompletableFuture.failedFuture(new RuntimeException());
       }
     }
+
+    setState(State.AVAILABLE);
 
     return CompletableFuture.completedFuture(null);
   }

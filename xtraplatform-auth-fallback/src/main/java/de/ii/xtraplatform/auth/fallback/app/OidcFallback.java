@@ -9,6 +9,7 @@ package de.ii.xtraplatform.auth.fallback.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.domain.Oidc;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import java.net.URI;
 import java.security.Key;
 import java.util.Map;
@@ -61,5 +62,20 @@ public class OidcFallback implements Oidc {
   @Override
   public Map<String, Key> getSigningKeys() {
     return null;
+  }
+
+  @Override
+  public State getState() {
+    return State.AVAILABLE;
+  }
+
+  @Override
+  public Optional<String> getMessage() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Runnable onStateChange(ChangeHandler handler, boolean initialCall) {
+    return () -> {};
   }
 }
