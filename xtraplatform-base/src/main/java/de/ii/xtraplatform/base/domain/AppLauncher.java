@@ -164,7 +164,7 @@ public class AppLauncher implements AppContext {
     if (Strings.isNullOrEmpty(externalUrl)) {
       this.uri =
           URI.create(
-              String.format("%s://%s:%d/", getScheme(), getHostName(), getApplicationPort()));
+              String.format("%s://%s:%d", getScheme(), getHostName(), getApplicationPort()));
     } else {
       this.uri =
           URI.create(
