@@ -7,12 +7,13 @@
  */
 package de.ii.xtraplatform.auth.domain;
 
+import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
 import java.net.URI;
 import java.security.Key;
 import java.util.Map;
 import java.util.Optional;
 
-public interface Oidc {
+public interface Oidc extends Volatile2 {
   boolean isEnabled();
 
   String getConfigurationUri();
