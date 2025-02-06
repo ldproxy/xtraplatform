@@ -166,7 +166,11 @@ public class AppLauncher implements AppContext {
           URI.create(
               String.format("%s://%s:%d/", getScheme(), getHostName(), getApplicationPort()));
     } else {
-      this.uri = URI.create(externalUrl.endsWith("/") ? externalUrl : externalUrl + "/");
+      this.uri =
+          URI.create(
+              externalUrl.endsWith("/")
+                  ? externalUrl.substring(0, externalUrl.length() - 1)
+                  : externalUrl);
     }
 
     return String.format(
