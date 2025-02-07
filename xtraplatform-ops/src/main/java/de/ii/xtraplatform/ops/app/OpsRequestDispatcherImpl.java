@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.ops.app;
 
+import static com.codahale.metrics.servlets.HealthCheckServlet.HEALTH_CHECK_HTTP_STATUS_INDICATOR;
+
 import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
 import com.codahale.metrics.servlets.PingServlet;
@@ -20,6 +22,7 @@ import de.ii.xtraplatform.web.domain.StaticResourceServlet;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.jaxrs2.Reader;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -109,6 +112,9 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   @Override
   public void init(ServletConfig servletConfig, ServletHolder tasksServlet) {
     try {
+      // otherwise health endpoint will return 500 when not all health checks are healthy
+      servletConfig.getServletContext().setAttribute(HEALTH_CHECK_HTTP_STATUS_INDICATOR, false);
+
       healthCheckServlet.init(servletConfig);
       metricsServlet.init(servletConfig);
       pingServlet.init(servletConfig);
@@ -413,13 +419,25 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
     return subEndpoint.get();
   }
 
-  public void getFile(String path, HttpServletRequest request, HttpServletResponse response)
+  @GET
+  @Path("/{path: .+\\.(?:html|js|css|json|woff2|txt)}")
+  @Hidden
+  public void getFile(
+      @PathParam("path") String path,
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response)
       throws ServletException, IOException {
     // LOGGER.debug("FILE {}", path);
     staticServlet.service(request, response);
   }
 
-  public void getRoute(String path, HttpServletRequest request, HttpServletResponse response)
+  @GET
+  @Path("/{path: .*}")
+  @Hidden
+  public void getRoute(
+      @PathParam("path") String path,
+      @Context HttpServletRequest request,
+      @Context HttpServletResponse response)
       throws ServletException, IOException {
     // LOGGER.debug("ROUTE {}", path);
     if (!path.contains(".") && request instanceof Request) {
