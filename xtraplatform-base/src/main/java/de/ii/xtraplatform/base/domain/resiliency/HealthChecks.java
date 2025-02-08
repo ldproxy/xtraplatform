@@ -54,6 +54,12 @@ public interface HealthChecks {
           builder.unhealthy();
           vol.getMessage().ifPresent(builder::withMessage);
         }
+
+        if (vol.getHealthInfo().isPresent()) {
+          builder.withDetail("label", vol.getHealthInfo().get().label());
+          builder.withDetail("description", vol.getHealthInfo().get().description());
+        }
+
         return builder.build();
       }
     };
@@ -110,6 +116,11 @@ public interface HealthChecks {
         } else {
           builder.unhealthy();
           vol.getMessage().ifPresent(builder::withMessage);
+        }
+
+        if (vol.getHealthInfo().isPresent()) {
+          builder.withDetail("label", vol.getHealthInfo().get().label());
+          builder.withDetail("description", vol.getHealthInfo().get().description());
         }
 
         Map<String, SubResult> capabilities =

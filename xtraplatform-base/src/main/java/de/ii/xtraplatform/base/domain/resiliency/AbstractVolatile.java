@@ -27,6 +27,7 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
   private State state;
   private String message;
   private boolean started;
+  private Optional<HealthInfo> healthInfo;
 
   protected AbstractVolatile(VolatileRegistry volatileRegistry) {
     this(volatileRegistry, null);
@@ -53,6 +54,7 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
     this.state = State.UNAVAILABLE;
     this.message = null;
     this.started = false;
+    this.healthInfo = Optional.empty();
   }
 
   protected synchronized void onVolatileStart() {
@@ -102,6 +104,11 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
     return volatileRegistry;
   }
 
+  @Override
+  public Optional<HealthInfo> getHealthInfo() {
+    return healthInfo;
+  }
+
   protected final void setState(State state) {
     if (state != this.state) {
       State from = this.state;
@@ -113,6 +120,10 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
 
   protected final void setMessage(String message) {
     this.message = message;
+  }
+
+  protected final void setHealthInfo(String label, String description) {
+    this.healthInfo = Optional.of(new HealthInfo(label, description));
   }
 
   protected Set<String> getVolatileCapabilities() {

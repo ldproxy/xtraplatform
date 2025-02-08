@@ -48,6 +48,10 @@ public interface Volatile2 {
 
   Runnable onStateChange(ChangeHandler handler, boolean initialCall);
 
+  default Optional<HealthInfo> getHealthInfo() {
+    return Optional.empty();
+  }
+
   default boolean isAvailable() {
     return getState() == State.AVAILABLE;
   }
@@ -106,6 +110,26 @@ public interface Volatile2 {
     @Override
     public Runnable onStateChange(ChangeHandler handler, boolean initialCall) {
       return () -> {};
+    }
+  }
+
+  // TODO: records are not yet working with the docs plugin
+  // record HealthInfo(String label, String description) {}
+  class HealthInfo {
+    private final String label;
+    private final String description;
+
+    public HealthInfo(String label, String description) {
+      this.label = label;
+      this.description = description;
+    }
+
+    public String label() {
+      return label;
+    }
+
+    public String description() {
+      return description;
     }
   }
 }
