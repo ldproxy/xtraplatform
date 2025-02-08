@@ -76,7 +76,7 @@ public class ValueStoreImpl extends AbstractVolatile
       BlobStoreFactory blobStoreFactory,
       ValueFactories valueFactories,
       VolatileRegistry volatileRegistry) {
-    super(volatileRegistry);
+    super(volatileRegistry, true);
     this.blobStore = blobStoreFactory.createBlobStore(Content.VALUES);
     this.valueFactories = valueFactories;
     this.valueEncoding =

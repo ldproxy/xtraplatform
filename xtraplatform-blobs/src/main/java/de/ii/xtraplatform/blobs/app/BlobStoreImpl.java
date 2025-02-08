@@ -60,6 +60,10 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
       Lazy<Set<BlobStoreDriver>> drivers,
       Content contentType) {
     super(volatileRegistry, "read", "write");
+    setHealthInfo(
+        contentType.getLabel() + " Store",
+        "Might be LIMITED if only a subset of store sources is available.\nMight be UNAVAILABLE if no store source is available.");
+
     this.store = store;
     this.volatileRegistry = volatileRegistry;
     this.drivers = drivers;

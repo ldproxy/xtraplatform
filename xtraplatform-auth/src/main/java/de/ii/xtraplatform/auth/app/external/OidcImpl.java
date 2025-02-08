@@ -96,6 +96,10 @@ public class OidcImpl extends AbstractVolatile implements Oidc, AppLifeCycle, Si
   @Inject
   public OidcImpl(AppContext appContext, Http http, VolatileRegistry volatileRegistry) {
     super(volatileRegistry, "app/oidc");
+    setHealthInfo(
+        "OpenID Connect",
+        "Might be UNAVAILABLE if the OIDC endpoint is not reachable or has an invalid configuration.");
+
     this.authConfig = appContext.getConfiguration().getAuth();
     this.httpClient = http.getDefaultClient();
     this.objectMapper =
