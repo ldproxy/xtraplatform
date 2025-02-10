@@ -28,7 +28,6 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
@@ -266,21 +265,11 @@ public class AppLauncher implements AppContext {
   }
 
   private Optional<Path> getDataDir(String[] args) {
-    Path dataDir;
-
-    if (args.length >= 1) {
-      dataDir = Paths.get(args[0]);
-    } else {
-      dataDir = Paths.get(DATA_DIR_NAME).toAbsolutePath();
-      if (!Files.isDirectory(dataDir)) {
-        dataDir = Paths.get("../", DATA_DIR_NAME).toAbsolutePath();
-      }
-    }
-    if (!Files.isDirectory(dataDir)) {
-      return Optional.empty();
-    }
-
-    return Optional.of(dataDir);
+    return Arrays.stream(args)
+        .filter(s -> s.startsWith("--data-dir="))
+        .map(s -> Path.of(s.substring(s.indexOf('=') + 1)))
+        .filter(Files::isDirectory)
+        .findFirst();
   }
 
   private OptionalLong getStartTime(String[] args) {
