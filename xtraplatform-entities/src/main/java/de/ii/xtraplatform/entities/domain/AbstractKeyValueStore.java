@@ -38,7 +38,7 @@ public abstract class AbstractKeyValueStore<T> extends AbstractVolatile
     return CompletableFuture.completedFuture(null);
   }
 
-  protected CompletableFuture<Void> onUpdate(Identifier identifier, T entityData) {
+  protected CompletableFuture<Void> onUpdate(Identifier identifier, T entityData, boolean force) {
     return CompletableFuture.completedFuture(null);
   }
 
@@ -77,7 +77,7 @@ public abstract class AbstractKeyValueStore<T> extends AbstractVolatile
               if (Objects.nonNull(throwable)) {
                 onFailure(identifier, throwable);
               } else if (Objects.nonNull(entityData)) {
-                if (exists) onUpdate(identifier, entityData);
+                if (exists) onUpdate(identifier, entityData, false);
                 else onCreate(identifier, entityData).join();
               }
             });

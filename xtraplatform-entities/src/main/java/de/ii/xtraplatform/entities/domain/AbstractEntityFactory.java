@@ -71,13 +71,13 @@ public abstract class AbstractEntityFactory<
   }
 
   @Override
-  public CompletableFuture<PersistentEntity> updateInstance(EntityData entityData) {
+  public CompletableFuture<PersistentEntity> updateInstance(EntityData entityData, boolean force) {
     String id = entityData.getId();
     String entityTypeSingular = type().substring(0, type().length() - 1);
     U instance = instances.get(id);
 
     try (MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
-      if (Objects.equals(entityData.hashCode(), instanceConfigurationHashes.get(id))) {
+      if (!force && Objects.equals(entityData.hashCode(), instanceConfigurationHashes.get(id))) {
 
         LOGGER.info(
             "Not reloading configuration for {} with id '{}', no effective changes detected",
@@ -86,13 +86,17 @@ public abstract class AbstractEntityFactory<
 
         // update data anyway to enable garbage collection, will not trigger reload
         if (Objects.nonNull(instance)) {
-          instance.setData((T) entityData);
+          instance.setData((T) entityData, false);
         }
 
         return CompletableFuture.completedFuture(null);
       }
 
-      LOGGER.info("Reloading configuration for {} with id '{}'", entityTypeSingular, id);
+      LOGGER.info(
+          "Reloading configuration for {} with id '{}'{}",
+          entityTypeSingular,
+          id,
+          force ? " (forced)" : "");
 
       CompletableFuture<PersistentEntity> reloaded = new CompletableFuture<>();
 
@@ -100,7 +104,7 @@ public abstract class AbstractEntityFactory<
         // TODO this.instanceReloadListeners.put(instanceId, reloaded);
 
         try {
-          instance.setData((T) entityData);
+          instance.setData((T) entityData, force);
           synchronized (this) {
             instanceConfigurationHashes.put(id, entityData.hashCode());
           }

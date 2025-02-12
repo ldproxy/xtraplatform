@@ -76,7 +76,9 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
             .ids(ids)
             .build();
 
-    eventStore.replay(filter);
+    boolean force = getForce(parameters);
+
+    eventStore.replay(filter, force);
   }
 
   private List<String> getEntityTypes(Map<String, List<String>> parameters) {
@@ -85,6 +87,10 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
 
   private List<String> getIds(Map<String, List<String>> parameters) {
     return getValueList(parameters.get("ids"));
+  }
+
+  private boolean getForce(Map<String, List<String>> parameters) {
+    return getValueList(parameters.get("force")).equals(List.of("true"));
   }
 
   private List<String> getValueList(Collection<String> values) {

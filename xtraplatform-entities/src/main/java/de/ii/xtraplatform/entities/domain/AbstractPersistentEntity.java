@@ -54,6 +54,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   private Future<?> startup;
   private EntityState.STATE state;
   private EntityState.STATE previousState;
+  private boolean forceReload;
 
   public AbstractPersistentEntity(
       T data, VolatileRegistry volatileRegistry, String... capabilities) {
@@ -70,6 +71,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     this.startup = null;
     this.state = STATE.UNKNOWN;
     this.previousState = STATE.UNKNOWN;
+    this.forceReload = false;
     setState(STATE.LOADING);
   }
 
@@ -84,14 +86,16 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   }
 
   // @Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler
-  public final void setData(T data) {
+  public final void setData(T data, boolean force) {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("GOT DATA {}" /*, data*/);
     }
     T previous = this.data;
     this.data = data;
+    this.forceReload = force;
 
-    if (Objects.nonNull(previous) && !Objects.equals(previous.hashCode(), data.hashCode())) {
+    if (force
+        || (Objects.nonNull(previous) && !Objects.equals(previous.hashCode(), data.hashCode()))) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("RELOAD DATA {} {}", previous.hashCode(), data.hashCode());
       }
@@ -206,7 +210,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
       }
 
       if (register) {
-        onReloaded();
+        onReloaded(forceReload);
         setState(STATE.ACTIVE);
       } else {
         LOGGER.trace("SUBSEQUENT FAILURE" /*, data*/);
@@ -265,7 +269,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     onVolatileStarted();
   }
 
-  protected void onReloaded() {}
+  protected void onReloaded(boolean forceReload) {}
 
   protected void onShutdown() {}
 

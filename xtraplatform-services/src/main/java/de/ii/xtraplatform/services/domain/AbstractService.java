@@ -43,7 +43,7 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
   }
 
   @Override
-  protected void onReloaded() {
+  protected void onReloaded(boolean forceReload) {
     LOGGER.info("Service with id '{}' reloaded successfully.", getId());
   }
 

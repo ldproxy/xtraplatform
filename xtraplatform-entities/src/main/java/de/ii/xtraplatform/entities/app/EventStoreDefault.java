@@ -148,7 +148,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                               LOGGER.trace("Replay filter {}", replayFilter);
                             }
 
-                            replay(replayFilter);
+                            replay(replayFilter, false);
                           }))
           .start();
     }
@@ -248,7 +248,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
   }
 
   @Override
-  public void replay(EventFilter filter) {
+  public void replay(EventFilter filter, boolean force) {
     findSources()
         .forEach(
             source -> {
@@ -258,7 +258,8 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
             });
 
     // TODO: type
-    subscriptions.emitEvent(ImmutableReloadEvent.builder().type("entities").filter(filter).build());
+    subscriptions.emitEvent(
+        ImmutableReloadEvent.builder().type("entities").filter(filter).force(force).build());
   }
 
   private void reload(StoreSource storeSource, EventStoreDriver driver, EventFilter filter) {

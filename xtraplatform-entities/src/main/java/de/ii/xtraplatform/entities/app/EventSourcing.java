@@ -63,6 +63,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   private final Optional<Function<ReplayEvent, List<ReplayEvent>>> replayEventProcessor;
   private final Optional<Function<MutationEvent, List<MutationEvent>>> mutationEventProcessor;
   private final Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> updateHook;
+  private final Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> forceUpdateHook;
   private final Optional<BiConsumer<Identifier, T>> valueValidator;
   private final Set<String> started;
   private final ExecutorService executorService;
@@ -74,7 +75,8 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       Supplier<CompletableFuture<Void>> onStart,
       Optional<Function<ReplayEvent, List<ReplayEvent>>> replayEventProcessor,
       Optional<Function<MutationEvent, List<MutationEvent>>> mutationEventProcessor,
-      Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> updateHook) {
+      Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> updateHook,
+      Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> forceUpdateHook) {
     this(
         eventStore,
         eventTypes,
@@ -83,6 +85,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
         replayEventProcessor,
         mutationEventProcessor,
         updateHook,
+        forceUpdateHook,
         Optional.empty());
   }
 
@@ -94,12 +97,14 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
       Optional<Function<ReplayEvent, List<ReplayEvent>>> replayEventProcessor,
       Optional<Function<MutationEvent, List<MutationEvent>>> mutationEventProcessor,
       Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> updateHook,
+      Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> forceUpdateHook,
       Optional<BiConsumer<Identifier, T>> valueValidator) {
     this.eventStore = eventStore;
     this.eventTypes = eventTypes;
     this.replayEventProcessor = replayEventProcessor;
     this.mutationEventProcessor = mutationEventProcessor;
     this.updateHook = updateHook;
+    this.forceUpdateHook = forceUpdateHook;
     this.cache = new ConcurrentSkipListMap<>();
     this.queue = new ConcurrentHashMap<>();
     this.valueEncoding = valueEncoding;
@@ -178,18 +183,23 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
           }
           break;
       }
-    } else if (event instanceof ReloadEvent && updateHook.isPresent()) {
-      List<Identifier> identifiers = getIdentifiers(((ReloadEvent) event).filter());
+    } else if (event instanceof ReloadEvent) {
+      Optional<BiFunction<Identifier, T, CompletableFuture<Void>>> hook =
+          ((ReloadEvent) event).force() ? forceUpdateHook : updateHook;
 
-      identifiers.stream()
-          .sorted(EntityDataStore.COMPARATOR)
-          .reduce(
-              CompletableFuture.completedFuture((Void) null),
-              (completableFuture, identifier) ->
-                  completableFuture.thenCompose(
-                      ignore2 -> updateHook.get().apply(identifier, get(identifier))),
-              (first, second) -> first.thenCompose(ignore2 -> second))
-          .join();
+      if (hook.isPresent()) {
+        List<Identifier> identifiers = getIdentifiers(((ReloadEvent) event).filter());
+
+        identifiers.stream()
+            .sorted(EntityDataStore.COMPARATOR)
+            .reduce(
+                CompletableFuture.completedFuture((Void) null),
+                (completableFuture, identifier) ->
+                    completableFuture.thenCompose(
+                        ignore2 -> hook.get().apply(identifier, get(identifier))),
+                (first, second) -> first.thenCompose(ignore2 -> second))
+            .join();
+      }
     }
   }
 

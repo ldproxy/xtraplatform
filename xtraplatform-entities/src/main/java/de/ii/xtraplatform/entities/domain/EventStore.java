@@ -15,5 +15,5 @@ public interface EventStore {
 
   boolean isReadOnly();
 
-  void replay(EventFilter filter);
+  void replay(EventFilter filter, boolean force);
 }
