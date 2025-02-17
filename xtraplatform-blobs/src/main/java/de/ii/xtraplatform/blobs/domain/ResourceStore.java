@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.blobs.domain;
 
+import com.codahale.metrics.health.HealthCheck;
 import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistered;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
@@ -172,6 +173,16 @@ public interface ResourceStore
     @Override
     public VolatileRegistry getVolatileRegistry() {
       return delegate.getVolatileRegistry();
+    }
+
+    @Override
+    public Optional<HealthInfo> getHealthInfo() {
+      return delegate.getHealthInfo();
+    }
+
+    @Override
+    public Optional<HealthCheck> asHealthCheck() {
+      return delegate.asHealthCheck();
     }
   }
 }
