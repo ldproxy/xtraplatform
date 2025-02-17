@@ -63,7 +63,7 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
           .whenComplete(
               (entityData, throwable) -> {
                 if (Objects.nonNull(entityData)) {
-                  onUpdate(identifier, entityData);
+                  onUpdate(identifier, entityData, false);
                 } else if (Objects.nonNull(throwable)) {
                   onFailure(identifier, throwable);
                 }
