@@ -13,4 +13,9 @@ import org.immutables.value.Value;
 @Value.Style(get = "*")
 public interface ReloadEvent extends TypedEvent {
   EventFilter filter();
+
+  @Value.Default
+  default boolean force() {
+    return false;
+  }
 }

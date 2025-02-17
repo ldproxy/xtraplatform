@@ -101,6 +101,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             Optional.of(this::processReplayEvent),
             Optional.of(this::processMutationEvent),
             Optional.empty(),
+            Optional.empty(),
             Optional.of(biConsumerMayThrow(this::validateDefaults)));
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution(substitutions));
@@ -502,7 +503,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         .thenRun(
             () -> {
               eventStore.replay(
-                  EventFilter.fromPath(Path.of(EntityDataDefaultsStore.EVENT_TYPE, defaultId)));
+                  EventFilter.fromPath(Path.of(EntityDataDefaultsStore.EVENT_TYPE, defaultId)),
+                  false);
             });
 
     return CompletableFuture.completedFuture(defaults);

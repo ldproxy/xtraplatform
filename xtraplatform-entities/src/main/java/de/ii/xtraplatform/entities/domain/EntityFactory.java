@@ -53,7 +53,7 @@ public interface EntityFactory {
 
   CompletableFuture<PersistentEntity> createInstance(EntityData entityData);
 
-  CompletableFuture<PersistentEntity> updateInstance(EntityData entityData);
+  CompletableFuture<PersistentEntity> updateInstance(EntityData entityData, boolean force);
 
   void deleteInstance(String id);
 

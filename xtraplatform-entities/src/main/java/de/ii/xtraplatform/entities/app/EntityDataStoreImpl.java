@@ -142,7 +142,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             this::onListenStart,
             Optional.of(this::processEvent),
             Optional.empty(),
-            Optional.of(this::onUpdate));
+            Optional.of((i, e) -> onUpdate(i, e, false)),
+            Optional.of((i, e) -> onUpdate(i, e, true)));
     this.defaultsStore = defaultsStore;
     this.blobStoreReady = blobStore.onReady()::join;
     this.valueStoreReady = valueStore.onReady()::join;
@@ -497,7 +498,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   @Override
-  protected CompletableFuture<Void> onUpdate(Identifier identifier, EntityData entityData) {
+  protected CompletableFuture<Void> onUpdate(
+      Identifier identifier, EntityData entityData, boolean force) {
     try (MDC.MDCCloseable closeable =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
       if (LOGGER.isDebugEnabled()) {
@@ -509,7 +511,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
         return entityFactories
             .get(EntityDataStore.entityType(identifier), entityData.getEntitySubType())
-            .updateInstance(hydratedData)
+            .updateInstance(hydratedData, force)
             .thenAccept(ignore -> CompletableFuture.completedFuture(null));
       } catch (Throwable e) {
         return CompletableFuture.completedFuture(null);
@@ -637,7 +639,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
           .whenComplete(
               (entityData, throwable) -> {
                 if (Objects.nonNull(entityData)) {
-                  onUpdate(identifier, entityData).join();
+                  onUpdate(identifier, entityData, false).join();
                 } else if (Objects.nonNull(throwable)) {
                   onFailure(identifier, throwable);
                 }
