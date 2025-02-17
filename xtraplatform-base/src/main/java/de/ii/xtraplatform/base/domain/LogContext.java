@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import java.io.Closeable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -74,6 +75,23 @@ public class LogContext {
 
   public static MDC.MDCCloseable putCloseable(CONTEXT context, String value) {
     return MDC.putCloseable(context.name(), value);
+  }
+
+  public interface MdcCloseable extends Closeable {
+    void close();
+  }
+
+  public static MdcCloseable withCloseable(CONTEXT context, String value, boolean restore) {
+    String previous = restore ? MDC.get(context.name()) : null;
+    MDC.put(context.name(), value);
+
+    return () -> {
+      if (Objects.nonNull(previous)) {
+        MDC.put(context.name(), previous);
+      } else {
+        MDC.remove(context.name());
+      }
+    };
   }
 
   public static Runnable withMdc(Runnable runnable) {
