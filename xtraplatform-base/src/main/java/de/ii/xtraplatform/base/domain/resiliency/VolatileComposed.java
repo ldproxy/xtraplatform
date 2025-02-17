@@ -23,6 +23,8 @@ public interface VolatileComposed extends Volatile2 {
 
   Optional<String> getMessage(String capability);
 
+  Optional<HealthInfo> getHealthInfo(String capability);
+
   Runnable onStateChange(String capability, ChangeHandler handler, boolean initialCall);
 
   default boolean isAvailable(String capability) {

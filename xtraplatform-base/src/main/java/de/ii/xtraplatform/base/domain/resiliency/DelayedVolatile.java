@@ -50,6 +50,12 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatileCompos
   }
 
   public synchronized void set(T volatile2) {
+    if (volatile2.getHealthInfo().isPresent()) {
+      setHealthInfo(
+          volatile2.getHealthInfo().get().label(),
+          volatile2.getHealthInfo().get().description(),
+          volatile2.getHealthInfo().get().hidden());
+    }
     addSubcomponent("delayed", volatile2, false, getVolatileCapabilities().toArray(new String[0]));
 
     this.dependency = volatile2;

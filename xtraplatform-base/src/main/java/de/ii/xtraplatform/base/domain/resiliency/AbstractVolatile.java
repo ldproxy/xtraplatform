@@ -123,7 +123,11 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
   }
 
   protected final void setHealthInfo(String label, String description) {
-    this.healthInfo = Optional.of(new HealthInfo(label, description));
+    setHealthInfo(label, description, false);
+  }
+
+  protected final void setHealthInfo(String label, String description, boolean hidden) {
+    this.healthInfo = Optional.of(new HealthInfo(label, description, hidden));
   }
 
   protected Set<String> getVolatileCapabilities() {

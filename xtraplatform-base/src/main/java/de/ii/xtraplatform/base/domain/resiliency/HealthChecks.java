@@ -58,6 +58,9 @@ public interface HealthChecks {
         if (vol.getHealthInfo().isPresent()) {
           builder.withDetail("label", vol.getHealthInfo().get().label());
           builder.withDetail("description", vol.getHealthInfo().get().description());
+          if (vol.getHealthInfo().get().hidden()) {
+            builder.withDetail("hidden", true);
+          }
         }
 
         return builder.build();
@@ -121,20 +124,31 @@ public interface HealthChecks {
         if (vol.getHealthInfo().isPresent()) {
           builder.withDetail("label", vol.getHealthInfo().get().label());
           builder.withDetail("description", vol.getHealthInfo().get().description());
+          if (vol.getHealthInfo().get().hidden()) {
+            builder.withDetail("hidden", true);
+          }
         }
 
         Map<String, SubResult> capabilities =
             vol.getVolatileCapabilities().stream()
                 .sorted()
                 .map(
-                    capability ->
-                        Map.entry(
-                            capability,
-                            new Builder()
-                                .healthy(vol.isAvailable(capability))
-                                .state(vol.getState(capability))
-                                .message(vol.getMessage(capability).orElse(null))
-                                .build()))
+                    capability -> {
+                      Builder capBuilder =
+                          new Builder()
+                              .healthy(vol.isAvailable(capability))
+                              .state(vol.getState(capability))
+                              .message(vol.getMessage(capability).orElse(null));
+
+                      if (vol.getHealthInfo(capability).isPresent()) {
+                        capBuilder.label(vol.getHealthInfo(capability).get().label());
+                        capBuilder.description(vol.getHealthInfo(capability).get().description());
+                        capBuilder.hidden(
+                            vol.getHealthInfo(capability).get().hidden() ? true : null);
+                      }
+
+                      return Map.entry(capability, capBuilder.build());
+                    })
                 .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
 
         builder.withDetail("capabilities", capabilities);
@@ -146,15 +160,23 @@ public interface HealthChecks {
               avol.getComponents().stream()
                   .sorted()
                   .map(
-                      key ->
-                          Map.entry(
-                              key,
-                              new Builder()
-                                  .healthy(avol.getComponent(key).isAvailable())
-                                  .state(avol.getComponent(key).getState())
-                                  .message(avol.getComponent(key).getMessage().orElse(null))
-                                  .capabilities(avol.getComponentCapabilities(key))
-                                  .build()))
+                      key -> {
+                        Volatile2 comp = avol.getComponent(key);
+                        Builder compBuilder =
+                            new Builder()
+                                .healthy(comp.isAvailable())
+                                .state(comp.getState())
+                                .message(comp.getMessage().orElse(null))
+                                .capabilities(avol.getComponentCapabilities(key));
+
+                        if (comp.getHealthInfo().isPresent()) {
+                          compBuilder.label(comp.getHealthInfo().get().label());
+                          compBuilder.description(comp.getHealthInfo().get().description());
+                          compBuilder.hidden(comp.getHealthInfo().get().hidden() ? true : null);
+                        }
+
+                        return Map.entry(key, compBuilder.build());
+                      })
                   .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
 
           builder.withDetail("components", components);
@@ -174,6 +196,18 @@ public interface HealthChecks {
     @JsonInclude(value = Include.NON_NULL)
     @Nullable
     String getMessage();
+
+    @JsonInclude(value = Include.NON_NULL)
+    @Nullable
+    String getLabel();
+
+    @JsonInclude(value = Include.NON_NULL)
+    @Nullable
+    String getDescription();
+
+    @JsonInclude(value = Include.NON_NULL)
+    @Nullable
+    Boolean getHidden();
 
     @JsonInclude(value = Include.NON_EMPTY)
     Set<String> getCapabilities();

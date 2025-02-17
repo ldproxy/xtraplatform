@@ -114,14 +114,16 @@ public interface Volatile2 {
   }
 
   // TODO: records are not yet working with the docs plugin
-  // record HealthInfo(String label, String description) {}
+  // record HealthInfo(String label, String description, boolean hidden) {}
   class HealthInfo {
     private final String label;
     private final String description;
+    private final boolean hidden;
 
-    public HealthInfo(String label, String description) {
+    public HealthInfo(String label, String description, boolean hidden) {
       this.label = label;
       this.description = description;
+      this.hidden = hidden;
     }
 
     public String label() {
@@ -130,6 +132,10 @@ public interface Volatile2 {
 
     public String description() {
       return description;
+    }
+
+    public boolean hidden() {
+      return hidden;
     }
   }
 }

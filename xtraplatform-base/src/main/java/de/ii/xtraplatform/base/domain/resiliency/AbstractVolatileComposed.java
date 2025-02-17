@@ -136,16 +136,14 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   protected final void addSubcomponent(
       String localKey, Volatile2 v, boolean neededForInit, String... capabilities) {
     this.components.put(localKey, v);
-    this.componentCapabilities.put(localKey, Set.of(capabilities));
+    this.componentCapabilities.put(
+        localKey,
+        Arrays.stream(capabilities)
+            .filter(this.capabilities::containsKey)
+            .collect(Collectors.toSet()));
 
     if (neededForInit) {
       this.initComponents.put(localKey, v);
-    }
-
-    for (String cap : capabilities) {
-      if (!this.capabilities.containsKey(cap)) {
-        this.capabilities.put(cap, new AbstractVolatile(volatileRegistry, cap) {});
-      }
     }
 
     if (v instanceof AbstractVolatile) {
@@ -157,18 +155,30 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     // checkStates();
   }
 
-  protected final void addCapability(String capability) {
+  protected final void addCapability(String capability, String label) {
+    addCapability(capability, label, "", false);
+  }
+
+  protected final void addCapability(String capability, String label, String description) {
+    addCapability(capability, label, description, false);
+  }
+
+  protected final void addHiddenCapability(String capability, String label) {
+    addCapability(capability, label, "", true);
+  }
+
+  private void addCapability(String capability, String label, String description, boolean hidden) {
     if (!this.capabilities.containsKey(capability)) {
-      this.capabilities.put(capability, new AbstractVolatile(volatileRegistry, capability) {});
+      AbstractVolatile vol = new AbstractVolatile(volatileRegistry, capability) {};
+      vol.setHealthInfo(label, description, hidden);
+      this.capabilities.put(capability, vol);
     }
   }
 
-  protected final void addCapability(String capability, boolean noComponents) {
-    addCapability(capability);
+  protected final void addStaticCapability(String capability, String label) {
+    addHiddenCapability(capability, label);
 
-    if (noComponents) {
-      addSubcomponent(Volatile2.available(capability), capability);
-    }
+    addSubcomponent(Volatile2.available(capability), capability);
   }
 
   @Override
@@ -187,6 +197,13 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   public Optional<String> getMessage(String capability) {
     return capabilities.containsKey(capability)
         ? capabilities.get(capability).getMessage()
+        : Optional.empty();
+  }
+
+  @Override
+  public Optional<HealthInfo> getHealthInfo(String capability) {
+    return capabilities.containsKey(capability)
+        ? capabilities.get(capability).getHealthInfo()
         : Optional.empty();
   }
 
