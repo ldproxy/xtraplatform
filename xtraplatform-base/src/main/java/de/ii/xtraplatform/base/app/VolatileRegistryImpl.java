@@ -136,7 +136,7 @@ public class VolatileRegistryImpl implements VolatileRegistry {
       LOGGER.debug(MARKER.DI, "Volatile state changed from {} to {}: {}", from, to, key);
     }
 
-    synchronized (watchers) {
+    synchronized (this) {
       if (watchers.containsKey(key)) {
         for (ChangeHandler handler : watchers.get(key)) {
           if (Objects.nonNull(handler)) {
@@ -161,7 +161,7 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   public Runnable watch(Volatile2 dependency, ChangeHandler handler) {
     String key = dependency.getUniqueKey();
 
-    synchronized (watchers) {
+    synchronized (this) {
       if (!watchers.containsKey(key)) {
         watchers.put(key, new ArrayList<>());
       }
