@@ -98,7 +98,11 @@ public class JobRunner implements AppLifeCycle {
                   activeJobSets.add(jobSet.getId());
                 }
 
-                run(processor, optionalJob.get());
+                try {
+                  run(processor, optionalJob.get());
+                } catch (Throwable e) {
+                  LogContext.error(LOGGER, e, "Error scheduling job");
+                }
               } else {
                 break;
               }
@@ -165,6 +169,10 @@ public class JobRunner implements AppLifeCycle {
                         jobSet.getDescription().orElse(""));
                   }
                 });
+          }
+          if (logJobsTrace()) {
+            LOGGER.trace(
+                MARKER.JOBS, "Job processor threads busy: {}/{}", activeThreads.get(), maxThreads);
           }
         },
         5,
