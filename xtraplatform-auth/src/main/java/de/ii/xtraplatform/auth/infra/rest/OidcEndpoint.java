@@ -52,7 +52,7 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
                 .setPort(servicesContext.getUri().getPort())
                 .toString());
     String path = servicesContext.getUri().getPath();
-    this.servicesPath = Objects.equals(path, "/") ? "" : path;
+    this.servicesPath = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
     this.authConfig = appContext.getConfiguration().getAuth();
     this.oidc = oidc;
   }
