@@ -26,6 +26,7 @@ moduleInfo {
             'java.xml',
             'java.naming', //https jks keystore
             'java.management', //metrics
+            'jdk.crypto.ec', // ssl/tls
     ]
     exports = [
             '!io.dropwizard.logback.shaded*'
