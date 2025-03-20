@@ -16,18 +16,33 @@ import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LoggingFilter;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
 import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.sse.OutboundSseEvent;
+import javax.ws.rs.sse.Sse;
+import javax.ws.rs.sse.SseBroadcaster;
+import javax.ws.rs.sse.SseEventSink;
 import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@Path("logs")
 public class OpsEndpointLogs implements OpsEndpoint {
 
   private final ObjectMapper objectMapper;
   private final LoggerContext loggerContext;
+  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+  private SseBroadcaster broadcaster;
 
   @Inject
   public OpsEndpointLogs(Jackson jackson) {
@@ -62,6 +77,46 @@ public class OpsEndpointLogs implements OpsEndpoint {
     return Response.ok(
             objectMapper.writeValueAsString(getLogInfo(level, optionalThirdPartyLoggingFilter)))
         .build();
+  }
+
+  @Singleton
+  @GET
+  @Path("attach")
+  @Produces("text/event-stream")
+  public void attach(@Context SseEventSink sseEventSink, @Context Sse sse) {
+    if (sseEventSink == null || sse == null) {
+      System.err.println("Error: SseEventSink or Sse is null");
+      return;
+    }
+
+    Timer timer = new Timer();
+    timer.scheduleAtFixedRate(
+        new TimerTask() {
+          int lastEventId = 0;
+
+          @Override
+          public void run() {
+            try {
+              OutboundSseEvent sseEvent =
+                  sse.newEventBuilder()
+                      .name("message")
+                      .id(String.valueOf(lastEventId))
+                      .mediaType(MediaType.TEXT_PLAIN_TYPE)
+                      .data(String.class, "This is a test message")
+                      .reconnectDelay(3000)
+                      .comment("test message")
+                      .build();
+              sseEventSink.send(sseEvent);
+              lastEventId++;
+            } catch (Exception e) {
+              System.err.println("Error in TimerTask: " + e.getMessage());
+              timer.cancel();
+              sseEventSink.close();
+            }
+          }
+        },
+        0,
+        5000);
   }
 
   private ImmutableMap<String, Object> getLogInfo(
