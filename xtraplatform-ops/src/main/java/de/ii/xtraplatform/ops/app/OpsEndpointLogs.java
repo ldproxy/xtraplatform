@@ -23,8 +23,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -117,6 +119,19 @@ public class OpsEndpointLogs implements OpsEndpoint {
         },
         0,
         5000);
+  }
+
+  @POST
+  @Path("setLogLevel")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response setLogLevel(@QueryParam("logLevel") String logLevel) {
+    if (logLevel == null || logLevel.isEmpty()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity("{\"error\":\"logLevel parameter is missing\"}")
+          .build();
+    }
+
+    return Response.ok("{\"logLevel\":\"" + logLevel + "\"}").build();
   }
 
   private ImmutableMap<String, Object> getLogInfo(
