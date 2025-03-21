@@ -124,24 +124,68 @@ public class OpsEndpointLogs implements OpsEndpoint {
   @POST
   @Path("setLogLevel")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response setLogLevel(@QueryParam("logLevel") String logLevel) {
+  public Response setLogLevel(
+      @QueryParam("logLevel") String logLevel,
+      @QueryParam("showThirdPartyLoggers") boolean showThirdPartyLoggers,
+      @QueryParam("apiRequests") boolean apiRequests,
+      @QueryParam("apiRequestUsers") boolean apiRequestUsers,
+      @QueryParam("apiRequestHeaders") boolean apiRequestHeaders,
+      @QueryParam("apiRequestBodies") boolean apiRequestBodies,
+      @QueryParam("s3") boolean s3,
+      @QueryParam("sqlQueries") boolean sqlQueries,
+      @QueryParam("sqlResults") boolean sqlResults,
+      @QueryParam("configDumps") boolean configDumps,
+      @QueryParam("stackTraces") boolean stackTraces,
+      @QueryParam("wiring") boolean wiring,
+      @QueryParam("jobs") boolean jobs) {
+
     if (logLevel == null || logLevel.isEmpty()) {
       return Response.status(Response.Status.BAD_REQUEST)
           .entity("{\"error\":\"logLevel parameter is missing\"}")
           .build();
     }
 
-    ch.qos.logback.classic.Logger rootLogger =
-        loggerContext.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
-    try {
-      rootLogger.setLevel(ch.qos.logback.classic.Level.valueOf(logLevel.toUpperCase()));
-    } catch (IllegalArgumentException e) {
-      return Response.status(Response.Status.BAD_REQUEST)
-          .entity("{\"error\":\"Invalid logLevel parameter\"}")
-          .build();
-    }
-
-    return Response.ok("{\"logLevel\":\"" + logLevel + "\"}").build();
+    return Response.ok(
+            "{\"logLevel\":\""
+                + logLevel
+                + "\","
+                + "\"showThirdPartyLoggers\":"
+                + showThirdPartyLoggers
+                + ","
+                + "\"apiRequests\":"
+                + apiRequests
+                + ","
+                + "\"apiRequestUsers\":"
+                + apiRequestUsers
+                + ","
+                + "\"apiRequestHeaders\":"
+                + apiRequestHeaders
+                + ","
+                + "\"apiRequestBodies\":"
+                + apiRequestBodies
+                + ","
+                + "\"s3\":"
+                + s3
+                + ","
+                + "\"sqlQueries\":"
+                + sqlQueries
+                + ","
+                + "\"sqlResults\":"
+                + sqlResults
+                + ","
+                + "\"configDumps\":"
+                + configDumps
+                + ","
+                + "\"stackTraces\":"
+                + stackTraces
+                + ","
+                + "\"wiring\":"
+                + wiring
+                + ","
+                + "\"jobs\":"
+                + jobs
+                + "}")
+        .build();
   }
 
   private ImmutableMap<String, Object> getLogInfo(
