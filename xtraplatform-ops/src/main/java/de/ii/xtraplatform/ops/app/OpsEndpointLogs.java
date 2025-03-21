@@ -131,6 +131,16 @@ public class OpsEndpointLogs implements OpsEndpoint {
           .build();
     }
 
+    ch.qos.logback.classic.Logger rootLogger =
+        loggerContext.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+    try {
+      rootLogger.setLevel(ch.qos.logback.classic.Level.valueOf(logLevel.toUpperCase()));
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity("{\"error\":\"Invalid logLevel parameter\"}")
+          .build();
+    }
+
     return Response.ok("{\"logLevel\":\"" + logLevel + "\"}").build();
   }
 
