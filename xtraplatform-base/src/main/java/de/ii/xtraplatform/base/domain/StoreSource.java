@@ -342,6 +342,21 @@ import org.immutables.value.Value;
  *     archiveRoot: /path/to/store
  * ```
  *     </code>
+ * @langEn #### Tile cache in S3/minio
+ * @langDe #### Tile-Cache in S3/minio
+ * @langAll <code>
+ * ```yml
+ * store:
+ *   sources:
+ *   - type: S3
+ *     mode: RW
+ *     content: RESOURCES
+ *     prefix: tiles
+ *     src: minio.example.org/tile-cache-bucket
+ *     accessKey: ${ACCESS_KEY}
+ *     secretKey: ${SECRET_KEY}
+ * ```
+ *     </code>
  * @langEn #### Data directory with old store layout
  *     <p>You could use this if you want to keep using the old layout with `v4`.
  * @langDe #### Datenverzeichnis mit altem Store-Layout
