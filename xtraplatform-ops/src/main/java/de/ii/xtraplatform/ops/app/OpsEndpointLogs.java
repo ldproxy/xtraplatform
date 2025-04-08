@@ -8,6 +8,8 @@
 package de.ii.xtraplatform.ops.app;
 
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.filter.ThresholdFilter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
@@ -18,8 +20,6 @@ import de.ii.xtraplatform.ops.domain.OpsEndpoint;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
@@ -32,7 +32,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.sse.OutboundSseEvent;
 import javax.ws.rs.sse.Sse;
-import javax.ws.rs.sse.SseBroadcaster;
 import javax.ws.rs.sse.SseEventSink;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +42,6 @@ public class OpsEndpointLogs implements OpsEndpoint {
 
   private final ObjectMapper objectMapper;
   private final LoggerContext loggerContext;
-  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-  private SseBroadcaster broadcaster;
 
   @Inject
   public OpsEndpointLogs(Jackson jackson) {
@@ -81,15 +78,46 @@ public class OpsEndpointLogs implements OpsEndpoint {
         .build();
   }
 
+  private PatternLayoutEncoder getPatternLayoutEncoder() {
+    PatternLayoutEncoder ple = new PatternLayoutEncoder();
+    ple.setPattern("%date %level [%thread] %logger{10} [%file:%line] %msg%n");
+    ple.setContext(loggerContext);
+    ple.start();
+    return ple;
+  }
+
   @Singleton
   @GET
   @Path("attach")
   @Produces("text/event-stream")
-  public void attach(@Context SseEventSink sseEventSink, @Context Sse sse) {
-    if (sseEventSink == null || sse == null) {
-      System.err.println("Error: SseEventSink or Sse is null");
+  public void attach(
+      @Context SseEventSink sseEventSink,
+      @Context Sse sse,
+      @QueryParam("logLevel") String logLevel) {
+
+    if (sseEventSink == null || sse == null || logLevel == null) {
+      System.err.println("Error: SseEventSink, Sse or logLevel is null");
       return;
     }
+
+    ThresholdFilter thresholdFilter = new ThresholdFilter();
+
+    thresholdFilter.setLevel(logLevel);
+    thresholdFilter.start();
+
+    CustomOutputStreamAppender appender = getCustomOutputStreamAppender(sseEventSink, sse);
+    appender.setContext(loggerContext);
+    appender.setName("SSEAppender");
+    appender.setEncoder(getPatternLayoutEncoder());
+
+    appender.addFilter(thresholdFilter);
+
+    appender.start();
+
+    ch.qos.logback.classic.Logger logbackLogger =
+        (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("ROOT");
+    logbackLogger.addAppender(appender);
+    logbackLogger.setAdditive(false);
 
     Timer timer = new Timer();
     timer.scheduleAtFixedRate(
@@ -99,6 +127,12 @@ public class OpsEndpointLogs implements OpsEndpoint {
           @Override
           public void run() {
             try {
+              if (sseEventSink.isClosed()) {
+                timer.cancel();
+                logbackLogger.detachAppender(appender);
+                appender.stop();
+                return;
+              }
               OutboundSseEvent sseEvent =
                   sse.newEventBuilder()
                       .name("message")
@@ -119,6 +153,31 @@ public class OpsEndpointLogs implements OpsEndpoint {
         },
         0,
         5000);
+
+    try {
+      OutboundSseEvent event =
+          sse.newEventBuilder().name("open").data("Connection established").build();
+      sseEventSink.send(event);
+    } catch (Exception e) {
+      System.err.println("Error sending initial event: " + e.getMessage());
+    }
+  }
+
+  private static CustomOutputStreamAppender getCustomOutputStreamAppender(
+      SseEventSink sseEventSink, Sse sse) {
+    LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+    ch.qos.logback.classic.encoder.PatternLayoutEncoder ple =
+        new ch.qos.logback.classic.encoder.PatternLayoutEncoder();
+    ple.setPattern("%date %level [%thread] %logger{10} [%file:%line] %msg%n");
+    ple.setContext(lc);
+    ple.start();
+
+    CustomOutputStreamAppender appender = new CustomOutputStreamAppender();
+    appender.setEncoder(ple);
+    appender.setContext(lc);
+    appender.setOutputStream(new SseOutputStream(sseEventSink, sse));
+    appender.start();
+    return appender;
   }
 
   @POST
