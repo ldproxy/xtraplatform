@@ -17,6 +17,8 @@ import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LoggingFilter;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -93,20 +95,76 @@ public class OpsEndpointLogs implements OpsEndpoint {
   public void attach(
       @Context SseEventSink sseEventSink,
       @Context Sse sse,
-      @QueryParam("logLevel") String logLevel) {
+      @QueryParam("logLevel") String logLevel,
+      @QueryParam("filters") String filters) {
 
     if (sseEventSink == null || sse == null || logLevel == null) {
       System.err.println("Error: SseEventSink, Sse or logLevel is null");
       return;
     }
 
+    Map<String, Boolean> flags = new HashMap<>();
+
+    flags.put("showThirdPartyLoggers", false);
+    flags.put("apiRequests", false);
+    flags.put("apiRequestUsers", false);
+    flags.put("apiRequestHeaders", false);
+    flags.put("apiRequestBodies", false);
+    flags.put("sqlQueries", false);
+    flags.put("sqlResults", false);
+    flags.put("s3", false);
+    flags.put("configDumps", false);
+    flags.put("stackTraces", false);
+    flags.put("wiring", false);
+    flags.put("jobs", false);
+
+    if (filters != null && !filters.isEmpty()) {
+      String[] filterKeys = filters.split(",");
+      for (String key : filterKeys) {
+        if (flags.containsKey(key)) {
+          flags.put(key, true);
+        } else {
+          throw new IllegalArgumentException("Unknown filter: " + key);
+        }
+      }
+    }
+
+    System.out.println("Parsed flags: " + flags);
+
     ThresholdFilter thresholdFilter = new ThresholdFilter();
 
     thresholdFilter.setLevel(logLevel);
     thresholdFilter.start();
 
+    CustomLoggingFilter customFilter = new CustomLoggingFilter(flags, loggerContext);
+    customFilter.applyFilters();
+
     CustomOutputStreamAppender appender = getCustomOutputStreamAppender(sseEventSink, sse);
     appender.setContext(loggerContext);
+
+    loggerContext
+        .getTurboFilterList()
+        .forEach(
+            turboFilter -> {
+              if (turboFilter instanceof LoggingFilter) {
+                LoggingFilter loggingFilter = (LoggingFilter) turboFilter;
+                System.out.println("Current LoggingFilter settings:");
+                System.out.println("apiRequests: " + loggingFilter.isApiRequests());
+                System.out.println("apiRequestUsers: " + loggingFilter.isApiRequestUsers());
+                System.out.println("apiRequestHeaders: " + loggingFilter.isApiRequestHeaders());
+                System.out.println("apiRequestBodies: " + loggingFilter.isApiRequestBodies());
+                System.out.println("sqlQueries: " + loggingFilter.isSqlQueries());
+                System.out.println("sqlResults: " + loggingFilter.isSqlResults());
+                System.out.println("s3: " + loggingFilter.isS3());
+                System.out.println("configDumps: " + loggingFilter.isConfigDumps());
+                System.out.println("stackTraces: " + loggingFilter.isStackTraces());
+                System.out.println("wiring: " + loggingFilter.isWiring());
+                System.out.println("jobs: " + loggingFilter.isJobs());
+                System.out.println(
+                    "showThirdPartyLoggers: " + loggingFilter.isShowThirdPartyLoggers());
+              }
+            });
+
     appender.setName("SSEAppender");
     appender.setEncoder(getPatternLayoutEncoder());
 
