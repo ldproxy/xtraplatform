@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["ldproxy/renovate-config:xtraplatform", "ldproxy/renovate-config:maintenance(6.2)"],
+  "extends": ["ldproxy/renovate-config:xtraplatform", "ldproxy/renovate-config:maintenance(6.3,6.2)"],
   "packageRules": [
     {
       "groupName": "dropwizard",
@@ -10,7 +10,7 @@
     {
       "groupName": "jackson",
       "matchPackageNames": ["com.fasterxml.jackson.*"],
-      "allowedVersions": "< 2.17.3"
+      "allowedVersions": "< 2.18.3"
     },
     {
       "groupName": "jjwt",
