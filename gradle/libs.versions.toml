@@ -16,6 +16,7 @@ rxjava = '3.1.10'
 rxjava-ext = '3.1.1'
 rs = '1.0.4'
 uuid = '5.0.0'
+jsr305 = '3.0.2'
 
 [libraries]
 # auth
@@ -50,6 +51,7 @@ immutables-value = { module = "org.immutables:value", version.ref = "immutables"
 immutables-encode = { module = "org.immutables:encode", version.ref = "immutables" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-auto = { module = "io.github.azahnen:dagger-auto", version.ref = "dagger-auto" }
+jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
 
 #s3
 minio = { module = "io.minio:minio", version.ref = "minio" }
@@ -69,5 +71,5 @@ rs = { module = "org.reactivestreams:reactive-streams", version.ref = "rs" }
 auth = ["jjwt-api", "jjwt-impl", "jjwt-jackson"]
 openapi = ["swagger-jaxrs2", "swagger-models", "swagger-annotations", "swagger-integration", "swagger-core", "swagger-classgraph"]
 runtime = ["dropwizard-core", "dropwizard-views-mustache", "dropwizard-client", "dropwizard-auth", "dropwizard-json-logging",
-  "jackson-afterburner", "jackson-xml", "jackson-smile", "commons-codec", "threeten-extra", "xml-bind-api", "immutables-encode"]
+  "jackson-afterburner", "jackson-xml", "jackson-smile", "commons-codec", "threeten-extra", "xml-bind-api", "immutables-encode", "jsr305"]
 runtimeFlat = ["dagger", "dagger-auto"]
