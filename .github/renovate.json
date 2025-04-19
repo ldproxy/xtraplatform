@@ -10,7 +10,7 @@
     {
       "groupName": "jackson",
       "matchPackageNames": ["com.fasterxml.jackson.*"],
-      "allowedVersions": "< 2.18.3"
+      "allowedVersions": "< 2.18.4"
     },
     {
       "groupName": "jjwt",
