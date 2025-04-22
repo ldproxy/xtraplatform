@@ -25,7 +25,6 @@ import java.util.TimerTask;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -167,15 +166,15 @@ public class OpsEndpointLogs implements OpsEndpoint {
 
     appender.setName("SSEAppender");
     appender.setEncoder(getPatternLayoutEncoder());
-
+    appender.clearAllFilters();
     appender.addFilter(thresholdFilter);
 
     appender.start();
 
     ch.qos.logback.classic.Logger logbackLogger =
         (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("ROOT");
+    logbackLogger.detachAppender("SSEAppender");
     logbackLogger.addAppender(appender);
-    logbackLogger.setAdditive(false);
 
     Timer timer = new Timer();
     timer.scheduleAtFixedRate(
@@ -213,10 +212,16 @@ public class OpsEndpointLogs implements OpsEndpoint {
         5000);
 
     try {
+      if (sseEventSink.isClosed()) {
+        logbackLogger.detachAppender(appender);
+        appender.stop();
+        return;
+      }
       OutboundSseEvent event =
           sse.newEventBuilder().name("open").data("Connection established").build();
       sseEventSink.send(event);
     } catch (Exception e) {
+      sseEventSink.close();
       System.err.println("Error sending initial event: " + e.getMessage());
     }
   }
@@ -236,73 +241,6 @@ public class OpsEndpointLogs implements OpsEndpoint {
     appender.setOutputStream(new SseOutputStream(sseEventSink, sse));
     appender.start();
     return appender;
-  }
-
-  @POST
-  @Path("setLogLevel")
-  @Produces(MediaType.APPLICATION_JSON)
-  public Response setLogLevel(
-      @QueryParam("logLevel") String logLevel,
-      @QueryParam("showThirdPartyLoggers") boolean showThirdPartyLoggers,
-      @QueryParam("apiRequests") boolean apiRequests,
-      @QueryParam("apiRequestUsers") boolean apiRequestUsers,
-      @QueryParam("apiRequestHeaders") boolean apiRequestHeaders,
-      @QueryParam("apiRequestBodies") boolean apiRequestBodies,
-      @QueryParam("s3") boolean s3,
-      @QueryParam("sqlQueries") boolean sqlQueries,
-      @QueryParam("sqlResults") boolean sqlResults,
-      @QueryParam("configDumps") boolean configDumps,
-      @QueryParam("stackTraces") boolean stackTraces,
-      @QueryParam("wiring") boolean wiring,
-      @QueryParam("jobs") boolean jobs) {
-
-    if (logLevel == null || logLevel.isEmpty()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-          .entity("{\"error\":\"logLevel parameter is missing\"}")
-          .build();
-    }
-
-    return Response.ok(
-            "{\"logLevel\":\""
-                + logLevel
-                + "\","
-                + "\"showThirdPartyLoggers\":"
-                + showThirdPartyLoggers
-                + ","
-                + "\"apiRequests\":"
-                + apiRequests
-                + ","
-                + "\"apiRequestUsers\":"
-                + apiRequestUsers
-                + ","
-                + "\"apiRequestHeaders\":"
-                + apiRequestHeaders
-                + ","
-                + "\"apiRequestBodies\":"
-                + apiRequestBodies
-                + ","
-                + "\"s3\":"
-                + s3
-                + ","
-                + "\"sqlQueries\":"
-                + sqlQueries
-                + ","
-                + "\"sqlResults\":"
-                + sqlResults
-                + ","
-                + "\"configDumps\":"
-                + configDumps
-                + ","
-                + "\"stackTraces\":"
-                + stackTraces
-                + ","
-                + "\"wiring\":"
-                + wiring
-                + ","
-                + "\"jobs\":"
-                + jobs
-                + "}")
-        .build();
   }
 
   private ImmutableMap<String, Object> getLogInfo(
