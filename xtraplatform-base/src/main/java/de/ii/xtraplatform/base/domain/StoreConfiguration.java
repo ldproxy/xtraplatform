@@ -61,6 +61,7 @@ public interface StoreConfiguration {
    * @langDe YAML-Dateien für Entities und Values, die größer als dieser Wert sind, werden mit einem
    *     Fehler ignoriert.
    * @default 3MB
+   * @since v4.4
    */
   @Value.Default
   default DataSize getMaxYamlFileSize() {
