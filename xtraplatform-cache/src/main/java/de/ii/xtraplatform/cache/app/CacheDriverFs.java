@@ -46,7 +46,7 @@ public class CacheDriverFs implements CacheDriver {
   @Inject
   public CacheDriverFs(AppContext appContext, Jackson jackson) {
     this.cache = appContext.getTmpDir().resolve("cache");
-    this.valueEncoding = new ValueEncodingJackson<>(jackson, false);
+    this.valueEncoding = new ValueEncodingJackson<>(jackson, null, false);
   }
 
   @Override

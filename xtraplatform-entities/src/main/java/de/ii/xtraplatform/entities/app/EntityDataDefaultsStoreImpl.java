@@ -20,6 +20,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.StoreConfiguration;
 import de.ii.xtraplatform.base.domain.Substitutions;
 import de.ii.xtraplatform.entities.domain.AbstractMergeableKeyValueStore;
 import de.ii.xtraplatform.entities.domain.EntityData;
@@ -86,12 +87,13 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       Jackson jackson,
       Substitutions substitutions,
       Lazy<Set<EntityFactory>> entityFactories) {
+    StoreConfiguration store = appContext.getConfiguration().getStore();
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.eventStore = eventStore;
     this.ready = new CompletableFuture<>();
     this.valueEncoding =
         new ValueEncodingJacksonWithNesting<>(
-            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
+            jackson, store.getMaxYamlFileSize(), store.isFailOnUnknownProperties());
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
@@ -110,7 +112,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     this.valueEncodingBuilder =
         new ValueEncodingJacksonWithNesting<>(
-            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
+            jackson, store.getMaxYamlFileSize(), store.isFailOnUnknownProperties());
     valueEncodingBuilder.addDecoderMiddleware(
         new ValueDecoderBase<>(
             this::getNewBuilder,
@@ -133,7 +135,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     this.valueEncodingMap =
         new ValueEncodingJacksonWithNesting<>(
-            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
+            jackson, store.getMaxYamlFileSize(), store.isFailOnUnknownProperties());
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
             identifier -> new LinkedHashMap<>(),
@@ -156,7 +158,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     this.valueEncodingEntity =
         new ValueEncodingJacksonWithNesting<>(
-            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
+            jackson, store.getMaxYamlFileSize(), store.isFailOnUnknownProperties());
     valueEncodingEntity.addDecoderMiddleware(
         new ValueDecoderWithBuilder<>(
             this::getBuilder,

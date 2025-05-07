@@ -14,6 +14,7 @@ import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.entities.domain.KeyPathAlias;
 import de.ii.xtraplatform.entities.domain.ValueEncodingWithNesting;
 import de.ii.xtraplatform.values.api.ValueEncodingJackson;
+import io.dropwizard.util.DataSize;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,8 +24,9 @@ import java.util.Optional;
 public class ValueEncodingJacksonWithNesting<T> extends ValueEncodingJackson<T>
     implements ValueEncodingWithNesting<T> {
 
-  public ValueEncodingJacksonWithNesting(Jackson jackson, boolean failOnUnknownProperties) {
-    super(jackson, failOnUnknownProperties);
+  public ValueEncodingJacksonWithNesting(
+      Jackson jackson, DataSize maxYamlFileSize, boolean failOnUnknownProperties) {
+    super(jackson, maxYamlFileSize, failOnUnknownProperties);
 
     getMapper(FORMAT.JSON)
         .registerModule(EntityDeserialization.DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER)

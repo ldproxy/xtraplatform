@@ -19,6 +19,7 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
+import de.ii.xtraplatform.base.domain.StoreConfiguration;
 import de.ii.xtraplatform.base.domain.Substitutions;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.entities.domain.AbstractMergeableKeyValueStore;
@@ -125,15 +126,16 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       ResourceStore blobStore,
       ValueStore valueStore,
       boolean noDefaults) {
+    StoreConfiguration store = appContext.getConfiguration().getStore();
     this.isEventStoreReadOnly = eventStore.isReadOnly();
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.additionalEvents = new ConcurrentLinkedQueue<>();
     this.valueEncoding =
         new ValueEncodingJacksonWithNesting<>(
-            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
+            jackson, store.getMaxYamlFileSize(), store.isFailOnUnknownProperties());
     this.valueEncodingMap =
         new ValueEncodingJacksonWithNesting<>(
-            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
+            jackson, store.getMaxYamlFileSize(), store.isFailOnUnknownProperties());
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
