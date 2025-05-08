@@ -13,6 +13,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.StoreConfiguration;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.Substitutions;
 import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatile;
@@ -77,11 +78,12 @@ public class ValueStoreImpl extends AbstractVolatile
       ValueFactories valueFactories,
       VolatileRegistry volatileRegistry) {
     super(volatileRegistry);
+    StoreConfiguration store = appContext.getConfiguration().getStore();
     this.blobStore = blobStoreFactory.createBlobStore(Content.VALUES);
     this.valueFactories = valueFactories;
     this.valueEncoding =
         new ValueEncodingJackson<>(
-            jackson, appContext.getConfiguration().getStore().isFailOnUnknownProperties());
+            jackson, store.getMaxYamlFileSize(), store.isFailOnUnknownProperties());
     this.memCache = new ConcurrentHashMap<>();
     this.lastModified = new ConcurrentHashMap<>();
     this.ready = new CompletableFuture<>();

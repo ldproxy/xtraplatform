@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+import com.fasterxml.jackson.dataformat.yaml.JacksonYAMLParseException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.common.collect.ImmutableMap;
@@ -22,6 +23,7 @@ import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
+import io.dropwizard.util.DataSize;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 
 public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
@@ -48,8 +51,14 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
   private final Map<FORMAT, ObjectMapper> mappers;
   private final List<ValueDecoderMiddleware<byte[]>> decoderPreProcessor;
   private final List<ValueDecoderMiddleware<T>> decoderMiddleware;
+  private final DataSize maxYamlFileSize;
 
-  public ValueEncodingJackson(Jackson jackson, boolean failOnUnknownProperties) {
+  public ValueEncodingJackson(
+      Jackson jackson, DataSize maxYamlFileSize, boolean failOnUnknownProperties) {
+    this.maxYamlFileSize = Objects.requireNonNullElse(maxYamlFileSize, DataSize.megabytes(3));
+
+    LoaderOptions loaderOptions = new LoaderOptions();
+    loaderOptions.setCodePointLimit(Math.toIntExact(this.maxYamlFileSize.toBytes()));
 
     ObjectMapper jsonMapper =
         jackson
@@ -61,7 +70,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     ObjectMapper yamlMapper =
         jackson
             .getNewObjectMapper(
-                new YAMLFactory()
+                YAMLFactory.builder()
+                    .loaderOptions(loaderOptions)
                     .disable(Feature.USE_NATIVE_TYPE_ID)
                     .disable(Feature.USE_NATIVE_OBJECT_ID)
                     .disable(Feature.INDENT_ARRAYS)
@@ -69,7 +79,8 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
                     .disable(Feature.SPLIT_LINES)
                     .disable(Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS)
                     .enable(Feature.WRITE_DOC_START_MARKER)
-                    .enable(Feature.MINIMIZE_QUOTES))
+                    .enable(Feature.MINIMIZE_QUOTES)
+                    .build())
             .registerModule(DESERIALIZE_IMMUTABLE_BUILDER_NESTED)
             .setDefaultMergeable(true)
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
@@ -167,6 +178,15 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
       }
 
     } catch (Throwable e) {
+      if (e instanceof JacksonYAMLParseException
+          && Objects.nonNull(e.getMessage())
+          && e.getMessage().contains("incoming YAML document exceeds the limit")) {
+        throw new IOException(
+            String.format(
+                "Maximum YAML file size of %s exceeded, increase 'store.maxYamlFileSize' to fix.",
+                maxYamlFileSize));
+      }
+
       Optional<ValueDecoderMiddleware<T>> recovery =
           decoderMiddleware.stream().filter(ValueDecoderMiddleware::canRecover).findFirst();
       if (recovery.isPresent()) {

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonMerge;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.docs.DocIgnore;
+import io.dropwizard.util.DataSize;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -52,6 +53,19 @@ public interface StoreConfiguration {
   @Value.Default
   default boolean isFailOnUnknownProperties() {
     return false;
+  }
+
+  /**
+   * @langEn YAML files for entities and values that are larger than this size will be ignored with
+   *     an error.
+   * @langDe YAML-Dateien für Entities und Values, die größer als dieser Wert sind, werden mit einem
+   *     Fehler ignoriert.
+   * @default 3MB
+   * @since v4.4
+   */
+  @Value.Default
+  default DataSize getMaxYamlFileSize() {
+    return DataSize.megabytes(3);
   }
 
   /**
