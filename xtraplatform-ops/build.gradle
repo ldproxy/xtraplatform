@@ -6,4 +6,5 @@ descriptionDe = 'Operations-Dashboard und API.'
 dependencies {
     provided project(':xtraplatform-web')
     provided project(':xtraplatform-openapi')
+    provided project(':xtraplatform-openapi')
 }

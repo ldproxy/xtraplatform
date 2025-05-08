@@ -25,7 +25,7 @@ moduleInfo {
             'java.sql',
             'java.xml',
             'java.naming', //https jks keystore
-            'java.management', //metrics
+            'jdk.management', //metrics
             'jdk.crypto.ec', // ssl/tls
     ]
     exports = [
