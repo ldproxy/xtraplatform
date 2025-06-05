@@ -82,9 +82,12 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
       byte[] xacmlRequest =
           getXacmlRequest(resourceId, resourceAttributes, actionId, actionAttributes, user);
 
+      String url =
+          pdpUrl.replaceAll("\\{\\{apiId\\}\\}", (String) resourceAttributes.get("ldproxy:api:id"));
+
       InputStream response =
           httpClient.postAsInputStream(
-              pdpUrl, xacmlRequest, mediaTypeContent, Map.of("Accept", mediaTypeAccept.toString()));
+              url, xacmlRequest, mediaTypeContent, Map.of("Accept", mediaTypeAccept.toString()));
 
       XacmlResponse xacmlResponse = getXacmlResponse(response);
 
