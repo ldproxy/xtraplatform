@@ -52,7 +52,9 @@ import org.immutables.value.Value;
  *     sources are writable by default.
  *     <p>#### `S3`
  *     <p>Access files from any S3 compatible object store. `src` must be a relative path composed
- *     of a host and a bucket, e.g. `my-minio/demo` or `s3.eu-central-1.amazonaws.com/demo`.
+ *     of a host and a bucket, e.g. `my-minio/demo` or `s3.eu-central-1.amazonaws.com/demo`. A port
+ *     can be appended with a colon, e.g. `my-minio:9000/demo`. For unencrypted connections the
+ *     option `insecure` must be set to `true`.
  *     <p>Additionally an `accessKey` and a `secretKey` have to be specified for the source.
  *     <p>#### `HTTP`
  *     <p>Access files from a web server. `src` must be a valid URL pointing to a ZIP file. Can be
@@ -178,7 +180,9 @@ import org.immutables.value.Value;
  *     <p>#### `S3`
  *     <p>Zugriff auf Dateien aus einem S3-kompatiblen Object-Store. `src` muss ein relativer Pfad
  *     sein, der aus einem Host und einem Bucket besteht, z.B. `my-minio/demo` oder
- *     `s3.eu-central-1.amazonaws.com/demo`.
+ *     `s3.eu-central-1.amazonaws.com/demo`. Ein Port kann mit einem Doppelpunkt angehängt werden,
+ *     z.B. `my-minio:9000/demo`. Für unverschlüsselte Verbindungen muss die Option `insecure` auf
+ *     `true` gesetzt werden.
  *     <p>Außerdem müssen ein `accessKey` und ein `secretKey` für die Store Source angegeben werden.
  *     <p>#### `HTTP`
  *     <p>Zugriff auf Dateien von einem Webserver. `src` muss eine gültige URL sein, die auf eine
@@ -355,6 +359,7 @@ import org.immutables.value.Value;
  *     src: minio.example.org/tile-cache-bucket
  *     accessKey: ${ACCESS_KEY}
  *     secretKey: ${SECRET_KEY}
+ *     insecure: false
  * ```
  *     </code>
  * @langEn #### Data directory with old store layout
