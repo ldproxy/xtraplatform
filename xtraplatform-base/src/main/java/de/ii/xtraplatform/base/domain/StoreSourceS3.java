@@ -22,6 +22,11 @@ public interface StoreSourceS3 extends StoreSource {
 
   String getSecretKey();
 
+  @Value.Default
+  default boolean getInsecure() {
+    return false;
+  }
+
   @JsonProperty(StoreSource.MODE_PROP)
   @Value.Default
   @Override

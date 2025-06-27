@@ -19,6 +19,7 @@ import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import io.minio.BucketExistsArgs;
 import io.minio.MinioClient;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -46,10 +47,10 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
   @Override
   public boolean isAvailable(StoreSource storeSource) {
     if (storeSource instanceof StoreSourceS3) {
-      Tuple<MinioClient, String> client = getClient((StoreSourceS3) storeSource);
-      String bucket = client.second();
-
       try {
+        Tuple<MinioClient, String> client = getClient((StoreSourceS3) storeSource);
+        String bucket = client.second();
+
         return client.first().bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
       } catch (Throwable e) {
         LogContext.error(LOGGER, e, "S3 Driver");
@@ -79,12 +80,26 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
   }
 
   private Tuple<MinioClient, String> getClient(StoreSourceS3 storeSource) {
-    String host = storeSource.getSrc().substring(0, storeSource.getSrc().lastIndexOf("/"));
-    String bucket = storeSource.getSrc().substring(storeSource.getSrc().lastIndexOf("/") + 1);
+    boolean hasScheme = storeSource.getSrc().matches("^[a-zA-Z0-9]+://");
+    String scheme = storeSource.getInsecure() ? "http://" : "https://";
+    String source =
+        hasScheme
+            ? storeSource.getSrc().replaceFirst("[a-zA-Z0-9]+://", scheme)
+            : storeSource.getSrc();
+    URI uri = URI.create(source);
+
+    String host = uri.getHost();
+    int port = uri.getPort() == -1 ? (storeSource.getInsecure() ? 80 : 443) : uri.getPort();
+    String bucket = uri.getPath().replaceFirst("^/", "").replaceFirst("/$", "");
+
+    if (bucket.isEmpty()) {
+      throw new IllegalArgumentException(
+          "Bucket name cannot be empty (" + storeSource.getSrc() + ")");
+    }
 
     MinioClient minioClient =
         MinioClient.builder()
-            .endpoint("https://" + host)
+            .endpoint(host, port, !storeSource.getInsecure())
             .credentials(storeSource.getAccessKey(), storeSource.getSecretKey())
             .build();
 
