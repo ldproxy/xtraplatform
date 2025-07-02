@@ -30,10 +30,11 @@ public interface StoreSourceGitea extends StoreSourceHttp {
   default StoreSourceGitea apply() {
     Pattern pattern =
         Pattern.compile(
-            "^([\\w\\-\\.\\/]+)\\/([\\w\\-\\.]+)\\/([\\w\\-\\.]+)(?::([\\w\\-\\.]+))?$");
+            "^([\\w\\-\\.\\/:]+?)\\/([\\w\\-\\.]+)\\/([\\w\\-\\.]+)(?::([\\w\\-\\.]+))?$");
     Matcher matcher = pattern.matcher(getSrc());
 
     if (matcher.matches()) {
+      String scheme = getInsecure() ? "http" : "https";
       String host = matcher.group(1);
       String org = matcher.group(2);
       String repo = matcher.group(3);
@@ -46,7 +47,7 @@ public interface StoreSourceGitea extends StoreSourceHttp {
 
       return new ImmutableStoreSourceGitea.Builder()
           .from(this)
-          .src(String.format("https://%s/%s/%s/archive/%s.zip", host, org, repo, branch))
+          .src(String.format("%s://%s/%s/%s/archive/%s.zip", scheme, host, org, repo, branch))
           .archiveRoot(String.format("/%s%s", repo, root))
           .label(String.format("%s[%s]", KEY, Path.of(getSrc())))
           .build();

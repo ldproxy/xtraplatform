@@ -17,6 +17,11 @@ import org.immutables.value.Value;
 @JsonDeserialize(builder = ImmutableStoreSourceHttp.Builder.class)
 public interface StoreSourceHttp extends StoreSource {
 
+  @Value.Default
+  default boolean getInsecure() {
+    return false;
+  }
+
   @JsonIgnore
   @Value.Derived
   @Override
