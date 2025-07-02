@@ -35,7 +35,7 @@ public interface StoreSourceGitlab extends StoreSourceHttp {
             "^(?:([\\w\\-\\.\\/:]+?)\\/)?([\\w\\-\\.]+)\\/([\\w\\-\\.]+)(?::([\\w\\-\\.]+))?$");
     Matcher matcher = pattern.matcher(getSrc());
 
-    if (matcher.matches()) {
+    if (!getLabel().startsWith(KEY) && matcher.matches()) {
       String scheme = getInsecure() && Objects.nonNull(matcher.group(1)) ? "http" : "https";
       String host = Optional.ofNullable(matcher.group(1)).orElse("gitlab.com");
       String org = matcher.group(2);

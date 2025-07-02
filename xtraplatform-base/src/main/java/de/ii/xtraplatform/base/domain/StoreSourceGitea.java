@@ -33,7 +33,7 @@ public interface StoreSourceGitea extends StoreSourceHttp {
             "^([\\w\\-\\.\\/:]+?)\\/([\\w\\-\\.]+)\\/([\\w\\-\\.]+)(?::([\\w\\-\\.]+))?$");
     Matcher matcher = pattern.matcher(getSrc());
 
-    if (matcher.matches()) {
+    if (!getLabel().startsWith(KEY) && matcher.matches()) {
       String scheme = getInsecure() ? "http" : "https";
       String host = matcher.group(1);
       String org = matcher.group(2);
