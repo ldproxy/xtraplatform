@@ -11,7 +11,6 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
@@ -87,9 +86,6 @@ public class DropwizardProvider implements AppLifeCycle {
 
     environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
-    // TODO: per parameter
-    environment.getObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-
     environment
         .metrics()
         .removeMatching(
@@ -105,6 +101,7 @@ public class DropwizardProvider implements AppLifeCycle {
 
     environment.jersey().setUrlPattern(JERSEY_ENDPOINT);
 
+    environment.jersey().register(new JsonProviderOptionalPretty(environment.getObjectMapper()));
     environment.jersey().register(new JacksonJaxbXMLProvider());
 
     appContext.getConfiguration().getServerFactory().build(environment);
