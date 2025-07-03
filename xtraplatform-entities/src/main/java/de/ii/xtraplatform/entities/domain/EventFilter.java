@@ -16,6 +16,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface EventFilter {
 
+  String WILDCARD = "*";
+
   List<String> getEventTypes();
 
   List<String> getEntityTypes();
@@ -25,7 +27,7 @@ public interface EventFilter {
   default boolean matches(EntityEvent event) {
     Identifier identifier = event.identifier();
 
-    if (!getEntityTypes().contains("*")) {
+    if (!getEntityTypes().contains(WILDCARD)) {
       if (identifier.path().isEmpty() || !containsEntityType(identifier.path())) {
         if ((!isDefault(event) || !containsEntityType(identifier.id()))) {
           return false;
@@ -34,7 +36,7 @@ public interface EventFilter {
     }
 
     if (!getIds().isEmpty() && !isDefault(event)) {
-      boolean allow = getIds().contains(identifier.id()) || getIds().contains("*");
+      boolean allow = getIds().contains(identifier.id()) || getIds().contains(WILDCARD);
 
       if (!allow && isOverride(event)) {
         return getIds().contains(identifier.path().get(identifier.path().size() - 1));
@@ -47,7 +49,7 @@ public interface EventFilter {
   }
 
   default boolean matches(Identifier identifier) {
-    if (!getEntityTypes().contains("*")) {
+    if (!getEntityTypes().contains(WILDCARD)) {
       if (identifier.path().isEmpty() || !containsEntityType(identifier.path())) {
         if (!getEntityTypes().contains(identifier.id())) {
           return false;
@@ -56,7 +58,7 @@ public interface EventFilter {
     }
 
     if (!getIds().isEmpty()) {
-      return getIds().contains(identifier.id()) || getIds().contains("*");
+      return getIds().contains(identifier.id()) || getIds().contains(WILDCARD);
     }
 
     return true;
@@ -112,7 +114,7 @@ public interface EventFilter {
         ImmutableEventFilter.builder().addEventTypes(eventType).addEntityTypes(entityType);
     // TODO
     if (eventType.equals("defaults")) {
-      builder.addIds("*");
+      builder.addIds(WILDCARD);
     } else if (path.getNameCount() > 2) {
       String id = path.getName(2).toString();
       if (id.contains(".")) {

@@ -10,15 +10,23 @@ package de.ii.xtraplatform.entities.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
+import de.ii.xtraplatform.entities.domain.EntityEvent;
+import de.ii.xtraplatform.entities.domain.EventFilter;
 import de.ii.xtraplatform.entities.domain.EventStore;
 import de.ii.xtraplatform.entities.domain.ImmutableEventFilter;
+import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent;
+import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.servlets.tasks.Task;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -78,7 +86,33 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
 
     boolean force = getForce(parameters);
 
-    eventStore.replay(filter, force);
+    List<EntityEvent> additionalEvents = new ArrayList<>();
+    Optional<Boolean> enabledOverride = getEnabled(parameters);
+
+    if (enabledOverride.isPresent()) {
+      if (ids.contains(EventFilter.WILDCARD) || entityTypes.contains(EventFilter.WILDCARD)) {
+        output.println(
+            "Cannot use wildcards with 'enabled', please specify explicit ids and types");
+        output.flush();
+        return;
+      }
+      for (String id : ids) {
+        for (String entityType : entityTypes) {
+          additionalEvents.add(
+              ImmutableReplayEvent.builder()
+                  .type("overrides")
+                  .identifier(Identifier.from(id, entityType))
+                  .format("yml")
+                  .source("ADHOC")
+                  .payload(
+                      String.format("enabled: %s\n", enabledOverride.get())
+                          .getBytes(StandardCharsets.UTF_8))
+                  .build());
+        }
+      }
+    }
+
+    eventStore.replay(filter, force, additionalEvents);
   }
 
   private List<String> getEntityTypes(Map<String, List<String>> parameters) {
@@ -93,7 +127,18 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
     return getValueList(parameters.get("force")).equals(List.of("true"));
   }
 
+  private Optional<Boolean> getEnabled(Map<String, List<String>> parameters) {
+    if (!parameters.containsKey("enabled")) {
+      return Optional.empty();
+    }
+    return Optional.of(getValueList(parameters.get("enabled")).equals(List.of("true")));
+  }
+
   private List<String> getValueList(Collection<String> values) {
+    if (Objects.isNull(values) || values.isEmpty()) {
+      return List.of();
+    }
+
     return values.stream()
         .flatMap(
             value -> {

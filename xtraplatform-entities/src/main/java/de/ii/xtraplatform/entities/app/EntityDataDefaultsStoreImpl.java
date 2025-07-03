@@ -506,7 +506,8 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             () -> {
               eventStore.replay(
                   EventFilter.fromPath(Path.of(EntityDataDefaultsStore.EVENT_TYPE, defaultId)),
-                  false);
+                  false,
+                  List.of());
             });
 
     return CompletableFuture.completedFuture(defaults);

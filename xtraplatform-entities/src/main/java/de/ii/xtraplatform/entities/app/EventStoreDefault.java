@@ -27,6 +27,7 @@ import de.ii.xtraplatform.entities.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.entities.domain.ImmutableEventFilter;
 import de.ii.xtraplatform.entities.domain.ImmutableReloadEvent;
 import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent;
+import de.ii.xtraplatform.entities.infra.EventStoreDriverAdHoc;
 import de.ii.xtraplatform.streams.domain.Reactive;
 import de.ii.xtraplatform.values.api.ValueEncodingJackson;
 import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
@@ -148,7 +149,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                               LOGGER.trace("Replay filter {}", replayFilter);
                             }
 
-                            replay(replayFilter, false);
+                            replay(replayFilter, false, List.of());
                           }))
           .start();
     }
@@ -248,21 +249,26 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
   }
 
   @Override
-  public void replay(EventFilter filter, boolean force) {
+  public void replay(EventFilter filter, boolean force, List<EntityEvent> additionalEvents) {
     findSources()
         .forEach(
             source -> {
               Optional<EventStoreDriver> driver = findDriver(source, false);
 
-              driver.ifPresent(eventStoreDriver -> reload(source, eventStoreDriver, filter));
+              driver.ifPresent(eventStoreDriver -> reload(source, eventStoreDriver, filter, true));
             });
+
+    if (!additionalEvents.isEmpty()) {
+      reload(null, new EventStoreDriverAdHoc(additionalEvents), filter, false);
+    }
 
     // TODO: type
     subscriptions.emitEvent(
         ImmutableReloadEvent.builder().type("entities").filter(filter).force(force).build());
   }
 
-  private void reload(StoreSource storeSource, EventStoreDriver driver, EventFilter filter) {
+  private void reload(
+      StoreSource storeSource, EventStoreDriver driver, EventFilter filter, boolean doDelete) {
     Set<EntityEvent> deleteEvents = new HashSet<>();
 
     List<EntityEvent> eventStream =
@@ -336,15 +342,18 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
             .sorted(Comparator.naturalOrder())
             .collect(Collectors.toList());
 
-    deleteEvents.forEach(
-        event -> {
-          subscriptions.emitEvent(event);
-          try {
-            Thread.sleep(50);
-          } catch (InterruptedException e) {
-            // ignore
-          }
-        });
+    if (doDelete) {
+      deleteEvents.forEach(
+          event -> {
+            subscriptions.emitEvent(event);
+            try {
+              Thread.sleep(50);
+            } catch (InterruptedException e) {
+              // ignore
+            }
+          });
+    }
+
     eventStream.forEach(
         event -> {
           subscriptions.emitEvent(event);

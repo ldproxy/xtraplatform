@@ -62,6 +62,13 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
     }
   }
 
+  protected synchronized void onVolatileStop() {
+    if (started) {
+      this.started = false;
+      setState(State.UNAVAILABLE);
+    }
+  }
+
   protected final boolean isStarted() {
     return started;
   }

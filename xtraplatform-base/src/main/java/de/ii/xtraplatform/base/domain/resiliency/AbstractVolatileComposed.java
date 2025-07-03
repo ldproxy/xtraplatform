@@ -117,6 +117,12 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   @Override
+  protected synchronized void onVolatileStop() {
+    super.onVolatileStop();
+    this.initialized = false;
+  }
+
+  @Override
   public Optional<HealthCheck> asHealthCheck() {
     return noHealth ? Optional.empty() : VolatileComposed.super.asHealthCheck();
   }

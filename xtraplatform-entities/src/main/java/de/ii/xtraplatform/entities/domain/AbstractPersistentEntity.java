@@ -143,7 +143,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STARTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
-      if (state == STATE.LOADING) {
+      if (state == STATE.LOADING || state == STATE.RELOADING) {
         if (shouldRegister() && !register) {
           setState(STATE.DEFECTIVE);
         } else {
@@ -179,10 +179,16 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
       if (shouldRegister()) {
         triggerStartup(false, this::afterReload);
       } else {
+        boolean wasStarted = register;
         this.register = false;
         setState(STATE.DISABLED);
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("DISABLED {} {} {} {}", getType(), getId(), shouldRegister(), register);
+        }
+        if (wasStarted) {
+          onInvalidate();
+          onPostUnregistration();
+          onVolatileStop();
         }
       }
     }
@@ -212,8 +218,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
       if (register) {
         onReloaded(forceReload);
         setState(STATE.ACTIVE);
+        onVolatileStarted();
       } else {
-        LOGGER.trace("SUBSEQUENT FAILURE" /*, data*/);
+        setState(STATE.DEFECTIVE);
       }
     }
   }

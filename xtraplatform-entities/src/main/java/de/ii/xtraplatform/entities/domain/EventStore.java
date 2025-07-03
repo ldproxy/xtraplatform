@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import java.util.List;
+
 public interface EventStore {
 
   void subscribe(EventStoreSubscriber subscriber);
@@ -15,5 +17,5 @@ public interface EventStore {
 
   boolean isReadOnly();
 
-  void replay(EventFilter filter, boolean force);
+  void replay(EventFilter filter, boolean force, List<EntityEvent> additionalEvents);
 }
