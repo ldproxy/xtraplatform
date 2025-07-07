@@ -11,8 +11,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 public interface JsonPretty {
 
-  String JSON_PRETTY_HEADER = "x-ldproxy-pretty";
-  String JSON_PRETTY_HEADER1 = "x-ldproxy-json-pretty";
+  String JSON_PRETTY_HEADER = "x-ldproxy-json-pretty";
 
   static boolean isJsonPretty(MultivaluedMap<String, Object> httpHeaders) {
     Object headerValue = httpHeaders.getFirst(JSON_PRETTY_HEADER);
