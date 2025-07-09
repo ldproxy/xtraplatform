@@ -9,8 +9,9 @@ package de.ii.xtraplatform.web.app;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
@@ -84,7 +85,10 @@ public class DropwizardProvider implements AppLifeCycle {
   private void init() {
     Environment environment = initEnvironment();
 
-    environment.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    environment
+        .getObjectMapper()
+        .setSerializationInclusion(Include.NON_ABSENT)
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     environment
         .metrics()
