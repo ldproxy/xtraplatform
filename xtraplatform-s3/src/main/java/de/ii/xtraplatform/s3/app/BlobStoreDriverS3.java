@@ -80,13 +80,11 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
   }
 
   private Tuple<MinioClient, String> getClient(StoreSourceS3 storeSource) {
-    boolean hasScheme = storeSource.getSrc().matches("^[a-zA-Z0-9]+://");
+    boolean hasScheme = storeSource.getSrc().matches("^[a-zA-Z0-9]+://.*");
     String scheme = storeSource.getInsecure() ? "http://" : "https://";
     String source =
-        hasScheme
-            ? storeSource.getSrc().replaceFirst("[a-zA-Z0-9]+://", scheme)
-            : storeSource.getSrc();
-    URI uri = URI.create(source);
+        hasScheme ? storeSource.getSrc().replaceFirst("[a-zA-Z0-9]+://", "") : storeSource.getSrc();
+    URI uri = URI.create(scheme + source);
 
     String host = uri.getHost();
     int port = uri.getPort() == -1 ? (storeSource.getInsecure() ? 80 : 443) : uri.getPort();
