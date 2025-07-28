@@ -1,15 +1,15 @@
 [versions]
 jjwt = '0.12.6'
 swagger = '2.2.34'
-classgraph = "4.8.179"
-dropwizard = '3.0.14'
+classgraph = "4.8.181"
+dropwizard = '3.0.15'
 jackson = '2.18.3'
-commons-codec = '1.18.0'
+commons-codec = '1.19.0'
 threeten = '1.8.0'
 jakarta-xml = '2.3.3'
 minio = '8.5.17'
 cron4j = '2.2.5'
-rxjava = '3.1.10'
+rxjava = '3.1.11'
 rxjava-ext = '3.1.1'
 rs = '1.0.4'
 uuid = '5.1.0'
