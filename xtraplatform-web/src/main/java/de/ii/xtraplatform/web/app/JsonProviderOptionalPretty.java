@@ -19,20 +19,23 @@ import javax.annotation.Priority;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.ext.WriterInterceptor;
+import javax.ws.rs.ext.WriterInterceptorContext;
 
-/** Custom JSON reader and writer that supports optional pretty JSON output via header */
+/**
+ * Custom JSON reader and writer that supports optional pretty JSON output via request context
+ * property
+ */
 @Provider
 @Consumes({"*/*"})
 @Produces({"application/json", "text/json", "*/*"})
 @Priority(Priorities.ENTITY_CODER)
 public class JsonProviderOptionalPretty extends JacksonJaxbJsonProvider
-    implements ContainerResponseFilter {
+    implements WriterInterceptor {
 
   private final ObjectMapper mapper;
   private final ObjectMapper mapperPretty;
@@ -44,22 +47,18 @@ public class JsonProviderOptionalPretty extends JacksonJaxbJsonProvider
     setMapper(mapper);
   }
 
-  /**
-   * Filter method to add the JSON pretty header to the response if it exists in the request. The
-   * MessageBodyWriter can only access the response headers. It will handle the actual pretty
-   * printing based on this header.
-   */
   @Override
-  public void filter(
-      ContainerRequestContext requestContext, ContainerResponseContext responseContext)
-      throws IOException {
-    if (requestContext.getHeaders().containsKey(JsonPretty.JSON_PRETTY_HEADER)) {
-      responseContext
-          .getHeaders()
-          .add(
-              JsonPretty.JSON_PRETTY_HEADER,
-              requestContext.getHeaders().getFirst(JsonPretty.JSON_PRETTY_HEADER));
+  public void aroundWriteTo(WriterInterceptorContext writerInterceptorContext)
+      throws IOException, WebApplicationException {
+    // check if the request context has the JSON pretty property set
+    if (JsonPretty.isJsonPretty(writerInterceptorContext)) {
+
+      // if so, add the JsonPrettify annotation to the writer context, since the method that selects
+      // the object mapper for writing cannot access the request context
+      JsonPretty.addAnnotation(writerInterceptorContext);
     }
+
+    writerInterceptorContext.proceed();
   }
 
   @Override
@@ -70,9 +69,7 @@ public class JsonProviderOptionalPretty extends JacksonJaxbJsonProvider
       Annotation[] annotations,
       MediaType mediaType,
       MultivaluedMap<String, Object> httpHeaders) {
-    boolean pretty = JsonPretty.isJsonPretty(httpHeaders);
-
-    JsonPretty.cleanup(httpHeaders);
+    boolean pretty = JsonPretty.isJsonPretty(annotations);
 
     return this._configForWriting(
         pretty ? mapperPretty : mapper, annotations, this._defaultWriteView);
