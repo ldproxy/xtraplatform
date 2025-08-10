@@ -9,7 +9,6 @@ package de.ii.xtraplatform.web.app;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
