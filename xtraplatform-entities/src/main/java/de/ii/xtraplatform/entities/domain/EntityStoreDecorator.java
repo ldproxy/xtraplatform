@@ -53,6 +53,11 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
   }
 
   @Override
+  default String hash(U value) {
+    return getDecorated().hash(value);
+  }
+
+  @Override
   default CompletableFuture<U> patch(String id, Map<String, Object> partialData, String... path) {
     return (CompletableFuture<U>) getDecorated().patch(id, partialData, transformPath(path));
   }

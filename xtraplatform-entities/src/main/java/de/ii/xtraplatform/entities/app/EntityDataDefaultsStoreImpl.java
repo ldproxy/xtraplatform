@@ -517,4 +517,9 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
   public CompletableFuture<Void> onReady() {
     return ready;
   }
+
+  @Override
+  public String hash(Map<String, Object> value) {
+    return valueEncoding.hash(value);
+  }
 }

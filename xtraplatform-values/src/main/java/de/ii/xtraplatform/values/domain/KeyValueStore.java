@@ -41,4 +41,6 @@ public interface KeyValueStore<T> extends Values<T> {
   CompletableFuture<T> put(Identifier identifier, T value);
 
   CompletableFuture<Boolean> delete(Identifier identifier);
+
+  String hash(T value);
 }

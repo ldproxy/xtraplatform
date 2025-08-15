@@ -597,6 +597,11 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   @Override
+  public String hash(EntityData value) {
+    return valueEncoding.hash(value);
+  }
+
+  @Override
   public CompletableFuture<EntityData> patch(
       String id, Map<String, Object> partialData, String... path) {
     return patch(id, partialData, false, path);

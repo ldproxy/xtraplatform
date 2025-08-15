@@ -21,6 +21,7 @@ import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
 import de.ii.xtraplatform.blobs.domain.BlobStoreFactory;
 import de.ii.xtraplatform.values.api.ValueDecoderEnvVarSubstitution;
+import de.ii.xtraplatform.values.api.ValueDecoderPreHash;
 import de.ii.xtraplatform.values.api.ValueDecoderWithBuilder;
 import de.ii.xtraplatform.values.api.ValueEncodingJackson;
 import de.ii.xtraplatform.values.domain.Identifier;
@@ -94,6 +95,8 @@ public class ValueStoreImpl extends AbstractVolatile
 
     valueEncoding.addDecoderPreProcessor(new ValueDecoderEnvVarSubstitution(substitutions));
     valueEncoding.addDecoderMiddleware(new ValueDecoderWithBuilder<>(this::getBuilder, this));
+    valueEncoding.addDecoderMiddleware(
+        new ValueDecoderPreHash<>(this::getBuilder, valueEncoding::hash));
   }
 
   @Override
@@ -370,6 +373,11 @@ public class ValueStoreImpl extends AbstractVolatile
     }
 
     return CompletableFuture.completedFuture(Objects.nonNull(removed));
+  }
+
+  @Override
+  public String hash(StoredValue value) {
+    return valueEncoding.hash(value);
   }
 
   @Override

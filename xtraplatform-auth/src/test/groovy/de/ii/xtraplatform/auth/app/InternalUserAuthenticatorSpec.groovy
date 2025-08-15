@@ -202,6 +202,11 @@ class InternalUserAuthenticatorSpec extends Specification {
         }
 
         @Override
+        String hash(EntityData value) {
+            return null
+        }
+
+        @Override
         State getState() {
             return null
         }

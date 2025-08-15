@@ -91,6 +91,11 @@ public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U>, V
   }
 
   @Override
+  default String hash(U value) {
+    return getDecorated().hash(value);
+  }
+
+  @Override
   default long lastModified(Identifier identifier) {
     return getDecorated().lastModified(transformIdentifier(identifier));
   }
