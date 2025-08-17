@@ -25,6 +25,11 @@ public interface BaseJob {
     return UUID.generate().toString();
   }
 
+  @Value.Default
+  default int getPriority() {
+    return 1000;
+  }
+
   String getType();
 
   Object getDetails();
@@ -74,10 +79,6 @@ public interface BaseJob {
       return 100;
     }
 
-    if (total == -1) {
-      return 0;
-    }
-
     int current = getCurrent().get();
 
     if (current >= total) {
@@ -87,8 +88,12 @@ public interface BaseJob {
     return (int) ((((float) Math.max(current, 0)) / total) * 100);
   }
 
+  default boolean isStarted() {
+    return getStartedAt().get() > 0;
+  }
+
   default boolean isDone() {
-    return getTotal().get() == getCurrent().get();
+    return isStarted() && getTotal().get() == getCurrent().get();
   }
 
   default void init(int delta) {

@@ -23,7 +23,9 @@ import de.ii.xtraplatform.jobs.domain.JobSet;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,6 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -56,6 +59,7 @@ public class JobRunner implements AppLifeCycle {
   private final int maxThreads;
   private final Supplier<Integer> activeThreads;
   private final Set<String> activeJobSets;
+  private final AtomicInteger activeJobs = new AtomicInteger(0);
 
   @Inject
   JobRunner(AppContext appContext, JobQueue jobQueue, Lazy<Set<JobProcessor<?, ?>>> processors) {
@@ -80,38 +84,7 @@ public class JobRunner implements AppLifeCycle {
 
   @Override
   public CompletionStage<Void> onStart(boolean isStartupAsync) {
-    // check for new jobs every second
-    polling.scheduleAtFixedRate(
-        () -> {
-          for (JobProcessor<?, ?> processor : processors.get()) {
-            while (activeThreads.get() < maxThreads) {
-              Optional<Job> optionalJob = jobQueue.take(processor.getJobType(), executorName);
-
-              if (optionalJob.isPresent()) {
-                if (optionalJob.get().getPartOf().isPresent()) {
-                  JobSet jobSet = jobQueue.getSet(optionalJob.get().getPartOf().get());
-
-                  if (jobSet.getEntity().isPresent()) {
-                    LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.getEntity().get());
-                  }
-
-                  activeJobSets.add(jobSet.getId());
-                }
-
-                try {
-                  run(processor, optionalJob.get());
-                } catch (Throwable e) {
-                  LogContext.error(LOGGER, e, "Error scheduling job");
-                }
-              } else {
-                break;
-              }
-            }
-          }
-        },
-        0,
-        1,
-        TimeUnit.SECONDS);
+    jobQueue.onPush(this::checkWork);
 
     // check for orphaned jobs every minute
     polling.scheduleAtFixedRate(
@@ -182,7 +155,56 @@ public class JobRunner implements AppLifeCycle {
     return AppLifeCycle.super.onStart(isStartupAsync);
   }
 
+  private void checkWork(String jobType) {
+    List<JobProcessor<?, ?>> orderedProcessors =
+        processors.get().stream()
+            .sorted(
+                Comparator.<JobProcessor<?, ?>>comparingInt(JobProcessor::getPriority).reversed())
+            .toList();
+
+    while (activeJobs.get() < maxThreads) {
+      boolean hasWork = false;
+
+      for (JobProcessor<?, ?> processor : orderedProcessors) {
+        Optional<Job> optionalJob = jobQueue.take(processor.getJobType(), executorName);
+
+        if (optionalJob.isPresent()) {
+          hasWork = true;
+          if (logJobsTrace()) {
+            LOGGER.trace(
+                MARKER.JOBS,
+                "Assigned job to processor {}: {} ({})",
+                processor.getJobType(),
+                optionalJob.get().getId(),
+                optionalJob.get().getPriority());
+          }
+          if (optionalJob.get().getPartOf().isPresent()) {
+            JobSet jobSet = jobQueue.getSet(optionalJob.get().getPartOf().get());
+
+            if (jobSet.getEntity().isPresent()) {
+              LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.getEntity().get());
+            }
+
+            activeJobSets.add(jobSet.getId());
+          }
+
+          try {
+            run(processor, optionalJob.get());
+          } catch (Throwable e) {
+            LogContext.error(LOGGER, e, "Error scheduling job");
+          }
+
+          break;
+        }
+      }
+      if (!hasWork) {
+        break;
+      }
+    }
+  }
+
   private void run(JobProcessor<?, ?> processor, Job job) {
+    activeJobs.incrementAndGet();
     executor.execute(
         () -> {
           Instant start = Instant.now();
@@ -194,6 +216,21 @@ public class JobRunner implements AppLifeCycle {
 
           if (logJobsTrace()) {
             LOGGER.trace(MARKER.JOBS, "Processing job: {}", job);
+          }
+
+          if (jobSet.isPresent() && !jobSet.get().isStarted()) {
+            if (jobSet.get().getSetup().isEmpty()
+                || !Objects.equals(job.getId(), jobSet.get().getSetup().get().getId())) {
+              jobSet.get().start();
+
+              if (LOGGER.isInfoEnabled() || LOGGER.isInfoEnabled(MARKER.JOBS)) {
+                LOGGER.info(
+                    MARKER.JOBS,
+                    "{} started ({})",
+                    jobSet.get().getLabel(),
+                    jobSet.get().getDetails().getLabel());
+              }
+            }
           }
 
           JobResult result;
@@ -226,6 +263,8 @@ public class JobRunner implements AppLifeCycle {
               LOGGER.trace(MARKER.JOBS, "Processed job in {}: {}", pretty(duration), job);
             }
           }
+          activeJobs.decrementAndGet();
+          checkWork("");
         });
   }
 

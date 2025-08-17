@@ -15,14 +15,18 @@ import de.ii.xtraplatform.jobs.domain.JobQueue;
 import de.ii.xtraplatform.jobs.domain.JobSet;
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
@@ -35,29 +39,49 @@ public class JobQueueSimple implements JobQueue {
   private static final Logger LOGGER = LoggerFactory.getLogger(JobQueueSimple.class);
 
   private final Map<String, JobSet> jobSets;
-  private final Map<String, Deque<Job>> queues;
+  private final Map<String, Set<Integer>> priorities;
+  private final Map<String, Map<Integer, Deque<Job>>> queues;
   private final Queue<Job> openQueue;
   private final List<Job> takenQueue;
   private final List<Job> errorQueue;
+  private final List<Consumer<String>> observers;
 
   @Inject
   JobQueueSimple(AppContext appContext) {
     // TODO: if enabled, start embedded queue
     this.jobSets = new ConcurrentHashMap<>();
+    this.priorities = new ConcurrentHashMap<>();
     this.queues = new ConcurrentHashMap<>();
     this.openQueue = new ArrayDeque<>();
     this.takenQueue = new CopyOnWriteArrayList<>();
     this.errorQueue = new CopyOnWriteArrayList<>();
+    this.observers = new CopyOnWriteArrayList<>();
 
     // TODO: housekeeping
   }
 
+  private synchronized void checkQueue(String type, int priority) {
+    if (!queues.containsKey(type)) {
+      priorities.put(type, new TreeSet<>(Comparator.reverseOrder()));
+      queues.put(type, new ConcurrentHashMap<>());
+    }
+    if (!priorities.get(type).contains(priority)) {
+      priorities.get(type).add(priority);
+      queues.get(type).put(priority, new ArrayDeque<>());
+    }
+  }
+
+  private synchronized Deque<Job> getQueue(String type, int priority) {
+    checkQueue(type, priority);
+
+    return queues.get(type).get(priority);
+  }
+
   @Override
   public synchronized void push(BaseJob job, boolean untake) {
-    if (!queues.containsKey(job.getType())) {
-      queues.put(job.getType(), new ArrayDeque<>());
-    }
     if (job instanceof Job) {
+      Deque<Job> queue = getQueue(job.getType(), job.getPriority());
+
       if (untake) {
         takenQueue.remove(job);
         if (((Job) job).getPartOf().isPresent()) {
@@ -68,10 +92,11 @@ public class JobQueueSimple implements JobQueue {
             jobSets.get(setId).getDetails().reset((Job) job);
           }
         }
-        queues.get(job.getType()).addFirst(((Job) job).reset());
+        queue.addFirst(((Job) job).reset());
       } else {
-        queues.get(job.getType()).add((Job) job);
+        queue.add((Job) job);
       }
+      observers.forEach(observer -> observer.accept(job.getType()));
     } else if (job instanceof JobSet) {
       jobSets.put(job.getId(), (JobSet) job);
 
@@ -84,15 +109,26 @@ public class JobQueueSimple implements JobQueue {
   }
 
   @Override
-  public synchronized Optional<Job> take(String type, String executor) {
-    if (!queues.containsKey(type)) {
-      queues.put(type, new ArrayDeque<>());
-    }
-    if (!queues.get(type).isEmpty()) {
-      Job job = queues.get(type).remove().started(executor);
-      takenQueue.add(job);
+  public void onPush(Consumer<String> callback) {
+    this.observers.add(callback);
+  }
 
-      return Optional.of(job);
+  @Override
+  public synchronized Optional<Job> take(String type, String executor) {
+    if (!priorities.containsKey(type)) {
+      return Optional.empty();
+    }
+
+    for (int priority : priorities.get(type)) {
+      Deque<Job> queue = queues.get(type).get(priority);
+
+      if (!queue.isEmpty()) {
+        Job job = queue.remove();
+        job.started(executor);
+        takenQueue.add(job);
+
+        return Optional.of(job);
+      }
     }
 
     return Optional.empty();
@@ -168,7 +204,7 @@ public class JobQueueSimple implements JobQueue {
   }
 
   @Override
-  public Map<String, Deque<Job>> getOpen() {
+  public Map<String, Map<Integer, Deque<Job>>> getOpen() {
     return queues;
   }
 

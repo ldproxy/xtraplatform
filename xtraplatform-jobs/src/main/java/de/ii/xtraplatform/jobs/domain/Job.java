@@ -17,13 +17,14 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface Job extends BaseJob {
 
-  static Job of(String type, Object details) {
-    return new ImmutableJob.Builder().type(type).details(details).build();
+  static Job of(String type, int priority, Object details) {
+    return new ImmutableJob.Builder().type(type).priority(priority).details(details).build();
   }
 
-  static Job of(String type, Object details, String partOf, int total) {
+  static Job of(String type, int priority, Object details, String partOf, int total) {
     return new ImmutableJob.Builder()
         .type(type)
+        .priority(priority)
         .details(details)
         .partOf(partOf)
         .total(new AtomicInteger(total))
