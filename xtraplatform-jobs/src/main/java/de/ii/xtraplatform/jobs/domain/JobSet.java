@@ -23,21 +23,29 @@ public interface JobSet extends BaseJob {
     void update(Map<String, String> parameters);
 
     void reset(Job job);
+
+    String getLabel();
   }
 
   @Override
   JobSetDetails getDetails();
 
   static JobSet of(
-      String type, String entity, String label, String description, JobSetDetails details) {
+      String type,
+      int priority,
+      String entity,
+      String label,
+      String description,
+      JobSetDetails details) {
     return new ImmutableJobSet.Builder()
         .type(type)
+        .priority(priority)
         .entity(entity)
         .label(label)
         .description(description)
         .details(details)
         .startedAt(new AtomicLong())
-        .total(new AtomicInteger(-1))
+        .total(new AtomicInteger(0))
         .current(new AtomicInteger(0))
         .build();
   }
@@ -64,7 +72,6 @@ public interface JobSet extends BaseJob {
 
   default void start() {
     getStartedAt().set(Instant.now().getEpochSecond());
-    getTotal().set(0);
   }
 
   default List<BaseJob> done(Job job) {
@@ -76,7 +83,6 @@ public interface JobSet extends BaseJob {
       return getFollowUps();
     }
 
-    // getCurrent().incrementAndGet();
     getUpdatedAt().set(Instant.now().getEpochSecond());
 
     if (isDone() && getFinishedAt().get() == -1) {

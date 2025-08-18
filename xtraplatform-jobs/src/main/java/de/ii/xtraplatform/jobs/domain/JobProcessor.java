@@ -16,6 +16,8 @@ public interface JobProcessor<T, U> {
 
   String getJobType();
 
+  int getPriority();
+
   int getConcurrency(JobSet jobSet);
 
   JobResult process(Job job, JobSet jobSet, Consumer<Job> pushJob);

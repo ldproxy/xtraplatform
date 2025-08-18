@@ -17,6 +17,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +47,11 @@ public class JobQueueRedis implements JobQueue {
     } else {
       throw new IllegalArgumentException("Unknown job type: " + job.getClass());
     }
+  }
+
+  @Override
+  public void onPush(Consumer<String> callback) {
+    // TODO
   }
 
   @Override
@@ -91,7 +97,7 @@ public class JobQueueRedis implements JobQueue {
   }
 
   @Override
-  public Map<String, Deque<Job>> getOpen() {
+  public Map<String, Map<Integer, Deque<Job>>> getOpen() {
     return Map.of();
   }
 

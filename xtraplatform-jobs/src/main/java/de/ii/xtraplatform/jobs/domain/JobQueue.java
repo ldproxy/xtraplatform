@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public interface JobQueue {
 
@@ -19,6 +20,8 @@ public interface JobQueue {
   default void push(BaseJob job) {
     push(job, false);
   }
+
+  void onPush(Consumer<String> callback);
 
   Optional<Job> take(String type, String executor);
 
@@ -30,7 +33,7 @@ public interface JobQueue {
 
   Collection<JobSet> getSets();
 
-  Map<String, Deque<Job>> getOpen();
+  Map<String, Map<Integer, Deque<Job>>> getOpen();
 
   Collection<Job> getTaken();
 
