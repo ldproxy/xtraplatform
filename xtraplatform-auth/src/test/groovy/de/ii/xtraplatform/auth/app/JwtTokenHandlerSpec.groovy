@@ -13,6 +13,9 @@ import spock.lang.Specification
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
+/**
+ * Use https://www.jwt.io to encode or decode tokens
+ */
 class JwtTokenHandlerSpec extends Specification {
 
     @Shared
@@ -22,7 +25,16 @@ class JwtTokenHandlerSpec extends Specification {
 
     def setupSpec() {
         def auth = ModifiableAuthConfiguration.create()
-        auth.putProviders("jwt", new ImmutableJwt.Builder().type(AuthConfiguration.AuthProviderType.JWT).signingKey(Base64.getEncoder().encodeToString(secretKey)).build())
+        auth.putProviders("jwt", new ImmutableJwt.Builder()
+                .type(AuthConfiguration.AuthProviderType.JWT)
+                .signingKey(Base64.getEncoder().encodeToString(secretKey))
+                .claims(new ImmutableClaims.Builder()
+                        .permissions("resource_access.{{apiId}}.roles")
+                        .build()
+                )
+                .build()
+        )
+
         AppConfiguration config = Stub(AppConfiguration) {
             getAuth() >> auth
         }
@@ -61,7 +73,7 @@ class JwtTokenHandlerSpec extends Specification {
 
     def 'Test token parsing'() {
         given:
-        String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmb29iYXIiLCJyb2xlIjoiQURNSU4iLCJyZW1lbWJlck1lIjp0cnVlLCJleHAiOjIxMDAwMDAwMDB9.fwBqwF3MNwNxLXwSzVhn3BIsSNHtgbV7f9_w_Zg04PQ"
+        String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmb29iYXIiLCJyb2xlIjoiQURNSU4iLCJyZW1lbWJlck1lIjp0cnVlLCJleHAiOjIxMDAwMDAwMDAsImF1ZCI6ImxkcHJveHkiLCJzY29wZSI6WyJyZWFkIiwid3JpdGUiXSwicm9sZXMiOlsiZGF0YTpyZWFkIiwiZGF0YTp3cml0ZSJdfQ.9bmFBXYOr7WJs8rAsDf5QT9uPIRNi5ofKzP6vd89i5w"
 
         when:
         Optional<User> user = jwtTokenHandler.parseToken(token)
@@ -71,10 +83,26 @@ class JwtTokenHandlerSpec extends Specification {
         user.get().getName() == "foobar"
         user.get().getRole() == Role.ADMIN
         !user.get().getForceChangePassword()
+        user.get().getAudience() == ["ldproxy"] as Set
+        user.get().getScopes() == ["read", "write"] as Set
+        user.get().getPermissions() == [] as Set
+        user.get().getPermissions("myapi") == [] as Set
     }
 
-    @Ignore
-    //TODO
+
+    def 'Test token permissions parsing'() {
+        given:
+        String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmb29iYXIiLCJyb2xlIjoiQURNSU4iLCJyZW1lbWJlck1lIjp0cnVlLCJleHAiOjIxMDAwMDAwMDAsImF1ZCI6ImxkcHJveHkiLCJzY29wZSI6WyJyZWFkIiwid3JpdGUiXSwicmVzb3VyY2VfYWNjZXNzIjp7Int7YXBpSWR9fSI6eyJyb2xlcyI6WyJkYXRhOnJlYWQiXX0sIm15YXBpIjp7InJvbGVzIjpbImRhdGE6cmVhZCIsImRhdGE6d3JpdGUiXX19fQ.8Cea4J_x1ei7MgYJFjnXTzuyqdWXCkzogx4VeA42MyA"
+
+        when:
+        Optional<User> user = jwtTokenHandler.parseToken(token)
+
+        then:
+        user.isPresent()
+        user.get().getPermissions() == ["data:read"] as Set
+        user.get().getPermissions("myapi") == ["data:read", "data:write"] as Set
+    }
+
     def 'Test token parsing on incorrect inputs'() {
         when:
         Optional<User> user = jwtTokenHandler.parseToken(token)

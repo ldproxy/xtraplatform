@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.auth.domain;
 
 import java.security.Principal;
+import java.util.Map;
 import java.util.Set;
 import org.immutables.value.Value;
 
@@ -31,6 +32,8 @@ public interface User extends Principal {
 
   Set<String> getPermissions();
 
+  Map<String, Set<String>> getApiPermissions();
+
   @Value.Default
   default Role getRole() {
     return Role.NONE;
@@ -44,5 +47,9 @@ public interface User extends Principal {
   @Value.Default
   default boolean getForceChangePassword() {
     return false;
+  }
+
+  default Set<String> getPermissions(String apiId) {
+    return getApiPermissions().getOrDefault(apiId, getPermissions());
   }
 }

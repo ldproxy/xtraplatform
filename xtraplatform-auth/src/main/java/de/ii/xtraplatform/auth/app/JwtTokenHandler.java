@@ -42,12 +42,15 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
@@ -206,6 +209,50 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     return list;
   }
 
+  private Map<String, Set<String>> readListPerApi(Claims claims, String claim) {
+    Map<String, Set<String>> lists = new LinkedHashMap<>();
+
+    if (claim.contains("{{apiId}}")) {
+      Pattern pattern = Pattern.compile(claim.replace("{{apiId}}", "(.*)"));
+      List<String> claimNames = getClaimNames(claims);
+
+      for (String key : claimNames) {
+        if (pattern.matcher(key).matches()) {
+          String apiId = pattern.matcher(key).replaceAll("$1");
+          List<String> list = readList(claims, key);
+          if (!list.isEmpty()) {
+            lists.put(apiId, Set.copyOf(list));
+          }
+        }
+      }
+    }
+
+    return lists;
+  }
+
+  private List<String> getClaimNames(Map<?, ?> claims) {
+    List<String> keys = new ArrayList<>();
+
+    for (Object baseKey : claims.keySet()) {
+      if (baseKey instanceof String) {
+        Object val = claims.get(baseKey);
+        List<String> subKeys = new ArrayList<>();
+
+        if (Objects.nonNull(val) && val instanceof Map) {
+          subKeys = getClaimNames((Map<?, ?>) val);
+        }
+
+        if (subKeys.isEmpty()) {
+          keys.add((String) baseKey);
+        } else {
+          keys.addAll(subKeys.stream().map(subKey -> baseKey + "." + subKey).toList());
+        }
+      }
+    }
+
+    return keys;
+  }
+
   private List<String> parseList(Object entry, String key) {
     if (entry instanceof String) {
       String listString = (String) entry;
@@ -237,6 +284,8 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
               .audience(readList(claimsJws, claimsProvider.getClaims().getAudience()))
               .scopes(readList(claimsJws, claimsProvider.getClaims().getScopes()))
               .permissions(readList(claimsJws, claimsProvider.getClaims().getPermissions()))
+              .apiPermissions(
+                  readListPerApi(claimsJws, claimsProvider.getClaims().getPermissions()))
               .build();
 
       if (LOGGER.isTraceEnabled()) {

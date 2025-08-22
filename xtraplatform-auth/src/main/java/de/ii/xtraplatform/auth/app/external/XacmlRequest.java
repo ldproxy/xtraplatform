@@ -43,7 +43,9 @@ public class XacmlRequest {
                     "urn:oasis:names:tc:xacml:1.0:subject:subject-id",
                     user.map(User::getName).orElse("UNKNOWN")));
     if (user.isPresent()) {
-      subject.add(new Attribute("ldproxy:claim:permissions", user.get().getPermissions()));
+      String apiId = resourceAttributes.getOrDefault("ldproxy:api:id", "").toString();
+
+      subject.add(new Attribute("ldproxy:claim:permissions", user.get().getPermissions(apiId)));
       if (!user.get().getScopes().isEmpty()) {
         subject.add(new Attribute("ldproxy:claim:scopes", user.get().getScopes()));
       }
