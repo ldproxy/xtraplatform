@@ -115,6 +115,11 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
   }
 
   @Override
+  default EntityDataStore<EntityData> forType(String type) {
+    throw new IllegalArgumentException();
+  }
+
+  @Override
   default ValueEncoding<EntityData> getValueEncoding() {
     return getDecorated().getValueEncoding();
   }

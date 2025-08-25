@@ -9,16 +9,16 @@ package de.ii.xtraplatform.auth.app
 
 import com.google.common.collect.ImmutableList
 import de.ii.xtraplatform.auth.domain.Role
-import de.ii.xtraplatform.base.domain.AppContext
 import de.ii.xtraplatform.auth.domain.User
 import de.ii.xtraplatform.base.domain.AppConfiguration
+import de.ii.xtraplatform.base.domain.AppContext
 import de.ii.xtraplatform.base.domain.ModifiableAuthConfiguration
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry
-import de.ii.xtraplatform.values.domain.Identifier
-import de.ii.xtraplatform.values.domain.ValueEncoding
 import de.ii.xtraplatform.entities.domain.EntityData
 import de.ii.xtraplatform.entities.domain.EntityDataBuilder
 import de.ii.xtraplatform.entities.domain.EntityDataStore
+import de.ii.xtraplatform.values.domain.Identifier
+import de.ii.xtraplatform.values.domain.ValueEncoding
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -27,7 +27,8 @@ import java.util.function.Predicate
 
 class InternalUserAuthenticatorSpec extends Specification {
 
-    @Shared InternalUserAuthenticator internalUserAuthenticator
+    @Shared
+    InternalUserAuthenticator internalUserAuthenticator
 
     def setupSpec() {
         internalUserAuthenticator = getinternalUserAuthenticatorMock()
@@ -70,12 +71,12 @@ class InternalUserAuthenticatorSpec extends Specification {
         user.isEmpty()
 
         where:
-        username            | password
-        null                | null              // username and password are null
-        ""                  | ""                // empty username and password
-        "foobar"            | "userPassword"    // non-existent user
-        "testUser"          | ""                // existing user, empty password
-        "testUser"          | "password"        // existing user, wrong password
+        username   | password
+        null       | null              // username and password are null
+        ""         | ""                // empty username and password
+        "foobar"   | "userPassword"    // non-existent user
+        "testUser" | ""                // existing user, empty password
+        "testUser" | "password"        // existing user, wrong password
     }
 
     InternalUserAuthenticator getinternalUserAuthenticatorMock() {
@@ -90,7 +91,7 @@ class InternalUserAuthenticatorSpec extends Specification {
         return new InternalUserAuthenticator(ac, entityDataStore)
     }
 
-    class EntityDataStoreTest implements EntityDataStore<EntityData>{
+    class EntityDataStoreTest implements EntityDataStore<EntityData> {
 
         @Override
         CompletableFuture<EntityData> patch(String id, Map<String, Object> partialData, String... path) {
@@ -121,13 +122,18 @@ class InternalUserAuthenticatorSpec extends Specification {
         }
 
         @Override
+        EntityDataStore<EntityData> forType(String type) {
+            return null
+        }
+
+        @Override
         Map<String, Object> asMap(Identifier identifier, EntityData entityData) throws IOException {
             return null
         }
 
         @Override
         EntityData fromMap(Identifier identifier, Map<String, Object> entityData) throws IOException {
-            return null 
+            return null
         }
 
         @Override

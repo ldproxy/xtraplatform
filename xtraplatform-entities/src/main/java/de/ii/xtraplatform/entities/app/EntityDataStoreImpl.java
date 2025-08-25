@@ -233,7 +233,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   private List<ReplayEvent> processEvent(ReplayEvent event) {
 
     if (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format())) {
-      return ImmutableList.of();
+      return List.of();
     }
 
     if (!event.isDelete()
@@ -243,7 +243,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
           "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single group.",
           event.asPathNoType(),
           event.source().orElse("UNKNOWN"));
-      return ImmutableList.of();
+      return List.of();
     }
 
     if (!event.isDelete()
@@ -253,11 +253,11 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
           "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single source, use overrides to update it from another source.",
           event.asPathNoType(),
           event.source().orElse("UNKNOWN"));
-      return ImmutableList.of();
+      return List.of();
     }
 
     if (!event.type().equals(EntityDataStore.EVENT_TYPE_OVERRIDES)) {
-      return ImmutableList.of(event);
+      return List.of(event);
     }
 
     EntityDataOverridesPath overridesPath =
@@ -268,7 +268,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     // override without matching entity
     if (!eventSourcing.has(cacheKey)) {
       LOGGER.warn("Ignoring override '{}', no matching entity found", event.asPath());
-      return ImmutableList.of();
+      return List.of();
     }
 
     ImmutableReplayEvent.Builder builder =
@@ -290,7 +290,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       }
     }
 
-    return ImmutableList.of(builder.build());
+    return List.of(builder.build());
   }
 
   @Override
@@ -545,6 +545,21 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       @Override
       public String[] transformPath(String... path) {
         return ObjectArrays.concat(entityType, path);
+      }
+    };
+  }
+
+  @Override
+  public EntityDataStore<EntityData> forType(String type) {
+    return new EntityStoreDecorator<EntityData, EntityData>() {
+      @Override
+      public EntityDataStore<EntityData> getDecorated() {
+        return EntityDataStoreImpl.this;
+      }
+
+      @Override
+      public String[] transformPath(String... path) {
+        return ObjectArrays.concat(type, path);
       }
     };
   }

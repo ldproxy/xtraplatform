@@ -10,6 +10,7 @@ package de.ii.xtraplatform.entities.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
+import de.ii.xtraplatform.entities.domain.EntityDataStore;
 import de.ii.xtraplatform.entities.domain.EntityEvent;
 import de.ii.xtraplatform.entities.domain.EventFilter;
 import de.ii.xtraplatform.entities.domain.EventStore;
@@ -45,12 +46,14 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
   private static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
 
   private final EventStore eventStore;
+  private final EntityDataStore<?> entityDataStore;
 
   // TODO:  AdminTaskRegistry (OpsPlugin)
   @Inject
-  protected StoreReloadTask(EventStore eventStore) {
+  protected StoreReloadTask(EventStore eventStore, EntityDataStore<?> entityDataStore) {
     super("reload-entities");
     this.eventStore = eventStore;
+    this.entityDataStore = entityDataStore;
   }
 
   @Override
@@ -96,12 +99,20 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
         output.flush();
         return;
       }
+      boolean found = false;
+
       for (String id : ids) {
         for (String entityType : entityTypes) {
+          Identifier identifier = entityDataStore.forType(entityType).fullIdentifier(id);
+          if (Objects.isNull(identifier)) {
+            continue;
+          }
+          found = true;
+
           additionalEvents.add(
               ImmutableReplayEvent.builder()
                   .type("overrides")
-                  .identifier(Identifier.from(id, entityType))
+                  .identifier(identifier)
                   .format("yml")
                   .source("ADHOC")
                   .payload(
@@ -109,6 +120,12 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
                           .getBytes(StandardCharsets.UTF_8))
                   .build());
         }
+      }
+
+      if (!found) {
+        output.println("No entities found for given types and ids");
+        output.flush();
+        return;
       }
     }
 

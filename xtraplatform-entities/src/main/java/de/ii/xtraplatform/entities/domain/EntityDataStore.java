@@ -117,5 +117,7 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
 
   <U extends T> EntityDataStore<U> forType(Class<U> type);
 
+  EntityDataStore<EntityData> forType(String type);
+
   Map<String, Object> asMap(Identifier identifier, EntityData entityData) throws IOException;
 }
