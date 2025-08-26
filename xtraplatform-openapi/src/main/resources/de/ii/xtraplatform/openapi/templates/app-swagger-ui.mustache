@@ -1,6 +1,6 @@
 
-<link rel="stylesheet" type="text/css" href="{{urlPrefix}}/xtraplatform-openapi/assets/swagger-ui-5.4.2/swagger-ui.css" >
-<script src="{{urlPrefix}}/xtraplatform-openapi/assets/swagger-ui-5.4.2/swagger-ui-bundle.js" charset="UTF-8"> </script>
+<link rel="stylesheet" type="text/css" href="{{assetsPrefix}}/xtraplatform-openapi/assets/swagger-ui-5.4.2/swagger-ui.css" >
+<script src="{{assetsPrefix}}/xtraplatform-openapi/assets/swagger-ui-5.4.2/swagger-ui-bundle.js" charset="UTF-8"> </script>
 
 <script type="text/javascript">
   const HideInfoUrlPartsPlugin = () => {
@@ -13,7 +13,7 @@
   }
 
   const ui = SwaggerUIBundle(Object.assign({
-    oauth2RedirectUrl: '{{baseUri}}{{urlPrefix}}/xtraplatform-openapi/assets/swagger-ui-5.4.2/oauth2-redirect.html',
+    oauth2RedirectUrl: '{{baseUri}}{{assetsPrefix}}/xtraplatform-openapi/assets/swagger-ui-5.4.2/oauth2-redirect.html',
     presets: [
       SwaggerUIBundle.presets.apis,
     ],
