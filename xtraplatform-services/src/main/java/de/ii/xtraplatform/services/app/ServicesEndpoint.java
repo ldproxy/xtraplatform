@@ -20,9 +20,11 @@ import de.ii.xtraplatform.services.domain.ServiceInjectableContext;
 import de.ii.xtraplatform.services.domain.ServiceListingProvider;
 import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.web.domain.Endpoint;
+import de.ii.xtraplatform.web.domain.ForwardedUri;
 import de.ii.xtraplatform.web.domain.LoginHandler;
 import de.ii.xtraplatform.web.domain.MediaTypeCharset;
 import de.ii.xtraplatform.web.domain.StaticResourceHandler;
+import de.ii.xtraplatform.web.domain.URICustomizer;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.io.IOException;
@@ -139,8 +141,10 @@ public class ServicesEndpoint implements Endpoint {
     if (provider.isPresent()) {
       Optional<Principal> user =
           Optional.ofNullable(containerRequestContext.getSecurityContext().getUserPrincipal());
-      Response serviceListing =
-          provider.get().getServiceListing(services, uriInfo.getRequestUri(), user);
+      URICustomizer uriCustomizer =
+          ForwardedUri.from(containerRequestContext).clearParameters().ensureNoTrailingSlash();
+      Response serviceListing = provider.get().getServiceListing(services, uriCustomizer, user);
+
       return Response.ok().entity(serviceListing.getEntity()).type(mediaType).build();
     }
 
@@ -148,14 +152,12 @@ public class ServicesEndpoint implements Endpoint {
   }
 
   @GET
-  @Path("/___static___/{file: .+}")
+  @Path("/{service}" + StaticResourceHandler.PREFIX + "/{file: .+}")
   @Produces(MediaType.WILDCARD)
-  @CacheControl(maxAge = 3600)
-  public Response getFile(
+  public Response getAsset(
       @PathParam("file") String file,
       @Context final HttpServletRequest request,
       @Context final HttpServletResponse response) {
-
     boolean handled = staticResourceHandler.handle(file, request, response);
 
     if (handled) {
@@ -163,6 +165,16 @@ public class ServicesEndpoint implements Endpoint {
     }
 
     return Response.status(Response.Status.NOT_FOUND).build();
+  }
+
+  @GET
+  @Path("/{service}/v{version}" + StaticResourceHandler.PREFIX + "/{file: .+}")
+  @Produces(MediaType.WILDCARD)
+  public Response getVersionedAsset(
+      @PathParam("file") String file,
+      @Context final HttpServletRequest request,
+      @Context final HttpServletResponse response) {
+    return getAsset(file, request, response);
   }
 
   @GET

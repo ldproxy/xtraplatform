@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.servlet.Servlet;
 import javax.servlet.ServletRegistration.Dynamic;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,7 +32,7 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
 
   private final Lazy<Set<StaticResources>> staticResources;
   private final Lazy<Set<ServletRegistration>> servletRegistrations;
-  private final Map<String, Servlet> servlets;
+  private final Map<String, StaticResourceServlet> servlets;
 
   @Inject
   public StaticPlugin(
@@ -55,6 +54,8 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
                 return;
               }
 
+              String path = StaticResourceHandler.PREFIX + staticResources1.getUrlPath();
+
               StaticResourceServlet servlet =
                   new StaticResourceServlet(
                       staticResources1.getResourcePath(),
@@ -64,9 +65,8 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
                           .getResourceReader()
                           .orElse(new StaticResourceReaderJar(staticResources1.getClass())));
 
-              Dynamic registration =
-                  environment.servlets().addServlet(staticResources1.getUrlPath(), servlet);
-              registration.addMapping(getUrlPattern(staticResources1.getUrlPath()));
+              Dynamic registration = environment.servlets().addServlet(path, servlet);
+              registration.addMapping(getUrlPattern(path));
 
               servlets.put(staticResources1.getUrlPath(), servlet);
             });
