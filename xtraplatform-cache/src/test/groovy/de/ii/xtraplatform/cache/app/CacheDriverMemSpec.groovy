@@ -7,7 +7,7 @@ import java.sql.ShardingKey
 
 class CacheDriverMemSpec extends Specification{
 
-    @Shared CacheDriverMem cacheDriverMem = new CacheDriverMem();
+    @Shared CacheDriverMem cacheDriverMem = new CacheDriverMem()
     def 'Test put get has'() {
         given:
         String key = "key"
@@ -38,7 +38,7 @@ class CacheDriverMemSpec extends Specification{
     def 'Test put get has with ttl'() {
         given:
         String key = "key"
-        int ttl = 60;
+        int ttl = 60
         String value = "Test Object String"
 
         when:
@@ -53,7 +53,7 @@ class CacheDriverMemSpec extends Specification{
         given:
         String key = "key"
         String validator = "validator"
-        int ttl = 60;
+        int ttl = 60
         String value = "Test Object String"
 
         when:
