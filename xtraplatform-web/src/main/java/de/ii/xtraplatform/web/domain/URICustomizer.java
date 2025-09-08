@@ -58,6 +58,12 @@ public class URICustomizer extends URIBuilder {
     return this;
   }
 
+  @Override
+  public URICustomizer setPathSegments(List<String> pathSegments) {
+    super.setPathSegments(pathSegments);
+    return this;
+  }
+
   public URICustomizer ensureParameter(final String parameter, final String value) {
     if (this.getQueryParams().stream()
         .noneMatch(nameValuePair -> nameValuePair.getName().equals(parameter))) {
@@ -84,6 +90,19 @@ public class URICustomizer extends URIBuilder {
     return pathSegments.isEmpty() ? null : pathSegments.get(pathSegments.size() - 1);
   }
 
+  public URICustomizer prependPathSegments(final String... segments) {
+    return prependPathSegments(List.of(segments));
+  }
+
+  public URICustomizer prependPathSegments(final Iterable<String> segments) {
+    final List<String> pathSegments = getPathSegments();
+
+    this.setPathSegments(
+        new ImmutableList.Builder<String>().addAll(segments).addAll(pathSegments).build());
+
+    return this;
+  }
+
   public URICustomizer ensureLastPathSegment(final String segment) {
     final List<String> pathSegments = getPathSegments();
 
@@ -95,7 +114,11 @@ public class URICustomizer extends URIBuilder {
   }
 
   public URICustomizer ensureLastPathSegments(final String... segments) {
-    final List<String> pathSegments = getPathSegments();
+    List<String> pathSegments = getPathSegments();
+
+    if (pathSegments.size() == 1 && pathSegments.get(0).isEmpty()) {
+      pathSegments = List.of();
+    }
 
     int pathSegmentsIndex =
         pathSegments.size() >= segments.length ? pathSegments.size() - segments.length : 0;
@@ -134,8 +157,20 @@ public class URICustomizer extends URIBuilder {
     }
 
     final List<String> pathSegments = getPathSegments();
+    int pathSegmentsIndex = -1;
 
-    int pathSegmentsIndex = pathSegments.lastIndexOf(segments[0]);
+    for (int i = 0; i <= pathSegments.size() - segments.length; i++) {
+      boolean found = true;
+      for (int j = 0; j < segments.length; j++) {
+        if (!pathSegments.get(i + j).equals(segments[j])) {
+          found = false;
+          break;
+        }
+      }
+      if (found) {
+        pathSegmentsIndex = i;
+      }
+    }
 
     if (pathSegmentsIndex == -1) {
       return this;

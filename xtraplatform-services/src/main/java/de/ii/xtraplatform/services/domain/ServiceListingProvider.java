@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.services.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
-import java.net.URI;
+import de.ii.xtraplatform.web.domain.URICustomizer;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -23,5 +23,6 @@ public interface ServiceListingProvider {
   // TODO: one provider per mime type
   MediaType getMediaType();
 
-  Response getServiceListing(List<ServiceData> services, URI uri, Optional<Principal> user);
+  Response getServiceListing(
+      List<ServiceData> services, URICustomizer uriCustomizer, Optional<Principal> user);
 }

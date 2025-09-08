@@ -7,17 +7,13 @@
  */
 package de.ii.xtraplatform.auth.infra.rest;
 
-import static de.ii.xtraplatform.services.domain.ServicesContext.STATIC_PREFIX;
-
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.domain.Oidc;
 import de.ii.xtraplatform.auth.domain.SplitCookie;
-import de.ii.xtraplatform.base.domain.AppContext;
-import de.ii.xtraplatform.base.domain.AuthConfiguration;
-import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.web.domain.Endpoint;
+import de.ii.xtraplatform.web.domain.ForwardedUri;
 import de.ii.xtraplatform.web.domain.LoginHandler;
-import de.ii.xtraplatform.web.domain.URICustomizer;
+import de.ii.xtraplatform.web.domain.StaticResourceHandler;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
@@ -37,23 +33,10 @@ import javax.ws.rs.core.UriBuilder;
 @Singleton
 @AutoBind
 public class OidcEndpoint implements Endpoint, LoginHandler {
-  private final URI externalUriRoot;
-  private final String servicesPath;
-  private final AuthConfiguration authConfig;
   private final Oidc oidc;
 
   @Inject
-  public OidcEndpoint(AppContext appContext, ServicesContext servicesContext, Oidc oidc) {
-    this.externalUriRoot =
-        URI.create(
-            new URICustomizer()
-                .setScheme(servicesContext.getUri().getScheme())
-                .setHost(servicesContext.getUri().getHost())
-                .setPort(servicesContext.getUri().getPort())
-                .toString());
-    String path = servicesContext.getUri().getPath();
-    this.servicesPath = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
-    this.authConfig = appContext.getConfiguration().getAuth();
+  public OidcEndpoint(Oidc oidc) {
     this.oidc = oidc;
   }
 
@@ -90,24 +73,23 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
     return logout(containerRequestContext, redirectUri);
   }
 
-  private URI getCallbackUri(String rootPath) {
-    String callbackPath = java.nio.file.Path.of(rootPath, "_callback").toString();
-    return URI.create(new URICustomizer(externalUriRoot).setPath(callbackPath).toString());
+  private URI getCallbackUri(ContainerRequestContext containerRequestContext) {
+    return URI.create(
+        ForwardedUri.base(containerRequestContext).appendPath(PATH_CALLBACK).toString());
   }
 
-  private URI getCallbackRedirectUri(String rootPath, String redirectUri) {
-    String callbackPath = java.nio.file.Path.of(rootPath, "_callback").toString();
+  private URI getCallbackRedirectUri(
+      ContainerRequestContext containerRequestContext, String redirectUri) {
     return URI.create(
-        new URICustomizer(externalUriRoot)
-            .setPath(callbackPath)
+        ForwardedUri.base(containerRequestContext)
+            .appendPath(PATH_CALLBACK)
             .addParameter(LoginHandler.PARAM_LOGIN_REDIRECT_URI, redirectUri)
             .toString());
   }
 
-  private String getStaticUrlPrefix() {
-    return new URICustomizer(externalUriRoot)
-        .setPath(servicesPath)
-        .appendPath(STATIC_PREFIX)
+  private String getAssetsPrefix(ContainerRequestContext containerRequestContext) {
+    return ForwardedUri.base(containerRequestContext)
+        .appendPath(StaticResourceHandler.PREFIX)
         .getPath();
   }
 
@@ -120,14 +102,12 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
       boolean isCallback,
       String state,
       String token) {
-    URI callbackUri = getCallbackUri(rootPath);
+    URI callbackUri = getCallbackUri(containerRequestContext);
 
     String redirect =
         isCallback && Objects.isNull(token) && Objects.nonNull(state)
-            ? getCallbackRedirectUri(rootPath, state).toString()
+            ? getCallbackRedirectUri(containerRequestContext, state).toString()
             : redirectUri;
-
-    String staticUrlPrefix = getStaticUrlPrefix();
 
     ResponseBuilder response =
         Response.ok(
@@ -141,7 +121,7 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
                 state,
                 token,
                 isCallback,
-                staticUrlPrefix));
+                getAssetsPrefix(containerRequestContext)));
 
     if (Objects.nonNull(token)) {
       List<String> authCookies =

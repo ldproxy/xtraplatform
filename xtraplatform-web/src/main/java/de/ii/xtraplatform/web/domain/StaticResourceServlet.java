@@ -161,8 +161,16 @@ public class StaticResourceServlet extends HttpServlet {
   }
 
   private CachedResource loadAsset(String key) throws URISyntaxException, IOException {
-    String cleanKey = key.startsWith("/___static___") ? key.replace("/___static___", "") : key;
-    checkArgument(cleanKey.startsWith(uriPath));
+    String cleanKey =
+        key.contains(StaticResourceHandler.PREFIX)
+            ? key.substring(
+                key.indexOf(StaticResourceHandler.PREFIX) + StaticResourceHandler.PREFIX.length())
+            : key;
+    try {
+      checkArgument(cleanKey.startsWith(uriPath));
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
     final String requestedResourcePath = SLASHES.trimFrom(cleanKey.substring(uriPath.length()));
     final String absoluteRequestedResourcePath =
         "/" + SLASHES.trimFrom(this.resourcePath + requestedResourcePath);
@@ -170,6 +178,14 @@ public class StaticResourceServlet extends HttpServlet {
     return resourceReader
         .load(absoluteRequestedResourcePath, Optional.of(DEFAULT_PAGE))
         .orElse(null);
+  }
+
+  public Optional<CachedResource> getAsset(String key) {
+    try {
+      return Optional.ofNullable(loadAsset(key));
+    } catch (Throwable e) {
+      return Optional.empty();
+    }
   }
 
   private boolean isCachedClientSide(HttpServletRequest req, CachedResource cachedAsset) {

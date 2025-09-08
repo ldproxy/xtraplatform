@@ -12,5 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public interface StaticResourceHandler {
 
+  String PREFIX = "/___static___";
+
   boolean handle(String path, HttpServletRequest request, HttpServletResponse response);
 }
