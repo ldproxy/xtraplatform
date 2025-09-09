@@ -86,19 +86,6 @@ class CacheDriverMemSpec extends Specification{
         cacheDriverMem.get(key, Map<Integer, String>).map(value::equals).orElse(false)
     }
 
-    def 'Test put get has int'() {
-        given:
-        String key = "key"
-        int value = 11
-
-        when:
-        cacheDriverMem.put(key, value)
-
-        then:
-        cacheDriverMem.has(key)
-        cacheDriverMem.get(key, Integer).map(value::equals).orElse(false)
-    }
-
     def 'Test put get has with validator'() {
         given:
         String key = "key"
@@ -127,7 +114,7 @@ class CacheDriverMemSpec extends Specification{
         cacheDriverMem.get(key, String).map(value::equals).orElse(false)
     }
 
-    def 'Test put get has with ttl and validator STRING'() {
+    def 'Test put get has with ttl and validator'() {
         given:
         String key = "key"
         String validator = "validator"

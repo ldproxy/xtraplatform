@@ -55,7 +55,7 @@ class CacheDriverFsSpec extends Specification{
         }
     }, new JacksonProvider(Set::of))
 
-    def 'Test put get has'() {
+    def 'Test put get has String'() {
         given:
         String key = "key"
         String value = "Test Object String"
@@ -66,6 +66,73 @@ class CacheDriverFsSpec extends Specification{
         then:
         cacheDriverFs.has(key)
         cacheDriverFs.get(key, String).map(value::equals).orElse(false)
+    }
+
+    def 'Test put get has int'() {
+        given:
+        String key = "key"
+        int value = 11
+
+        when:
+        cacheDriverFs.put(key, value)
+
+        then:
+        cacheDriverFs.has(key)
+        cacheDriverFs.get(key, Integer).map(value::equals).orElse(false)
+    }
+
+    def 'Test put get has double'() {
+        given:
+        String key = "key"
+        double value = 11
+
+        when:
+        cacheDriverFs.put(key, value)
+
+        then:
+        cacheDriverFs.has(key)
+        cacheDriverFs.get(key, Double).map(value::equals).orElse(false)
+    }
+
+    def 'Test put get has boolean'() {
+        given:
+        String key = "key"
+        boolean value = 11
+
+        when:
+        cacheDriverFs.put(key, value)
+
+        then:
+        cacheDriverFs.has(key)
+        cacheDriverFs.get(key, Boolean).map(value::equals).orElse(false)
+    }
+
+    def 'Test put get has List'() {
+        given:
+        String key = "key"
+        List<Integer> value = List.of(10,20,30)
+
+        when:
+        cacheDriverFs.put(key, value)
+
+        then:
+        cacheDriverFs.has(key)
+        cacheDriverFs.get(key, List<Integer>).map(value::equals).orElse(false)
+    }
+
+    def 'Test put get has Map'() {
+        given:
+        String key = "key"
+        Map<Integer, String> value = Map.of(1, "One", 2, "Two")
+
+        when:
+        cacheDriverFs.put(key, value)
+
+        then:
+        cacheDriverFs.has(key)
+        cacheDriverFs.get(key, Map).map { m ->
+            m.collectEntries { k,v -> [(k as Integer):v] } == value
+        }.orElse(false)
     }
 
     def 'Test put get has with validator'() {
@@ -123,5 +190,69 @@ class CacheDriverFsSpec extends Specification{
         then:
         !cacheDriverFs.has(key)
         !cacheDriverFs.get(key, String).isPresent()
+    }
+
+    def 'Test empty String key'() {
+        given:
+        String key = ""
+        String value = "Test Object String"
+
+        when:
+        cacheDriverFs.put(key, value)
+
+        then:
+        cacheDriverFs.has(key)
+        cacheDriverFs.get(key, String).map(value::equals).orElse(false)
+    }
+
+    def 'Test empty String value'() {
+        given:
+        String key = "key"
+        String value = ""
+
+        when:
+        cacheDriverFs.put(key, value)
+
+        then:
+        cacheDriverFs.has(key)
+        cacheDriverFs.get(key, String).map(value::equals).orElse(false)
+    }
+
+    def 'Test null key'() {
+        given:
+        String key = null
+        String value = "Test Object String"
+
+        when:
+        cacheDriverFs.put(key, value)
+
+        then:
+        thrown(NullPointerException)
+    }
+
+    def 'Test null value'() {
+        given:
+        String key = "key"
+        String value = null
+
+        when:
+        cacheDriverFs.put(key, value)
+
+        then:
+        cacheDriverFs.has(key)
+        cacheDriverFs.get(key, String).get() == ":)\n\u0001!"
+    }
+
+    def 'Test null value int'() {
+        given:
+        String key = "key"
+        Integer value = null
+
+        when:
+        cacheDriverFs.put(key, value)
+
+        then:
+        cacheDriverFs.has(key)
+        cacheDriverFs.get(key, Integer).isEmpty()
     }
 }
