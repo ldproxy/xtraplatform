@@ -1,6 +1,6 @@
 [versions]
 jjwt = '0.12.6'
-swagger = '2.2.36'
+swagger = '2.2.38'
 classgraph = "4.8.181"
 dropwizard = '3.0.15'
 jackson = '2.18.3'
