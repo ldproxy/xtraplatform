@@ -71,7 +71,7 @@ public class CacheDriverMem implements CacheDriver {
 
   @Override
   public <T> Optional<T> get(String key, String validator, Class<T> clazz) {
-    return has(validator, key)
+    return has(key, validator)
         ? Optional.ofNullable(cache.get(key).get(CONTENT)).map(clazz::cast)
         : Optional.empty();
   }
