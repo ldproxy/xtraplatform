@@ -9,7 +9,7 @@
 <body>
 
 <script type="module">
-  import * as oauth from '{{urlPrefix}}/xtraplatform-auth/assets/oauth4webapi-2.3.0.js';
+  import * as oauth from '{{assetsPrefix}}/xtraplatform-auth/assets/oauth4webapi-2.3.0.js';
 
   const currentUrl = new URL(window.location.href);
   const oidcUrl = new URL('{{{oidcUri}}}');
@@ -28,7 +28,7 @@
   }
 
   const code_verifier = '1V5Zf42ZNxFz6klXwBtrW4fEUfccpLtRTxunky9omNE';// oauth.generateRandomCodeVerifier()
-  const code_challenge = await oauth.calculatePKCECodeChallenge(code_verifier)
+  const code_challenge = await oauth.calculatePKCECodeChallenge(code_verifier).catch((e) => console.error(e))
   const code_challenge_method = 'S256'
 
   {{^callback}}
