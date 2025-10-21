@@ -8,10 +8,9 @@
 package de.ii.xtraplatform.base.domain;
 
 import de.ii.xtraplatform.base.domain.Constants.ENV;
-import java.net.URI;
 import java.nio.file.Path;
 
-public interface AppContext {
+public interface AppContext extends WebContext {
 
   String getName();
 
@@ -24,8 +23,6 @@ public interface AppContext {
   Path getTmpDir();
 
   AppConfiguration getConfiguration();
-
-  URI getUri();
 
   String getInstanceName();
 

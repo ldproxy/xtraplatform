@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.google.common.base.Splitter;
+import de.ii.xtraplatform.base.domain.WebContext;
 import java.util.List;
 import javax.ws.rs.container.ContainerRequestContext;
 
@@ -16,22 +17,22 @@ public interface ForwardedUri {
   String X_FORWARDED_PREFIX = "X-Forwarded-Prefix";
   Splitter PATH_SPLITTER = Splitter.on('/').trimResults().omitEmptyStrings();
 
-  static URICustomizer from(ContainerRequestContext requestContext) {
+  static URICustomizer from(ContainerRequestContext requestContext, WebContext webContext) {
     return new URICustomizer(requestContext.getUriInfo().getRequestUri())
-        .prependPathSegments(prefix(requestContext));
+        .prependPathSegments(prefix(requestContext, webContext));
   }
 
-  static URICustomizer base(ContainerRequestContext requestContext) {
+  static URICustomizer base(ContainerRequestContext requestContext, WebContext webContext) {
     return new URICustomizer(requestContext.getUriInfo().getRequestUri())
-        .setPathSegments(prefix(requestContext))
+        .setPathSegments(prefix(requestContext, webContext))
         .ensureNoTrailingSlash()
         .clearParameters();
   }
 
-  static List<String> prefix(ContainerRequestContext requestContext) {
+  static List<String> prefix(ContainerRequestContext requestContext, WebContext webContext) {
     if (requestContext.getHeaders().containsKey(X_FORWARDED_PREFIX)) {
       return PATH_SPLITTER.splitToList(requestContext.getHeaderString(X_FORWARDED_PREFIX));
     }
-    return List.of();
+    return webContext.getPathPrefix();
   }
 }
