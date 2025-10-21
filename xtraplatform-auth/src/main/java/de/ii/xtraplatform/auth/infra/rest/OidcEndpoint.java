@@ -10,6 +10,7 @@ package de.ii.xtraplatform.auth.infra.rest;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.domain.Oidc;
 import de.ii.xtraplatform.auth.domain.SplitCookie;
+import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import de.ii.xtraplatform.web.domain.ForwardedUri;
 import de.ii.xtraplatform.web.domain.LoginHandler;
@@ -33,10 +34,13 @@ import javax.ws.rs.core.UriBuilder;
 @Singleton
 @AutoBind
 public class OidcEndpoint implements Endpoint, LoginHandler {
+
+  private final ServicesContext servicesContext;
   private final Oidc oidc;
 
   @Inject
-  public OidcEndpoint(Oidc oidc) {
+  public OidcEndpoint(ServicesContext servicesContext, Oidc oidc) {
+    this.servicesContext = servicesContext;
     this.oidc = oidc;
   }
 
@@ -75,20 +79,22 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
 
   private URI getCallbackUri(ContainerRequestContext containerRequestContext) {
     return URI.create(
-        ForwardedUri.base(containerRequestContext).appendPath(PATH_CALLBACK).toString());
+        ForwardedUri.base(containerRequestContext, servicesContext)
+            .appendPath(PATH_CALLBACK)
+            .toString());
   }
 
   private URI getCallbackRedirectUri(
       ContainerRequestContext containerRequestContext, String redirectUri) {
     return URI.create(
-        ForwardedUri.base(containerRequestContext)
+        ForwardedUri.base(containerRequestContext, servicesContext)
             .appendPath(PATH_CALLBACK)
             .addParameter(LoginHandler.PARAM_LOGIN_REDIRECT_URI, redirectUri)
             .toString());
   }
 
   private String getAssetsPrefix(ContainerRequestContext containerRequestContext) {
-    return ForwardedUri.base(containerRequestContext)
+    return ForwardedUri.base(containerRequestContext, servicesContext)
         .appendPath(StaticResourceHandler.PREFIX)
         .getPath();
   }
