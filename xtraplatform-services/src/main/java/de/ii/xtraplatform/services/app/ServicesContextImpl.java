@@ -11,6 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.services.domain.ServicesContext;
 import java.net.URI;
+import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -18,15 +19,19 @@ import javax.inject.Singleton;
 @AutoBind
 public class ServicesContextImpl implements ServicesContext {
 
-  private final URI uri;
+  private final AppContext appContext;
 
   @Inject
   ServicesContextImpl(AppContext appContext) {
-    this.uri = appContext.getUri();
+    this.appContext = appContext;
   }
 
   @Override
   public URI getUri() {
-    return uri;
+    return appContext.getUri();
+  }
+
+  public List<String> getPathPrefix() {
+    return appContext.getPathPrefix();
   }
 }

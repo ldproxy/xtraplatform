@@ -7,11 +7,6 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-import java.net.URI;
+import de.ii.xtraplatform.base.domain.WebContext;
 
-public interface ServicesContext {
-
-  String STATIC_PREFIX = "___static___";
-
-  URI getUri();
-}
+public interface ServicesContext extends WebContext {}

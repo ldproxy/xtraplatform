@@ -69,7 +69,7 @@ public class ServicesEndpoint implements Endpoint {
 
   private final EntityRegistry entityRegistry;
   private final ServiceInjectableContext serviceContext;
-  private final URI servicesUri;
+  private final ServicesContext servicesContext;
   private final StaticResourceHandler staticResourceHandler;
   private final Lazy<Set<LoginHandler>> loginHandler;
 
@@ -86,7 +86,7 @@ public class ServicesEndpoint implements Endpoint {
       Lazy<Set<ServiceEndpoint>> serviceResources,
       Lazy<Set<ServiceListingProvider>> serviceListingProviders) {
     this.entityRegistry = entityRegistry;
-    this.servicesUri = servicesContext.getUri();
+    this.servicesContext = servicesContext;
     this.serviceContext = serviceContext;
     this.staticResourceHandler = staticResourceHandler;
     this.loginHandler = loginHandler;
@@ -142,7 +142,9 @@ public class ServicesEndpoint implements Endpoint {
       Optional<Principal> user =
           Optional.ofNullable(containerRequestContext.getSecurityContext().getUserPrincipal());
       URICustomizer uriCustomizer =
-          ForwardedUri.from(containerRequestContext).clearParameters().ensureNoTrailingSlash();
+          ForwardedUri.from(containerRequestContext, servicesContext)
+              .clearParameters()
+              .ensureNoTrailingSlash();
       Response serviceListing = provider.get().getServiceListing(services, uriCustomizer, user);
 
       return Response.ok().entity(serviceListing.getEntity()).type(mediaType).build();
@@ -194,7 +196,13 @@ public class ServicesEndpoint implements Endpoint {
         .iterator()
         .next()
         .handle(
-            containerRequestContext, redirectUri, scopes, servicesUri.getPath(), false, null, null);
+            containerRequestContext,
+            redirectUri,
+            scopes,
+            servicesContext.getUri().getPath(),
+            false,
+            null,
+            null);
   }
 
   @GET
@@ -215,7 +223,13 @@ public class ServicesEndpoint implements Endpoint {
         .iterator()
         .next()
         .handle(
-            containerRequestContext, redirectUri, null, servicesUri.getPath(), true, state, token);
+            containerRequestContext,
+            redirectUri,
+            null,
+            servicesContext.getUri().getPath(),
+            true,
+            state,
+            token);
   }
 
   @GET
@@ -304,7 +318,7 @@ public class ServicesEndpoint implements Endpoint {
   }
 
   private Optional<URI> getExternalUri() {
-    return Optional.of(servicesUri);
+    return Optional.of(servicesContext.getUri());
   }
 
   private void openLoggingContext(ContainerRequestContext containerRequestContext) {
