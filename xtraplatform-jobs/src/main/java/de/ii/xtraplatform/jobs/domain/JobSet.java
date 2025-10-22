@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.jobs.domain;
 
+import com.google.common.collect.ImmutableList;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +85,17 @@ public interface JobSet extends BaseJob {
     }
 
     getUpdatedAt().set(Instant.now().getEpochSecond());
+
+    List<String> jobErrors = job.getErrors().get();
+    if (!jobErrors.isEmpty()) {
+      getErrors()
+          .getAndUpdate(
+              existingErrors -> {
+                List<String> combined = new java.util.ArrayList<>(existingErrors);
+                combined.addAll(jobErrors);
+                return ImmutableList.copyOf(combined);
+              });
+    }
 
     if (isDone() && getFinishedAt().get() == -1) {
       getFinishedAt().set(Instant.now().getEpochSecond());

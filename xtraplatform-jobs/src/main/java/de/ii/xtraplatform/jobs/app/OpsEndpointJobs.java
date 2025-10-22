@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.Jackson;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
@@ -130,6 +131,27 @@ public class OpsEndpointJobs implements OpsEndpoint {
             "Job {} taken by remote executor {}",
             job.get().getId(),
             executor.get("id"));
+      }
+
+      Optional<JobSet> jobSet = job.get().getPartOf().map(jobQueue::getSet);
+
+      if (jobSet.isPresent() && jobSet.get().getEntity().isPresent()) {
+        LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.get().getEntity().get());
+      }
+
+      if (jobSet.isPresent() && !jobSet.get().isStarted()) {
+        if (jobSet.get().getSetup().isEmpty()
+            || !Objects.equals(job.get().getId(), jobSet.get().getSetup().get().getId())) {
+          jobSet.get().start();
+
+          if (LOGGER.isInfoEnabled() || LOGGER.isInfoEnabled(MARKER.JOBS)) {
+            LOGGER.info(
+                MARKER.JOBS,
+                "{} started ({})",
+                jobSet.get().getLabel(),
+                jobSet.get().getDetails().getLabel());
+          }
+        }
       }
       return Response.ok(objectMapper.writeValueAsString(job.get())).build();
     }

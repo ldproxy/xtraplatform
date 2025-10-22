@@ -7,11 +7,15 @@
  */
 package de.ii.xtraplatform.jobs.domain;
 
+import com.google.common.collect.ImmutableList;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -51,15 +55,24 @@ public interface Job extends BaseJob {
   }
 
   default Job retry(String error) {
+    List<String> errors = new ArrayList<>(getErrors().get());
+    errors.add(error);
+
     return new ImmutableJob.Builder()
         .from(this)
         .retries(this.getRetries().orElse(0) + 1)
-        .addErrors(error)
+        .errors(new AtomicReference<>(ImmutableList.copyOf(errors)))
         .build();
   }
 
   default Job failed(String error) {
-    return new ImmutableJob.Builder().from(this).addErrors(error).build();
+    List<String> errors = new ArrayList<>(getErrors().get());
+    errors.add(error);
+
+    return new ImmutableJob.Builder()
+        .from(this)
+        .errors(new AtomicReference<>(ImmutableList.copyOf(errors)))
+        .build();
   }
 
   default Job with(String jobSetId) {

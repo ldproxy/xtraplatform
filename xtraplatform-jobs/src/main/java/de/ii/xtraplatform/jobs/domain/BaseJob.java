@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.immutables.value.Value;
 
 public interface BaseJob {
@@ -36,13 +37,16 @@ public interface BaseJob {
 
   List<BaseJob> getFollowUps();
 
-  List<String> getErrors();
-
   OptionalInt getTimeout();
 
   OptionalInt getRetries();
 
   // TODO: progress wrapper?
+
+  @Value.Default
+  default AtomicReference<List<String>> getErrors() {
+    return new AtomicReference<>(List.of());
+  }
 
   @Value.Default
   default AtomicLong getStartedAt() {
