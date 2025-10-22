@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["ldproxy/renovate-config:xtraplatform", "ldproxy/renovate-config:maintenance2(6.4,6.3)"],
+  "extends": ["ldproxy/renovate-config:xtraplatform", "ldproxy/renovate-config:maintenance2(6.5,6.4)"],
   "packageRules": [
     {
       "groupName": "dropwizard",
