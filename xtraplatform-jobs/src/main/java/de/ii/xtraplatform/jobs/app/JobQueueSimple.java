@@ -123,8 +123,7 @@ public class JobQueueSimple implements JobQueue {
       Deque<Job> queue = queues.get(type).get(priority);
 
       if (!queue.isEmpty()) {
-        Job job = queue.remove();
-        job.started(executor);
+        Job job = queue.remove().started(executor);
         takenQueue.add(job);
 
         return Optional.of(job);
