@@ -32,6 +32,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -145,7 +146,11 @@ public class ServicesEndpoint implements Endpoint {
           ForwardedUri.from(containerRequestContext, servicesContext)
               .clearParameters()
               .ensureNoTrailingSlash();
-      Response serviceListing = provider.get().getServiceListing(services, uriCustomizer, user);
+      Map<String, String> queryParameters =
+          containerRequestContext.getUriInfo().getQueryParameters().entrySet().stream()
+              .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0)));
+      Response serviceListing =
+          provider.get().getServiceListing(services, uriCustomizer, queryParameters, user);
 
       return Response.ok().entity(serviceListing.getEntity()).type(mediaType).build();
     }
