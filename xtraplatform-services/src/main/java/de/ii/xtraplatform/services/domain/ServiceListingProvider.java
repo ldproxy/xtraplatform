@@ -11,6 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import de.ii.xtraplatform.web.domain.URICustomizer;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -24,5 +25,8 @@ public interface ServiceListingProvider {
   MediaType getMediaType();
 
   Response getServiceListing(
-      List<ServiceData> services, URICustomizer uriCustomizer, Optional<Principal> user);
+      List<ServiceData> services,
+      URICustomizer uriCustomizer,
+      Map<String, String> queryParameters,
+      Optional<Principal> user);
 }
