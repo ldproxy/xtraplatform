@@ -77,4 +77,8 @@ public abstract class Blob {
               return contentType;
             });
   }
+
+  public Blob withPrecomputedContentType(String value) {
+    return ImmutableBlob.builder().from(this).precomputedContentType(value).build();
+  }
 }
