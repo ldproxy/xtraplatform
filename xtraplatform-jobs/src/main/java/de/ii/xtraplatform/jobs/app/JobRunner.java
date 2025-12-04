@@ -238,6 +238,7 @@ public class JobRunner implements AppLifeCycle {
             result = processor.process(job, jobSet.orElse(null), jobQueue::push);
           } catch (Throwable e) {
             result = JobResult.error(e.getClass() + e.getMessage());
+            LogContext.errorAsDebug(LOGGER, e, "Error processing job {}", job.getId());
           }
 
           if (result.isSuccess()) {
@@ -245,7 +246,8 @@ public class JobRunner implements AppLifeCycle {
           } else if (result.isFailure()) {
             boolean retry = jobQueue.error(job.getId(), result.getError().get(), result.isRetry());
             if (!retry) {
-              LOGGER.error("Error while processing job: {}", result.getError().get());
+              LOGGER.error(
+                  "Error while processing job {}: {}", job.getId(), result.getError().get());
             }
           }
 
