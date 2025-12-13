@@ -1,0 +1,15 @@
+
+maturity = 'CANDIDATE'
+maintenance = 'LOW'
+description = 'Redis Job Queue and Cache.'
+descriptionDe = 'Redis Job Queue und Cache.'
+
+dependencies {
+    provided project(':xtraplatform-cache')
+    provided project(':xtraplatform-jobs')
+
+    embedded(libs.jedis) {
+        exclude module: 'slf4j-api'
+        exclude module: 'gson'
+    }
+}

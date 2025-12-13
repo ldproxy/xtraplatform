@@ -14,6 +14,7 @@ rxjava-ext = '3.1.1'
 rs = '1.0.4'
 uuid = '5.1.1'
 jsr305 = '3.0.2'
+jedis = '7.1.0'
 
 [libraries]
 # auth
@@ -58,6 +59,9 @@ cron4j = { module = "it.sauronsoftware.cron4j:cron4j", version.ref = "cron4j" }
 rxjava = { module = "io.reactivex.rxjava3:rxjava", version.ref = "rxjava" }
 rxjava-ext = { module = "com.github.akarnokd:rxjava3-extensions", version.ref = "rxjava-ext" }
 rs = { module = "org.reactivestreams:reactive-streams", version.ref = "rs" }
+
+#redis
+jedis = { module = "redis.clients:jedis", version.ref = "jedis" }
 
 [bundles]
 auth = ["jjwt-api", "jjwt-impl", "jjwt-jackson"]
