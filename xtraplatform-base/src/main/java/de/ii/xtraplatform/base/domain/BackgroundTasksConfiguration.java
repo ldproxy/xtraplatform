@@ -43,14 +43,17 @@ import org.immutables.value.Value;
 public interface BackgroundTasksConfiguration {
 
   /**
-   * @langEn The maximum number of threads available for background processes. If requests are to be
-   *     answered efficiently at all times, the value should not exceed half of the CPU cores.
-   * @langDe Die maximale Anzahl an Threads, die für Hintergrundprozesse zur Verfügung stehen. Falls
-   *     zu jeder Zeit Requests performant beantwortet können werden sollen, sollte der Wert die
-   *     Hälfte der CPU-Kerne nicht überschreiten.
+   * @langEn *Deprecated, replaced by `jobs.maxConcurrent`* The maximum number of threads available
+   *     for background processes. If requests are to be answered efficiently at all times, the
+   *     value should not exceed half of the CPU cores.
+   * @langDe *Deprecated, ersetzt durch`jobs.maxConcurrent`* Die maximale Anzahl an Threads, die für
+   *     Hintergrundprozesse zur Verfügung stehen. Falls zu jeder Zeit Requests performant
+   *     beantwortet können werden sollen, sollte der Wert die Hälfte der CPU-Kerne nicht
+   *     überschreiten.
    * @since v3.0
    * @default 1
    */
+  @Deprecated(since = "4.6", forRemoval = true)
   @Min(1)
   @Value.Default
   default int getMaxThreads() {

@@ -15,11 +15,16 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
+import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatileComposed;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileComposed;
+import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
+import de.ii.xtraplatform.base.domain.util.Tuple;
 import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobProcessor;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
 import de.ii.xtraplatform.jobs.domain.JobResult;
 import de.ii.xtraplatform.jobs.domain.JobSet;
+import de.ii.xtraplatform.jobs.domain.JobSet.JobSetDetails;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -46,10 +51,11 @@ import org.slf4j.LoggerFactory;
 import org.threeten.extra.AmountFormats;
 
 @Singleton
-@AutoBind
-public class JobRunner implements AppLifeCycle {
+@AutoBind(interfaces = {AppLifeCycle.class})
+public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle, VolatileComposed {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JobRunner.class);
+  private static final String JOB_TYPE_WILDCARD = "*";
 
   private final JobQueue jobQueue;
   private final Lazy<Set<JobProcessor<?, ?>>> processors;
@@ -60,9 +66,16 @@ public class JobRunner implements AppLifeCycle {
   private final Supplier<Integer> activeThreads;
   private final Set<String> activeJobSets;
   private final AtomicInteger activeJobs = new AtomicInteger(0);
+  private final boolean asyncStartup;
 
   @Inject
-  JobRunner(AppContext appContext, JobQueue jobQueue, Lazy<Set<JobProcessor<?, ?>>> processors) {
+  JobRunner(
+      AppContext appContext,
+      VolatileRegistry volatileRegistry,
+      JobQueue jobQueue,
+      Lazy<Set<JobProcessor<?, ?>>> processors) {
+    super("app/jobs", volatileRegistry, false);
+
     this.jobQueue = jobQueue;
     this.processors = processors;
     this.polling =
@@ -73,17 +86,42 @@ public class JobRunner implements AppLifeCycle {
     ThreadPoolExecutor threadPoolExecutor =
         (ThreadPoolExecutor)
             Executors.newFixedThreadPool(
-                appContext.getConfiguration().getBackgroundTasks().getMaxThreads(),
+                appContext.getConfiguration().getJobConcurrency(),
                 new ThreadFactoryBuilder().setNameFormat("jobs.exec-%d").build());
     this.executor = MoreExecutors.getExitingExecutorService(threadPoolExecutor);
     this.executorName = appContext.getInstanceName();
     this.maxThreads = threadPoolExecutor.getMaximumPoolSize();
     this.activeThreads = threadPoolExecutor::getActiveCount;
     this.activeJobSets = Collections.synchronizedSet(new LinkedHashSet<>());
+    this.asyncStartup = appContext.getConfiguration().getModules().isStartupAsync();
+
+    jobQueue.setJobTypes(this::getJobType);
   }
 
   @Override
   public CompletionStage<Void> onStart(boolean isStartupAsync) {
+    onVolatileStart();
+
+    addSubcomponent(jobQueue, true);
+
+    onVolatileStarted();
+
+    if (!asyncStartup) {
+      init();
+    }
+
+    return AppLifeCycle.super.onStart(isStartupAsync);
+  }
+
+  @Override
+  protected Tuple<State, String> volatileInit() {
+    if (asyncStartup) {
+      init();
+    }
+    return super.volatileInit();
+  }
+
+  private void init() {
     jobQueue.onPush(this::checkWork);
 
     // check for orphaned jobs every minute
@@ -151,13 +189,25 @@ public class JobRunner implements AppLifeCycle {
         5,
         5,
         TimeUnit.SECONDS);
+  }
 
-    return AppLifeCycle.super.onStart(isStartupAsync);
+  private Optional<? extends Class<?>> getJobType(String jobType) {
+    return processors.get().stream()
+        .sorted(Comparator.<JobProcessor<?, ?>>comparingInt(JobProcessor::getPriority).reversed())
+        .filter(p -> p.getJobTypes().containsKey(jobType))
+        .map(p -> p.getJobTypes().get(jobType))
+        .filter(Objects::nonNull)
+        .findFirst();
   }
 
   private void checkWork(String jobType) {
+    LOGGER.debug("CHECK WORK {}", jobType);
     List<JobProcessor<?, ?>> orderedProcessors =
         processors.get().stream()
+            .filter(
+                p ->
+                    Objects.equals(jobType, JOB_TYPE_WILDCARD)
+                        || Objects.equals(jobType, p.getJobType()))
             .sorted(
                 Comparator.<JobProcessor<?, ?>>comparingInt(JobProcessor::getPriority).reversed())
             .toList();
@@ -221,21 +271,21 @@ public class JobRunner implements AppLifeCycle {
           if (jobSet.isPresent() && !jobSet.get().isStarted()) {
             if (jobSet.get().getSetup().isEmpty()
                 || !Objects.equals(job.getId(), jobSet.get().getSetup().get().getId())) {
-              jobSet.get().start();
+              jobQueue.startJobSet(jobSet.get());
 
               if (LOGGER.isInfoEnabled() || LOGGER.isInfoEnabled(MARKER.JOBS)) {
                 LOGGER.info(
                     MARKER.JOBS,
                     "{} started ({})",
                     jobSet.get().getLabel(),
-                    jobSet.get().getDetails().getLabel());
+                    jobQueue.getJobSetDetails(JobSetDetails.class, jobSet.get()).getLabel());
               }
             }
           }
 
           JobResult result;
           try {
-            result = processor.process(job, jobSet.orElse(null), jobQueue::push);
+            result = processor.process(job, jobSet.orElse(null), jobQueue);
           } catch (Throwable e) {
             result = JobResult.error(e.getClass() + e.getMessage());
             LogContext.errorAsDebug(LOGGER, e, "Error processing job {}", job.getId());
@@ -266,7 +316,7 @@ public class JobRunner implements AppLifeCycle {
             }
           }
           activeJobs.decrementAndGet();
-          checkWork("");
+          checkWork(JOB_TYPE_WILDCARD);
         });
   }
 

@@ -35,7 +35,7 @@ public interface BaseJob {
 
   Object getDetails();
 
-  List<BaseJob> getFollowUps();
+  List<? extends BaseJob> getFollowUps();
 
   OptionalInt getTimeout();
 

@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.jobs.domain;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableList;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@JsonDeserialize(builder = ImmutableJob.Builder.class)
 public interface Job extends BaseJob {
 
   static Job of(String type, int priority, Object details) {
@@ -34,6 +36,11 @@ public interface Job extends BaseJob {
         .total(new AtomicInteger(total))
         .build();
   }
+
+  interface JobDetails {}
+
+  @Override
+  List<Job> getFollowUps();
 
   default Job started(String executor) {
     return new ImmutableJob.Builder()
@@ -75,15 +82,23 @@ public interface Job extends BaseJob {
         .build();
   }
 
+  default Job done() {
+    return new ImmutableJob.Builder()
+        .from(this)
+        .updatedAt(new AtomicLong(Instant.now().getEpochSecond()))
+        .finishedAt(new AtomicLong(Instant.now().getEpochSecond()))
+        .build();
+  }
+
   default Job with(String jobSetId) {
     return new ImmutableJob.Builder().from(this).partOf(jobSetId).build();
   }
 
-  default Job with(BaseJob... followUps) {
+  default Job with(Job... followUps) {
     return new ImmutableJob.Builder().from(this).addFollowUps(followUps).build();
   }
 
-  default Job with(Collection<? extends BaseJob> followUps) {
+  default Job with(Collection<Job> followUps) {
     return new ImmutableJob.Builder().from(this).addAllFollowUps(followUps).build();
   }
 

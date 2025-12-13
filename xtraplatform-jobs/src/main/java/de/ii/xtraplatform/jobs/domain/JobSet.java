@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.jobs.domain;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableList;
 import java.time.Instant;
 import java.util.List;
@@ -18,10 +19,18 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@JsonDeserialize(builder = ImmutableJobSet.Builder.class)
 public interface JobSet extends BaseJob {
 
   interface JobSetDetails {
-    void update(Map<String, String> parameters);
+
+    void init(Map<String, Object> parameters);
+
+    Map<String, Object> initJson(Map<String, Object> params);
+
+    void update(Map<String, Object> parameters);
+
+    Map<String, Object> updateJson(Map<String, Object> detailParameters);
 
     void reset(Job job);
 
@@ -29,7 +38,7 @@ public interface JobSet extends BaseJob {
   }
 
   @Override
-  JobSetDetails getDetails();
+  List<JobSet> getFollowUps();
 
   static JobSet of(
       String type,
@@ -59,7 +68,7 @@ public interface JobSet extends BaseJob {
         .build();
   }
 
-  default JobSet with(BaseJob... followUps) {
+  default JobSet with(JobSet... followUps) {
     return new ImmutableJobSet.Builder().from(this).addFollowUps(followUps).build();
   }
 
@@ -71,11 +80,15 @@ public interface JobSet extends BaseJob {
         .build();
   }
 
+  default JobSet with(JobSetDetails details) {
+    return new ImmutableJobSet.Builder().from(this).details(details).build();
+  }
+
   default void start() {
     getStartedAt().set(Instant.now().getEpochSecond());
   }
 
-  default List<BaseJob> done(Job job) {
+  default List<? extends BaseJob> done(Job job) {
     if (getSetup().isPresent() && Objects.equals(job.getId(), getSetup().get().getId())) {
       return List.of();
     }
