@@ -201,7 +201,9 @@ public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle,
   }
 
   private void checkWork(String jobType) {
-    LOGGER.debug("CHECK WORK {}", jobType);
+    if (logJobsTrace()) {
+      LOGGER.trace(MARKER.JOBS, "CHECK WORK {}", jobType);
+    }
     List<JobProcessor<?, ?>> orderedProcessors =
         processors.get().stream()
             .filter(

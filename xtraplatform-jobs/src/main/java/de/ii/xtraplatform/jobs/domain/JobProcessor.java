@@ -39,7 +39,5 @@ public interface JobProcessor<T, U> {
     return jobQueue.getJobSetDetails(getSetDetailsType(), jobSet);
   }
 
-  default Map<String, Class<?>> getJobTypes() {
-    return Map.of();
-  }
+  Map<String, Class<?>> getJobTypes();
 }
