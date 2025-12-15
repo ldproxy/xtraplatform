@@ -13,21 +13,21 @@ import de.ii.xtraplatform.docs.DocStep;
 import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
-import javax.validation.constraints.Min;
+import java.util.List;
 import org.immutables.value.Value;
 
 /**
- * @langEn # Background Tasks
+ * @langEn # Redis
  *     <p>## Options
  *     <p>{@docTable:properties}
- * @langDe # Background Tasks
+ * @langDe # Redis
  *     <p>## Optionen
  *     <p>{@docTable:properties}
- * @ref:cfgProperties {@link de.ii.xtraplatform.base.domain.ImmutableBackgroundTasksConfiguration}
+ * @ref:cfgProperties {@link ImmutableRedisConfiguration}
  */
 @DocFile(
     path = "application/20-configuration",
-    name = "90-background-tasks.md",
+    name = "110-redis.md",
     tables = {
       @DocTable(
           name = "properties",
@@ -39,24 +39,15 @@ import org.immutables.value.Value;
     })
 @Value.Immutable
 @Value.Modifiable
-@JsonDeserialize(as = ModifiableBackgroundTasksConfiguration.class)
-public interface BackgroundTasksConfiguration {
+@JsonDeserialize(as = ModifiableRedisConfiguration.class)
+public interface RedisConfiguration {
 
   /**
-   * @langEn *Deprecated, replaced by `jobs.maxConcurrent`* The maximum number of threads available
-   *     for background processes. If requests are to be answered efficiently at all times, the
-   *     value should not exceed half of the CPU cores.
-   * @langDe *Deprecated, ersetzt durch`jobs.maxConcurrent`* Die maximale Anzahl an Threads, die für
-   *     Hintergrundprozesse zur Verfügung stehen. Falls zu jeder Zeit Requests performant
-   *     beantwortet können werden sollen, sollte der Wert die Hälfte der CPU-Kerne nicht
-   *     überschreiten.
-   * @since v3.0
-   * @default 1
+   * @langEn The list of Redis or Valkey nodes to connect to, in the format `host:port`.
+   * @langDe Die Liste der Redis oder Valkey Knoten, zu denen eine Verbindung hergestellt werden
+   *     soll, im Format `host:port`.
+   * @since v4.6
+   * @default []
    */
-  @Deprecated(since = "4.6", forRemoval = true)
-  @Min(1)
-  @Value.Default
-  default int getMaxThreads() {
-    return 1;
-  }
+  List<String> getNodes();
 }

@@ -22,6 +22,7 @@ import io.dropwizard.core.server.ServerFactory;
 import io.dropwizard.logging.common.LoggingFactory;
 import io.dropwizard.metrics.common.MetricsFactory;
 import java.util.Map;
+import java.util.Objects;
 import javax.validation.Valid;
 import org.apache.commons.lang3.NotImplementedException;
 import org.immutables.value.Value;
@@ -167,13 +168,33 @@ public abstract class AppConfiguration extends Configuration {
   public abstract ModulesConfiguration getModules();
 
   /**
-   * @langEn See [Background Tasks](90-background-tasks.md).
-   * @langDe Siehe [Background Tasks](90-background-tasks.md).
+   * @langEn *Deprecated, replaced by `jobs`* See [Background Tasks](90-background-tasks.md).
+   * @langDe *Deprecated, wird ersetzt durch `jobs`* Siehe [Background
+   *     Tasks](90-background-tasks.md).
    * @since v3.0
    */
+  @Deprecated(since = "4.6", forRemoval = true)
   @JsonProperty("backgroundTasks")
   @Valid
   public abstract BackgroundTasksConfiguration getBackgroundTasks();
+
+  /**
+   * @langEn See [Jobs](91-jobs.md).
+   * @langDe Siehe [Jobs](91-jobs.md).
+   * @since v4.6
+   */
+  @JsonProperty("jobs")
+  @Valid
+  public abstract JobsConfiguration getJobs();
+
+  public int getJobConcurrency() {
+    if (Objects.nonNull(getBackgroundTasks())
+        && getBackgroundTasks().getMaxThreads() > 1
+        && getJobs().getMaxConcurrent() == 1) {
+      return getBackgroundTasks().getMaxThreads();
+    }
+    return getJobs().getMaxConcurrent();
+  }
 
   @Valid
   public abstract HttpClientConfiguration getHttpClient();
@@ -200,6 +221,15 @@ public abstract class AppConfiguration extends Configuration {
   @JsonProperty("substitutions")
   @Valid
   public abstract Map<String, Object> getSubstitutions();
+
+  /**
+   * @langEn See [Redis](110-redis.md).
+   * @langDe Siehe [Redis](110-redis.md).
+   * @since v4.6
+   */
+  @JsonProperty("redis")
+  @Valid
+  public abstract RedisConfiguration getRedis();
 
   @JsonIgnore
   @Override

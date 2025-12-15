@@ -7,16 +7,19 @@
  */
 package de.ii.xtraplatform.jobs.domain;
 
+import de.ii.xtraplatform.base.domain.resiliency.VolatileComposed;
 import java.util.Collection;
-import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-public interface JobQueue {
+public interface JobQueue extends JobQueueMin, VolatileComposed {
 
   void push(BaseJob job, boolean untake);
 
+  @Override
   default void push(BaseJob job) {
     push(job, false);
   }
@@ -33,11 +36,13 @@ public interface JobQueue {
 
   Collection<JobSet> getSets();
 
-  Map<String, Map<Integer, Deque<Job>>> getOpen();
+  Map<String, Map<Integer, List<Job>>> getOpen();
 
   Collection<Job> getTaken();
 
   Collection<Job> getFailed();
 
   JobSet getSet(String setId);
+
+  void setJobTypes(Function<String, Optional<? extends Class<?>>> jobTypesMapper);
 }

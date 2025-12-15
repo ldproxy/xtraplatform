@@ -17,6 +17,7 @@ import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobQueue;
 import de.ii.xtraplatform.jobs.domain.JobSet;
+import de.ii.xtraplatform.jobs.domain.JobSet.JobSetDetails;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -92,16 +93,16 @@ public class OpsEndpointJobs implements OpsEndpoint {
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
   public Response getJobs(@QueryParam("debug") boolean debug) throws JsonProcessingException {
-    Map<String, Object> jobs = new LinkedHashMap<>();
-    jobs.put("sets", jobQueue.getSets());
-
-    if (debug) {
-      jobs.put("open", jobQueue.getOpen());
-      jobs.put("taken", jobQueue.getTaken());
-      jobs.put("failed", jobQueue.getFailed());
-    }
-
     try {
+      Map<String, Object> jobs = new LinkedHashMap<>();
+      jobs.put("sets", jobQueue.getSets());
+
+      if (debug) {
+        jobs.put("open", jobQueue.getOpen());
+        jobs.put("taken", jobQueue.getTaken());
+        jobs.put("failed", jobQueue.getFailed());
+      }
+
       String s = objectMapper.writeValueAsString(jobs);
       return Response.ok(s).build();
     } catch (Throwable e) {
@@ -142,14 +143,14 @@ public class OpsEndpointJobs implements OpsEndpoint {
       if (jobSet.isPresent() && !jobSet.get().isStarted()) {
         if (jobSet.get().getSetup().isEmpty()
             || !Objects.equals(job.get().getId(), jobSet.get().getSetup().get().getId())) {
-          jobSet.get().start();
+          jobQueue.startJobSet(jobSet.get());
 
           if (LOGGER.isInfoEnabled() || LOGGER.isInfoEnabled(MARKER.JOBS)) {
             LOGGER.info(
                 MARKER.JOBS,
                 "{} started ({})",
                 jobSet.get().getLabel(),
-                jobSet.get().getDetails().getLabel());
+                jobQueue.getJobSetDetails(JobSetDetails.class, jobSet.get()).getLabel());
           }
         }
       }
@@ -176,17 +177,19 @@ public class OpsEndpointJobs implements OpsEndpoint {
             .filter(job1 -> Objects.equals(job1.getId(), jobId))
             .findFirst();
 
-    if (job.isPresent()) {
+    /*TODO if (job.isPresent()) {
       int delta = progress.containsKey("delta") ? Integer.parseInt(progress.get("delta")) : 0;
 
       job.get().update(delta);
+      jobQueue.updateJob(job.get());
 
       if (delta > 0 && job.get().getPartOf().isPresent()) {
         JobSet set = jobQueue.getSet(job.get().getPartOf().get());
         set.update(delta);
-        set.getDetails().update(progress);
+        jobQueue.getJobSetDetails(JobSetDetails.class, set).update(progress);
+        jobQueue.updateJobSet(set);
       }
-    }
+    }*/
 
     return Response.noContent().build();
   }

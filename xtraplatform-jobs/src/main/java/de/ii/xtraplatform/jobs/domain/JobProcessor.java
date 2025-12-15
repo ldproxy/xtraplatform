@@ -8,8 +8,8 @@
 package de.ii.xtraplatform.jobs.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
+import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 @AutoMultiBind
 public interface JobProcessor<T, U> {
@@ -20,7 +20,7 @@ public interface JobProcessor<T, U> {
 
   int getConcurrency(JobSet jobSet);
 
-  JobResult process(Job job, JobSet jobSet, Consumer<Job> pushJob);
+  JobResult process(Job job, JobSet jobSet, JobQueueMin jobQueue);
 
   Class<T> getDetailsType();
 
@@ -31,11 +31,13 @@ public interface JobProcessor<T, U> {
         && (Objects.isNull(job.getDetails()) || getDetailsType().isInstance(job.getDetails()));
   }
 
-  default T getDetails(Job job) {
-    return getDetailsType().cast(job.getDetails());
+  default T getDetails(Job job, JobQueueMin jobQueue) {
+    return jobQueue.getJobDetails(getDetailsType(), job);
   }
 
-  default U getSetDetails(JobSet jobSet) {
-    return getSetDetailsType().cast(jobSet.getDetails());
+  default U getSetDetails(JobSet jobSet, JobQueueMin jobQueue) {
+    return jobQueue.getJobSetDetails(getSetDetailsType(), jobSet);
   }
+
+  Map<String, Class<?>> getJobTypes();
 }
