@@ -62,7 +62,6 @@ public class OpsEndpointJobs implements OpsEndpoint {
 
   @Inject
   public OpsEndpointJobs(AppContext appContext, Jackson jackson, JobQueue jobQueue) {
-    // TODO: if enabled, start embedded queue
     this.objectMapper = jackson.getDefaultObjectMapper();
     this.jobQueue = jobQueue;
   }
@@ -170,26 +169,24 @@ public class OpsEndpointJobs implements OpsEndpoint {
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
   public synchronized Response updateJob(
-      @PathParam("jobId") String jobId, Map<String, String> progress)
+      @PathParam("jobId") String jobId, Map<String, Object> progress)
       throws JsonProcessingException {
     Optional<Job> job =
         jobQueue.getTaken().stream()
             .filter(job1 -> Objects.equals(job1.getId(), jobId))
             .findFirst();
 
-    /*TODO if (job.isPresent()) {
-      int delta = progress.containsKey("delta") ? Integer.parseInt(progress.get("delta")) : 0;
+    if (job.isPresent()) {
+      int delta =
+          progress.containsKey("delta") ? Integer.parseInt((String) progress.get("delta")) : 0;
 
-      job.get().update(delta);
-      jobQueue.updateJob(job.get());
+      jobQueue.updateJob(job.get(), delta);
 
       if (delta > 0 && job.get().getPartOf().isPresent()) {
         JobSet set = jobQueue.getSet(job.get().getPartOf().get());
-        set.update(delta);
-        jobQueue.getJobSetDetails(JobSetDetails.class, set).update(progress);
-        jobQueue.updateJobSet(set);
+        jobQueue.updateJobSet(set, delta, progress);
       }
-    }*/
+    }
 
     return Response.noContent().build();
   }
