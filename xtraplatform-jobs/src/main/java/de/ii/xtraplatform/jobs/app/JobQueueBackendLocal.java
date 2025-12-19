@@ -215,7 +215,6 @@ public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>>
 
   @Override
   protected void notifyObservers(String type) {
-    LOGGER.debug("NOTIFY {}", type);
     observers.forEach(observer -> observer.accept(type));
   }
 
