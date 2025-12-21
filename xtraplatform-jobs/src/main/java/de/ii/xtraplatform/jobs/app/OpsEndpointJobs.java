@@ -169,23 +169,34 @@ public class OpsEndpointJobs implements OpsEndpoint {
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
   public synchronized Response updateJob(
-      @PathParam("jobId") String jobId, Map<String, Object> progress)
-      throws JsonProcessingException {
-    Optional<Job> job =
-        jobQueue.getTaken().stream()
-            .filter(job1 -> Objects.equals(job1.getId(), jobId))
-            .findFirst();
+      @PathParam("jobId") String jobId, Map<String, Object> progress) {
+    try {
+      Optional<Job> job =
+          jobQueue.getTaken().stream()
+              .filter(job1 -> Objects.equals(job1.getId(), jobId))
+              .findFirst();
 
-    if (job.isPresent()) {
-      int delta =
-          progress.containsKey("delta") ? Integer.parseInt((String) progress.get("delta")) : 0;
+      if (job.isPresent()) {
+        int delta = (Integer) progress.getOrDefault("delta", 0);
 
-      jobQueue.updateJob(job.get(), delta);
+        jobQueue.updateJob(job.get(), delta);
 
-      if (delta > 0 && job.get().getPartOf().isPresent()) {
-        JobSet set = jobQueue.getSet(job.get().getPartOf().get());
-        jobQueue.updateJobSet(set, delta, progress);
+        if (delta > 0 && job.get().getPartOf().isPresent()) {
+          JobSet set = jobQueue.getSet(job.get().getPartOf().get());
+          jobQueue.updateJobSet(set, delta, progress);
+        }
+
+        if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
+          LOGGER.trace(
+              MARKER.JOBS, "Job {} progress updated by remote executor ({})", jobId, progress);
+        }
+      } else {
+        if (LOGGER.isWarnEnabled() || LOGGER.isWarnEnabled(MARKER.JOBS)) {
+          LOGGER.warn(MARKER.JOBS, "Received progress update for unknown job {}", jobId);
+        }
       }
+    } catch (Throwable e) {
+      LOGGER.error("Error while updating job {}", jobId, e);
     }
 
     return Response.noContent().build();
@@ -202,8 +213,7 @@ public class OpsEndpointJobs implements OpsEndpoint {
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
   public synchronized Response closeJob(
-      @PathParam("jobId") String jobId, @Parameter(hidden = true) Map<String, String> result)
-      throws JsonProcessingException {
+      @PathParam("jobId") String jobId, @Parameter(hidden = true) Map<String, String> result) {
     if (result.containsKey("error") && Objects.nonNull(result.get("error"))) {
       boolean retry =
           jobQueue.error(jobId, result.get("error"), Boolean.parseBoolean(result.get("retry")));

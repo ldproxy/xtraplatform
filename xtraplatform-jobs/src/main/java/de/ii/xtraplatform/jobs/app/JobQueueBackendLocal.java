@@ -126,7 +126,7 @@ public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>>
   }
 
   @Override
-  protected void queueJob(Job job, boolean untake) {
+  protected synchronized void queueJob(Job job, boolean untake) {
     Deque<String> queue = getQueue(job.getType(), job.getPriority());
     updateJob(job);
 
@@ -178,7 +178,7 @@ public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>>
   }
 
   @Override
-  protected Optional<Job> takeJob(Deque<String> queue) {
+  protected synchronized Optional<Job> takeJob(Deque<String> queue) {
     if (!queue.isEmpty()) {
       String jobId = queue.remove();
       takenQueue.add(jobId);
@@ -190,7 +190,7 @@ public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>>
   }
 
   @Override
-  protected Optional<Job> untakeJob(String jobId) {
+  protected synchronized Optional<Job> untakeJob(String jobId) {
     Optional<String> id =
         takenQueue.stream().filter(takenId -> Objects.equals(takenId, jobId)).findFirst();
 
