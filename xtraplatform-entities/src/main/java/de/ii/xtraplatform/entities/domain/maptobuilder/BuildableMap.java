@@ -24,20 +24,14 @@ public abstract class BuildableMap<T extends Buildable<T>, U extends BuildableBu
 
   @Value.Derived
   Map<String, T> getDelegate() {
-    return /*Stream.concat(
-           getInstances().entrySet()
-                         .stream(),
-           */ getBuilders().entrySet().stream()
+    return getBuilders().entrySet().stream()
         .map(
             entry ->
                 new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), entry.getValue().build()))
-        // )
         .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   abstract Map<String, U> getBuilders();
-
-  // abstract Map<String, T> getInstances();
 
   @Override
   protected Map<String, T> delegate() {

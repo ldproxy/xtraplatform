@@ -8,7 +8,6 @@
 package de.ii.xtraplatform.entities.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -592,8 +591,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Map<String, Object> map = asMap(identifier, data);
 
       Map<String, Object> withoutDefaults =
-          defaultsStore.subtractDefaults(
-              identifier, data.getEntitySubType(), map, ImmutableList.of());
+          defaultsStore.subtractDefaults(identifier, data.getEntitySubType(), map);
 
       return getEventSourcing()
           .pushPartialMutationEvent(identifier, withoutDefaults)
@@ -645,8 +643,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
       // TODO: I guess the correct way to define ignoreKeys would be in EntityFactory
       Map<String, Object> withoutDefaults =
-          defaultsStore.subtractDefaults(
-              identifier, merged.getEntitySubType(), map, ImmutableList.of("enabled"));
+          defaultsStore.subtractDefaults(identifier, merged.getEntitySubType(), map);
 
       Map<String, Object> withoutResetted =
           MapAligner.align(

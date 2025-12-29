@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.entities.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -75,6 +76,10 @@ public interface EntityFactory {
 
   default Map<String, String> getListEntryKeys() {
     return Map.of();
+  }
+
+  default List<String> getIgnoreKeys() {
+    return List.of("enabled");
   }
 
   void addEntityListener(Consumer<PersistentEntity> listener, boolean existing);
