@@ -271,10 +271,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
   @Override
   public Map<String, Object> subtractDefaults(
-      Identifier identifier,
-      Optional<String> subType,
-      Map<String, Object> data,
-      List<String> ignoreKeys) {
+      Identifier identifier, Optional<String> subType, Map<String, Object> data) {
 
     Identifier defaultsIdentifier = EntityDataStore.defaults(identifier, subType);
 
@@ -287,9 +284,10 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       Map<String, Object> defaults =
           valueEncodingMap.deserialize(
               defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
+      EntityFactory factory = getFactory(defaultsIdentifier);
 
       return MapSubtractor.subtract(
-          data, defaults, ignoreKeys, getFactory(defaultsIdentifier).getListEntryKeys());
+          data, defaults, factory.getIgnoreKeys(), factory.getListEntryKeys());
 
     } catch (Throwable e) {
       boolean br = true;

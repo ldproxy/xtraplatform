@@ -9,7 +9,6 @@ package de.ii.xtraplatform.entities.domain;
 
 import de.ii.xtraplatform.values.domain.Identifier;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -18,10 +17,7 @@ public interface EntityDataDefaultsStore extends MergeableKeyValueStore<Map<Stri
   String EVENT_TYPE = "defaults";
 
   Map<String, Object> subtractDefaults(
-      Identifier identifier,
-      Optional<String> subType,
-      Map<String, Object> data,
-      List<String> ignoreKeys);
+      Identifier identifier, Optional<String> subType, Map<String, Object> data);
 
   Map<String, Object> asMap(Identifier identifier, EntityData entityData) throws IOException;
 

@@ -56,10 +56,12 @@ public class MapSubtractor {
     for (String key : data.keySet()) {
       if (ignoreKeys.contains(key)) {
         result.put(key, data.get(key));
+        continue;
       }
 
       if (newEntries.containsKey(key)) {
         result.put(key, newEntries.get(key));
+        continue;
       }
 
       if (differingEntries.containsKey(key)) {
