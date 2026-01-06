@@ -48,61 +48,65 @@ import org.slf4j.LoggerFactory;
 public class DynamicOpenApiImpl extends BaseOpenApiResource
     implements DynamicOpenApi, JaxRsConsumer {
 
-  private static Logger LOGGER = LoggerFactory.getLogger(DynamicOpenApiImpl.class);
+  private static Logger logger = LoggerFactory.getLogger(DynamicOpenApiImpl.class);
   public static final MediaType YAML_TYPE = new MediaType("application", "yaml");
   public static final String YAML = "application/yaml";
 
   private OpenAPI openApiSpec;
 
   @Inject
-  public DynamicOpenApiImpl() {}
+  public DynamicOpenApiImpl() {
+    super();
+  }
 
   @Override
   public Consumer<Set<Object>> getConsumer() {
     return this::scan;
   }
 
-  private synchronized void scan(Set<Object> resources) {
-    Set<Class<?>> resourceClasses =
-        resources.stream()
-            .flatMap(
-                resource -> {
-                  if (resource instanceof DropwizardResourceConfig.SpecificBinder) {
-                    return ((DropwizardResourceConfig.SpecificBinder) resource)
-                        .getBindings().stream()
-                            .filter(binding -> binding instanceof InstanceBinding)
-                            .map(binding -> ((InstanceBinding<?>) binding).getService().getClass());
-                  }
-                  return Stream.of(resource.getClass());
-                })
-            .collect(Collectors.toSet());
-    Reader reader = new Reader(new OpenAPI());
-    this.openApiSpec = reader.read(resourceClasses);
-    openApiSpec.addServersItem(new Server().url("/rest"));
-    if (Objects.nonNull(openApiSpec.getComponents())) {
-      openApiSpec
-          .getComponents()
-          .addSecuritySchemes(
-              "JWT",
-              new SecurityScheme()
-                  .type(SecurityScheme.Type.HTTP)
-                  .scheme("bearer")
-                  .bearerFormat("JWT"));
+  private void scan(Set<Object> resources) {
+    synchronized (this) {
+      Set<Class<?>> resourceClasses =
+          resources.stream()
+              .flatMap(
+                  resource -> {
+                    if (resource instanceof DropwizardResourceConfig.SpecificBinder) {
+                      return ((DropwizardResourceConfig.SpecificBinder) resource)
+                          .getBindings().stream()
+                              .filter(binding -> binding instanceof InstanceBinding)
+                              .map(
+                                  binding ->
+                                      ((InstanceBinding<?>) binding).getService().getClass());
+                    }
+                    return Stream.of(resource.getClass());
+                  })
+              .collect(Collectors.toSet());
+      Reader reader = new Reader(new OpenAPI());
+      this.openApiSpec = reader.read(resourceClasses);
+      openApiSpec.addServersItem(new Server().url("/rest"));
+      if (Objects.nonNull(openApiSpec.getComponents())) {
+        openApiSpec
+            .getComponents()
+            .addSecuritySchemes(
+                "JWT",
+                new SecurityScheme()
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("bearer")
+                    .bearerFormat("JWT"));
+      }
+      openApiSpec.addSecurityItem(new SecurityRequirement().addList("JWT"));
     }
-    openApiSpec.addSecurityItem(new SecurityRequirement().addList("JWT"));
   }
 
   @Override
   public Response getOpenApi(
-      HttpHeaders headers, ServletConfig config, Application app, UriInfo uriInfo, String type)
-      throws Exception {
+      HttpHeaders headers, ServletConfig config, Application app, UriInfo uriInfo, String type) {
     return getOpenApi(headers, uriInfo, type, null);
   }
 
   @Override
   public Response getOpenApi(
-      HttpHeaders headers, UriInfo uriInfo, String type, OpenAPISpecFilter specFilter)
-      throws Exception {
+      HttpHeaders headers, UriInfo uriInfo, String type, OpenAPISpecFilter specFilter) {
     if (openApiSpec == null) {
       return Response.status(404).build();
     }
@@ -121,21 +125,29 @@ public class DynamicOpenApiImpl extends BaseOpenApiResource
               getHeaders(headers));
     }
 
-    if (StringUtils.isNotBlank(type) && type.trim().equalsIgnoreCase("yaml")) {
-      return Response.status(Response.Status.OK)
-          .entity(pretty ? Yaml.pretty(oas) : Yaml.mapper().writeValueAsString(oas))
-          .type("application/yaml")
-          .build();
-    } else {
-      return Response.status(Response.Status.OK)
-          .entity(pretty ? Json.pretty(oas) : Json.mapper().writeValueAsString(oas))
-          .type(MediaType.APPLICATION_JSON_TYPE)
+    try {
+      if (StringUtils.isNotBlank(type) && "yaml".equalsIgnoreCase(type.trim())) {
+        return Response.status(Response.Status.OK)
+            .entity(pretty ? Yaml.pretty(oas) : Yaml.mapper().writeValueAsString(oas))
+            .type("application/yaml")
+            .build();
+      } else {
+        return Response.status(Response.Status.OK)
+            .entity(pretty ? Json.pretty(oas) : Json.mapper().writeValueAsString(oas))
+            .type(MediaType.APPLICATION_JSON_TYPE)
+            .build();
+      }
+    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+      logger.error("Error serializing OpenAPI spec", e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity("Error serializing OpenAPI spec: " + e.getMessage())
+          .type(MediaType.TEXT_PLAIN)
           .build();
     }
   }
 
   private static Map<String, List<String>> getQueryParams(MultivaluedMap<String, String> params) {
-    Map<String, List<String>> output = new HashMap<String, List<String>>();
+    Map<String, List<String>> output = new HashMap<>();
     if (params != null) {
       for (String key : params.keySet()) {
         List<String> values = params.get(key);
@@ -146,7 +158,7 @@ public class DynamicOpenApiImpl extends BaseOpenApiResource
   }
 
   private static Map<String, String> getCookies(HttpHeaders headers) {
-    Map<String, String> output = new HashMap<String, String>();
+    Map<String, String> output = new HashMap<>();
     if (headers != null) {
       for (String key : headers.getCookies().keySet()) {
         Cookie cookie = headers.getCookies().get(key);
@@ -157,7 +169,7 @@ public class DynamicOpenApiImpl extends BaseOpenApiResource
   }
 
   private static Map<String, List<String>> getHeaders(HttpHeaders headers) {
-    Map<String, List<String>> output = new HashMap<String, List<String>>();
+    Map<String, List<String>> output = new HashMap<>();
     if (headers != null) {
       for (String key : headers.getRequestHeaders().keySet()) {
         List<String> values = headers.getRequestHeaders().get(key);

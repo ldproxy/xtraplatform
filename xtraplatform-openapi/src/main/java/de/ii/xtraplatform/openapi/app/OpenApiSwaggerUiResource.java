@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 @AutoBind
 public class OpenApiSwaggerUiResource implements OpenApiViewerResource {
 
-  private static Logger LOGGER = LoggerFactory.getLogger(OpenApiSwaggerUiResource.class);
+  private static Logger logger = LoggerFactory.getLogger(OpenApiSwaggerUiResource.class);
 
   @Inject
   public OpenApiSwaggerUiResource() {}
@@ -46,7 +46,10 @@ public class OpenApiSwaggerUiResource implements OpenApiViewerResource {
           .type(getMimeType(file))
           .build();
     } catch (Throwable e) {
-      throw new NotFoundException();
+      if (logger.isWarnEnabled()) {
+        logger.warn("Error serving file '{}': {}", file, e.toString(), e);
+      }
+      throw new NotFoundException(e);
     }
   }
 
