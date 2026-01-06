@@ -45,9 +45,8 @@ public class EventStoreDriverS3 implements EventStoreDriver {
     if (storeSource instanceof StoreSourceS3) {
       Tuple<MinioClient, String> client = getClient((StoreSourceS3) storeSource);
       String bucket = client.second();
-
-      try {
-        return client.first().bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+      try (MinioClient minioClient = client.first()) {
+        return minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
       } catch (Throwable e) {
         LogContext.error(LOGGER, e, "S3 Driver");
         return false;

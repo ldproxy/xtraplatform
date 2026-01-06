@@ -27,8 +27,6 @@ public class CfgStoreDriverS3 implements CfgStoreDriver {
   private static final Logger LOGGER = LoggerFactory.getLogger(CfgStoreDriverS3.class);
   static final Path CFG_YML = Path.of("cfg.yml");
 
-  public CfgStoreDriverS3() {}
-
   @Override
   public String getType() {
     return "S3";
@@ -39,9 +37,8 @@ public class CfgStoreDriverS3 implements CfgStoreDriver {
     if (storeSource instanceof StoreSourceS3) {
       Tuple<MinioClient, String> client = getClient((StoreSourceS3) storeSource);
       String bucket = client.second();
-
-      try {
-        return client.first().bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+      try (MinioClient minioClient = client.first()) {
+        return minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
       } catch (Throwable e) {
         LogContext.error(LOGGER, e, "S3 Driver");
         return false;
@@ -60,11 +57,10 @@ public class CfgStoreDriverS3 implements CfgStoreDriver {
       Path root = Path.of("");
       Path cfg = storeSource.isSingleContent() ? root : root.resolve(CFG_YML);
 
-      try {
+      try (MinioClient minioClient = client.first()) {
         return Optional.of(
-            client
-                .first()
-                .getObject(GetObjectArgs.builder().bucket(bucket).object(cfg.toString()).build()));
+            minioClient.getObject(
+                GetObjectArgs.builder().bucket(bucket).object(cfg.toString()).build()));
       } catch (Throwable e) {
         LogContext.error(LOGGER, e, "S3 Driver");
         return Optional.empty();
