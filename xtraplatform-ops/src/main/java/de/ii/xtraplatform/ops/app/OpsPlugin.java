@@ -92,6 +92,7 @@ public class OpsPlugin implements DropwizardPlugin {
     private String contextPath;
 
     public OpsResourceConfig() {
+      super();
       this.urlPattern = "/*";
       this.contextPath = "/";
 
