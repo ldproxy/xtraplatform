@@ -37,12 +37,12 @@ public class ReactiveRx implements Reactive {
 
   @Override
   public Runner runner(String name) {
-    return new RunnerRx(name);
+    return new RunnerRx();
   }
 
   @Override
   public Runner runner(String name, int capacity, int queueSize) {
-    return new RunnerRx(name, capacity, queueSize);
+    return new RunnerRx(capacity, queueSize);
   }
 
   static <V, W> Triple<Flowable<V>, SubscriberRx<V>, StreamContext<W>> getGraph(Stream<W> stream) {

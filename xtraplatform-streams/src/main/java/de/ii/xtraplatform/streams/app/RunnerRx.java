@@ -24,8 +24,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 // TODO: the queue was introduced as a mean to protect the connection pool and prevent deadlocks
 // because of a bug (running.get() < queueSize instead of running.get() < capacity) it was never
@@ -35,34 +33,29 @@ import org.slf4j.LoggerFactory;
 // FeatureStreams
 public class RunnerRx implements Runner {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(RunnerRx.class);
-
   private final Scheduler scheduler;
-  private final String name;
   private final int capacity;
   private final int queueSize;
   private final Queue<Runnable> queue;
   private final AtomicInteger running;
 
-  public RunnerRx(String name) {
-    this(name, Runner.DYNAMIC_CAPACITY, Runner.DYNAMIC_CAPACITY);
+  public RunnerRx() {
+    this(Runner.DYNAMIC_CAPACITY, Runner.DYNAMIC_CAPACITY);
   }
 
-  public RunnerRx(String name, int capacity, int queueSize) {
-    this(getConfig(name, capacity), name, capacity, queueSize);
+  public RunnerRx(int capacity, int queueSize) {
+    this(getConfig(capacity), capacity, queueSize);
   }
 
-  RunnerRx(ExecutorService executorService, String name, int capacity, int queueSize) {
+  RunnerRx(ExecutorService executorService, int capacity, int queueSize) {
     if (capacity == 0) {
       throw new IllegalArgumentException("invalid capacity: 0");
     }
 
     // TODO: thread names
-    getDispatcherName(name);
     this.scheduler = Schedulers.from(executorService);
     scheduler.start();
 
-    this.name = name;
     this.capacity = capacity;
     this.queueSize = queueSize;
     this.queue = new LinkedList<>();
@@ -153,24 +146,20 @@ public class RunnerRx implements Runner {
     return running.get();
   }
 
-  private static ExecutorService getConfig(String name, int capacity) {
+  private static ExecutorService getConfig(int capacity) {
     return capacity == Runner.DYNAMIC_CAPACITY
-        ? getDefaultConfig(name)
-        : getConfig(name, capacity, capacity);
+        ? getDefaultConfig()
+        : createExecutorService(capacity);
   }
 
-  private static ExecutorService getDefaultConfig(String name) {
-    return getConfig(name, 8, 64);
+  private static ExecutorService getDefaultConfig() {
+    return createExecutorService(64);
   }
 
   // TODO
-  private static ExecutorService getConfig(String name, int parallelismMin, int parallelismMax) {
+  private static ExecutorService createExecutorService(int parallelismMax) {
 
     return Executors.newWorkStealingPool(Math.max(1, parallelismMax));
-  }
-
-  private static String getDispatcherName(String name) {
-    return String.format("stream.%s", name);
   }
 
   @Override

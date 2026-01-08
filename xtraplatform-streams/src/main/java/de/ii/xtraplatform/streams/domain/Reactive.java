@@ -146,7 +146,7 @@ public interface Reactive {
     }
 
     static <T, U> Transformer<T, U> flatMap(Function<T, Source<U>> flatMap) {
-      return new TransformerDefault<>(flatMap, true);
+      return TransformerDefault.flatMap(flatMap);
     }
   }
 
