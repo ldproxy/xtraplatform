@@ -90,48 +90,52 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
 
     List<StoreSource> sources = findSources();
 
-    Lists.reverse(sources)
-        .forEach(
-            source -> {
-              Optional<BlobStoreDriver> blobStoreDriver = findDriver(source, true);
-
-              blobStoreDriver.ifPresent(
-                  driver -> {
-                    try {
-                      addSubComponent(driver, source);
-
-                      BlobSource blobSource = driver.init(source, contentType);
-
-                      blobReaders.add(blobSource);
-
-                      boolean writable = false;
-                      if (source.isWritable() && blobSource.canWrite()) {
-                        blobWriters.add(blobSource);
-                        writable = true;
-                      }
-
-                      if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(
-                            "{}{} for {} ready{}",
-                            contentType.getLabel(),
-                            source.getPrefix().isPresent()
-                                ? " of type " + source.getPrefix().get()
-                                : "",
-                            source.getLabel(),
-                            writable ? " and writable" : "");
-                      }
-                    } catch (Throwable e) {
-                      LogContext.error(
-                          LOGGER,
-                          e,
-                          "{} for {} could not be loaded",
-                          contentType.getLabel(),
-                          source.getLabel());
-                    }
-                  });
-            });
+    Lists.reverse(sources).forEach(this::initializeSource);
 
     onVolatileStarted();
+  }
+
+  private void initializeSource(StoreSource source) {
+    Optional<BlobStoreDriver> blobStoreDriver = findDriver(source, true);
+
+    blobStoreDriver.ifPresent(driver -> processDriver(driver, source));
+  }
+
+  private void processDriver(BlobStoreDriver driver, StoreSource source) {
+    try {
+      addSubComponent(driver, source);
+
+      BlobSource blobSource = driver.init(source, contentType);
+
+      blobReaders.add(blobSource);
+
+      boolean writable = addWriterIfPossible(source, blobSource);
+
+      logSourceReady(source, writable);
+    } catch (Throwable e) {
+      LogContext.error(
+          LOGGER, e, "{} for {} could not be loaded", contentType.getLabel(), source.getLabel());
+    }
+  }
+
+  private boolean addWriterIfPossible(StoreSource source, BlobSource blobSource) {
+    boolean writable = false;
+    if (source.isWritable() && blobSource.canWrite()) {
+      blobWriters.add(blobSource);
+      writable = true;
+    }
+    return writable;
+  }
+
+  private void logSourceReady(StoreSource source, boolean writable) {
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "{}{} for {} ready{}",
+          contentType.getLabel(),
+          source.getPrefix().isPresent() ? " of type " + source.getPrefix().get() : "",
+          source.getLabel(),
+          writable ? " and writable" : "");
+    }
   }
 
   private void addSubComponent(BlobStoreDriver driver, StoreSource source) {
@@ -182,7 +186,7 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
             .filter(
                 d -> {
                   if (!d.isAvailable(storeSource)) {
-                    if (warn) {
+                    if (warn && LOGGER.isWarnEnabled()) {
                       LOGGER.warn(
                           "{} for {} are not available.",
                           contentType.getLabel(),
@@ -195,7 +199,7 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
                 })
             .findFirst();
 
-    if (driver.isEmpty() && !foundUnavailable[0]) {
+    if (driver.isEmpty() && !foundUnavailable[0] && LOGGER.isErrorEnabled()) {
       LOGGER.error("No blob driver found for source {}.", storeSource.getLabel());
     }
 

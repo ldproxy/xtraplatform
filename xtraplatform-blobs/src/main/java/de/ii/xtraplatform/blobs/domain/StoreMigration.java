@@ -19,7 +19,6 @@ import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -89,294 +88,333 @@ public interface StoreMigration extends Migration<StoreMigrationContext, StoreSo
   }
 
   default List<Map.Entry<String, String>> getPreview() {
-    return getMoves().stream()
-        .flatMap(
-            moves -> {
-              Content content = moves.first().getContent();
-              Path from = Path.of(moves.first().getSrc());
-              Optional<String> prefix = moves.first().getPrefix();
+    return getMoves().stream().flatMap(this::getPreviewForMove).collect(Collectors.toList());
+  }
 
-              if (content == Content.ENTITIES) {
-                Path to = Path.of(content.getPrefix());
-                List<Entry<String, String>> inter = new ArrayList<>();
+  default Stream<Map.Entry<String, String>> getPreviewForMove(
+      Tuple<StoreSourceFs, StoreSourceFs> moves) {
+    Content content = moves.first().getContent();
 
-                try {
-                  if (getContext().reader().has(from.resolve(Content.DEFAULTS.getPrefix()))) {
-                    inter.add(
-                        Map.entry(
-                            from.resolve(Content.DEFAULTS.getPrefix()).normalize().toString(),
-                            to.resolve(Content.DEFAULTS.getPrefix()).normalize().toString()));
-                  }
-                } catch (Throwable e) {
-                }
-                try {
-                  if (getContext().reader().has(from.resolve(Content.INSTANCES_OLD.getPrefix()))) {
-                    inter.add(
-                        Map.entry(
-                            from.resolve(Content.INSTANCES_OLD.getPrefix()).normalize().toString()
-                                + filters(moves.first(), Content.INSTANCES_OLD.getPrefix()),
-                            to.resolve(Content.INSTANCES.getPrefix()).normalize().toString()));
-                  }
-                } catch (Throwable e) {
-                }
-                try {
-                  if (getContext().reader().has(from.resolve(Content.OVERRIDES.getPrefix()))) {
-                    inter.add(
-                        Map.entry(
-                            from.resolve(Content.OVERRIDES.getPrefix()).normalize().toString(),
-                            to.resolve(Content.OVERRIDES.getPrefix()).normalize().toString()));
-                  }
-                } catch (Throwable e) {
-                }
+    if (content == Content.ENTITIES) {
+      Path from = Path.of(moves.first().getSrc());
+      return getPreviewForEntities(from, content);
+    }
+    if (content == Content.RESOURCES || content == Content.VALUES) {
+      Path from = Path.of(moves.first().getSrc());
+      Optional<String> prefix = moves.first().getPrefix();
+      return getPreviewForResourcesOrValues(moves, from, content, prefix);
+    }
+    return Stream.<Map.Entry<String, String>>empty();
+  }
 
-                return inter.stream();
-              }
-              if (content == Content.RESOURCES || content == Content.VALUES) {
-                try {
-                  if (!getContext().reader().has(from)) {
-                    return Stream.<Entry<String, String>>empty();
-                  }
-                } catch (Throwable e) {
-                  // ignore
-                  System.out.println("E " + e.getMessage());
-                  return Stream.<Entry<String, String>>empty();
-                }
+  default Stream<Map.Entry<String, String>> getPreviewForEntities(Path from, Content content) {
+    Path to = Path.of(content.getPrefix());
+    List<Map.Entry<String, String>> entries = new ArrayList<>();
 
-                String from2 =
-                    moves.first().getAbsolutePath(Path.of("")).normalize().toString()
-                        + filters(moves.first());
-                String to =
-                    moves
-                        .second()
-                        .getAbsolutePath(Path.of(content.getPrefix()))
-                        .resolve(Path.of(prefix.orElse("")))
-                        .normalize()
-                        .toString();
+    addPreviewEntryIfExists(entries, from, to, Content.DEFAULTS);
+    addPreviewEntryIfExists(entries, from, to, Content.INSTANCES_OLD, Content.INSTANCES);
+    addPreviewEntryIfExists(entries, from, to, Content.OVERRIDES);
 
-                return Stream.of(Map.entry(from2, to));
-              }
-              return Stream.<Entry<String, String>>empty();
-            })
-        .collect(Collectors.toList());
+    return entries.stream();
+  }
+
+  default void addPreviewEntryIfExists(
+      List<Map.Entry<String, String>> entries, Path from, Path to, Content sourceContent) {
+    addPreviewEntryIfExists(entries, from, to, sourceContent, sourceContent);
+  }
+
+  default void addPreviewEntryIfExists(
+      List<Map.Entry<String, String>> entries,
+      Path from,
+      Path to,
+      Content sourceContent,
+      Content targetContent) {
+    try {
+      if (getContext().reader().has(from.resolve(sourceContent.getPrefix()))) {
+        String fromPath = from.resolve(sourceContent.getPrefix()).normalize().toString();
+        String toPath = to.resolve(targetContent.getPrefix()).normalize().toString();
+
+        if (sourceContent == Content.INSTANCES_OLD) {
+          fromPath += filters(getMoves().get(0).first(), Content.INSTANCES_OLD.getPrefix());
+        }
+
+        entries.add(Map.entry(fromPath, toPath));
+      }
+    } catch (Throwable e) {
+      // Ignore I/O exceptions during preview - migration will handle missing sources gracefully
+    }
+  }
+
+  default Stream<Map.Entry<String, String>> getPreviewForResourcesOrValues(
+      Tuple<StoreSourceFs, StoreSourceFs> moves,
+      Path from,
+      Content content,
+      Optional<String> prefix) {
+    try {
+      if (!getContext().reader().has(from)) {
+        return Stream.<Map.Entry<String, String>>empty();
+      }
+    } catch (Throwable e) {
+      // Ignore I/O exceptions - source may not exist during preview
+      return Stream.<Map.Entry<String, String>>empty();
+    }
+
+    String fromPath =
+        moves.first().getAbsolutePath(Path.of("")).normalize().toString() + filters(moves.first());
+    String toPath =
+        moves
+            .second()
+            .getAbsolutePath(Path.of(content.getPrefix()))
+            .resolve(Path.of(prefix.orElse("")))
+            .normalize()
+            .toString();
+
+    return Stream.of(Map.entry(fromPath, toPath));
   }
 
   default List<Map.Entry<Path, Path>> migrate() {
-    return getMoves().stream()
-        .flatMap(
-            moves -> {
-              Content content = moves.first().getContent();
-              Path from = Path.of(moves.first().getSrc());
-              Optional<String> prefix = moves.first().getPrefix();
+    return getMoves().stream().flatMap(this::migrateMove).collect(Collectors.toList());
+  }
 
-              if (content == Content.ENTITIES) {
-                Path to = Path.of(content.getPrefix());
-                List<Entry<Path, Path>> inter = new ArrayList<>();
+  default Stream<Map.Entry<Path, Path>> migrateMove(Tuple<StoreSourceFs, StoreSourceFs> moves) {
+    Content content = moves.first().getContent();
 
-                try {
-                  if (getContext().reader().has(from.resolve(Content.DEFAULTS.getPrefix()))) {
-                    inter.add(
-                        Map.entry(
-                            from.resolve(Content.DEFAULTS.getPrefix()).normalize(),
-                            to.resolve(Content.DEFAULTS.getPrefix()).normalize()));
-                  }
-                } catch (Throwable e) {
-                }
-                try {
-                  if (getContext().reader().has(from.resolve(Content.INSTANCES_OLD.getPrefix()))) {
-                    if (!moves.first().getIncludes().isEmpty()
-                        || !moves.first().getExcludes().isEmpty()) {
-                      Path from2 = from.resolve(Content.INSTANCES_OLD.getPrefix());
-                      Path to2 = to.resolve(Content.INSTANCES.getPrefix());
-                      List<PathMatcher> includes =
-                          StoreDriver.asMatchers(moves.first().getIncludes(), from.toString());
-                      List<PathMatcher> excludes =
-                          StoreDriver.asMatchers(moves.first().getExcludes(), from.toString());
+    if (content == Content.ENTITIES) {
+      Path from = Path.of(moves.first().getSrc());
+      return migrateEntities(moves, from);
+    }
+    if (content == Content.VALUES) {
+      Path from = Path.of(moves.first().getSrc());
+      Optional<String> prefix = moves.first().getPrefix();
+      return migrateValues(moves, from, prefix);
+    }
+    if (content == Content.RESOURCES) {
+      Path from = Path.of(moves.first().getSrc());
+      Optional<String> prefix = moves.first().getPrefix();
+      return migrateResources(moves, from, prefix);
+    }
+    return Stream.<Map.Entry<Path, Path>>empty();
+  }
 
-                      try (Stream<Path> paths =
-                          getContext()
-                              .reader()
-                              .walk(
-                                  from2,
-                                  8,
-                                  (p, a) ->
-                                      a.isValue()
-                                          && (includes.isEmpty()
-                                              || includes.stream()
-                                                  .anyMatch(
-                                                      include -> include.matches(from2.resolve(p))))
-                                          && excludes.stream()
-                                              .noneMatch(
-                                                  exclude -> exclude.matches(from2.resolve(p))))) {
-                        paths.forEach(
-                            path ->
-                                inter.add(
-                                    Map.entry(
-                                        from2.resolve(path).normalize(),
-                                        to2.resolve(path).normalize())));
-                      } catch (Throwable e) {
-                        // ignore
-                        System.out.println("E " + e.getMessage());
-                      }
-                    } else {
-                      inter.add(
-                          Map.entry(
-                              from.resolve(Content.INSTANCES_OLD.getPrefix()).normalize(),
-                              to.resolve(Content.INSTANCES.getPrefix()).normalize()));
-                    }
-                  }
-                } catch (Throwable e) {
-                }
-                try {
-                  if (getContext().reader().has(from.resolve(Content.OVERRIDES.getPrefix()))) {
-                    inter.add(
-                        Map.entry(
-                            from.resolve(Content.OVERRIDES.getPrefix()).normalize(),
-                            to.resolve(Content.OVERRIDES.getPrefix()).normalize()));
-                  }
-                } catch (Throwable e) {
-                }
+  default Stream<Map.Entry<Path, Path>> migrateEntities(
+      Tuple<StoreSourceFs, StoreSourceFs> moves, Path from) {
+    Content content = moves.first().getContent();
+    Path to = Path.of(content.getPrefix());
+    List<Map.Entry<Path, Path>> entries = new ArrayList<>();
 
-                return inter.stream();
-              }
-              if (content == Content.VALUES) {
-                try {
-                  if (!getContext().reader().has(from)) {
-                    return Stream.<Entry<Path, Path>>empty();
-                  }
-                } catch (Throwable e) {
-                  // ignore
-                  System.out.println("E " + e.getMessage());
-                  return Stream.<Entry<Path, Path>>empty();
-                }
+    addMigrationEntryIfExists(entries, from, to, Content.DEFAULTS);
+    addInstancesMigration(entries, moves, from, to);
+    addMigrationEntryIfExists(entries, from, to, Content.OVERRIDES);
 
-                Path to = Path.of(content.getPrefix()).resolve(Path.of(prefix.orElse("")));
-                List<PathMatcher> includes =
-                    StoreDriver.asMatchers(moves.first().getIncludes(), from.toString());
-                List<PathMatcher> excludes =
-                    StoreDriver.asMatchers(moves.first().getExcludes(), from.toString());
+    return entries.stream();
+  }
 
-                List<Entry<Path, Path>> inter = new ArrayList<>();
-                try (Stream<Path> paths =
-                    getContext()
-                        .reader()
-                        .walk(
-                            from,
-                            8,
-                            (p, a) ->
-                                a.isValue()
-                                    && (includes.isEmpty()
-                                        || includes.stream()
-                                            .anyMatch(include -> include.matches(from.resolve(p))))
-                                    && excludes.stream()
-                                        .noneMatch(exclude -> exclude.matches(from.resolve(p))))) {
-                  paths.forEach(
-                      path ->
-                          inter.add(
-                              Map.entry(
-                                  from.resolve(path).normalize(),
-                                  to.resolve(
-                                          Objects.equals(prefix.orElse(""), "codelists")
-                                              ? path.getFileName()
-                                              : path)
-                                      .normalize())));
-                } catch (Throwable e) {
-                  // ignore
-                  System.out.println("E " + e.getMessage());
-                }
-                return inter.stream();
-              }
-              if (content == Content.RESOURCES) {
-                try {
-                  if (!getContext().reader().has(from)) {
-                    return Stream.<Entry<Path, Path>>empty();
-                  }
-                } catch (Throwable e) {
-                  // ignore
-                  System.out.println("E " + e.getMessage());
-                  return Stream.<Entry<Path, Path>>empty();
-                }
+  default void addMigrationEntryIfExists(
+      List<Map.Entry<Path, Path>> entries, Path from, Path to, Content content) {
+    try {
+      if (getContext().reader().has(from.resolve(content.getPrefix()))) {
+        entries.add(
+            Map.entry(
+                from.resolve(content.getPrefix()).normalize(),
+                to.resolve(content.getPrefix()).normalize()));
+      }
+    } catch (Throwable e) {
+      // Ignore I/O exceptions during migration
+    }
+  }
 
-                if (prefix.isEmpty() || prefix.get().startsWith("tiles")) {
-                  Path to = Path.of(content.getPrefix()).resolve(Path.of(prefix.orElse("")));
-                  List<PathMatcher> includes =
-                      StoreDriver.asMatchers(moves.first().getIncludes(), from.toString());
-                  List<PathMatcher> excludes =
-                      StoreDriver.asMatchers(moves.first().getExcludes(), from.toString());
+  default void addInstancesMigration(
+      List<Map.Entry<Path, Path>> entries,
+      Tuple<StoreSourceFs, StoreSourceFs> moves,
+      Path from,
+      Path to) {
+    try {
+      if (getContext().reader().has(from.resolve(Content.INSTANCES_OLD.getPrefix()))) {
+        if (moves.first().getIncludes().isEmpty() && moves.first().getExcludes().isEmpty()) {
+          entries.add(
+              Map.entry(
+                  from.resolve(Content.INSTANCES_OLD.getPrefix()).normalize(),
+                  to.resolve(Content.INSTANCES.getPrefix()).normalize()));
+        } else {
+          addFilteredInstancesMigration(entries, moves, from, to);
+        }
+      }
+    } catch (Throwable e) {
+      // Ignore I/O exceptions during migration
+    }
+  }
 
-                  List<Entry<Path, Path>> inter = new ArrayList<>();
-                  try (Stream<Path> paths =
-                      getContext().reader().walk(from, 1, (p, a) -> !a.isValue())) {
-                    paths
-                        .skip(1)
-                        .filter(
-                            path ->
-                                (includes.isEmpty()
-                                        || includes.stream()
-                                            .anyMatch(
-                                                include -> include.matches(from.resolve(path))))
-                                    && excludes.stream()
-                                        .noneMatch(exclude -> exclude.matches(from.resolve(path)))
-                                    && !path.endsWith("__tmp__"))
-                        // .sorted(Comparator.reverseOrder())
-                        .forEach(
-                            path ->
-                                inter.add(
-                                    Map.entry(
-                                        from.resolve(path).normalize(),
-                                        to.resolve(path).normalize())));
-                  } catch (Throwable e) {
-                    // ignore
-                    System.out.println("E " + e.getMessage());
-                  }
-                  return inter.stream();
-                } else if (!moves.first().getIncludes().isEmpty()
-                    || !moves.first().getExcludes().isEmpty()) {
-                  Path to = Path.of(content.getPrefix()).resolve(Path.of(prefix.orElse("")));
-                  List<PathMatcher> includes =
-                      StoreDriver.asMatchers(moves.first().getIncludes(), from.toString());
-                  List<PathMatcher> excludes =
-                      StoreDriver.asMatchers(moves.first().getExcludes(), from.toString());
+  default void addFilteredInstancesMigration(
+      List<Map.Entry<Path, Path>> entries,
+      Tuple<StoreSourceFs, StoreSourceFs> moves,
+      Path from,
+      Path to) {
+    Path from2 = from.resolve(Content.INSTANCES_OLD.getPrefix());
+    Path to2 = to.resolve(Content.INSTANCES.getPrefix());
+    List<PathMatcher> includes =
+        StoreDriver.asMatchers(moves.first().getIncludes(), from.toString());
+    List<PathMatcher> excludes =
+        StoreDriver.asMatchers(moves.first().getExcludes(), from.toString());
 
-                  List<Entry<Path, Path>> inter = new ArrayList<>();
-                  try (Stream<Path> paths =
-                      getContext()
-                          .reader()
-                          .walk(
-                              from,
-                              8,
-                              (p, a) ->
-                                  a.isValue()
-                                      && (includes.isEmpty()
-                                          || includes.stream()
-                                              .anyMatch(
-                                                  include -> include.matches(from.resolve(p))))
-                                      && excludes.stream()
-                                          .noneMatch(
-                                              exclude -> exclude.matches(from.resolve(p))))) {
-                    paths.forEach(
-                        path ->
-                            inter.add(
-                                Map.entry(
-                                    from.resolve(path).normalize(), to.resolve(path).normalize())));
-                  } catch (Throwable e) {
-                    // ignore
-                    System.out.println("E " + e.getMessage());
-                  }
-                  return inter.stream();
-                }
+    try (Stream<Path> paths =
+        getContext()
+            .reader()
+            .walk(
+                from2,
+                8,
+                (p, a) ->
+                    a.isValue()
+                        && (includes.isEmpty()
+                            || includes.stream()
+                                .anyMatch(include -> include.matches(from2.resolve(p))))
+                        && excludes.stream()
+                            .noneMatch(exclude -> exclude.matches(from2.resolve(p))))) {
+      paths.forEach(
+          path ->
+              entries.add(
+                  Map.entry(from2.resolve(path).normalize(), to2.resolve(path).normalize())));
+    } catch (Throwable e) {
+      // Ignore I/O exceptions during filtered migration
+    }
+  }
 
-                Path from2 = moves.first().getAbsolutePath(Path.of("")).normalize();
-                Path to =
-                    moves
-                        .second()
-                        .getAbsolutePath(Path.of(content.getPrefix()))
-                        .resolve(Path.of(prefix.orElse("")))
-                        .normalize();
+  default Stream<Map.Entry<Path, Path>> migrateValues(
+      Tuple<StoreSourceFs, StoreSourceFs> moves, Path from, Optional<String> prefix) {
+    try {
+      if (!getContext().reader().has(from)) {
+        return Stream.<Map.Entry<Path, Path>>empty();
+      }
+    } catch (Throwable e) {
+      // Ignore I/O exceptions - source may not exist
+      return Stream.<Map.Entry<Path, Path>>empty();
+    }
 
-                return Stream.of(Map.entry(from2, to));
-              }
-              return Stream.<Entry<Path, Path>>empty();
-            })
-        .collect(Collectors.toList());
+    Path to = Path.of(Content.VALUES.getPrefix()).resolve(Path.of(prefix.orElse("")));
+    List<PathMatcher> includes =
+        StoreDriver.asMatchers(moves.first().getIncludes(), from.toString());
+    List<PathMatcher> excludes =
+        StoreDriver.asMatchers(moves.first().getExcludes(), from.toString());
+
+    List<Map.Entry<Path, Path>> entries = new ArrayList<>();
+    try (Stream<Path> paths =
+        getContext()
+            .reader()
+            .walk(
+                from,
+                8,
+                (p, a) ->
+                    a.isValue()
+                        && (includes.isEmpty()
+                            || includes.stream()
+                                .anyMatch(include -> include.matches(from.resolve(p))))
+                        && excludes.stream()
+                            .noneMatch(exclude -> exclude.matches(from.resolve(p))))) {
+      paths.forEach(
+          path ->
+              entries.add(
+                  Map.entry(
+                      from.resolve(path).normalize(),
+                      to.resolve(
+                              Objects.equals(prefix.orElse(""), "codelists")
+                                  ? path.getFileName()
+                                  : path)
+                          .normalize())));
+    } catch (Throwable e) {
+      // Ignore I/O exceptions during values migration
+    }
+    return entries.stream();
+  }
+
+  default Stream<Map.Entry<Path, Path>> migrateResources(
+      Tuple<StoreSourceFs, StoreSourceFs> moves, Path from, Optional<String> prefix) {
+    try {
+      if (!getContext().reader().has(from)) {
+        return Stream.<Map.Entry<Path, Path>>empty();
+      }
+    } catch (Throwable e) {
+      // Ignore I/O exceptions - source may not exist
+      return Stream.<Map.Entry<Path, Path>>empty();
+    }
+
+    if (prefix.isEmpty() || prefix.get().startsWith("tiles")) {
+      return migrateResourcesTiles(moves, from, prefix);
+    } else if (moves.first().getIncludes().isEmpty() && moves.first().getExcludes().isEmpty()) {
+      return migrateResourcesSimple(moves, from, prefix);
+    } else {
+      return migrateResourcesFiltered(moves, from, prefix);
+    }
+  }
+
+  default Stream<Map.Entry<Path, Path>> migrateResourcesTiles(
+      Tuple<StoreSourceFs, StoreSourceFs> moves, Path from, Optional<String> prefix) {
+    Path to = Path.of(Content.RESOURCES.getPrefix()).resolve(Path.of(prefix.orElse("")));
+    List<PathMatcher> includes =
+        StoreDriver.asMatchers(moves.first().getIncludes(), from.toString());
+    List<PathMatcher> excludes =
+        StoreDriver.asMatchers(moves.first().getExcludes(), from.toString());
+
+    List<Map.Entry<Path, Path>> entries = new ArrayList<>();
+    try (Stream<Path> paths = getContext().reader().walk(from, 1, (p, a) -> !a.isValue())) {
+      paths
+          .skip(1)
+          .filter(
+              path ->
+                  (includes.isEmpty()
+                          || includes.stream()
+                              .anyMatch(include -> include.matches(from.resolve(path))))
+                      && excludes.stream().noneMatch(exclude -> exclude.matches(from.resolve(path)))
+                      && !path.endsWith("__tmp__"))
+          .forEach(
+              path ->
+                  entries.add(
+                      Map.entry(from.resolve(path).normalize(), to.resolve(path).normalize())));
+    } catch (Throwable e) {
+      // Ignore I/O exceptions during tiles migration
+    }
+    return entries.stream();
+  }
+
+  default Stream<Map.Entry<Path, Path>> migrateResourcesFiltered(
+      Tuple<StoreSourceFs, StoreSourceFs> moves, Path from, Optional<String> prefix) {
+    Path to = Path.of(Content.RESOURCES.getPrefix()).resolve(Path.of(prefix.orElse("")));
+    List<PathMatcher> includes =
+        StoreDriver.asMatchers(moves.first().getIncludes(), from.toString());
+    List<PathMatcher> excludes =
+        StoreDriver.asMatchers(moves.first().getExcludes(), from.toString());
+
+    List<Map.Entry<Path, Path>> entries = new ArrayList<>();
+    try (Stream<Path> paths =
+        getContext()
+            .reader()
+            .walk(
+                from,
+                8,
+                (p, a) ->
+                    a.isValue()
+                        && (includes.isEmpty()
+                            || includes.stream()
+                                .anyMatch(include -> include.matches(from.resolve(p))))
+                        && excludes.stream()
+                            .noneMatch(exclude -> exclude.matches(from.resolve(p))))) {
+      paths.forEach(
+          path ->
+              entries.add(Map.entry(from.resolve(path).normalize(), to.resolve(path).normalize())));
+    } catch (Throwable e) {
+      // Ignore I/O exceptions during filtered resources migration
+    }
+    return entries.stream();
+  }
+
+  default Stream<Map.Entry<Path, Path>> migrateResourcesSimple(
+      Tuple<StoreSourceFs, StoreSourceFs> moves, Path from, Optional<String> prefix) {
+    Path from2 = moves.first().getAbsolutePath(Path.of("")).normalize();
+    Path to =
+        moves
+            .second()
+            .getAbsolutePath(Path.of(Content.RESOURCES.getPrefix()))
+            .resolve(Path.of(prefix.orElse("")))
+            .normalize();
+
+    return Stream.of(Map.entry(from2, to));
   }
 }

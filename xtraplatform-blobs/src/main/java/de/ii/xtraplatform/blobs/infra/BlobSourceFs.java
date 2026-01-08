@@ -136,7 +136,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
     return Files.find(
             dir,
             maxDepth,
-            ((path1, basicFileAttributes) ->
+            (path1, basicFileAttributes) ->
                 (includes.isEmpty()
                         || includes.stream().anyMatch(include -> include.matches(path1)))
                     && excludes.stream().noneMatch(exclude -> exclude.matches(path1))
@@ -152,7 +152,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
                           public boolean isHidden() {
                             return path1.getFileName().toString().startsWith(".");
                           }
-                        })))
+                        }))
         .map(dir::relativize);
   }
 
