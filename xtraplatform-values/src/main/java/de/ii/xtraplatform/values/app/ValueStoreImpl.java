@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind(interfaces = {ValueStore.class, AppLifeCycle.class})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.GodClass"})
 public class ValueStoreImpl extends AbstractVolatile
     implements ValueStore, KeyValueStore<StoredValue>, ValueCache<StoredValue>, AppLifeCycle {
 
@@ -272,7 +273,6 @@ public class ValueStoreImpl extends AbstractVolatile
         .collect(Collectors.toList());
   }
 
-  // TODO: change in KeyValueStore, might affect EntityDataStore
   @Override
   public List<String> ids(String... path) {
     return identifiers(path).stream().map(Identifier::asPath).collect(Collectors.toList());
