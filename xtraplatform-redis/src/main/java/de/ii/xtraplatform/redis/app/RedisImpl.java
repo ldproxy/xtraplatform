@@ -75,25 +75,23 @@ public class RedisImpl extends AbstractVolatilePolling implements Redis, AppLife
   }
 
   @Override
-  protected void onVolatileStart() {
+  protected synchronized void onVolatileStart() {
     super.onVolatileStart();
 
-    synchronized (this) {
-      if (asyncStartup) {
-        if (getState() == State.UNAVAILABLE) {
-          LOGGER.warn("Could not establish connection to redis");
-        }
-
-        onStateChange(
-            (from, to) -> {
-              if (to == State.AVAILABLE) {
-                LOGGER.info("Re-established connection to redis");
-              } else if (to == State.UNAVAILABLE) {
-                LOGGER.warn("Lost connection to redis");
-              }
-            },
-            false);
+    if (asyncStartup) {
+      if (getState() == State.UNAVAILABLE) {
+        LOGGER.warn("Could not establish connection to redis");
       }
+
+      onStateChange(
+          (from, to) -> {
+            if (to == State.AVAILABLE) {
+              LOGGER.info("Re-established connection to redis");
+            } else if (to == State.UNAVAILABLE) {
+              LOGGER.warn("Lost connection to redis");
+            }
+          },
+          false);
     }
   }
 
