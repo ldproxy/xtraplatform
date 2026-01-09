@@ -28,6 +28,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
 
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.DataClass")
 public class OpsPlugin implements DropwizardPlugin {
 
   private final OpsRequestDispatcher opsRequestDispatcher;
@@ -39,6 +40,7 @@ public class OpsPlugin implements DropwizardPlugin {
   }
 
   @Override
+  @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
   public void init(AppConfiguration configuration, Environment environment) {
     ServletHandler servletHandler = environment.getAdminContext().getServletHandler();
     ServletHolder[] holders = servletHandler.getServlets();
