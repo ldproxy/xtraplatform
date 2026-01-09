@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.TooManyMethods")
 public class CacheDriverFs implements CacheDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CacheDriverFs.class);
