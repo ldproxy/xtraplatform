@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+@SuppressWarnings("PMD.DataClass")
 public class TransformerDefault<T, U> implements Transformer<T, U> {
 
   public enum Type {

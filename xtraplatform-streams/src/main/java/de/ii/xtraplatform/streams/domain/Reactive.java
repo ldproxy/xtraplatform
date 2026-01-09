@@ -31,6 +31,7 @@ import java.util.function.Predicate;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.ExcessivePublicCount"})
 public interface Reactive {
 
   Runner runner(String name);
@@ -200,28 +201,6 @@ public interface Reactive {
 
     V getCustomSource(Source<U> source);
   }
-
-  /*interface TransformerCustomSink<T, U, V extends SinkWrapper<T>, W extends SinkWrapperReduced<T, ?>> extends TransformerCustom<T, U> {
-
-    //TODO: does not work since SinkReduced<U, X> does not match SinkWrapperReduced<T, ?>
-    <X> W to(SinkReduced<U, X> sink);
-
-    default V to(Sink<U> sink) {
-      return getCustomSink(TransformerCustom.super.to(sink));
-    }
-
-    V getCustomSink(Sink<T> sink);
-  }
-
-  interface SinkWrapper<T> extends Sink<T> {
-
-    Sink<T> getDelegate();
-  }
-
-  interface SinkWrapperReduced<T, V> extends SinkReduced<T, V> {
-
-    SinkReduced<T, V> getDelegate();
-  }*/
 
   interface Sink<U> {
     static <T> Sink<T> ignore() {

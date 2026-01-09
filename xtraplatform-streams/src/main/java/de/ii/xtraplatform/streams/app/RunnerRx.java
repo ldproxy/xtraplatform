@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO: the queue was introduced as a mean to protect the connection pool and prevent deadlocks
+// NOTE: the queue was introduced as a mean to protect the connection pool and prevent deadlocks
 // because of a bug (running.get() < queueSize instead of running.get() < capacity) it was never
 // used
 // despite that there were no problems with deadlocks and enabling it slightly decreases performance
@@ -52,7 +52,7 @@ public class RunnerRx implements Runner {
       throw new IllegalArgumentException("invalid capacity: 0");
     }
 
-    // TODO: thread names
+    // NOPMD - TODO: thread names
     this.scheduler = Schedulers.from(executorService);
     scheduler.start();
 
@@ -156,7 +156,6 @@ public class RunnerRx implements Runner {
     return createExecutorService(64);
   }
 
-  // TODO
   private static ExecutorService createExecutorService(int parallelismMax) {
 
     return Executors.newWorkStealingPool(Math.max(1, parallelismMax));
