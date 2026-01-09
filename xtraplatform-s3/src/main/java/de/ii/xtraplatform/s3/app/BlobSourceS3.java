@@ -41,7 +41,6 @@ import javax.ws.rs.core.EntityTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.CommentContent"})
 public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals, Closeable {
   private static final Logger LOGGER = LoggerFactory.getLogger(BlobSourceS3.class);
 
@@ -90,7 +89,6 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals, Closeab
     return s3Operations.getCurrent(pathHelper.full(path));
   }
 
-  // TODO: walkInfo
   @Override
   public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException {
@@ -116,7 +114,6 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals, Closeab
                     .build())
             .spliterator();
 
-    // TODO: concat path?
     return StreamSupport.stream(results, false)
         .flatMap(
             result -> {

@@ -22,7 +22,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.CommentContent", "PMD.CloseResource"})
+@SuppressWarnings({"PMD.CloseResource"})
 public class CfgStoreDriverS3 implements CfgStoreDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CfgStoreDriverS3.class);
@@ -48,7 +48,6 @@ public class CfgStoreDriverS3 implements CfgStoreDriver {
     return false;
   }
 
-  // TODO: single content?
   @Override
   public Optional<InputStream> load(StoreSource storeSource) throws IOException {
     if (storeSource instanceof StoreSourceS3) {
