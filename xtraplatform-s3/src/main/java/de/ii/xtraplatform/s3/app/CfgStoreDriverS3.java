@@ -22,6 +22,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"PMD.CommentContent", "PMD.CloseResource"})
 public class CfgStoreDriverS3 implements CfgStoreDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CfgStoreDriverS3.class);

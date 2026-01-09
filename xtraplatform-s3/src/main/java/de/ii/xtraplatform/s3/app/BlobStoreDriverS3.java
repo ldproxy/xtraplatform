@@ -79,6 +79,7 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
     return new BlobSourceS3(minioClient, bucket, root, cache);
   }
 
+  @SuppressWarnings("PMD.CloseResource")
   private Tuple<MinioClient, String> getClient(StoreSourceS3 storeSource) {
     boolean hasScheme = storeSource.getSrc().matches("^[a-zA-Z0-9]+://.*");
     String scheme = storeSource.getInsecure() ? "http://" : "https://";

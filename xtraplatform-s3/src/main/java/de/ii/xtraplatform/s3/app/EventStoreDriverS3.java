@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@SuppressWarnings({"PMD.CloseResource"})
 public class EventStoreDriverS3 implements EventStoreDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverS3.class);

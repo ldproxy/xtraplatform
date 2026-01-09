@@ -41,6 +41,7 @@ import javax.ws.rs.core.EntityTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"PMD.CommentContent"})
 public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals, Closeable {
   private static final Logger LOGGER = LoggerFactory.getLogger(BlobSourceS3.class);
 
