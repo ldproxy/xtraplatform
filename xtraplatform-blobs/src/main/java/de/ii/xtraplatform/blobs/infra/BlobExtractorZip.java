@@ -29,9 +29,9 @@ public class BlobExtractorZip implements BlobExtractor {
       Path targetRoot,
       boolean overwrite)
       throws IOException {
-    if (overwrite) {
-      // TODO: delete target directory
-    }
+    //  if (overwrite) {
+    // NOPMD - TODO: delete target directory
+    //  }
 
     ZipWalker.walkEntries(
         archiveFile,

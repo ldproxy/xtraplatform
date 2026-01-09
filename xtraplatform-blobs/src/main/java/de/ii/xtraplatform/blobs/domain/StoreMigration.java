@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings("PMD.TooManyMethods")
 public interface StoreMigration extends Migration<StoreMigrationContext, StoreSourceFs> {
   enum Type {
     BLOB,
