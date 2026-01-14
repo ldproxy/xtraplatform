@@ -25,7 +25,7 @@ public interface TaskContext extends TaskProgress {
   }
 
   default boolean matchesPartialModulo(int number) {
-    return (number % getMaxPartials()) == (getCurrentPartial() - 1);
+    return number % getMaxPartials() == getCurrentPartial() - 1;
   }
 
   int getActivePartials();

@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import de.ii.xtraplatform.entities.domain.AutoEntity;
 import de.ii.xtraplatform.entities.domain.EntityData;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -22,7 +23,7 @@ public interface ServiceData extends EntityData, AutoEntity {
 
   @Override
   default Optional<String> getEntitySubType() {
-    return Optional.of(getServiceType().toLowerCase());
+    return Optional.of(getServiceType().toLowerCase(Locale.ROOT));
   }
 
   String getServiceType();
@@ -51,6 +52,7 @@ public interface ServiceData extends EntityData, AutoEntity {
    *     erreichbar ist und Hintergrundprozesse nicht laufen.
    * @default true
    */
+  @Override
   @Value.Default
   default boolean getEnabled() {
     return true;

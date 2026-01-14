@@ -15,5 +15,5 @@ import org.immutables.value.Value;
 @JsonDeserialize(builder = ImmutableServiceDataCommon.Builder.class)
 public interface ServiceDataCommon extends ServiceData {
 
-  abstract static class Builder implements EntityDataBuilder<ServiceData> {}
+  abstract class Builder implements EntityDataBuilder<ServiceData> {}
 }
