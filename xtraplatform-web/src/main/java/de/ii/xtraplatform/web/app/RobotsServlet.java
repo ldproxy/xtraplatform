@@ -13,14 +13,11 @@ import java.io.PrintStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.StreamingOutput;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author zahnen
@@ -45,7 +42,7 @@ import org.slf4j.LoggerFactory;
 @Instantiate*/
 public class RobotsServlet extends HttpServlet implements ContainerResponseFilter {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(RobotsServlet.class);
+  private static final long serialVersionUID = 1L;
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -69,7 +66,7 @@ public class RobotsServlet extends HttpServlet implements ContainerResponseFilte
       StreamingOutput stream =
           new StreamingOutput() {
             @Override
-            public void write(OutputStream output) throws IOException, WebApplicationException {
+            public void write(OutputStream output) throws IOException {
               writeContent(output);
             }
           };

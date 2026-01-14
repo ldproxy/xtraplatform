@@ -45,7 +45,7 @@ public class HealthPlugin implements DropwizardPlugin, HealthChecks {
     volatileRegistry.listen(this::register, this::unregister);
   }
 
-  // @Override
+  @Override
   public void register(String name, HealthCheck check) {
     if (!healthCheckRegistry.getNames().contains(name)) {
       healthCheckRegistry.register(name, check);

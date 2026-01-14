@@ -19,7 +19,6 @@ import javax.annotation.Priority;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
@@ -41,6 +40,7 @@ public class JsonProviderOptionalPretty extends JacksonJaxbJsonProvider
   private final ObjectMapper mapperPretty;
 
   public JsonProviderOptionalPretty(ObjectMapper mapper) {
+    super();
     this.mapper = mapper;
     this.mapperPretty = mapper.copy().enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -48,8 +48,7 @@ public class JsonProviderOptionalPretty extends JacksonJaxbJsonProvider
   }
 
   @Override
-  public void aroundWriteTo(WriterInterceptorContext writerInterceptorContext)
-      throws IOException, WebApplicationException {
+  public void aroundWriteTo(WriterInterceptorContext writerInterceptorContext) throws IOException {
     // check if the request context has the JSON pretty property set
     if (JsonPretty.isJsonPretty(writerInterceptorContext)) {
 
