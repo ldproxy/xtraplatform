@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.TooManyMethods")
 public class VolatileRegistryImpl implements VolatileRegistry {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VolatileRegistryImpl.class);
@@ -77,7 +78,6 @@ public class VolatileRegistryImpl implements VolatileRegistry {
     this.cancelTasks = new ArrayDeque<>();
     this.onRegister = new ArrayList<>();
     this.onUnRegister = new ArrayList<>();
-    this.currentSchedule = null;
     this.currentRate = 0;
   }
 
@@ -108,13 +108,14 @@ public class VolatileRegistryImpl implements VolatileRegistry {
           polls.put(dependency.getUniqueKey(), polling);
           intervals.put(dependency.getUniqueKey(), 0);
 
-          schedulePoll((polling).getIntervalMs());
+          schedulePoll(polling.getIntervalMs());
         }
       }
     }
   }
 
   @Override
+  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
   public synchronized void unregister(Volatile2 dependency) {
     synchronized (this) {
       volatiles.remove(dependency.getUniqueKey());
@@ -131,29 +132,39 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   @Override
   public void change(Volatile2 dependency, State from, State to) {
     String key = dependency.getUniqueKey();
+    logStateChange(from, to, key);
+    notifyWatchers(key, from, to);
+  }
 
+  private void logStateChange(State from, State to, String key) {
     if (LOGGER.isDebugEnabled(MARKER.DI)) {
       LOGGER.debug(MARKER.DI, "Volatile state changed from {} to {}: {}", from, to, key);
     }
+  }
 
+  private void notifyWatchers(String key, State from, State to) {
     synchronized (this) {
       if (watchers.containsKey(key)) {
         for (ChangeHandler handler : watchers.get(key)) {
-          if (Objects.nonNull(handler)) {
-            changeExecutor.submit(
-                () -> {
-                  try {
-                    handler.change(from, to);
-                  } catch (Throwable e) {
-                    // ignore
-                    if (LOGGER.isDebugEnabled()) {
-                      LogContext.errorAsDebug(LOGGER, e, "Error in volatile watcher");
-                    }
-                  }
-                });
-          }
+          executeHandler(handler, from, to);
         }
       }
+    }
+  }
+
+  private void executeHandler(ChangeHandler handler, State from, State to) {
+    if (Objects.nonNull(handler)) {
+      changeExecutor.submit(
+          () -> {
+            try {
+              handler.change(from, to);
+            } catch (Throwable e) {
+              // ignore
+              if (LOGGER.isDebugEnabled()) {
+                LogContext.errorAsDebug(LOGGER, e, "Error in volatile watcher");
+              }
+            }
+          });
     }
   }
 
@@ -224,48 +235,71 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   }
 
   private void schedulePoll(int delayMs) {
-    if (delayMs > 0 && currentRate > delayMs || currentRate <= 0) {
-      if (Objects.nonNull(currentSchedule)) {
-        // LOGGER.debug("Cancelling current polling schedule");
-        currentSchedule.cancel(false);
-      }
-
-      this.currentRate = delayMs;
-      if (LOGGER.isDebugEnabled(MARKER.DI)) {
-        LOGGER.debug(MARKER.DI, "Scheduling polling every {}ms", delayMs);
-      }
-      this.currentSchedule =
-          pollingExecutor.scheduleWithFixedDelay(
-              () -> {
-                while (!cancelTasks.isEmpty()) {
-                  cancelTasks.remove().run();
-                }
-
-                for (Map.Entry<String, Integer> entry : intervals.entrySet()) {
-                  String key = entry.getKey();
-                  int interval = entry.getValue() - delayMs;
-
-                  if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Checking {} in {}ms", key, interval);
-                  }
-
-                  if (interval <= 0) {
-                    if (LOGGER.isTraceEnabled()) {
-                      LOGGER.trace("Checking {} now", key);
-                    }
-                    Polling polling = polls.get(key);
-                    interval = polling.getIntervalMs();
-
-                    Future<?> future = pollingExecutor.submit(polling::poll);
-                    cancelTasks.add(() -> future.cancel(true));
-                  }
-
-                  intervals.put(key, interval);
-                }
-              },
-              delayMs,
-              delayMs,
-              TimeUnit.MILLISECONDS);
+    if (shouldReschedulePoll(delayMs)) {
+      cancelCurrentScheduleIfExists();
+      startNewPollingSchedule(delayMs);
     }
+  }
+
+  private boolean shouldReschedulePoll(int delayMs) {
+    return delayMs > 0 && currentRate > delayMs || currentRate <= 0;
+  }
+
+  private void cancelCurrentScheduleIfExists() {
+    if (Objects.nonNull(currentSchedule)) {
+      // LOGGER.debug("Cancelling current polling schedule");
+      currentSchedule.cancel(false);
+    }
+  }
+
+  private void startNewPollingSchedule(int delayMs) {
+    this.currentRate = delayMs;
+    if (LOGGER.isDebugEnabled(MARKER.DI)) {
+      LOGGER.debug(MARKER.DI, "Scheduling polling every {}ms", delayMs);
+    }
+    this.currentSchedule =
+        pollingExecutor.scheduleWithFixedDelay(
+            () -> executePollingCycle(delayMs), delayMs, delayMs, TimeUnit.MILLISECONDS);
+  }
+
+  private void executePollingCycle(int delayMs) {
+    processCancelTasks();
+    processPollingIntervals(delayMs);
+  }
+
+  private void processCancelTasks() {
+    while (!cancelTasks.isEmpty()) {
+      cancelTasks.remove().run();
+    }
+  }
+
+  private void processPollingIntervals(int delayMs) {
+    for (Map.Entry<String, Integer> entry : intervals.entrySet()) {
+      String key = entry.getKey();
+      int interval = entry.getValue() - delayMs;
+
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Checking {} in {}ms", key, interval);
+      }
+
+      if (interval <= 0) {
+        interval = executePolling(key);
+      }
+
+      intervals.put(key, interval);
+    }
+  }
+
+  private int executePolling(String key) {
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Checking {} now", key);
+    }
+    Polling polling = polls.get(key);
+    int interval = polling.getIntervalMs();
+
+    Future<?> future = pollingExecutor.submit(polling::poll);
+    cancelTasks.add(() -> future.cancel(true));
+
+    return interval;
   }
 }

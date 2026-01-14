@@ -70,6 +70,8 @@ public class SubstitutionsImpl implements Substitutions {
       this.setEnableSubstitutionInVariables(substitutionInVariables);
     }
 
+    @Override
+    @SuppressWarnings("PMD.PreserveStackTrace")
     protected boolean substitute(TextStringBuilder buf, int offset, int length) {
       try {
         return super.substitute(buf, offset, length);
@@ -92,9 +94,11 @@ public class SubstitutionsImpl implements Substitutions {
         result.putAll(
             extract((Map<String, Object>) entry.getValue(), prefix + entry.getKey() + "."));
       } else if (entry.getValue() instanceof List) {
-        LOGGER.warn(
-            "Ignoring list value for substitution '{}'. Only scalar values and maps are supported.",
-            prefix + entry.getKey());
+        if (LOGGER.isWarnEnabled()) {
+          LOGGER.warn(
+              "Ignoring list value for substitution '{}'. Only scalar values and maps are supported.",
+              prefix + entry.getKey());
+        }
       } else {
         result.put(prefix + entry.getKey(), entry.getValue().toString());
       }

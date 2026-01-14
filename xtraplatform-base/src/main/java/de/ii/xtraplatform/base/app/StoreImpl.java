@@ -16,9 +16,6 @@ import de.ii.xtraplatform.base.domain.StoreFilters;
 import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Mode;
-import de.ii.xtraplatform.base.domain.StoreSource.Type;
-import de.ii.xtraplatform.base.domain.StoreSourceFs;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,17 +32,15 @@ public class StoreImpl implements Store {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StoreImpl.class);
 
-  private final Path dataDirectory;
   private final StoreConfiguration storeConfiguration;
   private final List<StoreSource> sources;
 
   @Inject
   StoreImpl(AppContext appContext) {
-    this(appContext.getDataDir(), appContext.getConfiguration().getStore());
+    this(appContext.getConfiguration().getStore());
   }
 
-  public StoreImpl(Path dataDirectory, StoreConfiguration storeConfiguration) {
-    this.dataDirectory = dataDirectory;
+  public StoreImpl(StoreConfiguration storeConfiguration) {
     this.storeConfiguration = storeConfiguration;
     this.sources =
         storeConfiguration.getSources().stream()
@@ -54,30 +49,30 @@ public class StoreImpl implements Store {
     info();
   }
 
-  public void info() {
-    LOGGER.info(
-        "Loading store ({}{}{})",
-        storeConfiguration.isReadOnly() ? "read-only" : "writable",
-        storeConfiguration.isWatch() ? ", watching for changes" : "",
-        storeConfiguration.isFiltered()
-            ? String.format(", filtered by %s", storeConfiguration.getFilter().get().getAsLabel())
-            : "");
+  @SuppressWarnings("PMD.CognitiveComplexity")
+  private void info() {
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info(
+          "Loading store ({}{}{})",
+          storeConfiguration.isReadOnly() ? "read-only" : "writable",
+          storeConfiguration.isWatch() ? ", watching for changes" : "",
+          storeConfiguration.isFiltered()
+              ? String.format(", filtered by %s", storeConfiguration.getFilter().get().getAsLabel())
+              : "");
 
-    sources.forEach(
-        s -> {
-          String src =
-              Objects.equals(s.getType(), Type.FS_KEY)
-                  ? ((StoreSourceFs) s).getAbsolutePath(dataDirectory).toString()
-                  : s.getSrc();
-          String mode = storeConfiguration.isReadOnly() ? "" : String.format(" [%s]", s.getMode());
-          String subType =
-              (s.getContent() == Content.RESOURCES || s.getContent() == Content.VALUES)
-                      && s.getPrefix().isPresent()
-                  ? String.format(" [%s]", s.getPrefix().get())
-                  : "";
+      sources.forEach(
+          s -> {
+            String mode =
+                storeConfiguration.isReadOnly() ? "" : String.format(" [%s]", s.getMode());
+            String subType =
+                (s.getContent() == Content.RESOURCES || s.getContent() == Content.VALUES)
+                        && s.getPrefix().isPresent()
+                    ? String.format(" [%s]", s.getPrefix().get())
+                    : "";
 
-          LOGGER.info("  {} [{}]{}{}", s.getLabelSpaces(), s.getContent(), subType, mode);
-        });
+            LOGGER.info("  {} [{}]{}{}", s.getLabelSpaces(), s.getContent(), subType, mode);
+          });
+    }
   }
 
   @Override
@@ -99,7 +94,7 @@ public class StoreImpl implements Store {
             source ->
                 source.getContent() == content
                     || source.getContent() == Content.ALL
-                    || (content.isEvent() && source.getContent() == Content.ENTITIES))
+                    || content.isEvent() && source.getContent() == Content.ENTITIES)
         .collect(Collectors.toUnmodifiableList());
   }
 
