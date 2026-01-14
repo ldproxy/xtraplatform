@@ -32,6 +32,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -64,6 +65,7 @@ import org.slf4j.LoggerFactory;
 @Hidden
 @Path("/")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
 public class ServicesEndpoint implements Endpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServicesEndpoint.class);
@@ -98,6 +100,7 @@ public class ServicesEndpoint implements Endpoint {
   // TODO
   @GET
   @Produces(MediaType.WILDCARD)
+  @SuppressWarnings("PMD.UnusedFormalParameter") // callback parameter part of API contract
   public Response getServices(
       @QueryParam("callback") String callback,
       @QueryParam("f") String f,
@@ -111,26 +114,7 @@ public class ServicesEndpoint implements Endpoint {
             // .filter(serviceData -> !serviceData.hasError())
             .collect(Collectors.toList());
 
-    MediaType mediaType =
-        Objects.equals(f, "json")
-            ? MediaType.APPLICATION_JSON_TYPE
-            : Objects.equals(f, "html")
-                ? MediaType.TEXT_HTML_TYPE
-                : Objects.nonNull(containerRequestContext.getMediaType())
-                    ? containerRequestContext.getMediaType()
-                    : (containerRequestContext.getAcceptableMediaTypes().size() > 0
-                            && !containerRequestContext
-                                .getAcceptableMediaTypes()
-                                .get(0)
-                                .equals(MediaType.WILDCARD_TYPE))
-                        ? containerRequestContext.getAcceptableMediaTypes().get(0)
-                        : (Objects.nonNull(containerRequestContext.getHeaderString("user-agent"))
-                                && containerRequestContext
-                                    .getHeaderString("user-agent")
-                                    .toLowerCase()
-                                    .contains("google-site-verification")
-                            ? MediaType.TEXT_HTML_TYPE
-                            : MediaType.APPLICATION_JSON_TYPE);
+    MediaType mediaType = determineMediaType(f, containerRequestContext);
 
     Optional<ServiceListingProvider> provider =
         serviceListingProviders.get().stream()
@@ -149,10 +133,11 @@ public class ServicesEndpoint implements Endpoint {
       Map<String, String> queryParameters =
           containerRequestContext.getUriInfo().getQueryParameters().entrySet().stream()
               .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0)));
-      Response serviceListing =
-          provider.get().getServiceListing(services, uriCustomizer, queryParameters, user);
 
-      return Response.ok().entity(serviceListing.getEntity()).type(mediaType).build();
+      try (Response serviceListing =
+          provider.get().getServiceListing(services, uriCustomizer, queryParameters, user)) {
+        return Response.ok().entity(serviceListing.getEntity()).type(mediaType).build();
+      }
     }
 
     return Response.ok().entity(services).build();
@@ -251,6 +236,7 @@ public class ServicesEndpoint implements Endpoint {
   }
 
   @Path("/{service}/")
+  @SuppressWarnings("PMD.UnusedFormalParameter") // callback parameter part of API contract
   public ServiceEndpoint getServiceResource(
       @PathParam("service") String id,
       @QueryParam("callback") String callback,
@@ -259,13 +245,14 @@ public class ServicesEndpoint implements Endpoint {
   }
 
   @Path("/{service}/v{version}/")
+  @SuppressWarnings("PMD.UnusedFormalParameter") // callback parameter part of API contract
   public ServiceEndpoint getVersionedServiceResource(
       @PathParam("service") String id,
       @QueryParam("callback") String callback,
       @Context ContainerRequestContext containerRequestContext,
       @PathParam("version") Integer version) {
 
-    Service service = getService(id, callback);
+    Service service = getService(id);
 
     if (service.getData().getApiVersion().isPresent()) {
       Integer apiVersion = service.getData().getApiVersion().get();
@@ -312,7 +299,7 @@ public class ServicesEndpoint implements Endpoint {
         .orElseThrow();
   }
 
-  private Service getService(String id, String callback) {
+  private Service getService(String id) {
     Optional<Service> s = entityRegistry.getEntity(Service.class, id);
 
     if (s.isEmpty() /*|| s.get().getData().hasError()*/) {
@@ -326,18 +313,56 @@ public class ServicesEndpoint implements Endpoint {
     return Optional.of(servicesContext.getUri());
   }
 
+  private MediaType determineMediaType(String f, ContainerRequestContext containerRequestContext) {
+    if (Objects.equals(f, "json")) {
+      return MediaType.APPLICATION_JSON_TYPE;
+    }
+
+    if (Objects.equals(f, "html")) {
+      return MediaType.TEXT_HTML_TYPE;
+    }
+
+    if (Objects.nonNull(containerRequestContext.getMediaType())) {
+      return containerRequestContext.getMediaType();
+    }
+
+    List<MediaType> acceptableTypes = containerRequestContext.getAcceptableMediaTypes();
+    if (!acceptableTypes.isEmpty() && !acceptableTypes.get(0).equals(MediaType.WILDCARD_TYPE)) {
+      return acceptableTypes.get(0);
+    }
+
+    String userAgent = containerRequestContext.getHeaderString("user-agent");
+    if (Objects.nonNull(userAgent)
+        && userAgent.toLowerCase(Locale.ROOT).contains("google-site-verification")) {
+      return MediaType.TEXT_HTML_TYPE;
+    }
+
+    return MediaType.APPLICATION_JSON_TYPE;
+  }
+
   private void openLoggingContext(ContainerRequestContext containerRequestContext) {
     openLoggingContext(null, null, containerRequestContext);
   }
 
   private void openLoggingContext(
       String serviceId, Integer version, ContainerRequestContext containerRequestContext) {
+    setupServiceContext(serviceId);
+    setupRequestLogging(serviceId, version, containerRequestContext);
+    logRequestUser(containerRequestContext);
+    logRequestHeaders(containerRequestContext);
+    logRequestBody(containerRequestContext);
+  }
+
+  private void setupServiceContext(String serviceId) {
     if (Objects.nonNull(serviceId)) {
       LogContext.put(LogContext.CONTEXT.SERVICE, serviceId);
     } else {
       LogContext.remove(LogContext.CONTEXT.SERVICE);
     }
+  }
 
+  private void setupRequestLogging(
+      String serviceId, Integer version, ContainerRequestContext containerRequestContext) {
     if (LOGGER.isDebugEnabled() || LOGGER.isDebugEnabled(MARKER.REQUEST)) {
       LogContext.put(LogContext.CONTEXT.REQUEST, LogContext.generateRandomUuid().toString());
 
@@ -349,7 +374,10 @@ public class ServicesEndpoint implements Endpoint {
     } else {
       LogContext.remove(LogContext.CONTEXT.REQUEST);
     }
+  }
 
+  @SuppressWarnings("PMD.GuardLogStatement")
+  private void logRequestUser(ContainerRequestContext containerRequestContext) {
     if (LOGGER.isDebugEnabled(MARKER.REQUEST_USER)) {
       Principal principal = containerRequestContext.getSecurityContext().getUserPrincipal();
 
@@ -359,27 +387,29 @@ public class ServicesEndpoint implements Endpoint {
         LOGGER.debug(MARKER.REQUEST_USER, "Request user: null");
       }
     }
+  }
 
+  private void logRequestHeaders(ContainerRequestContext containerRequestContext) {
     if (LOGGER.isDebugEnabled(MARKER.REQUEST_HEADER)) {
       String headers =
           Joiner.on("\n  ").withKeyValueSeparator(": ").join(containerRequestContext.getHeaders());
 
       LOGGER.debug(MARKER.REQUEST_HEADER, "Request headers: \n  {}", headers);
     }
+  }
 
-    if (LOGGER.isDebugEnabled(MARKER.REQUEST_BODY)) {
-      if (containerRequestContext.hasEntity()) {
-        try {
-          containerRequestContext.getEntityStream().mark(Integer.MAX_VALUE);
-          String body =
-              new String(
-                  containerRequestContext.getEntityStream().readAllBytes(), StandardCharsets.UTF_8);
-          containerRequestContext.getEntityStream().reset();
+  private void logRequestBody(ContainerRequestContext containerRequestContext) {
+    if (LOGGER.isDebugEnabled(MARKER.REQUEST_BODY) && containerRequestContext.hasEntity()) {
+      try {
+        containerRequestContext.getEntityStream().mark(Integer.MAX_VALUE);
+        String body =
+            new String(
+                containerRequestContext.getEntityStream().readAllBytes(), StandardCharsets.UTF_8);
+        containerRequestContext.getEntityStream().reset();
 
-          LOGGER.debug(MARKER.REQUEST_BODY, "Request body: \n  {}", body);
-        } catch (IOException e) {
-          // ignore
-        }
+        LOGGER.debug(MARKER.REQUEST_BODY, "Request body: \n  {}", body);
+      } catch (IOException e) {
+        // ignore
       }
     }
   }
