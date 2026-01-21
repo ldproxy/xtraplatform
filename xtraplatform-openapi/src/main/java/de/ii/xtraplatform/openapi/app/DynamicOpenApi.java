@@ -17,10 +17,8 @@ import javax.ws.rs.core.UriInfo;
 public interface DynamicOpenApi {
 
   Response getOpenApi(
-      HttpHeaders headers, UriInfo uriInfo, String type, OpenAPISpecFilter specFilter)
-      throws Exception;
+      HttpHeaders headers, UriInfo uriInfo, String type, OpenAPISpecFilter specFilter);
 
   Response getOpenApi(
-      HttpHeaders headers, ServletConfig config, Application app, UriInfo uriInfo, String yaml)
-      throws Exception;
+      HttpHeaders headers, ServletConfig config, Application app, UriInfo uriInfo, String yaml);
 }
