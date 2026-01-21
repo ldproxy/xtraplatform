@@ -16,17 +16,15 @@ import de.ii.xtraplatform.blobs.domain.BlobLocals;
 import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobWriter;
 import de.ii.xtraplatform.blobs.domain.ImmutableBlob;
-import io.minio.GetObjectArgs;
-import io.minio.GetObjectArgs.Builder;
 import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.Result;
-import io.minio.StatObjectArgs;
 import io.minio.StatObjectResponse;
 import io.minio.messages.Item;
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -39,20 +37,29 @@ import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nullable;
 import javax.ws.rs.core.EntityTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
-
+public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals, Closeable {
   private static final Logger LOGGER = LoggerFactory.getLogger(BlobSourceS3.class);
 
   private final MinioClient minioClient;
   private final String bucket;
-  private final Path root;
-  @Nullable private final Path prefix;
-  private final BlobCache cache;
+  private final S3OperationsHelper s3Operations;
+  private final CacheOperationsHelper cacheOperations;
+  private final PathHelper pathHelper;
+
+  @Override
+  public void close() throws IOException {
+    if (minioClient != null) {
+      try {
+        minioClient.close();
+      } catch (Exception e) {
+        throw new IOException("Failed to close MinioClient", e);
+      }
+    }
+  }
 
   public BlobSourceS3(MinioClient minioClient, String bucket, Path root, BlobCache cache) {
     this(minioClient, bucket, root, cache, null);
@@ -62,61 +69,30 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
       MinioClient minioClient, String bucket, Path root, BlobCache cache, Path prefix) {
     this.minioClient = minioClient;
     this.bucket = bucket;
-    this.root = root;
-    this.cache = cache;
-    this.prefix = prefix;
+    this.s3Operations = new S3OperationsHelper(minioClient, bucket);
+    this.cacheOperations = new CacheOperationsHelper(cache);
+    this.pathHelper = new PathHelper(root, prefix);
   }
 
   @Override
   public boolean canHandle(Path path) {
-    return Objects.isNull(prefix) || path.startsWith(prefix);
+    return pathHelper.canHandle(path);
   }
 
   @Override
   public boolean has(Path path) throws IOException {
-    return getStat(path).isPresent();
+    return s3Operations.getStat(pathHelper.full(path)).isPresent();
   }
 
   @Override
   public Optional<InputStream> content(Path path) throws IOException {
-    return getCurrent(path);
+    return s3Operations.getCurrent(pathHelper.full(path));
   }
 
-  @Override
-  public Optional<Blob> get(Path path) throws IOException {
-    return getStat(path)
-        .map(
-            stat ->
-                ImmutableBlob.of(
-                    path,
-                    stat.size(),
-                    stat.lastModified().toInstant().toEpochMilli(),
-                    Optional.of(new EntityTag(stat.etag())),
-                    Optional.ofNullable(stat.contentType()),
-                    supplierMayThrow(
-                        () ->
-                            content(path)
-                                .orElseThrow(
-                                    () ->
-                                        new IOException(
-                                            "Unexpected error, could not get " + path)))));
-  }
-
-  @Override
-  public long size(Path path) throws IOException {
-    return getStat(path).map(StatObjectResponse::size).orElse(-1L);
-  }
-
-  @Override
-  public long lastModified(Path path) throws IOException {
-    return getStat(path).map(stat -> stat.lastModified().toInstant().toEpochMilli()).orElse(-1L);
-  }
-
-  // TODO: walkInfo
   @Override
   public Stream<Path> walk(Path path, int maxDepth, BiPredicate<Path, PathAttributes> matcher)
       throws IOException {
-    if (!canHandle(path) || maxDepth <= 0) {
+    if (!pathHelper.canHandle(path) || maxDepth <= 0) {
       return Stream.empty();
     }
 
@@ -124,7 +100,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
       LOGGER.debug(MARKER.S3, "S3 walk {}", path);
     }
 
-    Path prefix = Path.of(full(path));
+    Path prefix = Path.of(pathHelper.full(path));
 
     Set<Path> paths = new HashSet<>();
 
@@ -138,7 +114,6 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
                     .build())
             .spliterator();
 
-    // TODO: concat path?
     return StreamSupport.stream(results, false)
         .flatMap(
             result -> {
@@ -195,7 +170,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public void put(Path path, InputStream content) throws IOException {
-    if (!canHandle(path)) {
+    if (!pathHelper.canHandle(path)) {
       return;
     }
 
@@ -205,7 +180,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
       }
 
       minioClient.putObject(
-          PutObjectArgs.builder().bucket(bucket).object(full(path)).stream(
+          PutObjectArgs.builder().bucket(bucket).object(pathHelper.full(path)).stream(
                   buffer, buffer.available(), -1)
               .build());
     } catch (Throwable e) {
@@ -215,7 +190,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public void delete(Path path) throws IOException {
-    if (!canHandle(path)) {
+    if (!pathHelper.canHandle(path)) {
       return;
     }
 
@@ -225,10 +200,44 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
       }
 
       minioClient.removeObject(
-          RemoveObjectArgs.builder().bucket(bucket).object(full(path)).build());
+          RemoveObjectArgs.builder().bucket(bucket).object(pathHelper.full(path)).build());
     } catch (Throwable e) {
       throw new IOException("S3 Driver", e);
     }
+  }
+
+  @Override
+  public Optional<Blob> get(Path path) throws IOException {
+    return s3Operations
+        .getStat(pathHelper.full(path))
+        .map(
+            stat ->
+                ImmutableBlob.of(
+                    path,
+                    stat.size(),
+                    stat.lastModified().toInstant().toEpochMilli(),
+                    Optional.of(new EntityTag(stat.etag())),
+                    Optional.ofNullable(stat.contentType()),
+                    supplierMayThrow(
+                        () ->
+                            content(path)
+                                .orElseThrow(
+                                    () ->
+                                        new IOException(
+                                            "Unexpected error, could not get " + path)))));
+  }
+
+  @Override
+  public long size(Path path) throws IOException {
+    return s3Operations.getStat(pathHelper.full(path)).map(StatObjectResponse::size).orElse(-1L);
+  }
+
+  @Override
+  public long lastModified(Path path) throws IOException {
+    return s3Operations
+        .getStat(pathHelper.full(path))
+        .map(stat -> stat.lastModified().toInstant().toEpochMilli())
+        .orElse(-1L);
   }
 
   @Override
@@ -237,93 +246,15 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals {
       throw new IOException("Local resources from S3 cannot be written to");
     }
 
-    Optional<StatObjectResponse> stat = getStat(path);
-
-    if (stat.isPresent()) {
-      String eTag = stat.get().etag();
-      Optional<Path> cachePath = cache.get(path, eTag);
-
-      if (cachePath.isPresent()) {
-        if (LOGGER.isDebugEnabled(MARKER.S3)) {
-          LOGGER.debug(MARKER.S3, "S3 using local cache {}", cachePath.get());
-        }
-        return cachePath;
-      }
-
-      Optional<InputStream> content = content(path);
-
-      if (content.isPresent()) {
-        if (LOGGER.isDebugEnabled(MARKER.S3)) {
-          LOGGER.debug(MARKER.S3, "S3 updating local cache for {}", path);
-        }
-
-        return Optional.of(cache.put(path, eTag, content.get()))
-            .map(
-                p -> {
-                  if (LOGGER.isDebugEnabled(MARKER.S3)) {
-                    LOGGER.debug(MARKER.S3, "S3 updated local cache {}", p);
-                  }
-
-                  return p;
-                });
-      }
-    }
-
-    return Optional.empty();
-  }
-
-  private Optional<StatObjectResponse> getStat(Path path) {
-    if (!canHandle(path)) {
+    Optional<StatObjectResponse> stat = s3Operations.getStat(pathHelper.full(path));
+    if (stat.isEmpty()) {
       return Optional.empty();
     }
-
-    if (LOGGER.isDebugEnabled(MARKER.S3)) {
-      LOGGER.debug(MARKER.S3, "S3 get stat {}", path);
+    String eTag = stat.get().etag();
+    Optional<Path> cachePath = cacheOperations.getCachedPath(path, eTag);
+    if (cachePath.isPresent()) {
+      return cachePath;
     }
-
-    try {
-      return Optional.of(
-          minioClient.statObject(
-              StatObjectArgs.builder().bucket(bucket).object(full(path)).build()));
-    } catch (Throwable e) {
-      return Optional.empty();
-    }
-  }
-
-  public Optional<InputStream> getCurrent(Path path) throws IOException {
-    return getByETag(path, null);
-  }
-
-  public Optional<InputStream> getByETag(Path path, String eTag) {
-    if (!canHandle(path)) {
-      return Optional.empty();
-    }
-
-    if (LOGGER.isDebugEnabled(MARKER.S3)) {
-      LOGGER.debug(
-          MARKER.S3,
-          "S3 get content {} {}",
-          path,
-          Objects.nonNull(eTag) ? "if-none-match " + eTag : "");
-    }
-
-    Builder builder = GetObjectArgs.builder().bucket(bucket).object(full(path));
-
-    if (Objects.nonNull(eTag)) {
-      builder.notMatchETag(eTag);
-    }
-
-    try {
-      return Optional.of(minioClient.getObject(builder.build()));
-    } catch (Throwable e) {
-      return Optional.empty();
-      // throw new IOException("S3 Driver", e);
-    }
-  }
-
-  private String full(Path path) {
-    return Objects.isNull(prefix)
-        ? root.resolve(path).toString()
-        : root.resolve(prefix.relativize(path)).toString();
+    return cacheOperations.updateCacheAndReturnPath(path, eTag, content(path));
   }
 }

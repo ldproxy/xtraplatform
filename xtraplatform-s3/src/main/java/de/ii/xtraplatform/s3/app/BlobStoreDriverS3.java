@@ -49,9 +49,10 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
     if (storeSource instanceof StoreSourceS3) {
       try {
         Tuple<MinioClient, String> client = getClient((StoreSourceS3) storeSource);
-        String bucket = client.second();
-
-        return client.first().bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+        try (MinioClient minioClient = client.first()) {
+          String bucket = client.second();
+          return minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+        }
       } catch (Throwable e) {
         LogContext.error(LOGGER, e, "S3 Driver");
         return false;
@@ -63,6 +64,7 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
   @Override
   public BlobSource init(StoreSource storeSource, Content contentType) throws IOException {
     Tuple<MinioClient, String> client = getClient((StoreSourceS3) storeSource);
+    MinioClient minioClient = client.first();
     String bucket = client.second();
     Path root = Path.of("");
 
@@ -70,15 +72,14 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
       root = root.resolve(contentType.getPrefix());
     }
 
-    BlobSource blobSource =
-        storeSource.isSingleContent() && storeSource.getPrefix().isPresent()
-            ? new BlobSourceS3(
-                client.first(), bucket, root, cache, Path.of(storeSource.getPrefix().get()))
-            : new BlobSourceS3(client.first(), bucket, root, cache);
-
-    return blobSource;
+    if (storeSource.isSingleContent() && storeSource.getPrefix().isPresent()) {
+      return new BlobSourceS3(
+          minioClient, bucket, root, cache, Path.of(storeSource.getPrefix().get()));
+    }
+    return new BlobSourceS3(minioClient, bucket, root, cache);
   }
 
+  @SuppressWarnings("PMD.CloseResource")
   private Tuple<MinioClient, String> getClient(StoreSourceS3 storeSource) {
     boolean hasScheme = storeSource.getSrc().matches("^[a-zA-Z0-9]+://.*");
     String scheme = storeSource.getInsecure() ? "http://" : "https://";
@@ -86,14 +87,15 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
         hasScheme ? storeSource.getSrc().replaceFirst("[a-zA-Z0-9]+://", "") : storeSource.getSrc();
     URI uri = URI.create(scheme + source);
 
-    String host = uri.getHost();
-    int port = uri.getPort() == -1 ? (storeSource.getInsecure() ? 80 : 443) : uri.getPort();
     String bucket = uri.getPath().replaceFirst("^/", "").replaceFirst("/$", "");
 
     if (bucket.isEmpty()) {
       throw new IllegalArgumentException(
           "Bucket name cannot be empty (" + storeSource.getSrc() + ")");
     }
+
+    String host = uri.getHost();
+    int port = uri.getPort() == -1 ? storeSource.getInsecure() ? 80 : 443 : uri.getPort();
 
     MinioClient minioClient =
         MinioClient.builder()
