@@ -31,6 +31,7 @@ public class ServicesContextImpl implements ServicesContext {
     return appContext.getUri();
   }
 
+  @Override
   public List<String> getPathPrefix() {
     return appContext.getPathPrefix();
   }

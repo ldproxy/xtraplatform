@@ -35,21 +35,29 @@ public abstract class AbstractService<T extends ServiceData> extends AbstractPer
 
     onStateChange(
         (from, to) -> {
-          LOGGER.info("Service with id '{}' state changed: {}", getId(), getState());
+          if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Service with id '{}' state changed: {}", getId(), getState());
+          }
         },
         true);
 
-    LOGGER.info("Service with id '{}' started successfully.", getId());
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info("Service with id '{}' started successfully.", getId());
+    }
   }
 
   @Override
   protected void onReloaded(boolean forceReload) {
-    LOGGER.info("Service with id '{}' reloaded successfully.", getId());
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info("Service with id '{}' reloaded successfully.", getId());
+    }
   }
 
   @Override
   protected void onStopped() {
-    LOGGER.info("Service with id '{}' stopped.", getId());
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info("Service with id '{}' stopped.", getId());
+    }
   }
 
   @Override

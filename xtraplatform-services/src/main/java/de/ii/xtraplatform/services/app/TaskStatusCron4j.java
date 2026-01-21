@@ -14,14 +14,11 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author zahnen
  */
 public class TaskStatusCron4j implements TaskStatus {
-  private static final Logger LOGGER = LoggerFactory.getLogger(TaskStatusCron4j.class);
 
   private final String id;
   private final String label;

@@ -9,27 +9,22 @@ package de.ii.xtraplatform.services.domain;
 
 import io.dropwizard.views.common.View;
 import java.net.URI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author fischer
  */
 public class GenericView extends View {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(GenericView.class);
-
   private final URI uri;
-  private Object data;
+  private final Object data;
 
   public GenericView(String template, URI uri) {
-    super(template + ".mustache");
-    this.uri = uri;
-    this.data = null;
+    this(template, uri, null);
   }
 
   public GenericView(String template, URI uri, Object data) {
-    this(template, uri);
+    super(template + ".mustache");
+    this.uri = uri;
     this.data = data;
   }
 
