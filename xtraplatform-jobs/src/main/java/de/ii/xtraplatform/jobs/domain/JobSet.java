@@ -20,7 +20,67 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonDeserialize(builder = ImmutableJobSet.Builder.class)
+@SuppressWarnings("PMD.UseObjectForClearerAPI")
 public interface JobSet extends BaseJob {
+
+  @SuppressWarnings("PMD.DataClass")
+  final class JobSetConfiguration {
+    private final String type;
+    private final int priority;
+    private final String entity;
+    private final String label;
+    private final String description;
+    private final JobSetDetails details;
+
+    private JobSetConfiguration(
+        String type,
+        int priority,
+        String entity,
+        String label,
+        String description,
+        JobSetDetails details) {
+      this.type = type;
+      this.priority = priority;
+      this.entity = entity;
+      this.label = label;
+      this.description = description;
+      this.details = details;
+    }
+
+    public static JobSetConfiguration of(
+        String type,
+        int priority,
+        String entity,
+        String label,
+        String description,
+        JobSetDetails details) {
+      return new JobSetConfiguration(type, priority, entity, label, description, details);
+    }
+
+    public String getType() {
+      return type;
+    }
+
+    public int getPriority() {
+      return priority;
+    }
+
+    public String getEntity() {
+      return entity;
+    }
+
+    public String getLabel() {
+      return label;
+    }
+
+    public String getDescription() {
+      return description;
+    }
+
+    public JobSetDetails getDetails() {
+      return details;
+    }
+  }
 
   interface JobSetDetails {
 
@@ -40,6 +100,20 @@ public interface JobSet extends BaseJob {
   @Override
   List<JobSet> getFollowUps();
 
+  static JobSet of(JobSetConfiguration config) {
+    return new ImmutableJobSet.Builder()
+        .type(config.getType())
+        .priority(config.getPriority())
+        .entity(config.getEntity())
+        .label(config.getLabel())
+        .description(config.getDescription())
+        .details(config.getDetails())
+        .startedAt(new AtomicLong())
+        .total(new AtomicInteger(0))
+        .current(new AtomicInteger(0))
+        .build();
+  }
+
   static JobSet of(
       String type,
       int priority,
@@ -47,17 +121,7 @@ public interface JobSet extends BaseJob {
       String label,
       String description,
       JobSetDetails details) {
-    return new ImmutableJobSet.Builder()
-        .type(type)
-        .priority(priority)
-        .entity(entity)
-        .label(label)
-        .description(description)
-        .details(details)
-        .startedAt(new AtomicLong())
-        .total(new AtomicInteger(0))
-        .current(new AtomicInteger(0))
-        .build();
+    return of(JobSetConfiguration.of(type, priority, entity, label, description, details));
   }
 
   default JobSet with(Job setup, Job cleanup) {

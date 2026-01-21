@@ -10,7 +10,6 @@ package de.ii.xtraplatform.jobs.app;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
@@ -50,18 +49,19 @@ import org.slf4j.LoggerFactory;
 @Singleton
 @AutoBind
 public class OpsEndpointJobs implements OpsEndpoint {
-  public class JobResponse {
-    public List<JobSet> sets;
-    public List<Job> open;
-  }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OpsEndpointJobs.class);
 
   private final JobQueue jobQueue;
   private final ObjectMapper objectMapper;
 
+  public class JobResponse {
+    public List<JobSet> sets;
+    public List<Job> open;
+  }
+
   @Inject
-  public OpsEndpointJobs(AppContext appContext, Jackson jackson, JobQueue jobQueue) {
+  public OpsEndpointJobs(Jackson jackson, JobQueue jobQueue) {
     this.objectMapper = jackson.getDefaultObjectMapper();
     this.jobQueue = jobQueue;
   }
@@ -120,43 +120,59 @@ public class OpsEndpointJobs implements OpsEndpoint {
         @ApiResponse(responseCode = "204", description = "No content"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  public synchronized Response takeJob(Map<String, String> executor)
-      throws JsonProcessingException {
-    Optional<Job> job = jobQueue.take(executor.get("type"), executor.get("id"));
+  public Response takeJob(Map<String, String> executor) throws JsonProcessingException {
+    synchronized (this) {
+      Optional<Job> job = jobQueue.take(executor.get("type"), executor.get("id"));
 
-    if (job.isPresent()) {
-      if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
-        LOGGER.trace(
-            MARKER.JOBS,
-            "Job {} taken by remote executor {}",
-            job.get().getId(),
-            executor.get("id"));
+      if (job.isEmpty()) {
+        return Response.noContent().build();
       }
 
-      Optional<JobSet> jobSet = job.get().getPartOf().map(jobQueue::getSet);
-
-      if (jobSet.isPresent() && jobSet.get().getEntity().isPresent()) {
-        LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.get().getEntity().get());
-      }
-
-      if (jobSet.isPresent() && !jobSet.get().isStarted()) {
-        if (jobSet.get().getSetup().isEmpty()
-            || !Objects.equals(job.get().getId(), jobSet.get().getSetup().get().getId())) {
-          jobQueue.startJobSet(jobSet.get());
-
-          if (LOGGER.isInfoEnabled() || LOGGER.isInfoEnabled(MARKER.JOBS)) {
-            LOGGER.info(
-                MARKER.JOBS,
-                "{} started ({})",
-                jobSet.get().getLabel(),
-                jobQueue.getJobSetDetails(JobSetDetails.class, jobSet.get()).getLabel());
-          }
-        }
-      }
-      return Response.ok(objectMapper.writeValueAsString(job.get())).build();
+      return processJobTaken(job.get(), executor.get("id"));
     }
+  }
 
-    return Response.noContent().build();
+  private Response processJobTaken(Job job, String executorId) throws JsonProcessingException {
+    logJobTaken(job, executorId);
+
+    Optional<JobSet> jobSet = job.getPartOf().map(jobQueue::getSet);
+    setupJobSetContext(jobSet);
+    handleJobSetStartup(job, jobSet);
+
+    return Response.ok(objectMapper.writeValueAsString(job)).build();
+  }
+
+  private void logJobTaken(Job job, String executorId) {
+    if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
+      LOGGER.trace(MARKER.JOBS, "Job {} taken by remote executor {}", job.getId(), executorId);
+    }
+  }
+
+  private void setupJobSetContext(Optional<JobSet> jobSet) {
+    if (jobSet.isPresent() && jobSet.get().getEntity().isPresent()) {
+      LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.get().getEntity().get());
+    }
+  }
+
+  private void handleJobSetStartup(Job job, Optional<JobSet> jobSet) {
+    if (jobSet.isPresent()
+        && !jobSet.get().isStarted()
+        && (jobSet.get().getSetup().isEmpty()
+            || !Objects.equals(job.getId(), jobSet.get().getSetup().get().getId()))) {
+
+      jobQueue.startJobSet(jobSet.get());
+      logJobSetStarted(jobSet.get());
+    }
+  }
+
+  private void logJobSetStarted(JobSet jobSet) {
+    if (LOGGER.isInfoEnabled() || LOGGER.isInfoEnabled(MARKER.JOBS)) {
+      LOGGER.info(
+          MARKER.JOBS,
+          "{} started ({})",
+          jobSet.getLabel(),
+          jobQueue.getJobSetDetails(JobSetDetails.class, jobSet).getLabel());
+    }
   }
 
   @POST
@@ -168,38 +184,39 @@ public class OpsEndpointJobs implements OpsEndpoint {
         @ApiResponse(responseCode = "204", description = "No content"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  public synchronized Response updateJob(
-      @PathParam("jobId") String jobId, Map<String, Object> progress) {
-    try {
-      Optional<Job> job =
-          jobQueue.getTaken().stream()
-              .filter(job1 -> Objects.equals(job1.getId(), jobId))
-              .findFirst();
+  public Response updateJob(@PathParam("jobId") String jobId, Map<String, Object> progress) {
+    synchronized (this) {
+      try {
+        Optional<Job> job =
+            jobQueue.getTaken().stream()
+                .filter(job1 -> Objects.equals(job1.getId(), jobId))
+                .findFirst();
 
-      if (job.isPresent()) {
-        int delta = (Integer) progress.getOrDefault("delta", 0);
+        if (job.isPresent()) {
+          int delta = (Integer) progress.getOrDefault("delta", 0);
 
-        jobQueue.updateJob(job.get(), delta);
+          jobQueue.updateJob(job.get(), delta);
 
-        if (delta > 0 && job.get().getPartOf().isPresent()) {
-          JobSet set = jobQueue.getSet(job.get().getPartOf().get());
-          jobQueue.updateJobSet(set, delta, progress);
+          if (delta > 0 && job.get().getPartOf().isPresent()) {
+            JobSet set = jobQueue.getSet(job.get().getPartOf().get());
+            jobQueue.updateJobSet(set, delta, progress);
+          }
+
+          if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
+            LOGGER.trace(
+                MARKER.JOBS, "Job {} progress updated by remote executor ({})", jobId, progress);
+          }
+        } else {
+          if (LOGGER.isWarnEnabled() || LOGGER.isWarnEnabled(MARKER.JOBS)) {
+            LOGGER.warn(MARKER.JOBS, "Received progress update for unknown job {}", jobId);
+          }
         }
-
-        if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
-          LOGGER.trace(
-              MARKER.JOBS, "Job {} progress updated by remote executor ({})", jobId, progress);
-        }
-      } else {
-        if (LOGGER.isWarnEnabled() || LOGGER.isWarnEnabled(MARKER.JOBS)) {
-          LOGGER.warn(MARKER.JOBS, "Received progress update for unknown job {}", jobId);
-        }
+      } catch (Throwable e) {
+        LOGGER.error("Error while updating job {}", jobId, e);
       }
-    } catch (Throwable e) {
-      LOGGER.error("Error while updating job {}", jobId, e);
-    }
 
-    return Response.noContent().build();
+      return Response.noContent().build();
+    }
   }
 
   @DELETE
@@ -212,28 +229,30 @@ public class OpsEndpointJobs implements OpsEndpoint {
         @ApiResponse(responseCode = "404", description = "Job not found"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  public synchronized Response closeJob(
+  public Response closeJob(
       @PathParam("jobId") String jobId, @Parameter(hidden = true) Map<String, String> result) {
-    if (result.containsKey("error") && Objects.nonNull(result.get("error"))) {
-      boolean retry =
-          jobQueue.error(jobId, result.get("error"), Boolean.parseBoolean(result.get("retry")));
+    synchronized (this) {
+      if (result.containsKey("error") && Objects.nonNull(result.get("error"))) {
+        boolean retry =
+            jobQueue.error(jobId, result.get("error"), Boolean.parseBoolean(result.get("retry")));
 
-      if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
-        LOGGER.trace(
-            MARKER.JOBS, "Job {} marked as error by remote executor (retry: {})", jobId, retry);
+        if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
+          LOGGER.trace(
+              MARKER.JOBS, "Job {} marked as error by remote executor (retry: {})", jobId, retry);
+        }
+
+        return Response.noContent().build();
       }
 
-      return Response.noContent().build();
-    }
+      if (jobQueue.done(jobId)) {
+        if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
+          LOGGER.trace(MARKER.JOBS, "Job {} marked as done by remote executor", jobId);
+        }
 
-    if (jobQueue.done(jobId)) {
-      if (LOGGER.isTraceEnabled() || LOGGER.isTraceEnabled(MARKER.JOBS)) {
-        LOGGER.trace(MARKER.JOBS, "Job {} marked as done by remote executor", jobId);
+        return Response.noContent().build();
       }
 
-      return Response.noContent().build();
+      return Response.status(Status.NOT_FOUND).build();
     }
-
-    return Response.status(Status.NOT_FOUND).build();
   }
 }

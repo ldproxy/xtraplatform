@@ -15,5 +15,6 @@ import java.util.function.Function;
 public interface JobQueueBackend extends JobQueue {
   boolean isEnabled();
 
+  @Override
   void setJobTypes(Function<String, Optional<? extends Class<?>>> jobTypesMapper);
 }
