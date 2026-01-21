@@ -74,6 +74,7 @@ public class RedisImpl extends AbstractVolatilePolling implements Redis, AppLife
     AppLifeCycle.super.onStop();
   }
 
+  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
   @Override
   protected synchronized void onVolatileStart() {
     super.onVolatileStart();
@@ -145,7 +146,7 @@ public class RedisImpl extends AbstractVolatilePolling implements Redis, AppLife
     connect();
 
     if (Objects.isNull(jedis)) {
-      // TODO: retry
+      // NOPMD - TODO: retry
       if (Objects.nonNull(connectionError)) {
         return Tuple.of(State.UNAVAILABLE, connectionError.getMessage());
       }
