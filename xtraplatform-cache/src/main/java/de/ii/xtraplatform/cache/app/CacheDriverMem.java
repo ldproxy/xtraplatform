@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.TooManyMethods")
 public class CacheDriverMem implements CacheDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CacheDriverMem.class);
@@ -101,12 +102,16 @@ public class CacheDriverMem implements CacheDriver {
     delete(key);
   }
 
-  private synchronized void set(String key, Map<String, Object> entry) {
-    cache.put(key, entry);
+  private void set(String key, Map<String, Object> entry) {
+    synchronized (cache) {
+      cache.put(key, entry);
+    }
   }
 
-  private synchronized void delete(String key) {
-    cache.remove(key);
+  private void delete(String key) {
+    synchronized (cache) {
+      cache.remove(key);
+    }
   }
 
   private void checkExpired(String key) {

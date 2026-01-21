@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.TooManyMethods")
 public class CacheDriverFs implements CacheDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CacheDriverFs.class);
@@ -137,18 +138,20 @@ public class CacheDriverFs implements CacheDriver {
     }
   }
 
-  private synchronized void write(String key, String validator, Object value, int ttl) {
+  private void write(String key, String validator, Object value, int ttl) {
     Path entry = keyPath(key);
     try {
       byte[] serialized = serialize(value);
 
-      Files.createDirectories(entry);
-      Files.write(entry.resolve(validator), serialized);
-      if (ttl > 0) {
-        long expires = Instant.now().toEpochMilli() + (ttl * 1000L);
-        Files.writeString(entry.resolve(TTL), Long.toString(expires));
-      } else {
-        Files.deleteIfExists(entry.resolve(TTL));
+      synchronized (this) {
+        Files.createDirectories(entry);
+        Files.write(entry.resolve(validator), serialized);
+        if (ttl > 0) {
+          long expires = Instant.now().toEpochMilli() + (ttl * 1000L);
+          Files.writeString(entry.resolve(TTL), Long.toString(expires));
+        } else {
+          Files.deleteIfExists(entry.resolve(TTL));
+        }
       }
     } catch (IOException e) {
       // ignore
@@ -175,11 +178,13 @@ public class CacheDriverFs implements CacheDriver {
     return valueEncoding.getMapper(FORMAT.SMILE).readValue(value, clazz);
   }
 
-  private synchronized void delete(String key) {
-    try (Stream<Path> entries = Files.walk(keyPath(key))) {
-      entries.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-    } catch (IOException e) {
-      // ignore
+  private void delete(String key) {
+    synchronized (this) {
+      try (Stream<Path> entries = Files.walk(keyPath(key))) {
+        entries.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+      } catch (IOException e) {
+        // ignore
+      }
     }
   }
 
