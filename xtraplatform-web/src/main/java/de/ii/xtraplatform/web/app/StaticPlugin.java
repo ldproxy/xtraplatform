@@ -84,6 +84,7 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
   }
 
   @Override
+  @SuppressWarnings("PMD.UselessParentheses")
   public boolean handle(String path, HttpServletRequest request, HttpServletResponse response) {
     for (String prefix : servlets.keySet()) {
       if (path.startsWith(prefix) || ("/" + path).startsWith(prefix)) {

@@ -78,21 +78,31 @@ public class JaxRsPlugin implements DropwizardPlugin {
   // should be last
   @Override
   public int getPriority() {
-    return 10000;
+    return 10_000;
   }
 
   @Override
   public void init(AppConfiguration configuration, Environment environment) {
     JerseyEnvironment jersey = environment.jersey();
 
+    setupAuthProviders(jersey);
+    registerEndpoints(jersey);
+    registerFilters(jersey);
+    registerBinders(jersey);
+    registerExceptionMappers(jersey);
+    processConsumers(jersey);
+  }
+
+  private void setupAuthProviders(JerseyEnvironment jersey) {
     for (AuthProvider<?> provider : authProviders.get()) {
       if (!isAuthProviderAvailable) {
         jersey.register(provider.getRolesAllowedDynamicFeature());
         jersey.register(provider.getAuthValueFactoryProvider());
         this.isAuthProviderAvailable = true;
       }
-      if (LOGGER.isDebugEnabled(MARKER.DI))
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
         LOGGER.debug(MARKER.DI, "Registered JAX-RS Auth Provider {}", provider.getClass());
+      }
     }
     if (isAuthProviderAvailable) {
       List<AuthFilter> filters =
@@ -104,37 +114,57 @@ public class JaxRsPlugin implements DropwizardPlugin {
       jersey.register(
           new WebApplicationExceptionCatchingFilterPreMatching(new ChainedAuthFilter<>(filters)));
     }
+  }
+
+  private void registerEndpoints(JerseyEnvironment jersey) {
     if (isAuthProviderAvailable && !endpoints.get().isEmpty()) {
       for (Object resource : endpoints.get()) {
         jersey.register(resource);
-        if (LOGGER.isDebugEnabled(MARKER.DI))
+        if (LOGGER.isDebugEnabled(MARKER.DI)) {
           LOGGER.debug(MARKER.DI, "Registered JAX-RS Resource {}", resource.getClass());
+        }
       }
-    } else if (!isAuthProviderAvailable && !endpoints.get().isEmpty()) {
-      if (LOGGER.isDebugEnabled(MARKER.DI))
-        LOGGER.debug(
-            MARKER.DI, "No JAX-RS Auth Provider registered yet, cannot register Resources.");
+    } else if (!isAuthProviderAvailable
+        && !endpoints.get().isEmpty()
+        && LOGGER.isDebugEnabled(MARKER.DI)) {
+      LOGGER.debug(MARKER.DI, "No JAX-RS Auth Provider registered yet, cannot register Resources.");
     }
+  }
+
+  private void registerFilters(JerseyEnvironment jersey) {
     for (ContainerRequestFilter filter : containerRequestFilters.get()) {
       jersey.register(filter);
-      if (LOGGER.isDebugEnabled(MARKER.DI))
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
         LOGGER.debug(MARKER.DI, "Registered JAX-RS ContainerRequestFilter {})", filter.getClass());
+      }
     }
     for (ContainerResponseFilter filter : containerResponseFilters.get()) {
       jersey.register(filter);
-      if (LOGGER.isDebugEnabled(MARKER.DI))
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
         LOGGER.debug(MARKER.DI, "Registered JAX-RS ContainerResponseFilter {})", filter.getClass());
+      }
     }
+  }
+
+  private void registerBinders(JerseyEnvironment jersey) {
     for (Binder binder : binders.get()) {
       jersey.register(binder);
-      if (LOGGER.isDebugEnabled(MARKER.DI))
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
         LOGGER.debug(MARKER.DI, "Registered JAX-RS Binder {}", binder.getClass());
+      }
     }
+  }
+
+  private void registerExceptionMappers(JerseyEnvironment jersey) {
     for (ExceptionMapper<?> exceptionMapper : exceptionMappers.get()) {
       jersey.register(exceptionMapper);
-      if (LOGGER.isDebugEnabled(MARKER.DI))
+      if (LOGGER.isDebugEnabled(MARKER.DI)) {
         LOGGER.debug(MARKER.DI, "Registered JAX-RS ExceptionMapper {}", exceptionMapper.getClass());
+      }
     }
+  }
+
+  private void processConsumers(JerseyEnvironment jersey) {
     for (JaxRsConsumer consumer : consumers.get()) {
       if (consumer != null) {
         consumer

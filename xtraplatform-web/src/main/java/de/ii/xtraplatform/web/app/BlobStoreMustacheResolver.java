@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -94,8 +93,7 @@ public class BlobStoreMustacheResolver implements PartialMustacheResolver, AppLi
   private void init() {
     try (Stream<Path> paths =
         templateStore.walk(Path.of(""), 1, (path, pathAttributes) -> pathAttributes.isValue())) {
-      for (Iterator<Path> it = paths.iterator(); it.hasNext(); ) {
-        Path path = it.next();
+      for (Path path : paths.toList()) {
 
         try {
           Optional<Path> localPath = templateStore.asLocalPath(path, false);

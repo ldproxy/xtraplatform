@@ -19,10 +19,6 @@ import javax.ws.rs.ext.WriterInterceptorContext;
 
 public interface JsonPretty {
 
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.METHOD)
-  @interface JsonPrettify {}
-
   String JSON_PRETTY_HEADER = "x-ldproxy-json-pretty";
 
   Annotation JSON_PRETTY_ANNOTATION =
@@ -33,13 +29,17 @@ public interface JsonPretty {
         }
       };
 
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.METHOD)
+  @interface JsonPrettify {}
+
   static boolean isJsonPretty(WriterInterceptorContext writerInterceptorContext) {
     Object headerValue = writerInterceptorContext.getProperty(JSON_PRETTY_HEADER);
 
     return headerValue instanceof String && "true".equalsIgnoreCase((String) headerValue);
   }
 
-  static boolean isJsonPretty(Annotation[] annotations) {
+  static boolean isJsonPretty(Annotation... annotations) {
     return annotations != null
         && Arrays.stream(annotations).anyMatch(annotation -> annotation instanceof JsonPrettify);
   }

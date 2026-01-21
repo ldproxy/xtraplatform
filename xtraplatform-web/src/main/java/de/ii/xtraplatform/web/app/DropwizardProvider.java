@@ -73,7 +73,7 @@ public class DropwizardProvider implements AppLifeCycle {
       init();
     } catch (Throwable ex) {
       LogContext.error(LOGGER, ex, "Error during initializing of {}", appContext.getName());
-      System.exit(1);
+      return CompletableFuture.failedFuture(ex);
     }
 
     return CompletableFuture.completedFuture(null);

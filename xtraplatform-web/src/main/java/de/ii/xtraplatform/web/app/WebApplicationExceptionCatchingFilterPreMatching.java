@@ -23,6 +23,8 @@ public class WebApplicationExceptionCatchingFilterPreMatching implements Contain
     this.underlying = underlying;
   }
 
+  @Override
+  @SuppressWarnings("PMD.EmptyCatchBlock")
   public void filter(ContainerRequestContext requestContext) throws IOException {
     try {
       this.underlying.filter(requestContext);

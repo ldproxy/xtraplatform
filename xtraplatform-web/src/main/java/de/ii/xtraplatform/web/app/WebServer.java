@@ -60,10 +60,12 @@ public class WebServer implements AppLifeCycle, DropwizardPlugin {
     try {
       server.get().start();
 
-      LOGGER.info("Started web server at {}", appContext.getUri());
+      if (LOGGER.isInfoEnabled()) {
+        LOGGER.info("Started web server at {}", appContext.getUri());
+      }
     } catch (Throwable ex) {
       LogContext.error(LOGGER, ex, "Error starting {}", appContext.getName());
-      System.exit(1);
+      return CompletableFuture.failedFuture(ex);
     }
 
     return CompletableFuture.completedFuture(null);
