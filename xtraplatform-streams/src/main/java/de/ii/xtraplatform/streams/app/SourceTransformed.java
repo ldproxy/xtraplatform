@@ -53,7 +53,6 @@ public class SourceTransformed<T, U> implements Source<U> {
     return via2;
   }
 
-  // TODO: fuse
   @Override
   public <V> BasicStream<U, V> to(SinkReduced<U, V> sink) {
     return new StreamDefault<>(this, sink);

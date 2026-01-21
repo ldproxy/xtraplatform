@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+@SuppressWarnings("PMD.DataClass")
 public class TransformerDefault<T, U> implements Transformer<T, U> {
 
   public enum Type {
@@ -41,8 +42,8 @@ public class TransformerDefault<T, U> implements Transformer<T, U> {
     this(Type.MAP, function, null, null, null, null, null);
   }
 
-  public TransformerDefault(Function<T, Source<U>> function, boolean flatMap) {
-    this(Type.FLATMAP, null, null, null, null, null, function);
+  public static <T, U> TransformerDefault<T, U> flatMap(Function<T, Source<U>> function) {
+    return new TransformerDefault<>(Type.FLATMAP, null, null, null, null, null, function);
   }
 
   public TransformerDefault(Predicate<T> predicate) {
