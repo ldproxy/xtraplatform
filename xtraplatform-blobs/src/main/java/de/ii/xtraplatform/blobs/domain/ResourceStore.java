@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
+@SuppressWarnings("PMD.TooManyMethods")
 public interface ResourceStore
     extends BlobReader, BlobWriter, BlobLocals, Volatile2, VolatileRegistered {
 
@@ -35,15 +36,14 @@ public interface ResourceStore
   }
 
   default ResourceStore writableWith(boolean writable, String type, String... path) {
-    ResourceStore delegate = this;
-    Path prefix = Path.of(type, path);
-
-    if (!(delegate instanceof BlobWriterReader)) {
+    if (!(this instanceof BlobWriterReader)) {
       throw new IllegalStateException();
     }
+
+    Path prefix = Path.of(type, path);
     BlobWriterReader delegateWriter = (BlobWriterReader) this;
 
-    return new PrefixedResourceStore(delegate, prefix, delegateWriter, writable);
+    return new PrefixedResourceStore(this, prefix, delegateWriter, writable);
   }
 
   class PrefixedResourceStore implements ResourceStore, BlobWriterReader {

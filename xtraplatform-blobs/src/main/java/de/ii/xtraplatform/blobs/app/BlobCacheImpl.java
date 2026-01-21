@@ -48,7 +48,7 @@ public class BlobCacheImpl implements BlobCache {
     Files.createDirectories(cachePath.getParent());
     Files.copy(content, cachePath, StandardCopyOption.REPLACE_EXISTING);
 
-    // TODO: cleanup older/other entries?
+    // NOPMD - TODO: cleanup older/other entries?
 
     return cachePath;
   }
