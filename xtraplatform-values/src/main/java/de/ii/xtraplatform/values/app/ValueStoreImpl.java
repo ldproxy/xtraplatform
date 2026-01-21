@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind(interfaces = {ValueStore.class, AppLifeCycle.class})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.GodClass"})
 public class ValueStoreImpl extends AbstractVolatile
     implements ValueStore, KeyValueStore<StoredValue>, ValueCache<StoredValue>, AppLifeCycle {
 
@@ -116,77 +117,7 @@ public class ValueStoreImpl extends AbstractVolatile
 
     LOGGER.debug("Loading values");
 
-    valueFactories
-        .getTypes()
-        .forEach(
-            valueType -> {
-              ValueFactory valueFactory = valueFactories.get(valueType);
-              Path typePath = Path.of(valueFactory.type());
-              int count = 0;
-
-              valueTypes.put(
-                  valueFactory.valueClass(),
-                  KeyValueStore.TYPE_SPLITTER.splitToList(valueFactory.type()));
-
-              try (Stream<Path> paths =
-                  blobStore.walk(
-                      typePath,
-                      8,
-                      (path, attributes) -> attributes.isValue() && !attributes.isHidden())) {
-                List<Path> files = paths.sorted().collect(Collectors.toList());
-
-                for (Path file : files) {
-                  String extension = Files.getFileExtension(file.getFileName().toString());
-                  ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(extension);
-
-                  if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN
-                      && valueFactory.formatAliases().containsKey(extension)) {
-                    payloadFormat = valueFactory.formatAliases().get(extension);
-                  }
-
-                  if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN) {
-                    return;
-                  }
-
-                  if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Loading value: {} {} {}", valueType, file, payloadFormat);
-                  }
-
-                  Path currentPath = typePath.resolve(file);
-                  Path parent = Objects.requireNonNullElse(file.getParent(), Path.of(""));
-                  Identifier identifier =
-                      Identifier.from(
-                          typePath
-                              .resolve(parent)
-                              .resolve(
-                                  Files.getNameWithoutExtension(file.getFileName().toString())));
-
-                  try {
-                    byte[] bytes = blobStore.content(currentPath).get().readAllBytes();
-                    long lm = blobStore.lastModified(currentPath);
-
-                    StoredValue value =
-                        valueEncoding.deserialize(identifier, bytes, payloadFormat, true);
-
-                    this.memCache.put(identifier, value);
-                    this.lastModified.put(identifier, lm == -1 ? Instant.now().toEpochMilli() : lm);
-
-                    count++;
-                  } catch (IOException e) {
-                    LogContext.error(LOGGER, e, "Could not load value from {}", currentPath);
-                  }
-                }
-
-              } catch (IOException e) {
-                LogContext.error(LOGGER, e, "Could not load values with type {}", valueType);
-              }
-
-              if (count > 0) {
-                LOGGER.info("Loaded {} {}", count, valueType);
-              } else {
-                LOGGER.debug("Loaded {} {}", count, valueType);
-              }
-            });
+    loadAllValues();
 
     LOGGER.debug("Loaded values");
 
@@ -199,92 +130,126 @@ public class ValueStoreImpl extends AbstractVolatile
   void reload(List<Path> filter) {
     LOGGER.debug("Reloading values");
 
-    valueFactories
-        .getTypes()
-        .forEach(
-            valueType -> {
-              ValueFactory valueFactory = valueFactories.get(valueType);
-              Path typePath = Path.of(valueFactory.type());
-              int count = 0;
-
-              valueTypes.put(
-                  valueFactory.valueClass(),
-                  KeyValueStore.TYPE_SPLITTER.splitToList(valueFactory.type()));
-
-              try (Stream<Path> paths =
-                  blobStore.walk(
-                      typePath,
-                      8,
-                      (path, attributes) -> attributes.isValue() && !attributes.isHidden())) {
-                List<Path> files = paths.sorted().collect(Collectors.toList());
-
-                for (Path file : files) {
-                  String extension = Files.getFileExtension(file.getFileName().toString());
-                  ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(extension);
-
-                  if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN
-                      && valueFactory.formatAliases().containsKey(extension)) {
-                    payloadFormat = valueFactory.formatAliases().get(extension);
-                  }
-
-                  if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN) {
-                    return;
-                  }
-
-                  if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Loading value: {} {} {}", valueType, file, payloadFormat);
-                  }
-
-                  Path currentPath = typePath.resolve(file);
-                  Path parent = Objects.requireNonNullElse(file.getParent(), Path.of(""));
-                  Path identifierPath =
-                      typePath
-                          .resolve(parent)
-                          .resolve(Files.getNameWithoutExtension(file.getFileName().toString()));
-                  Identifier identifier = Identifier.from(identifierPath);
-
-                  if (!filter.isEmpty() && filter.stream().noneMatch(identifierPath::startsWith)) {
-                    if (LOGGER.isTraceEnabled()) {
-                      LOGGER.trace("Skipping value, not included: {}", identifierPath);
-                    }
-                    continue;
-                  }
-
-                  try {
-                    byte[] bytes = blobStore.content(currentPath).get().readAllBytes();
-                    long lm = blobStore.lastModified(currentPath);
-
-                    StoredValue value =
-                        valueEncoding.deserialize(identifier, bytes, payloadFormat, true);
-
-                    if (memCache.containsKey(identifier)
-                        && !Objects.equals(memCache.get(identifier), value)) {
-                      count++;
-                    } else {
-                      if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Not counting value, not changed: {}", identifierPath);
-                      }
-                    }
-
-                    this.memCache.put(identifier, value);
-                    this.lastModified.put(identifier, lm == -1 ? Instant.now().toEpochMilli() : lm);
-                  } catch (IOException e) {
-                    LogContext.error(LOGGER, e, "Could not reload value from {}", currentPath);
-                  }
-                }
-
-              } catch (IOException e) {
-                LogContext.error(LOGGER, e, "Could not reload values with type {}", valueType);
-              }
-
-              if (count > 0) {
-                LOGGER.info("Reloaded {} {}", count, valueType);
-              } else {
-                LOGGER.debug("Reloaded {} {}", count, valueType);
-              }
-            });
+    loadValuesWithFilter(filter);
 
     LOGGER.debug("Reloaded values");
+  }
+
+  private void loadAllValues() {
+    valueFactories.getTypes().forEach(this::loadValuesForType);
+  }
+
+  private void loadValuesWithFilter(List<Path> filter) {
+    valueFactories.getTypes().forEach(valueType -> loadValuesForType(valueType, filter));
+  }
+
+  private void loadValuesForType(String valueType) {
+    loadValuesForType(valueType, List.of());
+  }
+
+  private void loadValuesForType(String valueType, List<Path> filter) {
+    ValueFactory valueFactory = valueFactories.get(valueType);
+    Path typePath = Path.of(valueFactory.type());
+    int count = 0;
+
+    valueTypes.put(
+        valueFactory.valueClass(), KeyValueStore.TYPE_SPLITTER.splitToList(valueFactory.type()));
+
+    try (Stream<Path> paths =
+        blobStore.walk(
+            typePath, 8, (path, attributes) -> attributes.isValue() && !attributes.isHidden())) {
+      List<Path> files = paths.sorted().collect(Collectors.toList());
+
+      for (Path file : files) {
+        if (processValueFile(valueType, valueFactory, typePath, file, filter)) {
+          count++;
+        }
+      }
+
+    } catch (IOException e) {
+      LogContext.error(LOGGER, e, "Could not load values with type {}", valueType);
+    }
+
+    logLoadingResult(count, valueType, !filter.isEmpty());
+  }
+
+  private boolean processValueFile(
+      String valueType, ValueFactory valueFactory, Path typePath, Path file, List<Path> filter) {
+
+    String extension = Files.getFileExtension(file.getFileName().toString());
+    ValueEncoding.FORMAT payloadFormat = ValueEncoding.FORMAT.fromString(extension);
+
+    if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN
+        && valueFactory.formatAliases().containsKey(extension)) {
+      payloadFormat = valueFactory.formatAliases().get(extension);
+    }
+
+    if (payloadFormat == ValueEncoding.FORMAT.UNKNOWN) {
+      return false;
+    }
+
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Loading value: {} {} {}", valueType, file, payloadFormat);
+    }
+
+    Path parent = Objects.requireNonNullElse(file.getParent(), Path.of(""));
+    Path identifierPath =
+        typePath
+            .resolve(parent)
+            .resolve(Files.getNameWithoutExtension(file.getFileName().toString()));
+
+    // Check filter for reload operations
+    if (!filter.isEmpty() && filter.stream().noneMatch(identifierPath::startsWith)) {
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Skipping value, not included: {}", identifierPath);
+      }
+      return false;
+    }
+
+    Identifier identifier = Identifier.from(identifierPath);
+    Path currentPath = typePath.resolve(file);
+    return loadAndStoreValue(identifier, currentPath, payloadFormat, filter.isEmpty());
+  }
+
+  private boolean loadAndStoreValue(
+      Identifier identifier,
+      Path currentPath,
+      ValueEncoding.FORMAT payloadFormat,
+      boolean isInitialLoad) {
+    try {
+      byte[] bytes = blobStore.content(currentPath).get().readAllBytes();
+      long lm = blobStore.lastModified(currentPath);
+
+      StoredValue value = valueEncoding.deserialize(identifier, bytes, payloadFormat, true);
+
+      boolean hasChanged = true;
+      if (!isInitialLoad) {
+        hasChanged =
+            memCache.containsKey(identifier) && !Objects.equals(memCache.get(identifier), value);
+
+        if (!hasChanged && LOGGER.isTraceEnabled()) {
+          LOGGER.trace("Not counting value, not changed: {}", identifier.asPath());
+        }
+      }
+
+      this.memCache.put(identifier, value);
+      this.lastModified.put(identifier, lm == -1 ? Instant.now().toEpochMilli() : lm);
+
+      return isInitialLoad || hasChanged;
+    } catch (IOException e) {
+      String operation = isInitialLoad ? "load" : "reload";
+      LogContext.error(LOGGER, e, "Could not {} value from {}", operation, currentPath);
+      return false;
+    }
+  }
+
+  private void logLoadingResult(int count, String valueType, boolean isReload) {
+    String operation = isReload ? "Reloaded" : "Loaded";
+    if (count > 0) {
+      LOGGER.info("{} {} {}", operation, count, valueType);
+    } else {
+      LOGGER.debug("{} {} {}", operation, count, valueType);
+    }
   }
 
   protected ValueBuilder<StoredValue> getBuilder(Identifier identifier) {
@@ -308,7 +273,6 @@ public class ValueStoreImpl extends AbstractVolatile
         .collect(Collectors.toList());
   }
 
-  // TODO: change in KeyValueStore, might affect EntityDataStore
   @Override
   public List<String> ids(String... path) {
     return identifiers(path).stream().map(Identifier::asPath).collect(Collectors.toList());
@@ -364,7 +328,7 @@ public class ValueStoreImpl extends AbstractVolatile
       }
     }
 
-    StoredValue removed = null;
+    StoredValue removed;
 
     synchronized (this) {
       removed = memCache.remove(identifier);

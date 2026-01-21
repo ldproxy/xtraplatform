@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -34,7 +35,7 @@ public interface ValueEncoding<T> {
       }
 
       for (FORMAT f : values()) {
-        if (Objects.equals(f.name(), format.toUpperCase())) {
+        if (Objects.equals(f.name(), format.toUpperCase(Locale.ROOT))) {
           return f;
         }
       }
@@ -48,7 +49,7 @@ public interface ValueEncoding<T> {
                   .filter(format -> format != NONE && format != UNKNOWN)
                   .map(Enum::name),
               Arrays.stream(additional))
-          .map(format -> "." + format.toLowerCase())
+          .map(format -> "." + format.toLowerCase(Locale.ROOT))
           .collect(Collectors.toList());
     }
 
@@ -56,7 +57,7 @@ public interface ValueEncoding<T> {
       if (this == NONE || this == UNKNOWN) {
         return path;
       }
-      return path + "." + this.name().toLowerCase();
+      return path + "." + this.name().toLowerCase(Locale.ROOT);
     }
   }
 
