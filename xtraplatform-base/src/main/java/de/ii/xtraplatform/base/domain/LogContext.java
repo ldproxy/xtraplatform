@@ -26,7 +26,14 @@ import org.slf4j.event.Level;
 /**
  * @author zahnen
  */
-public class LogContext {
+@SuppressWarnings("PMD.TooManyMethods")
+public final class LogContext {
+
+  private static final String MESSAGE_SUFFIX = ": {}";
+
+  private LogContext() {
+    // static class
+  }
 
   public enum CONTEXT {
     SERVICE,
@@ -78,6 +85,7 @@ public class LogContext {
   }
 
   public interface MdcCloseable extends Closeable {
+    @Override
     void close();
   }
 
@@ -160,7 +168,7 @@ public class LogContext {
         logger,
         Level.ERROR,
         throwable,
-        messagePrefix.isEmpty() ? "{}" : messagePrefix + ": {}",
+        messagePrefix.isEmpty() ? "{}" : messagePrefix + MESSAGE_SUFFIX,
         args);
   }
 
@@ -178,7 +186,7 @@ public class LogContext {
     Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
     args[messagePrefixArgs.length] = getMessage(throwable);
 
-    logThrowable(logger, Level.INFO, throwable, messagePrefix + ": {}", args);
+    logThrowable(logger, Level.INFO, throwable, messagePrefix + MESSAGE_SUFFIX, args);
   }
 
   /**
@@ -195,7 +203,7 @@ public class LogContext {
     Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
     args[messagePrefixArgs.length] = getMessage(throwable);
 
-    logThrowable(logger, Level.INFO, throwable, messagePrefix + ": {}", args);
+    logThrowable(logger, Level.INFO, throwable, messagePrefix + MESSAGE_SUFFIX, args);
   }
 
   /**
@@ -212,7 +220,7 @@ public class LogContext {
     Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
     args[messagePrefixArgs.length] = getMessage(throwable);
 
-    logThrowable(logger, Level.DEBUG, throwable, messagePrefix + ": {}", args);
+    logThrowable(logger, Level.DEBUG, throwable, messagePrefix + MESSAGE_SUFFIX, args);
   }
 
   /**
@@ -230,14 +238,15 @@ public class LogContext {
     int max = 3;
     int numMessages = 0;
     String[] messages = new String[max];
-    String prefix = messagePrefix;
+    StringBuilder prefixBuilder = new StringBuilder(messagePrefix);
     while (Objects.nonNull(current) && max > 0) {
       messages[numMessages] = getMessage(current);
-      prefix += ": {}";
+      prefixBuilder.append(MESSAGE_SUFFIX);
       numMessages++;
       max--;
       current = current.getCause();
     }
+    String prefix = prefixBuilder.toString();
 
     Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + numMessages);
     if (numMessages >= 0) {

@@ -65,7 +65,7 @@ public class XacmlRequest {
     actionAttributes.forEach((id, value) -> add(id, value, action, geoXacmlVersion));
 
     Request =
-        version == XacmlJsonVersion._1_0
+        version == XacmlJsonVersion.V1_0
             ? request10(subject.build(), resource.build(), action.build())
             : request11(subject.build(), resource.build(), action.build());
   }
@@ -80,7 +80,7 @@ public class XacmlRequest {
           new Attribute(
               id,
               value,
-              geoXacmlVersion == GeoXacmlVersion._1_0
+              geoXacmlVersion == GeoXacmlVersion.V1_0
                   ? "urn:ogc:def:dataType:geoxacml:1.0:geometry"
                   : "urn:ogc:def:geoxacml:3.0:data-type:geometry"));
       return;

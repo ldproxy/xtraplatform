@@ -64,21 +64,14 @@ public class StoreSourceHttpFetcher {
     }
 
     URI uri = URI.create(storeSource.getSrc());
-    InputStream asInputStream;
 
-    try {
-      asInputStream = getAsInputStream(uri.toString());
-    } catch (Throwable e) {
-      LogContext.error(LOGGER, e, "Could not load HTTP store source from {}", storeSource.getSrc());
-      return Optional.empty();
-    }
-
-    try {
+    try (InputStream asInputStream = getAsInputStream(uri.toString())) {
       Files.createDirectories(cachePath.getParent());
       Files.copy(asInputStream, cachePath, StandardCopyOption.REPLACE_EXISTING);
       PULLED.put(cachePath, Instant.now().toEpochMilli());
-    } catch (IOException e) {
-      LogContext.error(LOGGER, e, "Could not cache HTTP store source to {}", cachePath);
+    } catch (Throwable e) {
+      LogContext.error(
+          LOGGER, e, "Could not load or cache HTTP store source from {}", storeSource.getSrc());
       return Optional.empty();
     }
 
@@ -93,9 +86,9 @@ public class StoreSourceHttpFetcher {
   }
 
   private InputStream getAsInputStream(String url) {
-    try {
-      CloseableHttpResponse response = httpClient.execute(new HttpGet(url));
-      return response.getEntity().getContent();
+    try (CloseableHttpResponse response = httpClient.execute(new HttpGet(url))) {
+      byte[] data = response.getEntity().getContent().readAllBytes();
+      return new java.io.ByteArrayInputStream(data);
     } catch (IOException e) {
       throw new IllegalArgumentException(e);
     }

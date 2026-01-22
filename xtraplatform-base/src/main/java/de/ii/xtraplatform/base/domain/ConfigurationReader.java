@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ext.Java7Support;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.collect.ImmutableMap;
@@ -86,15 +85,6 @@ public class ConfigurationReader {
   private final ObjectMapper mergeMapper;
   private final EnvironmentVariableSubstitutor envSubstitutor;
 
-  // workaround for https://github.com/FasterXML/jackson-databind/issues/4078
-  static {
-    try {
-      Java7Support java7Support = Java7Support.instance();
-    } catch (Throwable e) {
-      // ignore
-    }
-  }
-
   public ConfigurationReader(Map<String, ByteSource> configsToMergeAfterBase) {
     this.configsToMergeAfterBase = configsToMergeAfterBase;
 
@@ -141,7 +131,7 @@ public class ConfigurationReader {
 
     applyLogFormat(builder.getLoggingFactory(), env);
 
-    applyForcedDefaults(builder, env);
+    applyForcedDefaults(builder);
 
     return builder.toImmutable();
   }
@@ -241,7 +231,7 @@ public class ConfigurationReader {
             });
   }
 
-  private static void applyForcedDefaults(AppConfiguration cfg, Constants.ENV env) {
+  private static void applyForcedDefaults(AppConfiguration cfg) {
     cfg.getServerFactory().setRegisterDefaultExceptionMappers(false);
 
     cfg.getServerFactory()
