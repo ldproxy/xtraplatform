@@ -61,7 +61,7 @@ public class OidcFallback implements Oidc {
 
   @Override
   public Map<String, Key> getSigningKeys() {
-    return null;
+    return java.util.Collections.emptyMap();
   }
 
   @Override

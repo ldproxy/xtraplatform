@@ -56,7 +56,7 @@ public class InternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
     JwtTokenAuthenticator tokenAuthenticator = new JwtTokenAuthenticator(tokenHandler);
 
     CachingAuthenticator<String, User> cachingAuthenticator =
-        new CachingAuthenticator<String, User>(
+        new CachingAuthenticator<>(
             metricRegistry,
             tokenAuthenticator,
             CaffeineSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
