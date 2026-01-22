@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
 public abstract class AbstractVolatileComposed extends AbstractVolatile
     implements VolatileComposed {
 
@@ -73,7 +74,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
       for (Volatile2 v : components.values()) {
         if (v instanceof AbstractVolatile) {
           ((AbstractVolatile) v).onVolatileStart();
-          v.onStateChange(this::onChange, false);
+          v.onStateChange((from, to) -> onChange(to), false);
         }
       }
       checkStates();
@@ -117,6 +118,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   @Override
+  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
   protected synchronized void onVolatileStop() {
     super.onVolatileStop();
     this.initialized = false;
@@ -139,6 +141,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     addSubcomponent(localKey, v, false, capabilities);
   }
 
+  @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
   protected final void addSubcomponent(
       String localKey, Volatile2 v, boolean neededForInit, String... capabilities) {
     this.components.put(localKey, v);
@@ -158,8 +161,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
       ((AbstractVolatile) v).onVolatileStart();
     }
 
-    v.onStateChange(this::onChange, false);
-
+    v.onStateChange((from, to) -> checkStates(), false);
     // checkStates();
   }
 
@@ -226,7 +228,8 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     return componentCapabilities.getOrDefault(subKey, Set.of());
   }
 
-  private void onChange(State from, State to) {
+  @SuppressWarnings("PMD.UnusedFormalParameter")
+  private void onChange(State to) {
     /*if (to.isLowerThan(getState())) {
       setState(to);
       // TODO: messages
@@ -312,13 +315,15 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   protected State reconcileStateNoComponents(@Nullable String capability) {
-    if (LOGGER.isDebugEnabled()) {
-      if (Objects.nonNull(capability)) {
+    if (Objects.nonNull(capability)) {
+      if (LOGGER.isWarnEnabled()) {
         LOGGER.warn(
             "No components with capability '{}' found for volatile: {}",
             capability,
             getUniqueKey());
-      } else {
+      }
+    } else {
+      if (LOGGER.isWarnEnabled()) {
         LOGGER.warn("No components found for volatile: {}", getUniqueKey());
       }
     }
@@ -327,7 +332,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
 
   private boolean hasCapability(String localKey, Volatile2 dep, String capability) {
     return componentCapabilities.get(localKey).contains(capability)
-        || (dep instanceof AbstractVolatile
-            && ((AbstractVolatile) dep).getVolatileCapabilities().contains(capability));
+        || dep instanceof AbstractVolatile
+            && ((AbstractVolatile) dep).getVolatileCapabilities().contains(capability);
   }
 }

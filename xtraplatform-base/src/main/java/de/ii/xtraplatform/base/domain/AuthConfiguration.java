@@ -491,9 +491,16 @@ public interface AuthConfiguration {
     XACML_JSON
   }
 
+  @SuppressWarnings("PMD.FieldDeclarationsShouldBeAtStartOfClass")
   String OIDC = "OIDC";
+
+  @SuppressWarnings("PMD.FieldDeclarationsShouldBeAtStartOfClass")
   String USER_INFO = "USER_INFO";
+
+  @SuppressWarnings("PMD.FieldDeclarationsShouldBeAtStartOfClass")
   String JWT = "JWT";
+
+  @SuppressWarnings("PMD.FieldDeclarationsShouldBeAtStartOfClass")
   String XACML_JSON = "XACML_JSON";
 
   @JsonTypeInfo(
@@ -596,7 +603,7 @@ public interface AuthConfiguration {
      */
     @Value.Default
     default XacmlJsonVersion getVersion() {
-      return XacmlJsonVersion._1_1;
+      return XacmlJsonVersion.V1_1;
     }
 
     /**
@@ -629,8 +636,8 @@ public interface AuthConfiguration {
   }
 
   enum XacmlJsonVersion {
-    _1_0("1.0"),
-    _1_1("1.1");
+    V1_0("1.0"),
+    V1_1("1.1");
     private final String stringRepresentation;
 
     XacmlJsonVersion(String stringRepresentation) {
@@ -649,14 +656,14 @@ public interface AuthConfiguration {
           return v;
         }
       }
-      return _1_1;
+      return V1_1;
     }
   }
 
   enum GeoXacmlVersion {
     NONE("NONE"),
-    _1_0("1.0"),
-    _3_0("3.0");
+    V1_0("1.0"),
+    V3_0("3.0");
     private final String stringRepresentation;
 
     GeoXacmlVersion(String stringRepresentation) {

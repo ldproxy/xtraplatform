@@ -12,12 +12,8 @@ import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class AbstractVolatile implements Volatile2, VolatileRegistered {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractVolatile.class);
 
   protected final VolatileRegistry volatileRegistry;
   private final boolean noHealth;
@@ -25,8 +21,8 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
   private final String uniqueKey;
   private final Set<String> capabilities;
   private State state;
-  private String message;
   private boolean started;
+  private Optional<String> message = Optional.empty();
 
   protected AbstractVolatile(VolatileRegistry volatileRegistry) {
     this(volatileRegistry, null);
@@ -51,10 +47,11 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
     this.uniqueKey = uniqueKey;
     this.capabilities = Set.of(capabilities);
     this.state = State.UNAVAILABLE;
-    this.message = null;
+    this.message = Optional.empty();
     this.started = false;
   }
 
+  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
   protected synchronized void onVolatileStart() {
     if (!started) {
       volatileRegistry.register(this);
@@ -62,6 +59,7 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
     }
   }
 
+  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
   protected synchronized void onVolatileStop() {
     if (started) {
       this.started = false;
@@ -85,7 +83,7 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
 
   @Override
   public Optional<String> getMessage() {
-    return Optional.ofNullable(message);
+    return message;
   }
 
   @Override
@@ -119,7 +117,7 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
   }
 
   protected final void setMessage(String message) {
-    this.message = message;
+    this.message = Optional.ofNullable(message);
   }
 
   protected Set<String> getVolatileCapabilities() {

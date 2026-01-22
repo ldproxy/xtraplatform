@@ -8,6 +8,8 @@
 package de.ii.xtraplatform.base.domain.resiliency;
 
 public class VolatileUnavailableException extends RuntimeException {
+  private static final long serialVersionUID = 1L;
+
   public VolatileUnavailableException() {
     super();
   }

@@ -18,12 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CfgStoreDriverFs implements CfgStoreDriver {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(CfgStoreDriverFs.class);
   static final Path CFG_YML = Path.of("cfg.yml");
   private final Path dataDirectory;
 

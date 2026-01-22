@@ -83,6 +83,7 @@ import java.util.Optional;
  * </code>
  *     <p>
  */
+@SuppressWarnings("PMD.DataClass")
 @DocFile(path = "application/20-configuration", name = "20-logging.md")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE, defaultImpl = LoggingConfiguration.class)
 public class LoggingConfiguration extends DefaultLoggingFactory {

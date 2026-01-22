@@ -124,6 +124,7 @@ public class ServerConfiguration extends DefaultServerFactory {
 
   // needed because @JsonProperty for the getter is missing in AbstractServerFactory
   @JsonProperty
+  @Override
   public Boolean getRegisterDefaultExceptionMappers() {
     return super.getRegisterDefaultExceptionMappers();
   }

@@ -19,6 +19,7 @@ import org.slf4j.Marker;
 /**
  * @author zahnen
  */
+@SuppressWarnings("PMD.GodClass")
 public class LoggingFilter extends TurboFilter {
 
   private boolean showThirdPartyLoggers;
@@ -47,6 +48,7 @@ public class LoggingFilter extends TurboFilter {
       boolean stackTraces,
       boolean wiring,
       boolean jobs) {
+    super();
     this.showThirdPartyLoggers = showThirdPartyLoggers;
     this.apiRequests = apiRequests;
     this.apiRequestUsers = apiRequestUsers;
@@ -62,6 +64,7 @@ public class LoggingFilter extends TurboFilter {
   }
 
   @Override
+  @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.CyclomaticComplexity", "PMD.NPathComplexity"})
   public FilterReply decide(
       Marker marker, Logger logger, Level level, String format, Object[] params, Throwable t) {
 
@@ -80,13 +83,13 @@ public class LoggingFilter extends TurboFilter {
 
     if (sqlQueries
         && (Objects.equals(marker, MARKER.SQL)
-            || logger.getName().equals("slick.jdbc.JdbcBackend.benchmark"))) {
+            || "slick.jdbc.JdbcBackend.benchmark".equals(logger.getName()))) {
       return FilterReply.ACCEPT;
     }
 
     if (sqlResults
         && (Objects.equals(marker, MARKER.SQL_RESULT)
-            || logger.getName().equals("slick.jdbc.StatementInvoker.result"))) {
+            || "slick.jdbc.StatementInvoker.result".equals(logger.getName()))) {
       return FilterReply.ACCEPT;
     }
 

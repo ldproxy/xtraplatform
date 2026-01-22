@@ -22,39 +22,23 @@ public interface ZipWalker {
 
   static void walkEntries(Path zipFile, BiConsumer<Path, Supplier<byte[]>> entryHandler)
       throws IOException {
-    ZipInputStream zip = new ZipInputStream(Files.newInputStream(zipFile));
-    /*JarInputStream jarInputStream = new JarInputStream(Files.newInputStream(pkg), true);
-    Manifest manifest = jarInputStream.getManifest();
-
-    if (Objects.isNull(manifest)) {
-      throw new IllegalArgumentException(String.format("package '%s' has no manifest", pkg));
-    }*/
-
-    ZipEntry zipEntry = zip.getNextEntry();
-    while (zipEntry != null) {
-      if (!zipEntry.isDirectory() && !zipEntry.getName().startsWith("META-INF")) {
-        /*Attributes attributes = manifest.getAttributes(zipEntry.getName());
-        if (Objects.isNull(attributes)) {
-          throw new IllegalArgumentException(
-              String.format(
-                  "entry '%s' in package '%s' is not contained in manifest",
-                  zipEntry.getName(), pkg));
-        }
-        attributes.forEach((key, value) -> LOGGER.error("ATT {} {}", key, value));
-        */
-        try {
-          entryHandler.accept(
-              Path.of("/", zipEntry.getName()), supplierMayThrow(zip::readAllBytes));
-        } catch (RuntimeException e) {
-          if (Objects.nonNull(e.getCause()) && e.getCause() instanceof IOException) {
-            throw (IOException) e.getCause();
+    try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(zipFile))) {
+      ZipEntry zipEntry = zip.getNextEntry();
+      while (zipEntry != null) {
+        if (!zipEntry.isDirectory() && !zipEntry.getName().startsWith("META-INF")) {
+          try {
+            entryHandler.accept(
+                Path.of("/", zipEntry.getName()), supplierMayThrow(zip::readAllBytes));
+          } catch (RuntimeException e) {
+            if (Objects.nonNull(e.getCause()) && e.getCause() instanceof IOException) {
+              throw (IOException) e.getCause();
+            }
+            throw e;
           }
-          throw e;
         }
+        zip.closeEntry();
+        zipEntry = zip.getNextEntry();
       }
-      zip.closeEntry();
-      zipEntry = zip.getNextEntry();
     }
-    zip.close();
   }
 }
