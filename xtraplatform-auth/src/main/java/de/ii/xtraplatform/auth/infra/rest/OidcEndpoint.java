@@ -100,6 +100,7 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
   }
 
   @Override
+  @SuppressWarnings("PMD.UseObjectForClearerAPI")
   public Response handle(
       ContainerRequestContext containerRequestContext,
       String redirectUri,

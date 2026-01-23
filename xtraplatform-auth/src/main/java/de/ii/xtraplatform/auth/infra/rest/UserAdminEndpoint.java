@@ -55,6 +55,7 @@ public class UserAdminEndpoint implements Endpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(UserAdminEndpoint.class);
 
+  private static final String FIELD_NEW_PASSWORD = "newPassword";
   private final EntityDataStore<UserData> userRepository;
 
   @Inject
@@ -100,12 +101,13 @@ public class UserAdminEndpoint implements Endpoint {
 
     } catch (IllegalStateException | InterruptedException | ExecutionException e) {
       LogContext.error(LOGGER, e, "Error adding user");
-      throw new BadRequestException();
+      throw new BadRequestException(e);
     }
   }
 
   @Path("/{id}")
   @POST
+  @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.PreserveStackTrace"})
   public Response updateUser(
       @Auth de.ii.xtraplatform.auth.domain.User user,
       @PathParam("id") String id,
@@ -116,9 +118,9 @@ public class UserAdminEndpoint implements Endpoint {
     }
 
     if (!request.containsKey("oldPassword")
-        || !request.containsKey("newPassword")
+        || !request.containsKey(FIELD_NEW_PASSWORD)
         || !request.containsKey("newPasswordRepeat")
-        || !Objects.equals(request.get("newPassword"), request.get("newPassword"))) {
+        || !Objects.equals(request.get(FIELD_NEW_PASSWORD), request.get(FIELD_NEW_PASSWORD))) {
       throw new BadRequestException();
     }
 
@@ -131,7 +133,7 @@ public class UserAdminEndpoint implements Endpoint {
     User.UserData updated =
         new ImmutableUserData.Builder()
             .from(userData)
-            .password(PasswordHash.createHash(request.get("newPassword")))
+            .password(PasswordHash.createHash(request.get(FIELD_NEW_PASSWORD)))
             .passwordExpiresAt(OptionalLong.empty())
             .build();
 
@@ -143,7 +145,7 @@ public class UserAdminEndpoint implements Endpoint {
       if (e.getCause() instanceof IllegalArgumentException) {
         throw new BadRequestException(e.getCause().getMessage());
       }
-      throw new InternalServerErrorException();
+      throw new InternalServerErrorException(e);
     }
   }
 

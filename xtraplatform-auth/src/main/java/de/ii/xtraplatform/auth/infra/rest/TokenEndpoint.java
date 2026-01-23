@@ -14,8 +14,6 @@ import de.ii.xtraplatform.auth.domain.SplitCookie;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthenticator;
-import de.ii.xtraplatform.base.domain.AppContext;
-import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.services.domain.ServicesContext;
 import de.ii.xtraplatform.web.domain.Endpoint;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -43,31 +41,27 @@ import javax.ws.rs.core.Response.Status;
 @Path("/auth")
 public class TokenEndpoint implements Endpoint {
 
-  private static final int DEFAULT_EXPIRY = 2592000;
+  private static final int DEFAULT_EXPIRY = 2_592_000;
+  private final UserAuthenticator authenticator;
+  private final TokenHandler tokenGenerator;
+  private final URI servicesUri;
 
   public static class Credentials {
     @JsonProperty public String user;
     @JsonProperty public String password;
     @JsonProperty public int expiration = DEFAULT_EXPIRY;
-    @JsonProperty public boolean rememberMe = false;
-    @JsonProperty public boolean noCookie = false;
+    @JsonProperty public boolean rememberMe;
+    @JsonProperty public boolean noCookie;
   }
-
-  private final UserAuthenticator authenticator;
-  private final TokenHandler tokenGenerator;
-  private final URI servicesUri;
-  private final AuthConfiguration authConfig;
 
   @Inject
   public TokenEndpoint(
       UserAuthenticator authenticator,
       TokenHandler tokenGenerator,
-      AppContext appContext,
       ServicesContext servicesContext) {
     this.authenticator = authenticator;
     this.tokenGenerator = tokenGenerator;
     this.servicesUri = servicesContext.getUri();
-    this.authConfig = appContext.getConfiguration().getAuth();
   }
 
   @RequestBody(
@@ -75,8 +69,7 @@ public class TokenEndpoint implements Endpoint {
       content =
           @Content(
               examples = {
-                @ExampleObject(
-                    value = "{\"user\": \"admin\", \"password\": \"admin\", \"noCookie\": true}")
+                @ExampleObject("{\"user\": \"admin\", \"password\": \"admin\", \"noCookie\": true}")
               },
               schema = @Schema(implementation = Credentials.class)))
   @POST
@@ -103,10 +96,10 @@ public class TokenEndpoint implements Endpoint {
           }
           return null;
         })
-    .orElse(DEFAULT_EXPIRY)*/ ;
+    .orElse(DEFAULT_EXPIRY)*/
 
     boolean rememberMe = body.rememberMe;
-    ; // Boolean.parseBoolean(body.get("rememberMe"));
+    // Boolean.parseBoolean(body.get("rememberMe"))
 
     String token = tokenGenerator.generateToken(user.get(), expiresIn, rememberMe);
 
@@ -128,6 +121,7 @@ public class TokenEndpoint implements Endpoint {
 
   // TODO: instead of external url, get request url
   // TODO: but we want to access view action links with same token, would that work?
+  @SuppressWarnings("PMD.UnusedPrivateMethod")
   private String getDomain() {
     return getExternalUri().getHost();
   }
