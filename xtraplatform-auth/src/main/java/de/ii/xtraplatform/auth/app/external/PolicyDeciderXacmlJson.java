@@ -68,7 +68,7 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
   }
 
   @Override
-  public de.ii.xtraplatform.auth.domain.PolicyDecision request(
+  public PolicyDecision request(
       String resourceId,
       Map<String, Object> resourceAttributes,
       String actionId,
@@ -85,20 +85,20 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
       String url =
           pdpUrl.replaceAll("\\{\\{apiId\\}\\}", (String) resourceAttributes.get("ldproxy:api:id"));
 
-      InputStream response =
+      try (InputStream response =
           httpClient.postAsInputStream(
-              url, xacmlRequest, mediaTypeContent, Map.of("Accept", mediaTypeAccept.toString()));
+              url, xacmlRequest, mediaTypeContent, Map.of("Accept", mediaTypeAccept.toString()))) {
 
-      XacmlResponse xacmlResponse = getXacmlResponse(response);
-
-      return evaluate(xacmlResponse);
+        XacmlResponse xacmlResponse = getXacmlResponse(response);
+        return evaluate(xacmlResponse);
+      }
 
     } catch (Throwable e) {
       // ignore
       LogContext.error(LOGGER, e, "Error requesting a policy decision");
     }
 
-    return de.ii.xtraplatform.auth.domain.PolicyDecision.deny();
+    return PolicyDecision.deny();
   }
 
   private byte[] getXacmlRequest(
@@ -112,9 +112,11 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
         new XacmlRequest(
             version, resourceId, resourceAttributes, actionId, actionAttributes, user, geoXacml);
 
-    LOGGER.debug(
-        "XACML {}", JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlRequest));
-
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "XACML {}",
+          JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlRequest));
+    }
     return JSON_MAPPER.writeValueAsBytes(xacmlRequest);
   }
 
@@ -123,10 +125,12 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
 
     XacmlResponse xacmlResponse = JSON_MAPPER.readValue(s, XacmlResponse.class);
 
-    LOGGER.debug("XACML R {}", s);
-    LOGGER.debug(
-        "XACML R {}",
-        JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlResponse));
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("XACML R {}", s);
+      LOGGER.debug(
+          "XACML R {}",
+          JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlResponse));
+    }
 
     return xacmlResponse;
   }

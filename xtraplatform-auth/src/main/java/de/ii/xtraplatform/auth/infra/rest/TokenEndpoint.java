@@ -113,7 +113,7 @@ public class TokenEndpoint implements Endpoint {
     Response.ResponseBuilder response =
         Response.ok()
             .entity(
-                ImmutableTokenResponse.builder().access_token(token).expires_in(expiresIn).build());
+                ImmutableTokenResponse.builder().accessToken(token).expiresIn(expiresIn).build());
 
     if (!body.noCookie) {
       String domain = null; // request.getServerName();

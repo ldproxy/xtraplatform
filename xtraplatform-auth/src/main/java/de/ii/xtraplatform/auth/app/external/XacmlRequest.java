@@ -26,7 +26,8 @@ public class XacmlRequest {
   // TODO
   private static final String PREFIX_GEO = "ldproxy:feature:geometry";
 
-  public final Map<String, Object> Request;
+  public final Map<String, Object> request;
+  private static final String ATTRIBUTE = "Attribute";
 
   public XacmlRequest(
       XacmlJsonVersion version,
@@ -64,7 +65,7 @@ public class XacmlRequest {
             .add(new Attribute("urn:oasis:names:tc:xacml:1.0:action:action-id", actionId));
     actionAttributes.forEach((id, value) -> add(id, value, action, geoXacmlVersion));
 
-    Request =
+    request =
         version == XacmlJsonVersion._1_0
             ? request10(subject.build(), resource.build(), action.build())
             : request11(subject.build(), resource.build(), action.build());
@@ -91,9 +92,9 @@ public class XacmlRequest {
   private static Map<String, Object> request11(
       List<Attribute> subject, List<Attribute> resource, List<Attribute> action) {
     return ImmutableMap.of(
-        "AccessSubject", ImmutableMap.of("Attribute", subject),
-        "Resource", ImmutableMap.of("Attribute", resource),
-        "Action", ImmutableMap.of("Attribute", action));
+        "AccessSubject", ImmutableMap.of(ATTRIBUTE, subject),
+        "Resource", ImmutableMap.of(ATTRIBUTE, resource),
+        "Action", ImmutableMap.of(ATTRIBUTE, action));
   }
 
   private static Map<String, Object> request10(
@@ -104,24 +105,24 @@ public class XacmlRequest {
             ImmutableMap.of(
                 "CategoryId",
                 "urn:oasis:names:tc:xacml:1.0:subject-category:access-subject",
-                "Attribute",
+                ATTRIBUTE,
                 subject),
             ImmutableMap.of(
                 "CategoryId",
                 "urn:oasis:names:tc:xacml:3.0:attribute-category:resource",
-                "Attribute",
+                ATTRIBUTE,
                 resource),
             ImmutableMap.of(
                 "CategoryId",
                 "urn:oasis:names:tc:xacml:3.0:attribute-category:action",
-                "Attribute",
+                ATTRIBUTE,
                 action)));
   }
 
   static class Attribute {
-    public final String AttributeId;
-    public final Object Value;
-    public final String DataType;
+    public final String attributeId;
+    public final Object value;
+    public final String dataType;
 
     Attribute(String attributeId, String value) {
       this(attributeId, value, "http://www.w3.org/2001/XMLSchema#string");
@@ -132,9 +133,9 @@ public class XacmlRequest {
     }
 
     Attribute(String attributeId, Object value, String dataType) {
-      AttributeId = attributeId;
-      Value = value;
-      DataType = dataType;
+      this.attributeId = attributeId;
+      this.value = value;
+      this.dataType = dataType;
     }
 
     private static String inferType(Object value) {
