@@ -66,6 +66,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind(interfaces = {EntityDataDefaultsStore.class, AppLifeCycle.class})
+@SuppressWarnings("PMD.TooManyMethods")
 public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<Map<String, Object>>
     implements EntityDataDefaultsStore, AppLifeCycle {
 
@@ -87,6 +88,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       Jackson jackson,
       Substitutions substitutions,
       Lazy<Set<EntityFactory>> entityFactories) {
+    super();
     StoreConfiguration store = appContext.getConfiguration().getStore();
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.eventStore = eventStore;
@@ -152,7 +154,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
               @Override
               public Map<String, Object> get(Identifier identifier) {
-                return null;
+                return new LinkedHashMap<>();
               }
             }));
 
@@ -290,7 +292,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
           data, defaults, factory.getIgnoreKeys(), factory.getListEntryKeys());
 
     } catch (Throwable e) {
-      boolean br = true;
+      // ignore
     }
 
     return data;
@@ -346,7 +348,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         return Optional.ofNullable(defaults);
 
       } catch (Throwable e) {
-        boolean br = true;
+        // ignore
       }
     }
 
@@ -375,7 +377,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
           return deserialize;
         } catch (IOException e) {
-          throw new RuntimeException(e);
+          throw new IllegalStateException("Error deserializing defaults", e);
         }
       }
     }

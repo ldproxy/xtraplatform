@@ -48,7 +48,7 @@ public class EntityRegistryImpl implements EntityRegistry {
         .flatMap(entityFactory -> entityFactory.instances().stream())
         .filter(
             persistentEntity ->
-                (async && ((EntityState) persistentEntity).getEntityState() != STATE.DISABLED)
+                async && ((EntityState) persistentEntity).getEntityState() != STATE.DISABLED
                     || ((EntityState) persistentEntity).isActive())
         .map(type::cast)
         .collect(ImmutableList.toImmutableList());
@@ -62,7 +62,7 @@ public class EntityRegistryImpl implements EntityRegistry {
         .map(Optional::get)
         .filter(
             persistentEntity ->
-                (async && ((EntityState) persistentEntity).getEntityState() != STATE.DISABLED)
+                async && ((EntityState) persistentEntity).getEntityState() != STATE.DISABLED
                     || ((EntityState) persistentEntity).isActive())
         .map(type::cast)
         .findFirst();

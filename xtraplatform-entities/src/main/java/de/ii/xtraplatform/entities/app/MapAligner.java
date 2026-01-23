@@ -18,8 +18,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class MapAligner {
+public final class MapAligner {
 
+  private MapAligner() {}
+
+  @SuppressWarnings("PMD.CognitiveComplexity")
   public static Map<String, Object> align(
       Map<String, Object> source,
       Map<String, Object> alignTo,
@@ -71,7 +74,6 @@ public class MapAligner {
       return source;
     }
 
-    List<Object> result = new ArrayList<>();
     KeyPathAliasUnwrap aliasUnwrap = entityFactory.getKeyPathAliasReverse(parentKey).get();
 
     Map<String, Object> aligned =
