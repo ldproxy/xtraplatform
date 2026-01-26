@@ -27,10 +27,12 @@ public abstract class EntityMigration<T extends EntityData, U extends EntityData
     boolean exists(Predicate<Identifier> matcher);
   }
 
+  @Override
   public final EntityMigrationContext getContext() {
     return context;
   }
 
+  @Override
   public boolean isApplicable(EntityData entityData) {
     return isApplicable(entityData, Optional.empty());
   }

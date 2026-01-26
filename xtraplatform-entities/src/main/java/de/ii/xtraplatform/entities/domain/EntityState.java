@@ -33,6 +33,6 @@ public interface EntityState {
 
   default boolean isActive() {
     return getEntityState() == STATE.ACTIVE
-        || (getEntityState() == STATE.RELOADING && getPreviousState() == STATE.ACTIVE);
+        || getEntityState() == STATE.RELOADING && getPreviousState() == STATE.ACTIVE;
   }
 }

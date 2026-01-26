@@ -16,13 +16,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.TooManyMethods")
 public abstract class AbstractKeyValueStore<T> extends AbstractVolatile
     implements KeyValueStore<T> {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractKeyValueStore.class);
 
   protected AbstractKeyValueStore() {
     super(null);
@@ -77,8 +74,11 @@ public abstract class AbstractKeyValueStore<T> extends AbstractVolatile
               if (Objects.nonNull(throwable)) {
                 onFailure(identifier, throwable);
               } else if (Objects.nonNull(entityData)) {
-                if (exists) onUpdate(identifier, entityData, false);
-                else onCreate(identifier, entityData).join();
+                if (exists) {
+                  onUpdate(identifier, entityData, false);
+                } else {
+                  onCreate(identifier, entityData).join();
+                }
               }
             });
   }

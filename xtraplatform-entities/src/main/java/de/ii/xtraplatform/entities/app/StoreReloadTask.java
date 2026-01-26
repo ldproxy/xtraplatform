@@ -62,8 +62,11 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
   }
 
   @Override
+  @SuppressWarnings({"PMD.NPathComplexity", "PMD.CyclomaticComplexity", "PMD.CognitiveComplexity"})
   public void execute(Map<String, List<String>> parameters, PrintWriter output) throws Exception {
-    if (LOGGER.isTraceEnabled()) LOGGER.trace("Reload request: {}", parameters);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Reload request: {}", parameters);
+    }
 
     List<String> entityTypes = getEntityTypes(parameters);
 
@@ -79,15 +82,6 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
       output.flush();
       return;
     }
-
-    ImmutableEventFilter filter =
-        ImmutableEventFilter.builder()
-            .addEventTypes("entities")
-            .entityTypes(entityTypes)
-            .ids(ids)
-            .build();
-
-    boolean force = getForce(parameters);
 
     List<EntityEvent> additionalEvents = new ArrayList<>();
     Optional<Boolean> enabledOverride = getEnabled(parameters);
@@ -128,6 +122,15 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
         return;
       }
     }
+
+    ImmutableEventFilter filter =
+        ImmutableEventFilter.builder()
+            .addEventTypes("entities")
+            .entityTypes(entityTypes)
+            .ids(ids)
+            .build();
+
+    boolean force = getForce(parameters);
 
     eventStore.replay(filter, force, additionalEvents);
   }

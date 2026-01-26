@@ -30,6 +30,7 @@ import org.slf4j.MDC;
 /**
  * @author zahnen
  */
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods", "PMD.AvoidUsingVolatile"})
 public abstract class AbstractPersistentEntity<T extends EntityData>
     extends AbstractVolatileComposed
     implements PersistentEntity, Reloadable, EntityState, VolatileComposed {
@@ -45,7 +46,6 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
      value = true,
      specification = EntityState.class) // is ignored here, but added by @Entity handler
   */
-  private boolean registerState;
 
   // @ServiceController(value = false) // is ignored here, but added by @Entity handler
   public volatile boolean register;
@@ -68,11 +68,9 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     this.stateChangeListeners = new CopyOnWriteArrayList<>();
     this.changingData = new ChangingDataImpl();
     this.data = data;
-    this.startup = null;
-    this.state = STATE.UNKNOWN;
     this.previousState = STATE.UNKNOWN;
     this.forceReload = false;
-    setState(STATE.LOADING);
+    this.state = STATE.LOADING;
   }
 
   @Override
@@ -86,6 +84,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   }
 
   // @Property(name = Entity.DATA_KEY) // is ignored here, but added by @Entity handler
+  @SuppressWarnings("PMD.InvalidLogMessageFormat")
   public final void setData(T data, boolean force) {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("GOT DATA {}" /*, data*/);
@@ -95,7 +94,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     this.forceReload = force;
 
     if (force
-        || (Objects.nonNull(previous) && !Objects.equals(previous.hashCode(), data.hashCode()))) {
+        || Objects.nonNull(previous) && !Objects.equals(previous.hashCode(), data.hashCode())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("RELOAD DATA {} {}", previous.hashCode(), data.hashCode());
       }
@@ -225,6 +224,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
+  @SuppressWarnings("PMD.CognitiveComplexity")
   private void triggerStartup(boolean wait, Runnable then) {
     this.startup =
         executorService.submit(
@@ -262,6 +262,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
+  @SuppressWarnings("PMD.UnusedLocalVariable")
   private void cancelStartup() {
     if (Objects.nonNull(startup)) {
       boolean canceled = startup.cancel(true);
