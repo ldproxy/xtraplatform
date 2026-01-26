@@ -48,6 +48,11 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
   }
 
   @Override
+  @SuppressWarnings({
+    "PMD.CyclomaticComplexity",
+    "PMD.AvoidInstantiatingObjectsInLoops",
+    "PMD.CognitiveComplexity"
+  })
   public void addSubscriber(EventStoreSubscriber subscriber) {
     executorService.submit(
         () -> {
@@ -100,6 +105,7 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
   }
 
   @Override
+  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
   public synchronized void emitEvent(TypedEvent event) {
     if (LOGGER.isTraceEnabled() && event instanceof EntityEvent) {
       LOGGER.trace("Emitting event: {} {}", event.type(), ((EntityEvent) event).identifier());
@@ -120,6 +126,7 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
     this.isStarted = true;
   }
 
+  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
   private synchronized EventStream<Event> getEventStream(String eventType) {
     Objects.requireNonNull(eventType, "eventType may not be null");
     return eventStreams.computeIfAbsent(eventType, prefix -> createEventStream(eventType));

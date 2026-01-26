@@ -46,7 +46,7 @@ class BuildableMapEncoding<T extends Buildable<T>, U extends BuildableBuilder<T>
     }
 
     @JsonProperty
-    @Encoding.Naming(value = "get*")
+    @Encoding.Naming("get*")
     public Map<String, U> get() {
       // return buildValue.build().getBuilders();
       return builderMap;

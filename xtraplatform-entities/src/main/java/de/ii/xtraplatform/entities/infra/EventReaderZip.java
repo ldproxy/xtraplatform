@@ -18,12 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EventReaderZip implements EventReader {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(EventReaderZip.class);
 
   @Override
   public Stream<Tuple<Path, Supplier<byte[]>>> load(
@@ -36,8 +32,8 @@ public class EventReaderZip implements EventReader {
     ZipWalker.walkEntries(
         sourcePath,
         (zipEntry, payload) -> {
-          if ((!includeMatchers.isEmpty()
-                  && includeMatchers.stream().noneMatch(exclude -> exclude.matches(zipEntry)))
+          if (!includeMatchers.isEmpty()
+                  && includeMatchers.stream().noneMatch(exclude -> exclude.matches(zipEntry))
               || excludeMatchers.stream().anyMatch(exclude -> exclude.matches(zipEntry))) {
             return;
           }

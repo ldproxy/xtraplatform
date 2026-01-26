@@ -13,14 +13,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValueStore<T>
     implements MergeableKeyValueStore<T> {
-
-  private static final Logger LOGGER =
-      LoggerFactory.getLogger(AbstractMergeableKeyValueStore.class);
 
   protected abstract ValueEncoding<T> getValueEncoding();
 

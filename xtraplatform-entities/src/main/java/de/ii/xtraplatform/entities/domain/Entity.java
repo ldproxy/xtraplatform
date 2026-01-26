@@ -25,7 +25,7 @@ public @interface Entity {
 
   boolean auxiliary() default false;
 
-  public @interface SubType {
+  @interface SubType {
     String key();
 
     String value();

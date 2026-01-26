@@ -24,15 +24,14 @@ public interface EventFilter {
 
   List<String> getIds();
 
+  @SuppressWarnings("PMD.CyclomaticComplexity")
   default boolean matches(EntityEvent event) {
     Identifier identifier = event.identifier();
 
-    if (!getEntityTypes().contains(WILDCARD)) {
-      if (identifier.path().isEmpty() || !containsEntityType(identifier.path())) {
-        if ((!isDefault(event) || !containsEntityType(identifier.id()))) {
-          return false;
-        }
-      }
+    if (!getEntityTypes().contains(WILDCARD)
+        && (identifier.path().isEmpty() || !containsEntityType(identifier.path()))
+        && (!isDefault(event) || !containsEntityType(identifier.id()))) {
+      return false;
     }
 
     if (!getIds().isEmpty() && !isDefault(event)) {
@@ -49,12 +48,10 @@ public interface EventFilter {
   }
 
   default boolean matches(Identifier identifier) {
-    if (!getEntityTypes().contains(WILDCARD)) {
-      if (identifier.path().isEmpty() || !containsEntityType(identifier.path())) {
-        if (!getEntityTypes().contains(identifier.id())) {
-          return false;
-        }
-      }
+    if (!getEntityTypes().contains(WILDCARD)
+        && (identifier.path().isEmpty() || !containsEntityType(identifier.path()))
+        && !getEntityTypes().contains(identifier.id())) {
+      return false;
     }
 
     if (!getIds().isEmpty()) {
@@ -89,8 +86,8 @@ public interface EventFilter {
   default boolean containsEntityType(String id) {
     if (getEntityTypes().contains(id)) {
       return true;
-    } else if (id.contains(".")) {
-      String entityType = id.substring(0, id.indexOf("."));
+    } else if (id.indexOf('.') != -1) {
+      String entityType = id.substring(0, id.indexOf('.'));
       if (getEntityTypes().contains(entityType)) {
         return true;
       }
@@ -106,19 +103,20 @@ public interface EventFilter {
 
     String eventType = path.getName(0).toString();
     String entityType = path.getName(1).toString();
-    if (entityType.contains(".")) {
-      entityType = entityType.substring(0, entityType.indexOf("."));
+    int dotIdx = entityType.indexOf('.');
+    if (dotIdx != -1) {
+      entityType = entityType.substring(0, dotIdx);
     }
 
     ImmutableEventFilter.Builder builder =
         ImmutableEventFilter.builder().addEventTypes(eventType).addEntityTypes(entityType);
     // TODO
-    if (eventType.equals("defaults")) {
+    if ("defaults".equals(eventType)) {
       builder.addIds(WILDCARD);
     } else if (path.getNameCount() > 2) {
       String id = path.getName(2).toString();
       if (id.contains(".")) {
-        id = id.substring(0, id.indexOf("."));
+        id = id.substring(0, id.indexOf('.'));
       }
       builder.addIds(id);
     }

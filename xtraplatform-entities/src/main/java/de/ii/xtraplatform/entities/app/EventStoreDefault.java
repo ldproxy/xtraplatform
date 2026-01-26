@@ -58,6 +58,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
   private final EventSubscriptions subscriptions;
   private Optional<StoreSource> writableSource;
   private final boolean isReadOnly;
+  private static final String EVENT_TYPE_ENTITIES = "entities";
 
   @Inject
   EventStoreDefault(Store store, Lazy<Set<EventStoreDriver>> drivers, Reactive reactive) {
@@ -170,7 +171,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
             .filter(
                 d -> {
                   if (!d.isAvailable(storeSource)) {
-                    if (warn) {
+                    if (warn && LOGGER.isWarnEnabled()) {
                       LOGGER.warn("Store source {} not found.", storeSource.getLabel());
                     }
                     foundUnavailable[0] = true;
@@ -201,23 +202,28 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
   }
 
   @Override
+  @SuppressWarnings("PMD.CyclomaticComplexity")
   public void push(EntityEvent event) {
     if (isReadOnly) {
       LOGGER.warn("Store is operating in read-only mode, write operations are not allowed.");
       return;
     }
     if (writableSource.isEmpty()) {
-      LOGGER.warn("Ignoring write event for '{}', no writable source found.", event.asPath());
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn("Ignoring write event for '{}', no writable source found.", event.asPath());
+      }
       return;
     }
 
     Optional<EventStoreDriver> driver = findDriver(writableSource.get(), false);
 
     if (driver.isEmpty()) {
-      LOGGER.warn(
-          "Ignoring write event for '{}', no driver found for source {}.",
-          event.asPath(),
-          writableSource.get().getLabel());
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn(
+            "Ignoring write event for '{}', no driver found for source {}.",
+            event.asPath(),
+            writableSource.get().getLabel());
+      }
       return;
     }
     if (!driver.get().canWrite()) {
@@ -264,9 +270,14 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
 
     // TODO: type
     subscriptions.emitEvent(
-        ImmutableReloadEvent.builder().type("entities").filter(filter).force(force).build());
+        ImmutableReloadEvent.builder()
+            .type(EVENT_TYPE_ENTITIES)
+            .filter(filter)
+            .force(force)
+            .build());
   }
 
+  @SuppressWarnings("PMD.CognitiveComplexity")
   private void reload(
       StoreSource storeSource, EventStoreDriver driver, EventFilter filter, boolean doDelete) {
     Set<EntityEvent> deleteEvents = new HashSet<>();
@@ -282,12 +293,12 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                     if (LOGGER.isTraceEnabled()) {
                       LOGGER.trace("ALLOW {}", event.asPath());
                     }
-                    if (Objects.equals(event.type(), "entities")
+                    if (Objects.equals(event.type(), EVENT_TYPE_ENTITIES)
                         || Objects.equals(event.type(), "overrides")) {
                       boolean deleted =
                           deleteEvents.add(
                               ImmutableReplayEvent.builder()
-                                  .type("entities")
+                                  .type(EVENT_TYPE_ENTITIES)
                                   .deleted(true)
                                   .identifier(event.identifier())
                                   .payload(ValueEncodingJackson.YAML_NULL)
@@ -367,7 +378,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
 
   private EventFilter getStartupFilter() {
     return ImmutableEventFilter.builder()
-        .addEventTypes("entities")
+        .addEventTypes(EVENT_TYPE_ENTITIES)
         .entityTypes(
             store
                 .getFilter()

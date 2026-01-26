@@ -15,6 +15,7 @@ import de.ii.xtraplatform.values.domain.ValueEncoding;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,24 +29,26 @@ import java.util.stream.Collectors;
  *
  * @author zahnen
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public interface EntityDataStore<T extends EntityData> extends MergeableKeyValueStore<T> {
 
   String EVENT_TYPE_ENTITIES = "entities";
   String EVENT_TYPE_OVERRIDES = "overrides";
   List<String> EVENT_TYPES = ImmutableList.of(EVENT_TYPE_ENTITIES, EVENT_TYPE_OVERRIDES);
+  String TILES_SUFFIX = "-tiles";
 
   Comparator<Identifier> COMPARATOR =
       (id1, id2) -> {
         int compareType = entityType(id1).compareTo(entityType(id2));
 
         if (compareType == 0) {
-          if (id1.id().endsWith("-tiles") && id2.id().endsWith("-tiles")) {
+          if (id1.id().endsWith(TILES_SUFFIX) && id2.id().endsWith(TILES_SUFFIX)) {
             return 0;
           }
-          if (id2.id().endsWith("-tiles")) {
+          if (id2.id().endsWith(TILES_SUFFIX)) {
             return -1;
           }
-          if (id1.id().endsWith("-tiles")) {
+          if (id1.id().endsWith(TILES_SUFFIX)) {
             return 1;
           }
         }
@@ -71,7 +74,7 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
         .id(EntityDataDefaultsStore.EVENT_TYPE)
         .path(entityGroup(identifier))
         .addPath(entityType(identifier))
-        .addPath(subType.toLowerCase())
+        .addPath(subType.toLowerCase(Locale.ROOT))
         .build();
   }
 
@@ -106,6 +109,7 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
 
   EntityData fromBytes(Identifier identifier, byte[] entityData) throws IOException;
 
+  @Override
   CompletableFuture<T> patch(String id, Map<String, Object> partialData, String... path);
 
   CompletableFuture<T> patch(
@@ -115,6 +119,7 @@ public interface EntityDataStore<T extends EntityData> extends MergeableKeyValue
 
   EntityDataBuilder<EntityData> getBuilder(Identifier identifier, Optional<String> entitySubtype);
 
+  @Override
   <U extends T> EntityDataStore<U> forType(Class<U> type);
 
   EntityDataStore<EntityData> forType(String type);

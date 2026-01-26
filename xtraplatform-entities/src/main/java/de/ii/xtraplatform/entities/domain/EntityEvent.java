@@ -15,6 +15,7 @@ import org.immutables.value.Value;
 
 public interface EntityEvent extends TypedEvent, Comparable<EntityEvent> {
 
+  @Override
   String type();
 
   Identifier identifier();
