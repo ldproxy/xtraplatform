@@ -60,7 +60,7 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
     TokenAuthenticator tokenAuthenticator = new TokenAuthenticator(authConfig, httpClient);
 
     CachingAuthenticator<String, User> cachingAuthenticator =
-        new CachingAuthenticator<String, User>(
+        new CachingAuthenticator<>(
             metricRegistry,
             tokenAuthenticator,
             CaffeineSpec.parse("maximumSize=10000, expireAfterAccess=10m"));

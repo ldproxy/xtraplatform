@@ -47,7 +47,8 @@ import javax.crypto.spec.PBEKeySpec;
  * Author: havoc AT defuse.ca
  * www: http://crackstation.net/hashing-security.htm
  */
-public class PasswordHash {
+public final class PasswordHash {
+
   public static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA1";
 
   // The following constants may be changed without breaking existing hashes.
@@ -58,6 +59,8 @@ public class PasswordHash {
   public static final int ITERATION_INDEX = 0;
   public static final int SALT_INDEX = 1;
   public static final int PBKDF2_INDEX = 2;
+
+  private PasswordHash() {}
 
   /**
    * Returns a salted PBKDF2 hash of the password.
@@ -79,6 +82,7 @@ public class PasswordHash {
    * @param password the password to hash
    * @return a salted PBKDF2 hash of the password
    */
+  @SuppressWarnings("PMD.UseVarargs")
   public static String createHash(char[] password)
       throws NoSuchAlgorithmException, InvalidKeySpecException {
     // Generate a random salt
@@ -140,7 +144,9 @@ public class PasswordHash {
    */
   private static boolean slowEquals(byte[] a, byte[] b) {
     int diff = a.length ^ b.length;
-    for (int i = 0; i < a.length && i < b.length; i++) diff |= a[i] ^ b[i];
+    for (int i = 0; i < a.length && i < b.length; i++) {
+      diff |= a[i] ^ b[i];
+    }
     return diff == 0;
   }
 
@@ -183,9 +189,12 @@ public class PasswordHash {
   private static String toHex(byte[] array) {
     BigInteger bi = new BigInteger(1, array);
     String hex = bi.toString(16);
-    int paddingLength = (array.length * 2) - hex.length();
-    if (paddingLength > 0) return String.format("%0" + paddingLength + "d", 0) + hex;
-    else return hex;
+    int paddingLength = array.length * 2 - hex.length();
+    if (paddingLength > 0) {
+      return String.format("%0" + paddingLength + "d", 0) + hex;
+    } else {
+      return hex;
+    }
   }
 
   /**

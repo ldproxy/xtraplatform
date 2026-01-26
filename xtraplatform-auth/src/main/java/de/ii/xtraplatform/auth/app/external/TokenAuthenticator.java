@@ -51,29 +51,31 @@ public class TokenAuthenticator implements Authenticator<String, User> {
       try {
         String url =
             userInfoProvider.getEndpoint().replace("{{token}}", token).replace("{token}", token);
-        InputStream response =
-            httpClient.getAsInputStream(url, Map.of("Authorization", "Bearer " + token));
+        try (InputStream response =
+            httpClient.getAsInputStream(url, Map.of("Authorization", "Bearer " + token))) {
 
-        Map<String, Object> userInfo = MAPPER.readValue(response, TYPE_REF);
+          Map<String, Object> userInfo = MAPPER.readValue(response, TYPE_REF);
 
-        LOGGER.debug("USERINFO {}", userInfo);
+          LOGGER.debug("USERINFO {}", userInfo);
 
-        String name = (String) userInfo.get(userInfoProvider.getClaims().getUserName());
-        Role role =
-            Role.fromString(
-                Optional.ofNullable(
-                        (String)
-                            userInfo.get(authConfig.getJwt().get().getClaims().getPermissions()))
-                    .orElse("USER"));
-        List<String> scopes =
-            userInfo.get(userInfoProvider.getClaims().getPermissions()) instanceof String
-                ? SPLITTER.splitToList(
-                    (String) userInfo.get(userInfoProvider.getClaims().getPermissions()))
-                : Optional.ofNullable(
-                        (List<String>) userInfo.get(userInfoProvider.getClaims().getPermissions()))
-                    .orElse(List.of());
+          String name = (String) userInfo.get(userInfoProvider.getClaims().getUserName());
+          Role role =
+              Role.fromString(
+                  Optional.ofNullable(
+                          (String)
+                              userInfo.get(authConfig.getJwt().get().getClaims().getPermissions()))
+                      .orElse("USER"));
+          List<String> scopes =
+              userInfo.get(userInfoProvider.getClaims().getPermissions()) instanceof String
+                  ? SPLITTER.splitToList(
+                      (String) userInfo.get(userInfoProvider.getClaims().getPermissions()))
+                  : Optional.ofNullable(
+                          (List<String>)
+                              userInfo.get(userInfoProvider.getClaims().getPermissions()))
+                      .orElse(List.of());
 
-        return Optional.of(ImmutableUser.builder().name(name).role(role).scopes(scopes).build());
+          return Optional.of(ImmutableUser.builder().name(name).role(role).scopes(scopes).build());
+        }
       } catch (Throwable e) {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("Error validating token", e);

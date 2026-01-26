@@ -46,12 +46,11 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
       EntityDataStore<?> entityRepository) {
     this.servicesUri = servicesContext.getUri();
     this.tokenHandler = tokenHandler;
-    this.userRepository =
-        ((EntityDataStore<EntityData>) entityRepository)
-            .forType(de.ii.xtraplatform.auth.app.User.UserData.class);
+    this.userRepository = ((EntityDataStore<EntityData>) entityRepository).forType(UserData.class);
   }
 
   @Override
+  @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   public void filter(
       ContainerRequestContext requestContext, ContainerResponseContext responseContext)
       throws IOException {
