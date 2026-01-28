@@ -2,7 +2,7 @@
 jjwt = '0.13.0'
 swagger = '2.2.42'
 classgraph = "4.8.184"
-dropwizard = '3.0.16'
+dropwizard = '3.0.17'
 jackson = '2.18.3'
 commons-codec = '1.19.0'
 threeten = '1.8.0'
