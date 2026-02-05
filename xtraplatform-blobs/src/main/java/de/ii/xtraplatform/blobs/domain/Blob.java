@@ -57,7 +57,7 @@ public abstract class Blob {
     return precomputedContentType()
         .orElseGet(
             () -> {
-              // TODO: URLConnection content-type guessing doesn't seem to work well, maybe try
+              // NOTE: URLConnection content-type guessing doesn't seem to work well, maybe try
               // Apache Tika
               String contentType =
                   URLConnection.guessContentTypeFromName(path().getFileName().toString());
