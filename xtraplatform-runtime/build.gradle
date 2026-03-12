@@ -29,7 +29,8 @@ moduleInfo {
             'jdk.crypto.ec', // ssl/tls
     ]
     exports = [
-            '!io.dropwizard.logback.shaded*'
+            '!io.dropwizard.logback.shaded*',
+            '!com.fasterxml.jackson.core.internal.shaded.fdp.v2_21_0*',
     ]
     uses = [
             'ch.qos.logback.classic.spi.Configurator',
