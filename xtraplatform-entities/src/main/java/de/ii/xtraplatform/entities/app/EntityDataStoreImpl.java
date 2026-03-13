@@ -65,6 +65,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -276,6 +280,10 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     EntityDataOverridesPath overridesPath =
         EntityDataOverridesPath.from(event.identifier(), entityFactories.getTypes());
 
+    if (overridesPath.isTypeOverride()) {
+      return processTypeOverride(event, overridesPath);
+    }
+
     Identifier cacheKey = overridesPath.asIdentifier();
 
     // override without matching entity
@@ -286,6 +294,46 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       }
     }
 
+    return List.of(buildOverrideEvent(event, overridesPath, cacheKey));
+  }
+
+  private List<ReplayEvent> processTypeOverride(
+      ReplayEvent event, EntityDataOverridesPath overridesPath) {
+    String entityType = overridesPath.getEntityType();
+    List<String> groups = overridesPath.getGroups();
+
+    List<Identifier> matchingEntities =
+        eventSourcing
+            .getIdentifiers(
+                groups.isEmpty()
+                    ? new String[] {entityType}
+                    : ObjectArrays.concat(groups.toArray(new String[0]), entityType))
+            .stream()
+            .collect(Collectors.toList());
+
+    if (matchingEntities.isEmpty()) {
+      LOGGER.warn(
+          "Ignoring type override '{}', no matching entities found for type '{}'",
+          event.asPath(),
+          entityType);
+      return List.of();
+    }
+
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "Applying type override '{}' to {} entities of type '{}'",
+          event.asPath(),
+          matchingEntities.size(),
+          entityType);
+    }
+
+    return matchingEntities.stream()
+        .map(cacheKey -> buildOverrideEvent(event, overridesPath, cacheKey))
+        .collect(Collectors.toList());
+  }
+
+  private ReplayEvent buildOverrideEvent(
+      ReplayEvent event, EntityDataOverridesPath overridesPath, Identifier cacheKey) {
     ImmutableReplayEvent.Builder builder =
         ImmutableReplayEvent.builder().from(event).identifier(cacheKey);
     if (!overridesPath.getKeyPath().isEmpty()) {
@@ -303,8 +351,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         LogContext.error(LOGGER, e, "Deserialization error");
       }
     }
-
-    return List.of(builder.build());
+    return builder.build();
   }
 
   @Override

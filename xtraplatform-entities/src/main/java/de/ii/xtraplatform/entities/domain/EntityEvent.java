@@ -39,6 +39,14 @@ public interface EntityEvent extends TypedEvent, Comparable<EntityEvent> {
       return typeCompared;
     }
 
+    // type overrides (_type) should be applied before entity-specific overrides
+    boolean thisIsTypeOverride = EntityDataOverridesPath.TYPE_OVERRIDE_ID.equals(identifier().id());
+    boolean otherIsTypeOverride =
+        EntityDataOverridesPath.TYPE_OVERRIDE_ID.equals(event.identifier().id());
+    if (thisIsTypeOverride != otherIsTypeOverride) {
+      return thisIsTypeOverride ? -1 : 1;
+    }
+
     return identifier().compareTo(event.identifier());
   }
 
