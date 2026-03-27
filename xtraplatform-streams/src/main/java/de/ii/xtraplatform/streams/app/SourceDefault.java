@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.reactivestreams.Publisher;
 
+@SuppressWarnings("PMD.DataClass")
 public class SourceDefault<T> implements Source<T> {
 
   enum Type {
