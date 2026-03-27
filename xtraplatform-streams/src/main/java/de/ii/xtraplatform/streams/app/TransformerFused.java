@@ -18,6 +18,7 @@ import de.ii.xtraplatform.streams.domain.Reactive.TransformerCustomFuseableIn;
 import java.util.Comparator;
 import java.util.function.Consumer;
 
+@SuppressWarnings("PMD.TooManyMethods")
 public class TransformerFused<T, U, V, W> implements TranformerCustomFuseableOut<T, V, W> {
 
   private final TranformerCustomFuseableOut<T, U, W> transformer1;
