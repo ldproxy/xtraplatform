@@ -19,6 +19,8 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableIdentifier.class)
 public interface Identifier extends Comparable<Identifier> {
 
+  Joiner JOINER = Joiner.on('/').skipNulls();
+
   String id();
 
   List<String> path();
@@ -62,8 +64,6 @@ public interface Identifier extends Comparable<Identifier> {
 
     return id().compareTo(identifier.id());
   }
-
-  Joiner JOINER = Joiner.on('/').skipNulls();
 
   @JsonIgnore
   @Value.Derived
