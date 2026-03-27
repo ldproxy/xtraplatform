@@ -37,7 +37,7 @@ class MergeableMapEncoding<T, U> {
     }
 
     @JsonProperty
-    @Encoding.Naming(value = "get*")
+    @Encoding.Naming("get*")
     public Map<T, U> get() {
       return mergeableMap;
     }
@@ -56,7 +56,7 @@ class MergeableMapEncoding<T, U> {
 
     @JsonProperty
     @Encoding.Init
-    @Encoding.Naming(value = "set*")
+    @Encoding.Naming("set*")
     void putAllJackson(Map<T, U> values) {
       values.forEach(this::put);
     }

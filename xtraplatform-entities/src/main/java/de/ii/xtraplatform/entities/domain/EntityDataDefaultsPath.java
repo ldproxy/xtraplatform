@@ -26,34 +26,45 @@ public interface EntityDataDefaultsPath {
 
   static EntityDataDefaultsPath from(Identifier identifier, Set<String> entityTypes) {
     ModifiableEntityDataDefaultsPath defaultsPath = ModifiableEntityDataDefaultsPath.create();
-    List<String> pathSegments = ImmutableList.of();
 
     boolean found = false;
+    List<String> pathSegments = new ArrayList<>();
 
     for (int i = 0; i < identifier.path().size(); i++) {
-      if (entityTypes.contains(identifier.path().get(i))) {
+      String segment = identifier.path().get(i);
+
+      if (entityTypes.contains(segment)) {
         found = true;
-        defaultsPath.setEntityType(identifier.path().get(i));
+        defaultsPath.setEntityType(segment);
         if (i > 0) {
           defaultsPath.setGroups(identifier.path().subList(0, i));
         }
+        pathSegments.clear();
         if (identifier.path().size() > i + 1) {
-          pathSegments = identifier.path().subList(i + 1, identifier.path().size());
+          pathSegments.addAll(identifier.path().subList(i + 1, identifier.path().size()));
         }
-      } else if (identifier.path().get(i).contains(".")) {
-        int firstDot = identifier.path().get(i).indexOf(".");
-        if (entityTypes.contains(identifier.path().get(i).substring(0, firstDot))) {
-          found = true;
-          defaultsPath.setEntityType(identifier.path().get(i).substring(0, firstDot));
-          pathSegments = DOT_SPLITTER.splitToList(identifier.path().get(i).substring(firstDot + 1));
-          if (i > 0) {
-            defaultsPath.setGroups(identifier.path().subList(0, i));
-          }
-          if (identifier.path().size() > i + 1) {
-            pathSegments = new ArrayList<>(pathSegments);
-            pathSegments.addAll(identifier.path().subList(i + 1, identifier.path().size()));
-          }
-        }
+        continue;
+      }
+
+      if (!segment.contains(".")) {
+        continue;
+      }
+
+      int firstDot = segment.indexOf('.');
+      String beforeDot = segment.substring(0, firstDot);
+      if (!entityTypes.contains(beforeDot)) {
+        continue;
+      }
+
+      found = true;
+      defaultsPath.setEntityType(beforeDot);
+      pathSegments.clear();
+      pathSegments.addAll(DOT_SPLITTER.splitToList(segment.substring(firstDot + 1)));
+      if (i > 0) {
+        defaultsPath.setGroups(identifier.path().subList(0, i));
+      }
+      if (identifier.path().size() > i + 1) {
+        pathSegments.addAll(identifier.path().subList(i + 1, identifier.path().size()));
       }
     }
 

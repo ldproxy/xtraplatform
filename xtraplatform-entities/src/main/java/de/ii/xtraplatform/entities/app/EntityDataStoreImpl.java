@@ -74,6 +74,7 @@ import org.slf4j.MDC;
  */
 @Singleton
 @AutoBind(interfaces = {EntityDataStore.class, AppLifeCycle.class})
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
 public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityData>
     implements EntityDataStore<EntityData>, AppLifeCycle {
 
@@ -125,6 +126,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       ResourceStore blobStore,
       ValueStore valueStore,
       boolean noDefaults) {
+    super();
     StoreConfiguration store = appContext.getConfiguration().getStore();
     this.isEventStoreReadOnly = eventStore.isReadOnly();
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
@@ -184,7 +186,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
               @Override
               public Map<String, Object> get(Identifier identifier) {
-                return null;
+                return new LinkedHashMap<>();
               }
             }));
   }
@@ -229,6 +231,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   }
 
   // TODO: onEmit middleware
+  @SuppressWarnings({
+    "PMD.CyclomaticComplexity",
+    "PMD.NPathComplexity",
+    "PMD.CognitiveComplexity",
+    "PMD.CollapsibleIfStatements"
+  })
   private List<ReplayEvent> processEvent(ReplayEvent event) {
 
     if (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format())) {
@@ -236,26 +244,29 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     }
 
     if (!event.isDelete()
-        && event.type().equals(EntityDataStore.EVENT_TYPE_ENTITIES)
+        && EntityDataStore.EVENT_TYPE_ENTITIES.equals(event.type())
         && eventSourcing.has(isDuplicate(event.identifier()))) {
-      LOGGER.warn(
-          "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single group.",
-          event.asPathNoType(),
-          event.source().orElse("UNKNOWN"));
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn(
+            "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single group.",
+            event.asPathNoType(),
+            event.source().orElse("UNKNOWN"));
+      }
       return List.of();
     }
 
     if (!event.isDelete()
-        && event.type().equals(EntityDataStore.EVENT_TYPE_ENTITIES)
+        && EntityDataStore.EVENT_TYPE_ENTITIES.equals(event.type())
         && eventSourcing.has(event.identifier())) {
-      LOGGER.warn(
-          "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single source, use overrides to update it from another source.",
-          event.asPathNoType(),
-          event.source().orElse("UNKNOWN"));
-      return List.of();
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn(
+            "Ignoring entity '{}' from {} because it already exists. An entity can only exist in a single source, use overrides to update it from another source.",
+            event.asPathNoType(),
+            event.source().orElse("UNKNOWN"));
+      }
     }
 
-    if (!event.type().equals(EntityDataStore.EVENT_TYPE_OVERRIDES)) {
+    if (!EntityDataStore.EVENT_TYPE_OVERRIDES.equals(event.type())) {
       return List.of(event);
     }
 
@@ -266,8 +277,10 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
     // override without matching entity
     if (!eventSourcing.has(cacheKey)) {
-      LOGGER.warn("Ignoring override '{}', no matching entity found", event.asPath());
-      return List.of();
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn("Ignoring override '{}', no matching entity found", event.asPath());
+        return List.of();
+      }
     }
 
     ImmutableReplayEvent.Builder builder =
@@ -484,10 +497,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             .createInstance(hydratedData)
             .whenComplete(
                 (entity, throwable) -> {
-                  if (Objects.nonNull(entity)) {
-                    if (LOGGER.isTraceEnabled()) {
-                      LOGGER.trace("Entity created: {}", identifier);
-                    }
+                  if (Objects.nonNull(entity) && LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Entity created: {}", identifier);
                   }
                 })
             .thenAccept(ignore -> CompletableFuture.completedFuture(null));

@@ -21,6 +21,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -52,6 +53,7 @@ public class EventSource {
   private final StoreSource source;
   private final Pattern mainPathPatternRead;
   private final String mainPathPatternWrite;
+  private static final String NAME_GROUP = "name";
 
   public EventSource(Path path, StoreSource source, Function<String, String> pathAdjuster) {
     this.path =
@@ -112,56 +114,58 @@ public class EventSource {
         Paths.get(
             String.format(
                     pathPattern, type, Joiner.on('/').join(identifier.path()), identifier.id())
-                + (Objects.nonNull(format) ? "." + format.toLowerCase() : "")));
+                + (Objects.nonNull(format) ? "." + format.toLowerCase(Locale.ROOT) : "")));
   }
 
+  @SuppressWarnings("PMD.CognitiveComplexity")
   public EntityEvent pathToEvent(Pattern pathPattern, Path path, Supplier<byte[]> readPayload) {
     Path relPath = rootPath.relativize(path);
     Path fullRelPath = applyPrefixes(relPath);
     Matcher pathMatcher = pathPattern.matcher(fullRelPath.toString());
 
-    if (pathMatcher.find()) {
-      String eventType = pathMatcher.group(TYPE_GROUP);
-      String eventPath = pathMatcher.group(PATH_GROUP);
-      String eventId = pathMatcher.group(ID_GROUP);
-      Optional<String> eventPayloadFormat;
-      try {
-        eventPayloadFormat = Optional.ofNullable(pathMatcher.group(FORMAT_GROUP));
-      } catch (Throwable e) {
-        eventPayloadFormat = Optional.empty();
-      }
-
-      if (Objects.nonNull(eventType)
-          && /*Objects.nonNull(eventPath) &&*/ Objects.nonNull(eventId)) {
-
-        if (!Content.isEvent(eventType)) {
-          if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(
-                "Skipping non-event {type: {}, path: {}, id: {}}", eventType, eventPath, eventId);
-          }
-          return null;
-        }
-
-        if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace("Reading event {type: {}, path: {}, id: {}}", eventType, eventPath, eventId);
-        }
-
-        byte[] bytes = readPayload.get();
-
-        Iterable<String> eventPathSegments =
-            Strings.isNullOrEmpty(eventPath) ? ImmutableList.of() : PATH_SPLITTER.split(eventPath);
-
-        return ImmutableReplayEvent.builder()
-            .type(eventType)
-            .identifier(ImmutableIdentifier.builder().id(eventId).path(eventPathSegments).build())
-            .payload(bytes)
-            .format(eventPayloadFormat.orElse(null))
-            .source(source.getLabel())
-            .build();
-      }
+    if (!pathMatcher.find()) {
+      return null;
     }
 
-    return null;
+    String eventType = pathMatcher.group(TYPE_GROUP);
+    String eventId = pathMatcher.group(ID_GROUP);
+    Optional<String> eventPayloadFormat;
+    try {
+      eventPayloadFormat = Optional.ofNullable(pathMatcher.group(FORMAT_GROUP));
+    } catch (Throwable e) {
+      eventPayloadFormat = Optional.empty();
+    }
+
+    if (Objects.isNull(eventType) || Objects.isNull(eventId)) {
+      return null;
+    }
+
+    String eventPath = pathMatcher.group(PATH_GROUP);
+
+    if (!Content.isEvent(eventType)) {
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace(
+            "Skipping non-event {type: {}, path: {}, id: {}}", eventType, eventPath, eventId);
+      }
+      return null;
+    }
+
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Reading event {type: {}, path: {}, id: {}}", eventType, eventPath, eventId);
+    }
+
+    byte[] bytes = readPayload.get();
+
+    Iterable<String> eventPathSegments =
+        Strings.isNullOrEmpty(eventPath) ? ImmutableList.of() : PATH_SPLITTER.split(eventPath);
+
+    return ImmutableReplayEvent.builder()
+        .type(eventType)
+        .identifier(ImmutableIdentifier.builder().id(eventId).path(eventPathSegments).build())
+        .payload(bytes)
+        .format(eventPayloadFormat.orElse(null))
+        .source(source.getLabel())
+        .build();
   }
 
   private Path applyPrefixes(Path path) {
@@ -192,21 +196,22 @@ public class EventSource {
     return Stream.of(mainPathPatternRead);
   }
 
+  @SuppressWarnings("PMD.CyclomaticComplexity")
   private Pattern pathToPattern(String path, Function<String, String> pathAdjuster) {
     Matcher matcher = PATH_PATTERN.matcher(path);
-    StringBuilder pattern = new StringBuilder();
+    StringBuilder pattern = new StringBuilder(64);
     List<String> names = new ArrayList<>();
 
     while (matcher.find()) {
       // LOGGER.debug("PATH REGEX {} {} {} {} {}", matcher.group(), matcher.groupCount(),
-      // matcher.group("name"), matcher.group("separator"), matcher.group("glob"));
+      // matcher.group(NAME_GROUP), matcher.group("separator"), matcher.group("glob"));
       if (Objects.isNull(matcher.group("glob"))) {
-        names.add(matcher.group("name"));
+        names.add(matcher.group(NAME_GROUP));
         pattern.append(matcher.group("separator").replaceAll("/", "\\\\/"));
         pattern.append("(?<");
-        pattern.append(matcher.group("name"));
+        pattern.append(matcher.group(NAME_GROUP));
         pattern.append(">[\\w][\\w-\\.]+?)");
-        if (Objects.equals(matcher.group("name"), "id")) {
+        if (Objects.equals(matcher.group(NAME_GROUP), "id")) {
           names.add(FORMAT_GROUP);
           pattern.append("(?:\\.(?<");
           pattern.append(FORMAT_GROUP);
@@ -217,17 +222,17 @@ public class EventSource {
           throw new IllegalArgumentException(
               "unknown store path expression: " + matcher.group("glob"));
         }
-        names.add(matcher.group("name"));
-        pattern.append("(?:");
-        pattern.append(matcher.group("separator").replaceAll("/", "\\\\/"));
-        pattern.append("(?<");
-        pattern.append(matcher.group("name"));
-        pattern.append(">(?:[\\w-_](?:[\\w-_]|\\.|\\/(?!\\.))+[\\w-_]))");
-        pattern.append(")?");
+        names.add(matcher.group(NAME_GROUP));
+        pattern
+            .append("(?:")
+            .append(matcher.group("separator").replaceAll("/", "\\\\/"))
+            .append("(?<")
+            .append(matcher.group(NAME_GROUP))
+            .append(">(?:[\\w-_](?:[\\w-_]|\\.|\\/(?!\\.))+[\\w-_]))?)");
       }
     }
     pattern.insert(0, "^");
-    pattern.append("$");
+    pattern.append('$');
 
     if (!(names.contains("type") && names.contains("path") && names.contains("id"))) {
       throw new IllegalArgumentException("store path expression must contain type, path and id");

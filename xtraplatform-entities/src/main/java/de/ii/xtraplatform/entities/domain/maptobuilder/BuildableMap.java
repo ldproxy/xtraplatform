@@ -20,6 +20,7 @@ import org.immutables.value.Value;
 public abstract class BuildableMap<T extends Buildable<T>, U extends BuildableBuilder<T>>
     extends ForwardingMap<String, T> {
 
+  @SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
   public abstract static class Builder {}
 
   @Value.Derived
