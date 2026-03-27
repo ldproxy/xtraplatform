@@ -30,6 +30,7 @@ import org.reactivestreams.Subscriber;
 
 @Singleton
 @AutoBind
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
 public class ReactiveRx implements Reactive {
 
   @Inject
