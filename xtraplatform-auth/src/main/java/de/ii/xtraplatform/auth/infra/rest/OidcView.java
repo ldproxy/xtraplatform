@@ -22,6 +22,9 @@ public class OidcView extends View {
   public final boolean callback;
   public final String assetsPrefix;
 
+  @Deprecated(since = "4.6", forRemoval = true)
+  public final String urlPrefix;
+
   public OidcView(
       String oidcUri,
       String callbackUri,
@@ -44,5 +47,6 @@ public class OidcView extends View {
     this.token = token;
     this.callback = callback;
     this.assetsPrefix = assetsPrefix;
+    this.urlPrefix = assetsPrefix;
   }
 }

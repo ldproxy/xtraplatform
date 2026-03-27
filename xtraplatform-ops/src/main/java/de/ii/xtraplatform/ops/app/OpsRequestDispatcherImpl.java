@@ -73,7 +73,6 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   private final StaticResourceServlet staticServlet;
   private final Lazy<Set<OpsEndpoint>> subEndpoints;
   private Servlet tasksServlet;
-  private final Reader reader;
   private final OpenAPI openAPI;
 
   @Inject
@@ -95,7 +94,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
 
     ModelConverters.getInstance().addConverter(new CustomModelConverter());
 
-    this.reader = new Reader(new OpenAPI());
+    Reader reader = new Reader(new OpenAPI());
     Set<Class<?>> endpointClasses =
         subEndpoints.get().stream().map(OpsEndpoint::getClass).collect(Collectors.toSet());
     endpointClasses.add(this.getClass());
@@ -124,7 +123,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
       tasksServlet.initialize();
       this.tasksServlet = tasksServlet.getServletInstance();
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new IllegalStateException("Failed to initialize servlets", e);
     }
   }
 
@@ -258,7 +257,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
                     schema = @Schema(implementation = HealthResponse.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  public void getHealth(@Context HttpServletRequest request, @Context HttpServletResponse response)
+  public void health(@Context HttpServletRequest request, @Context HttpServletResponse response)
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
     healthCheckServlet.service(request, response);
@@ -316,7 +315,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
         @ApiResponse(responseCode = "401", description = "Unauthorized"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  public void getMetrics(@Context HttpServletRequest request, @Context HttpServletResponse response)
+  public void metrics(@Context HttpServletRequest request, @Context HttpServletResponse response)
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
     metricsServlet.service(request, response);
@@ -342,7 +341,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
                     schema = @Schema(implementation = PingResponse.class))),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  public void getPing(@Context HttpServletRequest request, @Context HttpServletResponse response)
+  public void ping(@Context HttpServletRequest request, @Context HttpServletResponse response)
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
     pingServlet.service(request, response);
@@ -365,7 +364,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
                                 "\"dw-admin-105\" id=105 state=TIMED_WAITING - waiting on <0x04941bd8> (a java.util.concurrent.SynchronousQueue$Transferer) - locked <0x04941bd8> (a java.util.concurrent.SynchronousQueue$Transferer) at java.base@21.0.5/jdk.internal.misc.Unsafe.park(Native Method) at java.base@21.0.5/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410) at java.base@21.0.5/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452) at java.base@21.0.5/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194) at java.base@21.0.5/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235) at java.base@21.0.5/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.reservedWait(ReservedThreadExecutor.java:325) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:401) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:969) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.doRunJob(QueuedThreadPool.java:1194) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1149) at java.base@21.0.5/java.lang.Thread.runWith(Thread.java:1596) at java.base@21.0.5/java.lang.Thread.run(Thread.java:1583)"))),
         @ApiResponse(responseCode = "500", description = "Internal server error")
       })
-  public void getThreads(@Context HttpServletRequest request, @Context HttpServletResponse response)
+  public void threads(@Context HttpServletRequest request, @Context HttpServletResponse response)
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
     threadDumpServlet.service(request, response);
@@ -422,7 +421,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   @GET
   @Path("/{path: .+\\.(?:html|js|css|json|woff2|txt)}")
   @Hidden
-  public void getFile(
+  public void file(
       @PathParam("path") String path,
       @Context HttpServletRequest request,
       @Context HttpServletResponse response)
@@ -434,7 +433,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   @GET
   @Path("/{path: .*}")
   @Hidden
-  public void getRoute(
+  public void route(
       @PathParam("path") String path,
       @Context HttpServletRequest request,
       @Context HttpServletResponse response)
