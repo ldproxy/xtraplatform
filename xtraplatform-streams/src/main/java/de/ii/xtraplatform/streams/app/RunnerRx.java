@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO: the queue was introduced as a mean to protect the connection pool and prevent deadlocks
+// NOTE: the queue was introduced as a mean to protect the connection pool and prevent deadlocks
 // because of a bug (running.get() < queueSize instead of running.get() < capacity) it was never
 // used
 // despite that there were no problems with deadlocks and enabling it slightly decreases performance
@@ -34,35 +34,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RunnerRx implements Runner {
 
   private final Scheduler scheduler;
-  private final String name;
   private final int capacity;
   private final int queueSize;
   private final Queue<Runnable> queue;
   private final AtomicInteger running;
 
-  public RunnerRx(String name) {
-    this(
-        getConfig(Runner.DYNAMIC_CAPACITY), name, Runner.DYNAMIC_CAPACITY, Runner.DYNAMIC_CAPACITY);
-  }
-
-  public RunnerRx(String name, int capacity, int queueSize) {
-    this(getConfig(capacity), name, capacity, queueSize);
+  public RunnerRx() {
+    this(Runner.DYNAMIC_CAPACITY, Runner.DYNAMIC_CAPACITY);
   }
 
   public RunnerRx(int capacity, int queueSize) {
-    this(getConfig(capacity), "default", capacity, queueSize);
+    this(getConfig(capacity), capacity, queueSize);
   }
 
-  RunnerRx(ExecutorService executorService, String name, int capacity, int queueSize) {
+  RunnerRx(ExecutorService executorService, int capacity, int queueSize) {
     if (capacity == 0) {
       throw new IllegalArgumentException("invalid capacity: 0");
     }
 
-    // TODO: thread names
+    // NOPMD - TODO: thread names
     this.scheduler = Schedulers.from(executorService);
     scheduler.start();
 
-    this.name = name;
     this.capacity = capacity;
     this.queueSize = queueSize;
     this.queue = new LinkedList<>();
@@ -154,14 +147,16 @@ public class RunnerRx implements Runner {
   }
 
   private static ExecutorService getConfig(int capacity) {
-    return capacity == Runner.DYNAMIC_CAPACITY ? getDefaultConfig() : getConfig(capacity, capacity);
+    return capacity == Runner.DYNAMIC_CAPACITY
+        ? getDefaultConfig()
+        : createExecutorService(capacity);
   }
 
   private static ExecutorService getDefaultConfig() {
-    return getConfig(8, 64);
+    return createExecutorService(64);
   }
 
-  private static ExecutorService getConfig(int parallelismMin, int parallelismMax) {
+  private static ExecutorService createExecutorService(int parallelismMax) {
 
     return Executors.newWorkStealingPool(Math.max(1, parallelismMax));
   }
