@@ -30,6 +30,7 @@ import org.reactivestreams.Subscriber;
 
 @Singleton
 @AutoBind
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
 public class ReactiveRx implements Reactive {
 
   @Inject
@@ -37,12 +38,12 @@ public class ReactiveRx implements Reactive {
 
   @Override
   public Runner runner(String name) {
-    return new RunnerRx(name);
+    return new RunnerRx();
   }
 
   @Override
   public Runner runner(String name, int capacity, int queueSize) {
-    return new RunnerRx(name, capacity, queueSize);
+    return new RunnerRx(capacity, queueSize);
   }
 
   static <V, W> Triple<Flowable<V>, SubscriberRx<V>, StreamContext<W>> getGraph(Stream<W> stream) {
@@ -57,7 +58,6 @@ public class ReactiveRx implements Reactive {
     throw new IllegalStateException();
   }
 
-  // TODO: might use ConnectableFlowable
   static <V, W> Triple<Flowable<V>, SubscriberRx<V>, StreamContext<W>> getGraph(
       StreamDefault<V, W> stream) {
     Flowable<V> source = assemble(stream.getSource());
@@ -289,7 +289,6 @@ public class ReactiveRx implements Reactive {
     throw new IllegalStateException();
   }
 
-  // TODO: test
   static <U, V, W> SubscriberRx<U> assemble(
       SinkTransformedImpl<U, V, W> sink, StreamContext<W> stream) {
     UnicastProcessor<U> subscriber = UnicastProcessor.create();
@@ -350,7 +349,7 @@ public class ReactiveRx implements Reactive {
     }
   }
 
-  // TODO: creating or clearing Iterables hurts performance
+  // NOTE: creating or clearing Iterables hurts performance
   // when switching to RxJava, the correspondent operator would be concatMapIterable
   // but the more performant alternative might be partialCollect from extensions
   private static class AsymmetricFlow<U, V> {
@@ -370,7 +369,7 @@ public class ReactiveRx implements Reactive {
 
                     return items;
                   })
-              // TODO: lazy
+              // NOTE: lazy
               .concatWith(
                   Flowable.fromIterable(
                       () -> {

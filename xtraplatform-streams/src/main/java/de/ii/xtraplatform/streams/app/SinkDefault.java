@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+@SuppressWarnings("PMD.DataClass")
 public class SinkDefault<U, V> implements SinkReduced<U, V> {
 
   public enum Type {

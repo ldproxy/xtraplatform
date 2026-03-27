@@ -27,6 +27,7 @@ import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.TooManyMethods")
 public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BlobSourceFs.class);
@@ -136,7 +137,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
     return Files.find(
             dir,
             maxDepth,
-            ((path1, basicFileAttributes) ->
+            (path1, basicFileAttributes) ->
                 (includes.isEmpty()
                         || includes.stream().anyMatch(include -> include.matches(path1)))
                     && excludes.stream().noneMatch(exclude -> exclude.matches(path1))
@@ -152,7 +153,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
                           public boolean isHidden() {
                             return path1.getFileName().toString().startsWith(".");
                           }
-                        })))
+                        }))
         .map(dir::relativize);
   }
 
@@ -193,7 +194,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
     Files.deleteIfExists(filePath);
   }
 
-  // TODO: remote sources might provide readable locals, but never writable ones
+  // NOTE: remote sources might provide readable locals, but never writable ones
   @Override
   public Optional<Path> asLocalPath(Path path, boolean writable) throws IOException {
     if (!canHandle(path)) {
