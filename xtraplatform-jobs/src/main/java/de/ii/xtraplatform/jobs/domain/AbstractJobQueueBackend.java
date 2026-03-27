@@ -18,15 +18,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.TooManyMethods")
 public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileComposed
     implements JobQueueBackend {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractJobQueueBackend.class);
 
   private final Map<String, Set<Integer>> priorities;
   private final Map<String, Map<Integer, T>> queues;
+
+  // Pre-create comparator and avoid object creation in checkQueue
+  private static final Comparator<Integer> REVERSE_ORDER = Comparator.<Integer>reverseOrder();
 
   protected AbstractJobQueueBackend(VolatileRegistry volatileRegistry) {
     super(volatileRegistry);
@@ -82,7 +83,7 @@ public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileCompose
       updateJobSet((JobSet) job);
 
       if (((JobSet) job).getSetup().isPresent()) {
-        push(((JobSet) job).getSetup().get());
+        push(((JobSet) job).getSetup().get(), false);
       }
     } else {
       throw new IllegalArgumentException("Unknown job type: " + job.getClass());
@@ -95,11 +96,9 @@ public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileCompose
       T queue = getQueue(type, priority);
       Optional<Job> job = takeJob(queue);
 
-      if (job.isEmpty()) {
-        continue;
+      if (job.isPresent()) {
+        return Optional.of(startJob(job.get(), executor));
       }
-
-      return Optional.of(startJob(job.get(), executor));
     }
 
     return Optional.empty();
@@ -113,7 +112,7 @@ public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileCompose
       Job doneJob = doneJob(job.get());
       onJobFinished(doneJob);
 
-      doneJob.getFollowUps().forEach(this::push);
+      doneJob.getFollowUps().forEach(followUp -> push(followUp, false));
 
       return true;
     }
@@ -149,22 +148,25 @@ public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileCompose
 
   @Override
   public Map<String, Map<Integer, List<Job>>> getOpen() {
-    Map<String, Map<Integer, List<Job>>> openJobs = new LinkedHashMap<>();
     Set<String> priorityTypes = getTypes();
 
-    for (String type : priorityTypes) {
-      Set<Integer> priorities = getPriorities(type);
-      Map<Integer, List<Job>> priorityMap = new LinkedHashMap<>();
-
-      for (Integer priority : priorities) {
-        T queue = getQueue(type, priority);
-
-        priorityMap.put(priority, getJobsInQueue(queue));
-      }
-
-      openJobs.put(type, priorityMap);
-    }
-    return openJobs;
+    return priorityTypes.stream()
+        .collect(
+            LinkedHashMap::new,
+            (map, type) -> {
+              Set<Integer> priorities = getPriorities(type);
+              Map<Integer, List<Job>> priorityMap =
+                  priorities.stream()
+                      .collect(
+                          LinkedHashMap::new,
+                          (pMap, priority) -> {
+                            T queue = getQueue(type, priority);
+                            pMap.put(priority, getJobsInQueue(queue));
+                          },
+                          Map::putAll);
+              map.put(type, priorityMap);
+            },
+            Map::putAll);
   }
 
   protected abstract List<String> getTakenIds();
@@ -173,7 +175,8 @@ public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileCompose
 
   @Override
   public Collection<Job> getTaken() {
-    return getTakenIds().stream()
+    List<String> takenIds = getTakenIds();
+    return takenIds.stream()
         .map(this::getJob)
         .filter(Optional::isPresent)
         .map(Optional::get)
@@ -182,7 +185,8 @@ public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileCompose
 
   @Override
   public Collection<Job> getFailed() {
-    return getFailedIds().stream()
+    List<String> failedIds = getFailedIds();
+    return failedIds.stream()
         .map(this::getJob)
         .filter(Optional::isPresent)
         .map(Optional::get)
@@ -204,17 +208,20 @@ public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileCompose
   }
 
   private void checkQueue(String type, int priority) {
-    if (!priorities.containsKey(type)) {
-      // synchronized (this) {
-      priorities.put(type, new TreeSet<>(Comparator.reverseOrder()));
-      queues.put(type, new ConcurrentHashMap<>());
-      // }
-    }
-    if (!priorities.get(type).contains(priority)) {
-      // synchronized (this) {
-      priorities.get(type).add(priority);
-      queues.get(type).put(priority, createQueue(type, priority));
-      // }
+    // Use computeIfAbsent to avoid checking and creating separately
+    Set<Integer> typePriorities =
+        priorities.computeIfAbsent(
+            type,
+            k -> {
+              queues.put(k, new ConcurrentHashMap<>());
+              return new TreeSet<>(REVERSE_ORDER);
+            });
+
+    // Use computeIfAbsent for queue creation too
+    Map<Integer, T> typeQueues = queues.get(type);
+    if (!typePriorities.contains(priority)) {
+      typePriorities.add(priority);
+      typeQueues.computeIfAbsent(priority, p -> createQueue(type, p));
     }
   }
 
@@ -226,7 +233,7 @@ public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileCompose
       if (jobSet.isPresent()) {
         // TODO: if done, mark for removal
         List<? extends BaseJob> jobSetFollowUps = onJobFinished(job, jobSet.get());
-        jobSetFollowUps.forEach(this::push);
+        jobSetFollowUps.forEach(followUp -> push(followUp, false));
       }
     }
   }

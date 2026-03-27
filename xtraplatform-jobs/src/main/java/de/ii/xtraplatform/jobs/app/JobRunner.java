@@ -52,6 +52,7 @@ import org.threeten.extra.AmountFormats;
 
 @Singleton
 @AutoBind(interfaces = {AppLifeCycle.class})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.GuardLogStatement"})
 public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle, VolatileComposed {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JobRunner.class);
@@ -83,15 +84,19 @@ public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle,
             (ScheduledThreadPoolExecutor)
                 Executors.newScheduledThreadPool(
                     1, new ThreadFactoryBuilder().setNameFormat("jobs.poll-%d").build()));
+
+    int jobConcurrency = appContext.getConfiguration().getJobConcurrency();
+    @SuppressWarnings(
+        "PMD.CloseResource") // False positive: executor is properly closed in onStop()
     ThreadPoolExecutor threadPoolExecutor =
         (ThreadPoolExecutor)
             Executors.newFixedThreadPool(
-                appContext.getConfiguration().getJobConcurrency(),
-                new ThreadFactoryBuilder().setNameFormat("jobs.exec-%d").build());
-    this.executor = MoreExecutors.getExitingExecutorService(threadPoolExecutor);
-    this.executorName = appContext.getInstanceName();
+                jobConcurrency, new ThreadFactoryBuilder().setNameFormat("jobs.exec-%d").build());
+
     this.maxThreads = threadPoolExecutor.getMaximumPoolSize();
     this.activeThreads = threadPoolExecutor::getActiveCount;
+    this.executor = MoreExecutors.getExitingExecutorService(threadPoolExecutor);
+    this.executorName = appContext.getInstanceName();
     this.activeJobSets = Collections.synchronizedSet(new LinkedHashSet<>());
     this.asyncStartup = appContext.getConfiguration().getModules().isStartupAsync();
 
@@ -114,6 +119,32 @@ public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle,
   }
 
   @Override
+  public void onStop() {
+    LOGGER.info("Shutting down job runner...");
+
+    // Shutdown executors gracefully
+    polling.shutdown();
+    executor.shutdown();
+
+    try {
+      // Wait for tasks to complete
+      if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+        LOGGER.warn("Job executor did not terminate gracefully, forcing shutdown");
+        executor.shutdownNow();
+      }
+      if (!polling.awaitTermination(5, TimeUnit.SECONDS)) {
+        LOGGER.warn("Polling executor did not terminate gracefully, forcing shutdown");
+        polling.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      LOGGER.error("Interrupted while waiting for executors to terminate", e);
+      executor.shutdownNow();
+      polling.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  @Override
   protected Tuple<State, String> volatileInit() {
     if (asyncStartup) {
       init();
@@ -124,71 +155,78 @@ public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle,
   private void init() {
     jobQueue.onPush(this::checkWork);
 
-    // check for orphaned jobs every minute
-    polling.scheduleAtFixedRate(
-        () -> {
-          long oneMinuteAgo = Instant.now().minus(Duration.ofMinutes(1)).getEpochSecond();
+    // Check for orphaned jobs and cleanup old job sets every minute
+    polling.scheduleAtFixedRate(this::checkOrphanedJobsAndCleanup, 1, 1, TimeUnit.MINUTES);
 
-          if (logJobsTrace()) {
-            LOGGER.trace(MARKER.JOBS, "Checking for orphaned jobs (updatedAt < {})", oneMinuteAgo);
-          }
+    // Log progress for active job sets every 5 seconds
+    polling.scheduleAtFixedRate(this::logActiveJobSetProgress, 5, 5, TimeUnit.SECONDS);
+  }
 
-          for (Job job : jobQueue.getTaken()) {
-            // TODO: also update vector progress, remove raster check
-            if (job.getType().equals("tile-seeding:raster:png")
-                && job.getUpdatedAt().get() < oneMinuteAgo) {
-              if (logJobsDebug()) {
-                LOGGER.debug(MARKER.JOBS, "Found orphaned job, adding to queue again: {}", job);
-              }
-              jobQueue.push(job, true);
+  private void checkOrphanedJobsAndCleanup() {
+    checkOrphanedJobs();
+    cleanupOldJobSets();
+  }
+
+  private void checkOrphanedJobs() {
+    long oneMinuteAgo = Instant.now().minus(Duration.ofMinutes(1)).getEpochSecond();
+
+    if (logJobsTrace()) {
+      LOGGER.trace(MARKER.JOBS, "Checking for orphaned jobs (updatedAt < {})", oneMinuteAgo);
+    }
+
+    for (Job job : jobQueue.getTaken()) {
+      // TODO: also update vector progress, remove raster check
+      if ("tile-seeding:raster:png".equals(job.getType())
+          && job.getUpdatedAt().get() < oneMinuteAgo) {
+        if (logJobsDebug()) {
+          LOGGER.debug(MARKER.JOBS, "Found orphaned job, adding to queue again: {}", job);
+        }
+        jobQueue.push(job, true);
+      }
+    }
+
+    if (logJobsTrace()) {
+      LOGGER.trace(MARKER.JOBS, "Finished checking for orphaned jobs");
+    }
+  }
+
+  private void cleanupOldJobSets() {
+    long oneHourAgo = Instant.now().minus(Duration.ofHours(1)).getEpochSecond();
+
+    for (JobSet jobSet : jobQueue.getSets()) {
+      if (jobSet.isDone() && jobSet.getUpdatedAt().get() < oneHourAgo) {
+        jobQueue.doneSet(jobSet.getId());
+      }
+    }
+  }
+
+  private void logActiveJobSetProgress() {
+    if (logJobsDebug()) {
+      activeJobSets.forEach(
+          (jobSetId) -> {
+            JobSet jobSet = jobQueue.getSet(jobSetId);
+            if (jobSet == null) {
+              return;
             }
-          }
 
-          if (logJobsTrace()) {
-            LOGGER.trace(MARKER.JOBS, "Finished checking for orphaned jobs");
-          }
-
-          // remove done job sets older than one hour
-          long oneHourAgo = Instant.now().minus(Duration.ofHours(1)).getEpochSecond();
-
-          for (JobSet jobSet : jobQueue.getSets()) {
-            if (jobSet.isDone() && jobSet.getUpdatedAt().get() < oneHourAgo) {
-              jobQueue.doneSet(jobSet.getId());
+            if (jobSet.getEntity().isPresent()) {
+              LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.getEntity().get());
             }
-          }
-        },
-        1,
-        1,
-        TimeUnit.MINUTES);
 
-    // log progress for active job sets every 5 seconds
-    polling.scheduleAtFixedRate(
-        () -> {
-          if (logJobsDebug()) {
-            activeJobSets.forEach(
-                (jobSetId) -> {
-                  JobSet jobSet = jobQueue.getSet(jobSetId);
-                  if (Objects.nonNull(jobSet)) {
-                    if (jobSet.getEntity().isPresent()) {
-                      LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.getEntity().get());
-                    }
-                    LOGGER.debug(
-                        MARKER.JOBS,
-                        "{} at {}%{}",
-                        jobSet.getLabel(),
-                        jobSet.getPercent(),
-                        jobSet.getDescription().orElse(""));
-                  }
-                });
-          }
-          if (logJobsTrace()) {
-            LOGGER.trace(
-                MARKER.JOBS, "Job processor threads busy: {}/{}", activeThreads.get(), maxThreads);
-          }
-        },
-        5,
-        5,
-        TimeUnit.SECONDS);
+            if (logJobsDebug()) {
+              LOGGER.debug(
+                  MARKER.JOBS,
+                  "{} at {}%{}",
+                  jobSet.getLabel(),
+                  jobSet.getPercent(),
+                  jobSet.getDescription().orElse(""));
+            }
+          });
+    }
+    if (logJobsTrace()) {
+      LOGGER.trace(
+          MARKER.JOBS, "Job processor threads busy: {}/{}", activeThreads.get(), maxThreads);
+    }
   }
 
   private Optional<? extends Class<?>> getJobType(String jobType) {
@@ -204,122 +242,155 @@ public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle,
     if (logJobsTrace()) {
       LOGGER.trace(MARKER.JOBS, "CHECK WORK {}", jobType);
     }
-    List<JobProcessor<?, ?>> orderedProcessors =
-        processors.get().stream()
-            .filter(
-                p ->
-                    Objects.equals(jobType, JOB_TYPE_WILDCARD)
-                        || Objects.equals(jobType, p.getJobType()))
-            .sorted(
-                Comparator.<JobProcessor<?, ?>>comparingInt(JobProcessor::getPriority).reversed())
-            .toList();
+    List<JobProcessor<?, ?>> orderedProcessors = getOrderedProcessors(jobType);
 
     while (activeJobs.get() < maxThreads) {
-      boolean hasWork = false;
-
-      for (JobProcessor<?, ?> processor : orderedProcessors) {
-        Optional<Job> optionalJob = jobQueue.take(processor.getJobType(), executorName);
-
-        if (optionalJob.isPresent()) {
-          hasWork = true;
-          if (logJobsTrace()) {
-            LOGGER.trace(
-                MARKER.JOBS,
-                "Assigned job to processor {}: {} ({})",
-                processor.getJobType(),
-                optionalJob.get().getId(),
-                optionalJob.get().getPriority());
-          }
-          if (optionalJob.get().getPartOf().isPresent()) {
-            JobSet jobSet = jobQueue.getSet(optionalJob.get().getPartOf().get());
-
-            if (jobSet.getEntity().isPresent()) {
-              LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.getEntity().get());
-            }
-
-            activeJobSets.add(jobSet.getId());
-          }
-
-          try {
-            run(processor, optionalJob.get());
-          } catch (Throwable e) {
-            LogContext.error(LOGGER, e, "Error scheduling job");
-          }
-
-          break;
-        }
-      }
-      if (!hasWork) {
+      if (!tryAssignWork(orderedProcessors)) {
         break;
       }
     }
   }
 
+  private List<JobProcessor<?, ?>> getOrderedProcessors(String jobType) {
+    return processors.get().stream()
+        .filter(
+            p ->
+                Objects.equals(jobType, JOB_TYPE_WILDCARD)
+                    || Objects.equals(jobType, p.getJobType()))
+        .sorted(Comparator.<JobProcessor<?, ?>>comparingInt(JobProcessor::getPriority).reversed())
+        .toList();
+  }
+
+  private boolean tryAssignWork(List<JobProcessor<?, ?>> orderedProcessors) {
+    for (JobProcessor<?, ?> processor : orderedProcessors) {
+      Optional<Job> optionalJob = jobQueue.take(processor.getJobType(), executorName);
+
+      if (optionalJob.isPresent()) {
+        assignJobToProcessor(processor, optionalJob.get());
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void assignJobToProcessor(JobProcessor<?, ?> processor, Job job) {
+    if (logJobsTrace()) {
+      LOGGER.trace(
+          MARKER.JOBS,
+          "Assigned job to processor {}: {} ({})",
+          processor.getJobType(),
+          job.getId(),
+          job.getPriority());
+    }
+
+    setupJobContext(job);
+
+    try {
+      run(processor, job);
+    } catch (Throwable e) {
+      LogContext.error(LOGGER, e, "Error scheduling job");
+    }
+  }
+
+  private void setupJobContext(Job job) {
+    if (job.getPartOf().isPresent()) {
+      JobSet jobSet = jobQueue.getSet(job.getPartOf().get());
+
+      if (jobSet.getEntity().isPresent()) {
+        LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.getEntity().get());
+      }
+
+      activeJobSets.add(jobSet.getId());
+    }
+  }
+
   private void run(JobProcessor<?, ?> processor, Job job) {
     activeJobs.incrementAndGet();
-    executor.execute(
-        () -> {
-          Instant start = Instant.now();
-          Optional<JobSet> jobSet = job.getPartOf().map(jobQueue::getSet);
+    executor.execute(() -> processJobExecution(processor, job));
+  }
 
-          if (jobSet.isPresent() && jobSet.get().getEntity().isPresent()) {
-            LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.get().getEntity().get());
-          }
+  private void processJobExecution(JobProcessor<?, ?> processor, Job job) {
+    Instant start = Instant.now();
+    Optional<JobSet> jobSet = job.getPartOf().map(jobQueue::getSet);
 
-          if (logJobsTrace()) {
-            LOGGER.trace(MARKER.JOBS, "Processing job: {}", job);
-          }
+    setupExecutionContext(jobSet);
+    logJobProcessingStart(job);
+    handleJobSetStartup(job, jobSet);
 
-          if (jobSet.isPresent() && !jobSet.get().isStarted()) {
-            if (jobSet.get().getSetup().isEmpty()
-                || !Objects.equals(job.getId(), jobSet.get().getSetup().get().getId())) {
-              jobQueue.startJobSet(jobSet.get());
+    JobResult result = executeJob(processor, job, jobSet);
+    handleJobResult(job, result);
+    cleanupJobExecution(jobSet, result, start);
 
-              if (LOGGER.isInfoEnabled() || LOGGER.isInfoEnabled(MARKER.JOBS)) {
-                LOGGER.info(
-                    MARKER.JOBS,
-                    "{} started ({})",
-                    jobSet.get().getLabel(),
-                    jobQueue.getJobSetDetails(JobSetDetails.class, jobSet.get()).getLabel());
-              }
-            }
-          }
+    activeJobs.decrementAndGet();
+    checkWork(JOB_TYPE_WILDCARD);
+  }
 
-          JobResult result;
-          try {
-            result = processor.process(job, jobSet.orElse(null), jobQueue);
-          } catch (Throwable e) {
-            result = JobResult.error(e.getClass() + e.getMessage());
-            LogContext.errorAsDebug(LOGGER, e, "Error processing job {}", job.getId());
-          }
+  private void setupExecutionContext(Optional<JobSet> jobSet) {
+    if (jobSet.isPresent() && jobSet.get().getEntity().isPresent()) {
+      LogContext.put(LogContext.CONTEXT.SERVICE, jobSet.get().getEntity().get());
+    }
+  }
 
-          if (result.isSuccess()) {
-            jobQueue.done(job.getId());
-          } else if (result.isFailure()) {
-            boolean retry = jobQueue.error(job.getId(), result.getError().get(), result.isRetry());
-            if (!retry) {
-              LOGGER.error(
-                  "Error while processing job {}: {}", job.getId(), result.getError().get());
-            }
-          }
+  private void logJobProcessingStart(Job job) {
+    if (logJobsTrace()) {
+      LOGGER.trace(MARKER.JOBS, "Processing job: {}", job);
+    }
+  }
 
-          if (jobSet.isPresent()) {
-            if (jobSet.get().isDone()) {
-              activeJobSets.remove(jobSet.get().getId());
-            }
-          }
+  private void handleJobSetStartup(Job job, Optional<JobSet> jobSet) {
+    if (jobSet.isPresent()
+        && !jobSet.get().isStarted()
+        && (jobSet.get().getSetup().isEmpty()
+            || !Objects.equals(job.getId(), jobSet.get().getSetup().get().getId()))) {
+      jobQueue.startJobSet(jobSet.get());
 
-          if (logJobsTrace()) {
-            if (result.isOnHold()) {
-              LOGGER.trace(MARKER.JOBS, "Postponed job: {}", job);
-            } else {
-              long duration = Instant.now().toEpochMilli() - start.toEpochMilli();
-              LOGGER.trace(MARKER.JOBS, "Processed job in {}: {}", pretty(duration), job);
-            }
-          }
-          activeJobs.decrementAndGet();
-          checkWork(JOB_TYPE_WILDCARD);
-        });
+      if (LOGGER.isInfoEnabled() || LOGGER.isInfoEnabled(MARKER.JOBS)) {
+        LOGGER.info(
+            MARKER.JOBS,
+            "{} started ({})",
+            jobSet.get().getLabel(),
+            jobQueue.getJobSetDetails(JobSetDetails.class, jobSet.get()).getLabel());
+      }
+    }
+  }
+
+  private JobResult executeJob(JobProcessor<?, ?> processor, Job job, Optional<JobSet> jobSet) {
+    try {
+      return processor.process(job, jobSet.orElse(null), jobQueue);
+    } catch (Throwable e) {
+      LogContext.errorAsDebug(LOGGER, e, "Error processing job {}", job.getId());
+      return JobResult.error(e.getClass() + e.getMessage());
+    }
+  }
+
+  private void handleJobResult(Job job, JobResult result) {
+    if (result.isSuccess()) {
+      jobQueue.done(job.getId());
+    } else if (result.isFailure()) {
+      boolean retry = jobQueue.error(job.getId(), result.getError().get(), result.isRetry());
+      if (!retry) {
+        LOGGER.error("Error while processing job {}: {}", job.getId(), result.getError().get());
+      }
+    }
+  }
+
+  private void cleanupJobExecution(Optional<JobSet> jobSet, JobResult result, Instant start) {
+    if (jobSet.isPresent() && jobSet.get().isDone()) {
+      activeJobSets.remove(jobSet.get().getId());
+    }
+
+    logJobProcessingEnd(result, start);
+  }
+
+  private void logJobProcessingEnd(JobResult result, Instant start) {
+    if (logJobsTrace()) {
+      if (result.isOnHold()) {
+        LOGGER.trace(MARKER.JOBS, "Postponed job: {}", result);
+      } else {
+        long duration = Instant.now().toEpochMilli() - start.toEpochMilli();
+        LOGGER.trace(MARKER.JOBS, "Processed job in {}: {}", pretty(duration), result);
+      }
+    }
   }
 
   private static boolean logJobsTrace() {
