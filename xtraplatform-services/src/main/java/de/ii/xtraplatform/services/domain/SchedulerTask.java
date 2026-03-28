@@ -12,11 +12,11 @@ package de.ii.xtraplatform.services.domain;
  */
 public interface SchedulerTask {
 
-  public String getId();
+  String getId();
 
-  public void setId(String id);
+  void setId(String id);
 
-  public String getPattern();
+  String getPattern();
 
-  public Runnable getTask();
+  Runnable getTask();
 }

@@ -20,6 +20,7 @@ public class TaskCron4j extends Task {
   private final de.ii.xtraplatform.services.domain.Task task;
   private final int maxPartials;
   private final int partial;
+  private final int threadNumber;
   private final String threadName;
   private final AtomicInteger activePartials;
 
@@ -33,9 +34,11 @@ public class TaskCron4j extends Task {
       int partial,
       int threadNumber,
       AtomicInteger activePartials) {
+    super();
     this.task = task;
     this.maxPartials = maxPartials;
     this.partial = partial;
+    this.threadNumber = threadNumber;
     this.threadName = "bg-task-" + threadNumber;
     this.activePartials = activePartials;
   }
@@ -60,8 +63,12 @@ public class TaskCron4j extends Task {
     return threadName;
   }
 
+  public int getThreadNumber() {
+    return threadNumber;
+  }
+
   @Override
-  public void execute(TaskExecutionContext taskExecutionContext) throws RuntimeException {
+  public void execute(TaskExecutionContext taskExecutionContext) {
     final TaskContext taskContext =
         new TaskContextCron4j(
             taskExecutionContext,
