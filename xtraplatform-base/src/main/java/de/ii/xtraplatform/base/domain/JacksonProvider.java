@@ -9,7 +9,6 @@ package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.DatabindContext;
@@ -39,7 +38,6 @@ import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.JacksonSubTypeIds.JacksonSubType;
 import io.dropwizard.jackson.CaffeineModule;
 import io.dropwizard.jackson.FuzzyEnumModule;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -101,11 +99,13 @@ public class JacksonProvider implements Jackson {
     return optimize ? configured.registerModule(new AfterburnerModule()) : configured;
   }
 
+  @SuppressWarnings("PMD.UnnecessaryModifier")
   @Override
   public ObjectMapper getDefaultObjectMapper() {
     return jsonMapper;
   }
 
+  @SuppressWarnings("PMD.UnnecessaryModifier")
   @Override
   public ObjectMapper getNewObjectMapper(JsonFactory jsonFactory) {
     return configureMapper(new ObjectMapper(jsonFactory));
@@ -134,9 +134,6 @@ public class JacksonProvider implements Jackson {
   }
 
   public abstract static class IntervalMixin {
-    IntervalMixin(
-        @JsonProperty("start") Instant startInclusive, @JsonProperty("end") Instant endExclusive) {}
-
     @JsonIgnore
     abstract boolean isEmpty();
 
@@ -229,6 +226,7 @@ public class JacksonProvider implements Jackson {
     private final Map<String, DynamicTypeIdResolver> typeIdResolvers;
 
     DynamicHandlerInstantiator() {
+      super();
       this.typeIdResolvers = new HashMap<>();
     }
 

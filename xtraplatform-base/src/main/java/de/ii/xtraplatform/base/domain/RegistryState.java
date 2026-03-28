@@ -51,6 +51,7 @@ public final class RegistryState<T> implements Registry.State<T> {
   }
 
   @Override
+  @SuppressWarnings({"PMD.AvoidSynchronizedAtMethodLevel", "PMD.AvoidDeeplyNestedIfStmts"})
   public synchronized Optional<T> onArrival(T ref) {
     if (Objects.nonNull(ref)) {
       Optional<String> identifier = getComponentIdentifier(ref, componentProperties);
@@ -71,6 +72,7 @@ public final class RegistryState<T> implements Registry.State<T> {
   }
 
   @Override
+  @SuppressWarnings({"PMD.AvoidSynchronizedAtMethodLevel", "PMD.AvoidDeeplyNestedIfStmts"})
   public synchronized Optional<T> onDeparture(T ref) {
     if (Objects.nonNull(ref)) {
       Optional<String> identifier = getComponentIdentifier(ref, componentProperties);

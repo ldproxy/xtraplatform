@@ -55,7 +55,6 @@ public class AppLauncher implements AppContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(AppLauncher.class);
 
   private static final String ENV_VAR = "XTRAPLATFORM_ENV";
-  private static final String DATA_DIR_NAME = "data";
   private static final String TMP_DIR_NAME = "tmp";
 
   private final String name;
@@ -79,7 +78,6 @@ public class AppLauncher implements AppContext {
         (ThreadPoolExecutor)
             Executors.newCachedThreadPool(
                 new ThreadFactoryBuilder().setNameFormat("startup-%d").build()); // );
-    ;
   }
 
   @Override
@@ -134,8 +132,10 @@ public class AppLauncher implements AppContext {
     List<ILoggingEvent> buffer = configurationReader.loadMergedLogging(Optional.empty(), env);
     long initStart = Instant.now().toEpochMilli();
 
-    LOGGER.info("--------------------------------------------------");
-    LOGGER.info("Starting {} v{}", name, version);
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info("--------------------------------------------------");
+      LOGGER.info("Starting {} v{}", name, version);
+    }
 
     this.cfg = configurationReader.loadMergedConfig(Map.of(), env);
 
@@ -234,7 +234,9 @@ public class AppLauncher implements AppContext {
   }
 
   public void stop(App modules) {
-    LOGGER.info("Shutting down {}", name);
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info("Shutting down {}", name);
+    }
 
     modules.lifecycle().get().stream()
         .sorted(Comparator.comparingInt(AppLifeCycle::getPriority).reversed())
@@ -256,11 +258,13 @@ public class AppLauncher implements AppContext {
 
     startupExecutor.shutdownNow();
 
-    LOGGER.info("Stopped {}", name);
-    LOGGER.info("--------------------------------------------------");
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info("Stopped {}", name);
+      LOGGER.info("--------------------------------------------------");
+    }
   }
 
-  private Optional<Path> getDataDir(String[] args) {
+  private Optional<Path> getDataDir(String... args) {
     return Arrays.stream(args)
         .filter(s -> s.startsWith("--data-dir="))
         .map(s -> Path.of(s.substring(s.indexOf('=') + 1)))
@@ -268,7 +272,7 @@ public class AppLauncher implements AppContext {
         .findFirst();
   }
 
-  private OptionalLong getStartTime(String[] args) {
+  private OptionalLong getStartTime(String... args) {
     return Arrays.stream(args)
         .filter(s -> s.startsWith("--start-time="))
         .mapToLong(s -> Long.parseLong(s.substring(s.indexOf('=') + 1)))
@@ -339,7 +343,7 @@ public class AppLauncher implements AppContext {
             .filter(
                 d -> {
                   if (!d.isAvailable(storeSource)) {
-                    if (warn) {
+                    if (warn && LOGGER.isWarnEnabled()) {
                       LOGGER.warn(
                           "{} for {} is not available.",
                           Content.CFG.getLabel(),
@@ -352,7 +356,7 @@ public class AppLauncher implements AppContext {
                 })
             .findFirst();
 
-    if (driver.isEmpty() && !foundUnavailable[0]) {
+    if (driver.isEmpty() && !foundUnavailable[0] && LOGGER.isErrorEnabled()) {
       LOGGER.error("No cfg driver found for source {}.", storeSource.getLabel());
     }
 
