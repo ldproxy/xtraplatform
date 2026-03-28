@@ -10,6 +10,7 @@ package de.ii.xtraplatform.auth.infra.rest;
 import com.google.common.base.Charsets;
 import io.dropwizard.views.common.View;
 
+@SuppressWarnings("PMD.DataClass")
 public class OidcView extends View {
   public final String oidcUri;
   public final String callbackUri;

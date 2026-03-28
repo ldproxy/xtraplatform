@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
  * @author zahnen
  */
 @PreMatching
+@SuppressWarnings("PMD.SingularField")
 public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<String, P> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDynamicAuthFilter.class);
 
@@ -57,6 +58,8 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
   private final String ppUrl;
   private final HttpClient httpClient;
   private final OAuthCredentialAuthFilter<P> delegate;
+  // TODO: cfg.yml
+  private static final List<String> METHODS = ImmutableList.of("GET", "POST", "PUT", "DELETE");
 
   ExternalDynamicAuthFilter(
       String edaUrl,
@@ -88,15 +91,11 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     }
   }
 
-  // TODO: cfg.yml
-  static List<String> METHODS = ImmutableList.of("GET", "POST", "PUT", "DELETE");
-
   // TODO: either interface that is implemented in ogcapi to which we pass service id
   // or add xacml request as callback to user
   @Override
+  @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   public void filter(ContainerRequestContext requestContext) throws IOException {
-    SecurityContext oldSecurityContext = requestContext.getSecurityContext();
-
     delegate.filter(requestContext);
 
     if (METHODS.contains(requestContext.getMethod())) {
@@ -123,18 +122,22 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
 
         requestContext.setSecurityContext(
             new SecurityContext() {
+              @Override
               public Principal getUserPrincipal() {
                 return user;
               }
 
+              @Override
               public boolean isUserInRole(String role) {
                 return requestContext.getSecurityContext().isUserInRole(role);
               }
 
+              @Override
               public boolean isSecure() {
                 return requestContext.getSecurityContext().isSecure();
               }
 
+              @Override
               public String getAuthenticationScheme() {
                 return requestContext.getSecurityContext().getAuthenticationScheme();
               }
@@ -156,18 +159,15 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
   }
 
   private void postProcess(ContainerRequestContext requestContext, byte[] body) {
-    if (requestContext.getMethod().equals("POST") || requestContext.getMethod().equals("PUT")) {
-      try {
-
-        InputStream processedBody =
-            httpClient.postAsInputStream(
-                ppUrl, body, GEOJSON.withCharset("utf-8"), Map.of("Accept", GEOJSON.toString()));
+    if ("POST".equals(requestContext.getMethod()) || "PUT".equals(requestContext.getMethod())) {
+      try (InputStream processedBody =
+          httpClient.postAsInputStream(
+              ppUrl, body, GEOJSON.withCharset("utf-8"), Map.of("Accept", GEOJSON.toString()))) {
 
         putEntityBody(requestContext, processedBody);
 
       } catch (Throwable e) {
         // ignore
-        boolean stop = true;
       }
     }
   }
@@ -177,18 +177,18 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     LOGGER.debug("EDA {} {} {} {}", user, method, path, new String(body, Charset.forName("utf-8")));
 
     try {
-      byte[] xacmlRequest = getXacmlRequest(user, method, path, body);
+      byte[] xacmlRequest = getXacmlRequest();
 
-      InputStream response =
+      try (InputStream response =
           httpClient.postAsInputStream(
-              edaUrl, xacmlRequest, mediaType, Map.of("Accept", mediaTypeAccept.toString()));
+              edaUrl, xacmlRequest, mediaType, Map.of("Accept", mediaTypeAccept.toString()))) {
 
-      XacmlResponse xacmlResponse = getXacmlResponse(response);
+        XacmlResponse xacmlResponse = getXacmlResponse(response);
 
-      return xacmlResponse.isAllowed()
-          ? PolicyDecision.PERMIT
-          : xacmlResponse.isNotApplicable() ? PolicyDecision.NOT_APPLICABLE : PolicyDecision.DENY;
-
+        return xacmlResponse.isAllowed()
+            ? PolicyDecision.PERMIT
+            : xacmlResponse.isNotApplicable() ? PolicyDecision.NOT_APPLICABLE : PolicyDecision.DENY;
+      }
     } catch (Throwable e) {
       // ignore
       LogContext.errorAsDebug(LOGGER, e, "Error requesting a policy decision");
@@ -198,8 +198,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
   }
 
   // TODO
-  private byte[] getXacmlRequest(String user, String method, String path, byte[] body)
-      throws JsonProcessingException {
+  private byte[] getXacmlRequest() throws JsonProcessingException {
     Object xacmlRequest = null;
     /*xacmlJson10
     ? new XacmlRequest(
@@ -221,8 +220,10 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
         Optional.ofNullable(body),
         Map.of());*/
 
-    LOGGER.debug(
-        "XACML {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlRequest));
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "XACML {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlRequest));
+    }
 
     return JSON.writeValueAsBytes(xacmlRequest);
   }
@@ -230,32 +231,21 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
   private XacmlResponse getXacmlResponse(InputStream response) throws IOException {
     XacmlResponse xacmlResponse = JSON.readValue(response, XacmlResponse.class);
 
-    LOGGER.debug(
-        "XACML R {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlResponse));
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "XACML R {}", JSON.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlResponse));
+    }
 
     return xacmlResponse;
   }
 
   private byte[] getEntityBody(ContainerRequestContext requestContext) {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
-    InputStream in = requestContext.getEntityStream();
-
-    // final StringBuilder b = new StringBuilder();
-    try {
+    try (InputStream in = requestContext.getEntityStream()) {
       ReaderWriter.writeTo(in, out);
-
       byte[] requestEntity = out.toByteArray();
-      /*if (requestEntity.length == 0) {
-          b.append("")
-           .append("\n");
-      } else {
-          b.append(new String(requestEntity))
-           .append("\n");
-      }*/
       requestContext.setEntityStream(new ByteArrayInputStream(requestEntity));
-
       return requestEntity;
-
     } catch (IOException ex) {
       // Handle logging error
     }

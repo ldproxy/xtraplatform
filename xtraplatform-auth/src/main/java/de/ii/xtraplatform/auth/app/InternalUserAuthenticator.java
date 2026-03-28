@@ -12,7 +12,6 @@ import de.ii.xtraplatform.auth.domain.ImmutableUser;
 import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthenticator;
-import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.entities.domain.EntityData;
 import de.ii.xtraplatform.entities.domain.EntityDataStore;
 import java.time.Instant;
@@ -41,11 +40,8 @@ public class InternalUserAuthenticator implements UserAuthenticator {
   private final EntityDataStore<de.ii.xtraplatform.auth.app.User.UserData> userRepository;
 
   @Inject
-  public InternalUserAuthenticator(AppContext appContext, EntityDataStore<?> entityRepository) {
+  public InternalUserAuthenticator(EntityDataStore<?> entityRepository) {
     this.isAccessRestricted = true;
-    /*Optional.ofNullable(appContext.getConfiguration().getAuth())
-    .map(authConfig -> !authConfig.allowAnonymousAccess)
-    .orElse(true);*/
     this.userRepository =
         ((EntityDataStore<EntityData>) entityRepository)
             .forType(de.ii.xtraplatform.auth.app.User.UserData.class);
@@ -53,29 +49,8 @@ public class InternalUserAuthenticator implements UserAuthenticator {
 
   @Override
   public Optional<User> authenticate(String username, String password) {
-
     if (userRepository.has(username)) {
-
-      de.ii.xtraplatform.auth.app.User.UserData userData = userRepository.get(username);
-
-      if (PasswordHash.validatePassword(password, userData.getPassword())) {
-        if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace(
-              "Authenticated {} {} {}",
-              userData.getId(),
-              userData.getRole(),
-              PasswordHash.createHash(password));
-        }
-
-        long now = Instant.now().toEpochMilli();
-
-        return Optional.of(
-            ImmutableUser.builder()
-                .name(userData.getId())
-                .role(userData.getRole())
-                .forceChangePassword(userData.getPasswordExpiresAt().orElse(now) < now)
-                .build());
-      }
+      return authenticateExistingUser(username, password);
     }
 
     // TODO: for ldproxy make admin password settable via env variable, get from bundlecontext
@@ -83,40 +58,56 @@ public class InternalUserAuthenticator implements UserAuthenticator {
     // )
 
     // no user exists yet
+
     if (userRepository.ids().isEmpty()) {
-
-      if (!isAccessRestricted) {
-        return Optional.of(
-            ImmutableUser.builder().name(SUPER_ADMIN.getId()).role(SUPER_ADMIN.getRole()).build());
-      }
-
-      if (Objects.equals(username, SUPER_ADMIN.getId())
-          && PasswordHash.validatePassword(password, SUPER_ADMIN.getPassword())) {
-        if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace(
-              "Authenticated {} {} {}",
-              SUPER_ADMIN.getId(),
-              SUPER_ADMIN.getRole(),
-              PasswordHash.createHash(password));
-        }
-
-        try {
-          de.ii.xtraplatform.auth.app.User.UserData firstUser =
-              userRepository.put(SUPER_ADMIN.getId(), SUPER_ADMIN).get();
-
-          return Optional.of(
-              ImmutableUser.builder()
-                  .name(firstUser.getId())
-                  .role(firstUser.getRole())
-                  .forceChangePassword(true)
-                  .build());
-
-        } catch (InterruptedException | ExecutionException e) {
-          // ignore
-        }
-      }
+      return authenticateFirstUser(username, password);
     }
 
     return Optional.empty();
+  }
+
+  private Optional<User> authenticateExistingUser(String username, String password) {
+    de.ii.xtraplatform.auth.app.User.UserData userData = userRepository.get(username);
+    if (!PasswordHash.validatePassword(password, userData.getPassword())) {
+      return Optional.empty();
+    }
+    logAuthenticated(SUPER_ADMIN.getId(), SUPER_ADMIN.getRole().toString(), password);
+    long now = Instant.now().toEpochMilli();
+    return Optional.of(
+        ImmutableUser.builder()
+            .name(userData.getId())
+            .role(userData.getRole())
+            .forceChangePassword(userData.getPasswordExpiresAt().orElse(now) < now)
+            .build());
+  }
+
+  private Optional<User> authenticateFirstUser(String username, String password) {
+    if (!isAccessRestricted) {
+      return Optional.of(
+          ImmutableUser.builder().name(SUPER_ADMIN.getId()).role(SUPER_ADMIN.getRole()).build());
+    }
+    if (Objects.equals(username, SUPER_ADMIN.getId())
+        && PasswordHash.validatePassword(password, SUPER_ADMIN.getPassword())) {
+      logAuthenticated(SUPER_ADMIN.getId(), SUPER_ADMIN.getRole().toString(), password);
+      try {
+        de.ii.xtraplatform.auth.app.User.UserData firstUser =
+            userRepository.put(SUPER_ADMIN.getId(), SUPER_ADMIN).get();
+        return Optional.of(
+            ImmutableUser.builder()
+                .name(firstUser.getId())
+                .role(firstUser.getRole())
+                .forceChangePassword(true)
+                .build());
+      } catch (InterruptedException | ExecutionException e) {
+        // ignore
+      }
+    }
+    return Optional.empty();
+  }
+
+  private void logAuthenticated(String id, String role, String password) {
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Authenticated {} {} {}", id, role, PasswordHash.createHash(password));
+    }
   }
 }

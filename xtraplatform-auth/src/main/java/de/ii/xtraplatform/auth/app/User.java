@@ -51,9 +51,10 @@ public class User extends AbstractPersistentEntity<User.UserData> {
 
       public abstract Builder role(Role role);
 
+      @Override
       public ImmutableUserData.Builder fillRequiredFieldsWithPlaceholders() {
-        return ((ImmutableUserData.Builder)
-            this.id("__DEFAULT__").password("__DEFAULT__").role(Role.NONE));
+        return (ImmutableUserData.Builder)
+            this.id("__DEFAULT__").password("__DEFAULT__").role(Role.NONE);
       }
     }
 
