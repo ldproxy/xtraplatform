@@ -55,6 +55,13 @@ import org.slf4j.LoggerFactory;
 public class OidcImpl extends AbstractVolatile implements Oidc, AppLifeCycle, SigningKeyResolver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OidcImpl.class);
+  private final AuthConfiguration authConfig;
+  private final HttpClient httpClient;
+  private final ObjectMapper objectMapper;
+  private Optional<OidcConfiguration> oidcConfiguration;
+  private Map<String, Key> signingKeys;
+  private boolean enabled;
+  private static final String KEY_KID = "kid";
 
   @Value.Immutable
   @Value.Style(builder = "new")
@@ -86,13 +93,6 @@ public class OidcImpl extends AbstractVolatile implements Oidc, AppLifeCycle, Si
     List<Map<String, Object>> getKeys();
   }
 
-  private final AuthConfiguration authConfig;
-  private final HttpClient httpClient;
-  private final ObjectMapper objectMapper;
-  private Optional<OidcConfiguration> oidcConfiguration;
-  private Map<String, Key> signingKeys;
-  private boolean enabled;
-
   @Inject
   public OidcImpl(AppContext appContext, Http http, VolatileRegistry volatileRegistry) {
     super(volatileRegistry, "app/oidc");
@@ -117,8 +117,7 @@ public class OidcImpl extends AbstractVolatile implements Oidc, AppLifeCycle, Si
 
     if (authConfig.getOidc().isPresent()) {
       String endpoint = authConfig.getOidc().get().getEndpoint();
-      try {
-        InputStream inputStream = httpClient.getAsInputStream(endpoint);
+      try (InputStream inputStream = httpClient.getAsInputStream(endpoint)) {
         OidcConfiguration oidcConfiguration1 =
             objectMapper.readValue(inputStream, OidcConfiguration.class);
 
@@ -148,46 +147,54 @@ public class OidcImpl extends AbstractVolatile implements Oidc, AppLifeCycle, Si
     return CompletableFuture.completedFuture(null);
   }
 
+  private boolean isValidKeyDef(Map<String, Object> keyDef) {
+    return keyDef.containsKey(KEY_KID)
+        && keyDef.containsKey("kty")
+        && keyDef.containsKey("use")
+        && keyDef.containsKey("n")
+        && keyDef.containsKey("e");
+  }
+
+  private Map.Entry<String, Key> toSigningKey(Map<String, Object> keyDef)
+      throws InvalidKeySpecException, NoSuchAlgorithmException {
+    if (!isValidKeyDef(keyDef)) {
+      return null;
+    }
+    if (!Objects.equals(keyDef.get("kty"), "RSA")) {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(
+            "Skipping OIDC key '{}' with type '{}', only 'RSA' is supported.",
+            keyDef.get(KEY_KID),
+            keyDef.get("kty"));
+      }
+      return null;
+    }
+    if (!Objects.equals(keyDef.get("use"), "sig")) {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(
+            "Skipping OIDC key '{}' with use '{}', only 'sig' is supported.",
+            keyDef.get(KEY_KID),
+            keyDef.get("use"));
+      }
+      return null;
+    }
+    return Map.entry(
+        (String) keyDef.get(KEY_KID),
+        parseRsaKey((String) keyDef.get("n"), (String) keyDef.get("e")));
+  }
+
   private boolean loadSigningKeys() {
     if (oidcConfiguration.isPresent()) {
       String certsEndpoint = oidcConfiguration.get().getJwksEndpoint().toString();
-      try {
-        InputStream inputStream = httpClient.getAsInputStream(certsEndpoint);
+      try (InputStream inputStream = httpClient.getAsInputStream(certsEndpoint)) {
         OidcCerts oidcCerts = objectMapper.readValue(inputStream, OidcCerts.class);
 
         this.signingKeys =
             oidcCerts.getKeys().stream()
-                .map(
-                    mayThrow(
-                        keyDef -> {
-                          if (!keyDef.containsKey("kid")
-                              || !keyDef.containsKey("kty")
-                              || !keyDef.containsKey("use")
-                              || !keyDef.containsKey("n")
-                              || !keyDef.containsKey("e")) {
-                            return null;
-                          }
-                          if (!Objects.equals(keyDef.get("kty"), "RSA")) {
-                            LOGGER.debug(
-                                "Skipping OIDC key '{}' with type '{}', only 'RSA' is supported.",
-                                keyDef.get("kid"),
-                                keyDef.get("kty"));
-                            return null;
-                          }
-                          if (!Objects.equals(keyDef.get("use"), "sig")) {
-                            LOGGER.debug(
-                                "Skipping OIDC key '{}' with use '{}', only 'sig' is supported.",
-                                keyDef.get("kid"),
-                                keyDef.get("use"));
-                            return null;
-                          }
-
-                          return Map.entry(
-                              (String) keyDef.get("kid"),
-                              parseRsaKey((String) keyDef.get("n"), (String) keyDef.get("e")));
-                        }))
+                .map(mayThrow(this::toSigningKey))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
       } catch (Throwable e) {
         LogContext.error(
             LOGGER, e, "Could not parse OpenID Connect certificates at {}", certsEndpoint);
