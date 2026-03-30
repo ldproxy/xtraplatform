@@ -10,55 +10,41 @@ package de.ii.xtraplatform.values.api;
 import static de.ii.xtraplatform.base.domain.util.JacksonModules.DESERIALIZE_IMMUTABLE_BUILDER_NESTED;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-import com.fasterxml.jackson.dataformat.yaml.JacksonYAMLParseException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.hash.Hashing;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
 import io.dropwizard.util.DataSize;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.LoaderOptions;
 
 public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ValueEncodingJackson.class);
-
-  public static final byte[] JSON_NULL = "null".getBytes();
   public static final byte[] YAML_NULL = "--- null\n".getBytes();
-  private static final Pattern JSON_EMPTY = Pattern.compile("(\\s)*");
-  private static final Pattern YAML_EMPTY = Pattern.compile("---(\\s)*");
-
   private static final FORMAT DEFAULT_FORMAT = FORMAT.YML;
 
   private final Map<FORMAT, ObjectMapper> mappers;
   private final List<ValueDecoderMiddleware<byte[]>> decoderPreProcessor;
   private final List<ValueDecoderMiddleware<T>> decoderMiddleware;
-  private final DataSize maxYamlFileSize;
+  private final JacksonHelper<T> jacksonHelper;
 
   public ValueEncodingJackson(
       Jackson jackson, DataSize maxYamlFileSize, boolean failOnUnknownProperties) {
-    this.maxYamlFileSize = Objects.requireNonNullElse(maxYamlFileSize, DataSize.megabytes(3));
+    DataSize resolvedMaxYamlFileSize =
+        Objects.requireNonNullElse(maxYamlFileSize, DataSize.megabytes(3));
 
     LoaderOptions loaderOptions = new LoaderOptions();
-    loaderOptions.setCodePointLimit(Math.toIntExact(this.maxYamlFileSize.toBytes()));
+    loaderOptions.setCodePointLimit(Math.toIntExact(resolvedMaxYamlFileSize.toBytes()));
 
     ObjectMapper jsonMapper =
         jackson
@@ -107,6 +93,9 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
     this.decoderMiddleware = new ArrayList<>();
     this.decoderPreProcessor = new ArrayList<>();
+    this.jacksonHelper =
+        new JacksonHelper<>(
+            decoderPreProcessor, decoderMiddleware, resolvedMaxYamlFileSize, this::getMapper);
   }
 
   public void addDecoderPreProcessor(ValueDecoderMiddleware<byte[]> preProcessor) {
@@ -124,87 +113,19 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
   @Override
   public final byte[] serialize(T data) {
-    try {
-      return getDefaultMapper().writeValueAsBytes(data);
-    } catch (JsonProcessingException e) {
-      // should never happen
-      throw new IllegalStateException("Unexpected serialization error", e);
-    }
+    return serialize(data, DEFAULT_FORMAT);
   }
 
   @Override
   public final byte[] serialize(T data, FORMAT format) {
-    try {
-      return getMapper(format).writeValueAsBytes(data);
-    } catch (JsonProcessingException e) {
-      // should never happen
-      throw new IllegalStateException("Unexpected serialization error", e);
-    }
-  }
-
-  @Override
-  public byte[] serialize(Map<String, Object> data) {
-    try {
-      return getDefaultMapper().writeValueAsBytes(data);
-    } catch (JsonProcessingException e) {
-      // should never happen
-      throw new IllegalStateException("Unexpected serialization error", e);
-    }
+    return jacksonHelper.serialize(data, format);
   }
 
   @Override
   public final T deserialize(
       Identifier identifier, byte[] payload, FORMAT format, boolean ignoreCache)
       throws IOException {
-    // "null" as payload means delete
-    if (isNull(payload)) {
-      return null;
-    }
-    if (Objects.equals(format, FORMAT.NONE)) {
-      throw new IllegalStateException("No format given");
-    }
-
-    byte[] rawData = payload;
-    ObjectMapper objectMapper = getMapper(format);
-    T data = null;
-
-    for (ValueDecoderMiddleware<byte[]> preProcessor : decoderPreProcessor) {
-      rawData = preProcessor.process(identifier, rawData, objectMapper, null, ignoreCache);
-    }
-
-    try {
-      for (ValueDecoderMiddleware<T> middleware : decoderMiddleware) {
-        data = middleware.process(identifier, rawData, objectMapper, data, ignoreCache);
-      }
-
-    } catch (Throwable e) {
-      if (e instanceof JacksonYAMLParseException
-          && Objects.nonNull(e.getMessage())
-          && e.getMessage().contains("incoming YAML document exceeds the limit")) {
-        throw new IOException(
-            String.format(
-                "Maximum YAML file size of %s exceeded, increase 'store.maxYamlFileSize' to fix.",
-                maxYamlFileSize));
-      }
-
-      Optional<ValueDecoderMiddleware<T>> recovery =
-          decoderMiddleware.stream().filter(ValueDecoderMiddleware::canRecover).findFirst();
-      if (recovery.isPresent()) {
-        try {
-          data = recovery.get().recover(identifier, rawData, objectMapper);
-        } catch (Throwable e2) {
-          throw e;
-        }
-      } else {
-        throw e;
-      }
-    }
-
-    return data;
-  }
-
-  final ObjectMapper getDefaultMapper() {
-    return getMapper(DEFAULT_FORMAT);
+    return jacksonHelper.deserialize(identifier, payload, format, ignoreCache);
   }
 
   @Override
@@ -212,21 +133,17 @@ public class ValueEncodingJackson<T> implements ValueEncoding<T> {
     return mappers.get(format);
   }
 
-  final boolean isNull(byte[] payload) {
-    return Arrays.equals(payload, JSON_NULL) || Arrays.equals(payload, YAML_NULL);
-  }
-
   public final boolean isEmpty(byte[] payload) {
-    String payloadString = new String(payload, StandardCharsets.UTF_8);
-    return JSON_EMPTY.matcher(payloadString).matches()
-        || YAML_EMPTY.matcher(payloadString).matches();
+    return jacksonHelper.isEmpty(payload);
   }
 
   @Override
-  @SuppressWarnings("UnstableApiUsage")
-  public final String hash(T data) {
-    byte[] bytes = serialize(data, FORMAT.SMILE);
+  public byte[] serialize(Map<String, Object> data) {
+    return jacksonHelper.serialize(data, DEFAULT_FORMAT);
+  }
 
-    return Hashing.murmur3_128().hashBytes(bytes).toString();
+  @Override
+  public final String hash(T data) {
+    return jacksonHelper.hash(data);
   }
 }

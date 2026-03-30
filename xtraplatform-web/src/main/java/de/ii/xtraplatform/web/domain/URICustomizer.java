@@ -157,48 +157,52 @@ public class URICustomizer extends URIBuilder {
     }
 
     final List<String> pathSegments = getPathSegments();
-    int pathSegmentsIndex = -1;
+    int lastMatchIndex = findLastMatchingSegmentIndex(pathSegments, segments);
 
-    for (int i = 0; i <= pathSegments.size() - segments.length; i++) {
-      boolean found = true;
-      for (int j = 0; j < segments.length; j++) {
-        if (!pathSegments.get(i + j).equals(segments[j])) {
-          found = false;
-          break;
-        }
-      }
-      if (found) {
-        pathSegmentsIndex = i;
-      }
-    }
-
-    if (pathSegmentsIndex == -1) {
+    if (lastMatchIndex == -1) {
       return this;
     }
 
-    boolean match = true;
-    int cutIndex = 0;
-    for (int k = pathSegmentsIndex; k < pathSegments.size(); k++) {
-      for (int l = 0; k + l < pathSegments.size() && l < segments.length; l++) {
-        if (!pathSegments.get(k + l).equals(segments[l])) {
-          match = false;
-          break;
-        }
-        cutIndex = k + l + 1;
-      }
-      if (match) {
-        break;
-      } else {
-        match = true;
+    int cutIndex = determineCutIndex(pathSegments, segments, lastMatchIndex);
+    this.setPathSegments(
+        new ImmutableList.Builder<String>().addAll(pathSegments.subList(0, cutIndex)).build());
+
+    return this;
+  }
+
+  private int findLastMatchingSegmentIndex(List<String> pathSegments, String... segments) {
+    int lastMatchIndex = -1;
+
+    for (int i = 0; i <= pathSegments.size() - segments.length; i++) {
+      if (segmentsMatchAt(pathSegments, segments, i)) {
+        lastMatchIndex = i;
       }
     }
 
-    int segmentsIndex = match ? cutIndex : pathSegments.size();
+    return lastMatchIndex;
+  }
 
-    this.setPathSegments(
-        new ImmutableList.Builder<String>().addAll(pathSegments.subList(0, segmentsIndex)).build());
+  private boolean segmentsMatchAt(List<String> pathSegments, String[] segments, int startIndex) {
+    for (int j = 0; j < segments.length; j++) {
+      if (!pathSegments.get(startIndex + j).equals(segments[j])) {
+        return false;
+      }
+    }
+    return true;
+  }
 
-    return this;
+  private int determineCutIndex(List<String> pathSegments, String[] segments, int startIndex) {
+    for (int k = startIndex; k < pathSegments.size(); k++) {
+      for (int l = 0; k + l < pathSegments.size() && l < segments.length; l++) {
+        if (!pathSegments.get(k + l).equals(segments[l])) {
+          return pathSegments.size(); // No match found, return full size
+        }
+        if (l == segments.length - 1) {
+          return k + l + 1; // Found complete match, cut after this
+        }
+      }
+    }
+    return pathSegments.size();
   }
 
   public URICustomizer removePathSegment(final String segment, final int index) {

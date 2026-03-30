@@ -38,7 +38,7 @@ public interface StaticResourceConstants {
   long CACHE_TIMEOUT_DISABLED = -1L;
 
   /** Default cache timeout to use. */
-  long ONE_WEEK_IN_SECONDS = 604800L;
+  long ONE_WEEK_IN_SECONDS = 604_800L;
 
   /** Key used for the contextId */
   String CONTEXTID = "ContextId";

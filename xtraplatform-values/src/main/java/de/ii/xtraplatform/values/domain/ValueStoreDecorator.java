@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("PMD.TooManyMethods")
 public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U>, Volatile2 {
 
   KeyValueStore<T> getDecorated();

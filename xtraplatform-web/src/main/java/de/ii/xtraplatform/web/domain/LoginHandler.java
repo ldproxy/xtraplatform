@@ -24,6 +24,7 @@ public interface LoginHandler {
   String PARAM_LOGOUT_REDIRECT_URI = "post_logout_redirect_uri";
   String PARAM_LOGOUT_CLIENT_ID = "client_id";
 
+  @SuppressWarnings("PMD.UseObjectForClearerAPI")
   Response handle(
       ContainerRequestContext containerRequestContext,
       String redirectUri,

@@ -28,7 +28,7 @@ public class ValueDecoderBase<T> implements ValueDecoderMiddleware<T> {
   public T process(
       Identifier identifier, byte[] payload, ObjectMapper objectMapper, T data, boolean ignoreCache)
       throws IOException {
-    T data2 = null;
+    T data2;
 
     if (valueCache.has(identifier) && !ignoreCache) {
       data2 = valueCache.get(identifier);
