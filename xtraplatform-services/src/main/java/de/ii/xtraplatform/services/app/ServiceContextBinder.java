@@ -33,7 +33,6 @@ public class ServiceContextBinder extends AbstractBinder
     super();
   }
 
-  // TODO: bind every subtype
   @Override
   protected void configure() {
     bindFactory(ServiceFactory.class)

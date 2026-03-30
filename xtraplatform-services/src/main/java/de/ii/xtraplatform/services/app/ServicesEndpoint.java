@@ -97,7 +97,6 @@ public class ServicesEndpoint implements Endpoint {
     this.serviceListingProviders = serviceListingProviders;
   }
 
-  // TODO
   @GET
   @Produces(MediaType.WILDCARD)
   @SuppressWarnings("PMD.UnusedFormalParameter") // callback parameter part of API contract
@@ -289,8 +288,6 @@ public class ServicesEndpoint implements Endpoint {
     return getServiceResource(service);
   }
 
-  // TODO: after switch to jersey 2.x, use Resource.from and move instantiation to factory
-  // TODO: cache resource object per service
   private ServiceEndpoint getServiceResource(Service s) {
     return serviceResources.get().stream()
         .filter(
