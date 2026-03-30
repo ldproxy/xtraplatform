@@ -51,7 +51,6 @@ public class JaxRsPlugin implements DropwizardPlugin {
   private boolean isAuthProviderAvailable;
   private final Lazy<Set<JaxRsConsumer>> consumers;
 
-  // TODO: DynamicFeature ???
   @Inject
   JaxRsPlugin(
       Lazy<Set<Endpoint>> endpoints,
@@ -71,7 +70,6 @@ public class JaxRsPlugin implements DropwizardPlugin {
     this.exceptionMappers = exceptionMappers;
     this.binders = binders;
     this.consumers = consumers;
-    // TODO
     this.isAuthProviderAvailable = false;
   }
 
