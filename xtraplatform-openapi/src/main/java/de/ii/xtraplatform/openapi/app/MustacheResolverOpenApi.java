@@ -21,7 +21,9 @@ public class MustacheResolverOpenApi extends PerClassMustacheResolver
     implements PartialMustacheResolver {
 
   @Inject
-  MustacheResolverOpenApi() {}
+  MustacheResolverOpenApi() {
+    super();
+  }
 
   @Override
   public int getSortPriority() {

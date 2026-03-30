@@ -14,17 +14,13 @@ import de.ii.xtraplatform.values.domain.ValueBuilder;
 import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
 import java.io.IOException;
 import java.util.function.Function;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ValueDecoderPreHash<T extends StoredValue> implements ValueDecoderMiddleware<T> {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(ValueDecoderPreHash.class);
 
   private final Function<Identifier, ValueBuilder<T>> newBuilderSupplier;
   private final Function<T, String> hasher;
 
-  // TODO: shouldPreHash from Factory
+  // NOPMD - TODO: shouldPreHash from Factory
   public ValueDecoderPreHash(
       Function<Identifier, ValueBuilder<T>> newBuilderSupplier, Function<T, String> hasher) {
     this.newBuilderSupplier = newBuilderSupplier;
@@ -42,8 +38,6 @@ public class ValueDecoderPreHash<T extends StoredValue> implements ValueDecoderM
     builder.from(data);
 
     builder.stableHash(hash);
-
-    // LOGGER.debug("PROC {} {}", identifier, hash);
 
     return builder.build();
   }
