@@ -88,7 +88,7 @@ class InternalUserAuthenticatorSpec extends Specification {
             getConfiguration() >> config
         }
         EntityDataStore<?> entityDataStore = new EntityDataStoreTest()
-        return new InternalUserAuthenticator(ac, entityDataStore)
+        return new InternalUserAuthenticator(entityDataStore)
     }
 
     class EntityDataStoreTest implements EntityDataStore<EntityData> {

@@ -19,7 +19,7 @@ public enum Role {
 
   public static Role fromString(String role) {
     for (Role v : Role.values()) {
-      if (v.toString().toLowerCase().equals(role.toLowerCase())) {
+      if (v.toString().equalsIgnoreCase(role)) {
         return v;
       }
     }

@@ -54,7 +54,9 @@ public class ValueReloadTask extends Task implements DropwizardPlugin {
   // codelists/foo,maplibre-styles/bar
   @Override
   public void execute(Map<String, List<String>> parameters, PrintWriter output) throws Exception {
-    if (LOGGER.isTraceEnabled()) LOGGER.trace("Reload request: {}", parameters);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Reload request: {}", parameters);
+    }
 
     List<Path> includes = getPaths(parameters).stream().map(Path::of).collect(Collectors.toList());
 

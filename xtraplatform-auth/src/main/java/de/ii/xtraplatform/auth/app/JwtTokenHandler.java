@@ -60,6 +60,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
 public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenHandler.class);
@@ -97,7 +98,6 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
       volatileRegistry.onAvailable(oidc).toCompletableFuture().join();
     }
 
-    // TODO
     long clockSkew = 3600;
 
     this.signingKey = getKey();
@@ -162,7 +162,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   }
 
   private static String baseKey(String claim) {
-    return isComplex(claim) ? claim.substring(0, claim.indexOf(".")) : claim;
+    return isComplex(claim) ? claim.substring(0, claim.indexOf('.')) : claim;
   }
 
   private static Map<String, Class<?>> listType(String claim) {
@@ -173,6 +173,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     return claims.get(claim, String.class);
   }
 
+  @SuppressWarnings("PMD.CognitiveComplexity")
   private List<String> readList(Claims claims, String claim) {
     boolean isComplex = isComplex(claim);
     String baseKey = baseKey(claim);
@@ -230,6 +231,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     return lists;
   }
 
+  @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
   private List<String> getClaimNames(Map<?, ?> claims) {
     List<String> keys = new ArrayList<>();
 
@@ -354,7 +356,6 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private SecretKey generateKey() {
     SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    // TODO: either throw in put when no writable source or return true if written
     try {
       keyStore.put(SIGNING_KEY_PATH, new ByteArrayInputStream(key.getEncoded()));
     } catch (IOException e) {

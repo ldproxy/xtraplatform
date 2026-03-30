@@ -12,10 +12,10 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface TokenResponse {
 
-  String getAccess_token();
+  String getAccessToken();
 
   @Value.Default
-  default int getExpires_in() {
+  default int getExpiresIn() {
     return 60;
   }
 }

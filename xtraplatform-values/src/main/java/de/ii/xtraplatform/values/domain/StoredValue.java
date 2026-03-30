@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 
 public interface StoredValue {
 
-  // TODO: removing/emptying breaks builders, no from(Value) is generated
+  // NOPMD - TODO: removing/emptying breaks builders, no from(Value) is generated
   @JsonIgnore
   @org.immutables.value.Value.Default
   default long storageVersion() {

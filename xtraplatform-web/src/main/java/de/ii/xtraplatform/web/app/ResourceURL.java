@@ -21,7 +21,7 @@ import java.util.zip.ZipEntry;
 import javax.ws.rs.NotFoundException;
 
 /** Helper methods for dealing with {@link URL} objects for local resources. */
-public class ResourceURL {
+public final class ResourceURL {
   private ResourceURL() {
     /* singleton */
   }
@@ -59,11 +59,12 @@ public class ResourceURL {
           filename =
               filename.substring(
                   filename.indexOf('!') + 2); // leaves just the relative file path inside the jar
+          @SuppressWarnings("PMD.CloseResource")
           final JarFile jarFile = jarConnection.getJarFile();
           final ZipEntry zipEntry = jarFile.getEntry(filename);
-          final InputStream inputStream = jarFile.getInputStream(zipEntry);
-
-          return (inputStream == null);
+          try (InputStream inputStream = jarFile.getInputStream(zipEntry)) {
+            return inputStream == null;
+          }
         } catch (IOException e) {
           throw new NotFoundException(e);
         }
@@ -91,8 +92,8 @@ public class ResourceURL {
               originalURL.getHost(),
               originalURL.getPort(),
               originalURL.getFile() + '/');
-    } catch (MalformedURLException ignored) { // shouldn't happen
-      throw new IllegalArgumentException("Invalid resource URL: " + originalURL);
+    } catch (MalformedURLException e) { // shouldn't happen
+      throw new IllegalArgumentException("Invalid resource URL: " + originalURL, e);
     }
   }
 
@@ -107,6 +108,7 @@ public class ResourceURL {
    * @return the last modified time of the resource, expressed as the number of milliseconds since
    *     the epoch, or 0 if there was a problem
    */
+  @SuppressWarnings("PMD.CyclomaticComplexity")
   public static long getLastModified(URL resourceURL) {
     final String protocol = resourceURL.getProtocol();
     switch (protocol) {

@@ -50,7 +50,9 @@ public class LogConfigurationTask extends Task implements DropwizardPlugin {
 
   @Override
   public void execute(Map<String, List<String>> parameters, PrintWriter output) throws Exception {
-    if (LOGGER.isTraceEnabled()) LOGGER.trace("Log filter request: {}", parameters);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Log filter request: {}", parameters);
+    }
 
     Optional<LoggingFilter> optionalThirdPartyLoggingFilter =
         loggerContext.getTurboFilterList().stream()
@@ -66,6 +68,7 @@ public class LogConfigurationTask extends Task implements DropwizardPlugin {
         });
   }
 
+  @SuppressWarnings("PMD.CyclomaticComplexity")
   private void setFilter(LoggingFilter loggingFilter, String filter, boolean enable) {
     switch (filter) {
       case "apiRequests":
@@ -105,6 +108,8 @@ public class LogConfigurationTask extends Task implements DropwizardPlugin {
         loggingFilter.setS3(enable);
         loggingFilter.setConfigDumps(enable);
         loggingFilter.setStackTraces(enable);
+        break;
+      default:
         break;
     }
   }

@@ -21,4 +21,8 @@ public interface WebContext {
         ? List.of()
         : Splitter.on('/').trimResults().omitEmptyStrings().splitToList(getUri().getPath());
   }
+
+  default boolean isHttps() {
+    return "https".equalsIgnoreCase(getUri().getScheme());
+  }
 }

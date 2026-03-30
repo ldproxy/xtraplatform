@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind(interfaces = JobQueueBackend.class)
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.AvoidSynchronizedAtMethodLevel"})
 public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>>
     implements JobQueueBackend {
 

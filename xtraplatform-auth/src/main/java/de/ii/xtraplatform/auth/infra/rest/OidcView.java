@@ -10,6 +10,7 @@ package de.ii.xtraplatform.auth.infra.rest;
 import com.google.common.base.Charsets;
 import io.dropwizard.views.common.View;
 
+@SuppressWarnings("PMD.DataClass")
 public class OidcView extends View {
   public final String oidcUri;
   public final String callbackUri;
@@ -21,6 +22,9 @@ public class OidcView extends View {
   public final String token;
   public final boolean callback;
   public final String assetsPrefix;
+
+  @Deprecated(since = "4.6", forRemoval = true)
+  public final String urlPrefix;
 
   public OidcView(
       String oidcUri,
@@ -44,5 +48,6 @@ public class OidcView extends View {
     this.token = token;
     this.callback = callback;
     this.assetsPrefix = assetsPrefix;
+    this.urlPrefix = assetsPrefix;
   }
 }

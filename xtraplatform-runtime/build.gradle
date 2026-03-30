@@ -12,7 +12,7 @@ dependencies {
     //TODO: should be contained in xtraplatform.bundles.annotations, but catalogs do not support classifiers
     embeddedExport(variantOf(xtraplatform.immutables.value) { classifier('annotations') })
 
-    //NOTE: define newer versions of transitive deps here if required
+    //NOTE: define newer or older versions of transitive deps here if required
     constraints {
         /*embeddedExport('org.yaml:snakeyaml:1.33') {
             because 'critical/high vulnerabilities'
@@ -27,9 +27,11 @@ moduleInfo {
             'java.naming', //https jks keystore
             'jdk.management', //metrics
             'jdk.crypto.ec', // ssl/tls
+            'jdk.net', //http client
     ]
     exports = [
-            '!io.dropwizard.logback.shaded*'
+            '!io.dropwizard.logback.shaded*',
+            '!com.fasterxml.jackson.core.internal.shaded.fdp.v2_21_0*',
     ]
     uses = [
             'ch.qos.logback.classic.spi.Configurator',

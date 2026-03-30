@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.TooManyMethods")
 public class ServiceBackgroundTasksImpl implements ServiceBackgroundTasks, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServiceBackgroundTasksImpl.class);
