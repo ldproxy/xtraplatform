@@ -231,7 +231,6 @@ public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileCompose
       Optional<JobSet> jobSet = getJobSet(setId);
 
       if (jobSet.isPresent()) {
-        // TODO: if done, mark for removal
         List<? extends BaseJob> jobSetFollowUps = onJobFinished(job, jobSet.get());
         jobSetFollowUps.forEach(followUp -> push(followUp, false));
       }

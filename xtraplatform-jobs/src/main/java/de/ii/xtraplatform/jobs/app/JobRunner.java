@@ -175,7 +175,7 @@ public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle,
     }
 
     for (Job job : jobQueue.getTaken()) {
-      // TODO: also update vector progress, remove raster check
+      // NOPMD - TODO: also update vector progress, remove raster check
       if ("tile-seeding:raster:png".equals(job.getType())
           && job.getUpdatedAt().get() < oneMinuteAgo) {
         if (logJobsDebug()) {
