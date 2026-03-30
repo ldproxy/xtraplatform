@@ -98,7 +98,6 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
       volatileRegistry.onAvailable(oidc).toCompletableFuture().join();
     }
 
-    // TODO
     long clockSkew = 3600;
 
     this.signingKey = getKey();
@@ -357,7 +356,6 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private SecretKey generateKey() {
     SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    // TODO: either throw in put when no writable source or return true if written
     try {
       keyStore.put(SIGNING_KEY_PATH, new ByteArrayInputStream(key.getEncoded()));
     } catch (IOException e) {

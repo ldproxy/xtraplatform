@@ -30,7 +30,6 @@ import javax.inject.Singleton;
 /**
  * @author zahnen
  */
-// TODO: not used anymore?
 @Singleton
 @AutoBind
 public class ExternalBearerAuthProvider implements AuthProvider<User>, DropwizardPlugin {
@@ -64,9 +63,6 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
             metricRegistry,
             tokenAuthenticator,
             CaffeineSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
-
-    // TODO OAuthEdaAuthFIlter extends OAuthCredentialAuthFilter
-    // override filter, get stuff from ContainerRequestContext
 
     OAuthCredentialAuthFilter<User> authFilter =
         new OAuthCredentialAuthFilter.Builder<User>()

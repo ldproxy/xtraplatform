@@ -58,7 +58,6 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
   private final String ppUrl;
   private final HttpClient httpClient;
   private final OAuthCredentialAuthFilter<P> delegate;
-  // TODO: cfg.yml
   private static final List<String> METHODS = ImmutableList.of("GET", "POST", "PUT", "DELETE");
 
   ExternalDynamicAuthFilter(
@@ -91,8 +90,6 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     }
   }
 
-  // TODO: either interface that is implemented in ogcapi to which we pass service id
-  // or add xacml request as callback to user
   @Override
   @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -197,7 +194,6 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
     return PolicyDecision.DENY;
   }
 
-  // TODO
   private byte[] getXacmlRequest() throws JsonProcessingException {
     Object xacmlRequest = null;
     /*xacmlJson10

@@ -55,9 +55,6 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
       ContainerRequestContext requestContext, ContainerResponseContext responseContext)
       throws IOException {
 
-    // TODO: would it be faster/easier to save needed information in context in
-    // SplitCookieCredentialAuthFilter and only read it here?
-
     boolean isAuthenticated =
         Optional.ofNullable(requestContext.getSecurityContext())
             .map(SecurityContext::getUserPrincipal)
@@ -67,9 +64,6 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
 
     Optional<String> token = SplitCookie.readToken(requestContext.getCookies());
 
-    // LOGGER.debug("RESPONSE {} {} {} {}", requestContext.getUriInfo().getRequestUri(), status,
-    // isAuthenticated, token);
-
     if (status == 200 && isAuthenticated && token.isPresent()) {
       boolean forceChangePassword =
           tokenHandler
@@ -78,7 +72,7 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
       boolean rememberMe =
           tokenHandler.parseTokenClaim(token.get(), "rememberMe", Boolean.class).orElse(false);
 
-      // if forceChangePassword was enabled but userData no longer contains passwordExpiresAt,
+      // NOTE: if forceChangePassword was enabled but userData no longer contains passwordExpiresAt,
       // disable forceChangePassword
       if (forceChangePassword) {
         Optional<User> user = tokenHandler.parseToken(token.get());
@@ -105,13 +99,10 @@ public class SplitCookieResponseFilter implements ContainerResponseFilter {
     }
   }
 
-  // TODO: instead of external url, get request url
-  // TODO: but we want to access view action links with same token, would that work?
   private String getDomain() {
     return getExternalUri().getHost();
   }
 
-  // TODO: even if external url is set, we might want to access manager via http://localhost
   private boolean isSecure() {
     return false;
     // return Objects.equals(getExternalUri().getScheme(), "https");

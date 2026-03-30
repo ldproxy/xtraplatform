@@ -119,20 +119,16 @@ public class TokenEndpoint implements Endpoint {
     return response.build();
   }
 
-  // TODO: instead of external url, get request url
-  // TODO: but we want to access view action links with same token, would that work?
   @SuppressWarnings("PMD.UnusedPrivateMethod")
   private String getDomain() {
     return getExternalUri().getHost();
   }
 
-  // TODO: even if external url is set, we might want to access manager via http://localhost
   private boolean isSecure() {
     return false;
     // return Objects.equals(getExternalUri().getScheme(), "https");
   }
 
-  // TODO: from ServicesContext
   private URI getExternalUri() {
     return servicesUri;
   }

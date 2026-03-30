@@ -22,7 +22,7 @@ import org.immutables.value.Value;
 /**
  * @author zahnen
  */
-// TODO: make value
+// NOPMD - TODO: make value or delete
 @Entity(type = User.ENTITY_TYPE, data = UserData.class)
 public class User extends AbstractPersistentEntity<User.UserData> {
 

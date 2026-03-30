@@ -23,7 +23,6 @@ import java.util.Optional;
  * @author zahnen
  */
 public class XacmlRequest {
-  // TODO
   private static final String PREFIX_GEO = "ldproxy:feature:geometry";
 
   public final Map<String, Object> request;

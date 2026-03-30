@@ -53,12 +53,6 @@ public class InternalUserAuthenticator implements UserAuthenticator {
       return authenticateExistingUser(username, password);
     }
 
-    // TODO: for ldproxy make admin password settable via env variable, get from bundlecontext
-    // then save the user with that password below (or just validate and return for read-only store
-    // )
-
-    // no user exists yet
-
     if (userRepository.ids().isEmpty()) {
       return authenticateFirstUser(username, password);
     }
