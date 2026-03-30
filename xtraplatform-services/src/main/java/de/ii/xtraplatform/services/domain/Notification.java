@@ -31,7 +31,6 @@ public abstract class Notification {
   public Map<String, String> getMessages() {
     return ImmutableMap.of(DEFAULT_LANGUAGE, "");
   }
-  ;
 
   @Value.Derived
   public String getMessage() {
