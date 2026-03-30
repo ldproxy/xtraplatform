@@ -16,6 +16,7 @@ import de.ii.xtraplatform.web.domain.StaticResourceReader.CachedResource;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 public class StaticResourceServlet extends HttpServlet {
 
+  private static final long serialVersionUID = 1L;
   private static final Logger LOGGER = LoggerFactory.getLogger(StaticResourceServlet.class);
   private static final CharMatcher SLASHES = CharMatcher.is('/');
   private static final String DEFAULT_PAGE = "index.html";
@@ -39,7 +41,7 @@ public class StaticResourceServlet extends HttpServlet {
   private final String uriPath;
   private final Charset defaultCharset;
   private final StaticResourceReader resourceReader;
-  private final Optional<String> rootRedirect;
+  private final transient Optional<String> rootRedirect;
   private final Set<String> noCacheExtensions;
 
   /**
@@ -65,6 +67,7 @@ public class StaticResourceServlet extends HttpServlet {
       StaticResourceReader resourceReader,
       Set<String> noCacheExtensions,
       Optional<String> rootRedirect) {
+    super();
     final String trimmedPath = SLASHES.trimFrom(resourcePath);
     this.resourcePath = trimmedPath.isEmpty() ? trimmedPath : trimmedPath + '/';
     final String trimmedUri = SLASHES.trimTrailingFrom(uriPath);
@@ -97,20 +100,11 @@ public class StaticResourceServlet extends HttpServlet {
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     try {
-      final StringBuilder builder = new StringBuilder();
-      // if (!req.getDispatcherType().equals(DispatcherType.FORWARD)) {
-      builder.append(req.getServletPath());
-      // }
-      if (req.getPathInfo() != null) {
-        builder.append(req.getPathInfo());
-      } else if (rootRedirect.isPresent()) {
-        builder.append(rootRedirect.get());
-        resp.setHeader(HttpHeaders.LOCATION, builder.toString());
-        resp.sendError(HttpServletResponse.SC_MOVED_PERMANENTLY);
-        return;
+      String assetPath = buildAssetPath(req, resp);
+      if (assetPath == null) {
+        return; // Response already sent by buildAssetPath
       }
 
-      String assetPath = builder.toString();
       final CachedResource cachedAsset = loadAsset(assetPath);
       if (cachedAsset == null) {
         resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -122,42 +116,79 @@ public class StaticResourceServlet extends HttpServlet {
         return;
       }
 
-      if (assetPath.contains(".")
-          && noCacheExtensions.contains(assetPath.substring(assetPath.lastIndexOf('.') + 1))) {
-        resp.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
-      }
-
-      resp.setDateHeader(HttpHeaders.LAST_MODIFIED, cachedAsset.getLastModified());
-      resp.setHeader(HttpHeaders.ETAG, cachedAsset.getETag());
-
-      final String mimeTypeOfExtension = req.getServletContext().getMimeType(req.getRequestURI());
-      MediaType mediaType = DEFAULT_MEDIA_TYPE;
-
-      if (mimeTypeOfExtension != null) {
-        try {
-          mediaType = MediaType.parse(mimeTypeOfExtension);
-          if (defaultCharset != null && mediaType.is(MediaType.ANY_TEXT_TYPE)) {
-            mediaType = mediaType.withCharset(defaultCharset);
-          }
-        } catch (IllegalArgumentException ignore) {
-        }
-      }
-
-      resp.setContentType(mediaType.type() + '/' + mediaType.subtype());
-
-      if (mediaType.charset().isPresent()) {
-        resp.setCharacterEncoding(mediaType.charset().get().toString());
-      }
-
-      try (ServletOutputStream output = resp.getOutputStream()) {
-        output.write(cachedAsset.getResource());
-      }
+      configureResponse(req, resp, assetPath, cachedAsset);
+      writeResponse(resp, cachedAsset);
     } catch (RuntimeException | URISyntaxException ignored) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Unexpected exception", ignored);
-      }
-      resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+      handleException(resp, ignored);
     }
+  }
+
+  private String buildAssetPath(HttpServletRequest req, HttpServletResponse resp)
+      throws IOException {
+    final StringBuilder builder = new StringBuilder();
+    builder.append(req.getServletPath());
+
+    if (req.getPathInfo() != null) {
+      builder.append(req.getPathInfo());
+    } else if (rootRedirect.isPresent()) {
+      builder.append(rootRedirect.get());
+      resp.setHeader(HttpHeaders.LOCATION, builder.toString());
+      resp.sendError(HttpServletResponse.SC_MOVED_PERMANENTLY);
+      return null;
+    }
+
+    return builder.toString();
+  }
+
+  private void configureResponse(
+      HttpServletRequest req,
+      HttpServletResponse resp,
+      String assetPath,
+      CachedResource cachedAsset) {
+    if (assetPath.contains(".")
+        && noCacheExtensions.contains(assetPath.substring(assetPath.lastIndexOf('.') + 1))) {
+      resp.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+    }
+
+    resp.setDateHeader(HttpHeaders.LAST_MODIFIED, cachedAsset.getLastModified());
+    resp.setHeader(HttpHeaders.ETAG, cachedAsset.getETag());
+
+    setContentType(req, resp);
+  }
+
+  private void setContentType(HttpServletRequest req, HttpServletResponse resp) {
+    final String mimeTypeOfExtension = req.getServletContext().getMimeType(req.getRequestURI());
+    MediaType mediaType = DEFAULT_MEDIA_TYPE;
+
+    if (mimeTypeOfExtension != null) {
+      try {
+        mediaType = MediaType.parse(mimeTypeOfExtension);
+        if (defaultCharset != null && mediaType.is(MediaType.ANY_TEXT_TYPE)) {
+          mediaType = mediaType.withCharset(defaultCharset);
+        }
+      } catch (IllegalArgumentException ignore) {
+        // Keep default media type
+      }
+    }
+
+    resp.setContentType(mediaType.type() + '/' + mediaType.subtype());
+    if (mediaType.charset().isPresent()) {
+      resp.setCharacterEncoding(mediaType.charset().get().toString());
+    }
+  }
+
+  private void writeResponse(HttpServletResponse resp, CachedResource cachedAsset)
+      throws IOException {
+    try (ServletOutputStream output = resp.getOutputStream()) {
+      output.write(cachedAsset.getResource());
+    }
+  }
+
+  private void handleException(HttpServletResponse resp, Exception ignored) throws IOException {
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Unexpected exception", ignored);
+    }
+    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
   }
 
   private CachedResource loadAsset(String key) throws URISyntaxException, IOException {
@@ -193,11 +224,13 @@ public class StaticResourceServlet extends HttpServlet {
     // header field
     String ifNoneMatch = req.getHeader(HttpHeaders.IF_NONE_MATCH);
     String eTag = cachedAsset.getETag();
-    if (Objects.nonNull(ifNoneMatch) && Objects.nonNull(eTag)) return eTag.equals(ifNoneMatch);
+    if (Objects.nonNull(ifNoneMatch) && Objects.nonNull(eTag)) {
+      return eTag.equals(ifNoneMatch);
+    }
     // HTTP: A recipient MUST ignore the If-Modified-Since header field if the request method is
     // neither GET nor HEAD.
-    String method = req.getMethod().toUpperCase();
-    if (method.equals("GET") || method.equals("HEAD")) {
+    String method = req.getMethod().toUpperCase(Locale.ROOT);
+    if ("GET".equals(method) || "HEAD".equals(method)) {
       try {
         long ifModifiedSince = req.getDateHeader(HttpHeaders.IF_MODIFIED_SINCE);
         return ifModifiedSince >= cachedAsset.getLastModified();
