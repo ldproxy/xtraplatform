@@ -9,7 +9,6 @@ package de.ii.xtraplatform.cache.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
-import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.cache.domain.Cache;
 import de.ii.xtraplatform.cache.domain.CacheDriver;
@@ -33,8 +32,7 @@ public class CacheImpl implements Cache, AppLifeCycle {
   private CacheDriver driver;
 
   @Inject
-  public CacheImpl(AppContext appContext, Lazy<Set<CacheDriver>> drivers) {
-    // TODO appContext.getConfiguration().getCache();
+  public CacheImpl(Lazy<Set<CacheDriver>> drivers) {
     this.drivers = drivers;
   }
 

@@ -21,7 +21,6 @@ import javax.ws.rs.core.Response;
  */
 @AutoMultiBind
 public interface ServiceListingProvider {
-  // TODO: one provider per mime type
   MediaType getMediaType();
 
   Response getServiceListing(

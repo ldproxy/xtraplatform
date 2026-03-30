@@ -29,9 +29,10 @@ public class ServiceContextBinder extends AbstractBinder
     implements Binder, ServiceInjectableContext {
 
   @Inject
-  public ServiceContextBinder() {}
+  public ServiceContextBinder() {
+    super();
+  }
 
-  // TODO: bind every subtype
   @Override
   protected void configure() {
     bindFactory(ServiceFactory.class)

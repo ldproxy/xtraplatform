@@ -14,14 +14,14 @@ import java.util.concurrent.CompletableFuture;
 
 public interface KeyValueStore<T> extends Values<T> {
 
+  Splitter TYPE_SPLITTER = Splitter.on('/');
+
   static String valueType(Identifier identifier) {
     if (identifier.path().isEmpty()) {
       throw new IllegalArgumentException("Invalid path, no value type found.");
     }
     return identifier.path().get(0);
   }
-
-  Splitter TYPE_SPLITTER = Splitter.on('/');
 
   static boolean valueTypeMatches(Identifier identifier, String type) {
     List<String> valueType = TYPE_SPLITTER.splitToList(type);

@@ -15,18 +15,31 @@ import javax.ws.rs.container.ContainerRequestContext;
 public interface ForwardedUri {
 
   String X_FORWARDED_PREFIX = "X-Forwarded-Prefix";
+  String X_FORWARDED_PROTO = "X-Forwarded-Proto";
   Splitter PATH_SPLITTER = Splitter.on('/').trimResults().omitEmptyStrings();
 
   static URICustomizer from(ContainerRequestContext requestContext, WebContext webContext) {
-    return new URICustomizer(requestContext.getUriInfo().getRequestUri())
+    return customizer(requestContext, webContext)
         .prependPathSegments(prefix(requestContext, webContext));
   }
 
   static URICustomizer base(ContainerRequestContext requestContext, WebContext webContext) {
-    return new URICustomizer(requestContext.getUriInfo().getRequestUri())
+    return customizer(requestContext, webContext)
         .setPathSegments(prefix(requestContext, webContext))
         .ensureNoTrailingSlash()
         .clearParameters();
+  }
+
+  static URICustomizer customizer(ContainerRequestContext requestContext, WebContext webContext) {
+    URICustomizer uriCustomizer = new URICustomizer(requestContext.getUriInfo().getRequestUri());
+
+    if (!"https".equalsIgnoreCase(uriCustomizer.getScheme())
+        && !requestContext.getHeaders().containsKey(X_FORWARDED_PROTO)
+        && webContext.isHttps()) {
+      uriCustomizer.setScheme("https");
+    }
+
+    return uriCustomizer;
   }
 
   static List<String> prefix(ContainerRequestContext requestContext, WebContext webContext) {
