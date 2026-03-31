@@ -129,7 +129,7 @@ public interface HealthChecks {
         builder.withDetail("capabilities", capabilities);
 
         if (vol instanceof AbstractVolatileComposed) {
-          AbstractVolatileComposed avol = ((AbstractVolatileComposed) vol);
+          AbstractVolatileComposed avol = (AbstractVolatileComposed) vol;
 
           Map<String, SubResult> components =
               avol.getComponents().stream()
@@ -160,11 +160,11 @@ public interface HealthChecks {
 
     State getState();
 
-    @JsonInclude(value = Include.NON_NULL)
+    @JsonInclude(Include.NON_NULL)
     @Nullable
     String getMessage();
 
-    @JsonInclude(value = Include.NON_EMPTY)
+    @JsonInclude(Include.NON_EMPTY)
     Set<String> getCapabilities();
   }
 }

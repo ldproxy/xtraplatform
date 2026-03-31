@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.introspect.NopAnnotationIntrospector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.CognitiveComplexity")
 public interface JacksonModules {
   Logger LOGGER = LoggerFactory.getLogger(JacksonModules.class);
 
@@ -69,21 +70,15 @@ public interface JacksonModules {
         }
 
         private boolean isImmutableBuilder(Class<?> clazz) {
-          return clazz.getSimpleName().equals("Builder");
-          // TODO: annotations not retained
-          // && Objects.nonNull(clazz.getAnnotation(Generated.class))
-          // && clazz.getAnnotation(Generated.class).generator().equals("Immutables");
+          return "Builder".equals(clazz.getSimpleName());
         }
 
         private boolean isModifiable(Class<?> clazz) {
           return clazz.getSimpleName().startsWith("Modifiable");
-          // TODO: annotations not retained
-          // && Objects.nonNull(clazz.getAnnotation(Generated.class))
-          // && clazz.getAnnotation(Generated.class).generator().equals("Immutables");
         }
 
         private boolean isOptional(Class<?> clazz) {
-          return clazz.getSimpleName().equals("Optional");
+          return "Optional".equals(clazz.getSimpleName());
         }
       };
 }

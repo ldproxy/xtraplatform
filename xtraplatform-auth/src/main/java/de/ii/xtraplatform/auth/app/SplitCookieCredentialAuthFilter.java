@@ -20,8 +20,10 @@ import javax.ws.rs.core.SecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.MissingStaticMethodInNonInstantiatableClass")
 @Priority(Priorities.AUTHENTICATION)
-public class SplitCookieCredentialAuthFilter<P extends Principal> extends AuthFilter<String, P> {
+public final class SplitCookieCredentialAuthFilter<P extends Principal>
+    extends AuthFilter<String, P> {
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(SplitCookieCredentialAuthFilter.class);

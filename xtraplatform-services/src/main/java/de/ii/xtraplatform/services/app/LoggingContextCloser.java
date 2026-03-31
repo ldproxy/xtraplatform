@@ -68,6 +68,7 @@ public class LoggingContextCloser implements ContainerResponseFilter {
     private final OutputStream entityStream;
 
     public OutputStreamCloseListener(ContainerResponseContext responseContext) {
+      super();
       this.responseContext = responseContext;
       this.entityStream = responseContext.getEntityStream();
     }

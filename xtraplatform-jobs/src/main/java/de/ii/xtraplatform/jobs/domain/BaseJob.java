@@ -41,8 +41,6 @@ public interface BaseJob {
 
   OptionalInt getRetries();
 
-  // TODO: progress wrapper?
-
   @Value.Default
   default AtomicReference<List<String>> getErrors() {
     return new AtomicReference<>(List.of());

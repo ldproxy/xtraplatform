@@ -49,6 +49,7 @@ public class FallbackMustacheViewRenderer extends MustacheViewRenderer implement
 
   @Inject
   FallbackMustacheViewRenderer(MustacheResolverRegistry mustacheResolverRegistry) {
+    super();
     this.mustacheResolverRegistry = mustacheResolverRegistry;
     this.factories =
         CacheBuilder.newBuilder()
@@ -97,7 +98,9 @@ public class FallbackMustacheViewRenderer extends MustacheViewRenderer implement
     useCache = Optional.ofNullable(options.get("cache")).map(Boolean::parseBoolean).orElse(true);
   }
 
+  //  @Override
   @VisibleForTesting
+  @SuppressWarnings("PMD.MissingOverride")
   boolean isUseCache() {
     return useCache;
   }

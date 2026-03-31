@@ -106,9 +106,9 @@ public class HttpClientApache implements HttpClient {
       }
     }
 
-    try {
-      CloseableHttpResponse response = client.execute(request);
-      return response.getEntity().getContent();
+    try (CloseableHttpResponse response = client.execute(request)) {
+      byte[] content = EntityUtils.toByteArray(response.getEntity());
+      return new java.io.ByteArrayInputStream(content);
     } catch (IOException e) {
       throw new IllegalArgumentException(e);
     }

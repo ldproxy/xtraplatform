@@ -84,10 +84,10 @@ public class DynamicOpenApiResource implements Endpoint {
               @Content(mediaType = "text/html", schema = @Schema(type = "string"))
             })
       })
-  public Response getApiDescription(@Context HttpHeaders headers, @Context UriInfo uriInfo)
-      throws Exception {
-    if (LOGGER.isTraceEnabled())
+  public Response getApiDescription(@Context HttpHeaders headers, @Context UriInfo uriInfo) {
+    if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("MIME {} {}", "HTML", headers.getHeaderString("Accept"));
+    }
     return openApiViewerResource.getFile("index.html");
   }
 
@@ -99,9 +99,10 @@ public class DynamicOpenApiResource implements Endpoint {
       @Context HttpHeaders headers,
       @Context UriInfo uriInfo,
       @Context ServletConfig config,
-      @Context Application app)
-      throws Exception {
-    if (LOGGER.isTraceEnabled()) LOGGER.trace("MIME {})", "JSON");
+      @Context Application app) {
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("MIME: JSON");
+    }
     return openApi.getOpenApi(headers, config, app, uriInfo, "json");
   }
 
@@ -113,9 +114,10 @@ public class DynamicOpenApiResource implements Endpoint {
       @Context HttpHeaders headers,
       @Context UriInfo uriInfo,
       @Context ServletConfig config,
-      @Context Application app)
-      throws Exception {
-    if (LOGGER.isTraceEnabled()) LOGGER.trace("MIME {})", "YAML");
+      @Context Application app) {
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("MIME: YAML");
+    }
     return openApi.getOpenApi(headers, config, app, uriInfo, "yaml");
   }
 
@@ -123,7 +125,9 @@ public class DynamicOpenApiResource implements Endpoint {
   @Path("/{file}")
   @CacheControl(maxAge = 3600)
   public Response getFile(@PathParam("file") String file) {
-    if (LOGGER.isTraceEnabled()) LOGGER.trace("FILE {})", file);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("FILE: {}", file);
+    }
 
     if (openApiViewerResource == null) {
       throw new NotFoundException();

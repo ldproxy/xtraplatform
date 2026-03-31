@@ -26,6 +26,7 @@ public interface StoreSourceFs extends StoreSource {
   }
 
   @Value.Default
+  @Override
   default boolean isWatchable() {
     return !isArchive();
   }

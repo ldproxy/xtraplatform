@@ -49,6 +49,7 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatileCompos
         : Optional.empty();
   }
 
+  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
   public synchronized void set(T volatile2) {
     addSubcomponent("delayed", volatile2, false, getVolatileCapabilities().toArray(new String[0]));
 
