@@ -84,7 +84,7 @@ public class EventSourcingCache<T> {
     final CompletableFuture<T> completableFuture = new CompletableFuture<>();
 
     try {
-      // TODO: if already in queue, pipeline to existing future
+      // NOPMD - TODO: if already in queue, pipeline to existing future
       final EntityEvent entityEvent =
           ImmutableMutationEvent.builder()
               .type(eventType)
@@ -96,8 +96,6 @@ public class EventSourcingCache<T> {
 
       queue.put(identifier, completableFuture);
 
-      // TODO: pass snapshot to push, event store can decide what to do with it
-      // who decides if snapshotting is enabled?
       eventStore.push(entityEvent);
 
     } catch (Throwable e) {

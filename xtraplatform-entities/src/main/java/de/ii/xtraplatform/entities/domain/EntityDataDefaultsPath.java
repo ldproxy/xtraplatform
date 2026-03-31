@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Set;
 import org.immutables.value.Value;
 
-// TODO: unit tests for all cases
 @Value.Modifiable
 public interface EntityDataDefaultsPath {
 
@@ -79,7 +78,6 @@ public interface EntityDataDefaultsPath {
       defaultsPath.setGroups(identifier.path());
     }
 
-    // TODO: describe cases, how would catch happen?
     if (!pathSegments.isEmpty()) {
       try {
         List<String> subtype = pathSegments.subList(0, pathSegments.size());

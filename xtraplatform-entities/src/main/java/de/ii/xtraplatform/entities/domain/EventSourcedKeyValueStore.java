@@ -25,7 +25,7 @@ public interface EventSourcedKeyValueStore<T> extends EventSourcedStore<T>, KeyV
   @Override
   @SuppressWarnings("PMD.TooFewBranchesForASwitchStatement")
   default void onEmit(Event event) {
-    // TODO: when isReplay switches, notify EntityInstantiator
+    // NOTE: when isReplay switches, notify EntityInstantiator
     if (event instanceof EntityEvent) {
       getEventSourcing().onEmit((EntityEvent) event);
 

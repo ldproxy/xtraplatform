@@ -181,7 +181,6 @@ public class EventSource {
     }
 
     Path resolve = path;
-    // TODO
     if (source.getContent() == Content.ALL && path.startsWith(entitiesPath)) {
       resolve = entitiesPath.relativize(path);
     }

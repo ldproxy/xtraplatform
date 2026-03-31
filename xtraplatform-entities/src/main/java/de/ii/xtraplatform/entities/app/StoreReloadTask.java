@@ -48,7 +48,6 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
   private final EventStore eventStore;
   private final EntityDataStore<?> entityDataStore;
 
-  // TODO:  AdminTaskRegistry (OpsPlugin)
   @Inject
   protected StoreReloadTask(EventStore eventStore, EntityDataStore<?> entityDataStore) {
     super("reload-entities");

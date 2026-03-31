@@ -115,7 +115,8 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
     return source.load(eventReader);
   }
 
-  // TODO: stopWatching, move watchService to class, watch new directories, file extension filter
+  // NOPMD - TODO: stopWatching, move watchService to class, watch new directories, file extension
+  // filter
   @Override
   @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.CognitiveComplexity"})
   public void listen(StoreSource storeSource, Consumer<List<Path>> watchEventConsumer) {
@@ -158,7 +159,7 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
                 .filter(
                     watchEvent -> {
                       String fileExtension = getFileExtension(watchEvent.context().toString());
-                      // TODO: either inject from store or filter at a later stage
+                      // NOPMD - TODO: either inject from store or filter at a later stage
                       return Objects.equals(fileExtension, "yml")
                           || Objects.equals(fileExtension, "yaml")
                           || Objects.equals(fileExtension, "json");
@@ -210,8 +211,6 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
       return;
     }
 
-    // TODO: check mainPath first, if exists use override
-    // TODO: if override exists, merge with incoming
     Path eventPath = source.getSavePath(event);
     /*if (Files.exists(eventPath)) {
         eventPath = getEventFilePath(event.type(), event.identifier(), event.format(), savePathPattern);
@@ -224,7 +223,6 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
     }
   }
 
-  // TODO: only delete overrides if migration
   @Override
   public void deleteAll(StoreSource storeSource, String type, Identifier identifier, String format)
       throws IOException {
@@ -248,7 +246,6 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
       return;
     }
 
-    // TODO: better error handling
     Files.list(eventPath.getParent())
         .forEach(
             consumerMayThrow(

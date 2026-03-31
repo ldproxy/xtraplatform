@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Set;
 import org.immutables.value.Value;
 
-// TODO: unit tests for all cases
 @Value.Modifiable
 @SuppressWarnings("PMD.PrematureDeclaration")
 public interface EntityDataOverridesPath {

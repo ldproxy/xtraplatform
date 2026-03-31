@@ -135,7 +135,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
 
   private void watch(StoreSource storeSource, EventStoreDriver driver) {
     if (store.isWatchable() && storeSource.isWatchable() && driver.canWatch()) {
-      // TODO: executor
+      // NOPMD - TODO: executor
       new Thread(
               () ->
                   driver
@@ -164,7 +164,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
   private Optional<EventStoreDriver> findDriver(StoreSource storeSource, boolean warn) {
     final boolean[] foundUnavailable = {false};
 
-    // TODO: content all/entities
+    // NOTE: content all/entities
     Optional<EventStoreDriver> driver =
         drivers.get().stream()
             .filter(d -> Objects.equals(d.getType(), storeSource.getType()))
@@ -268,7 +268,6 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
       reload(null, new EventStoreDriverAdHoc(additionalEvents), filter, false);
     }
 
-    // TODO: type
     subscriptions.emitEvent(
         ImmutableReloadEvent.builder()
             .type(EVENT_TYPE_ENTITIES)

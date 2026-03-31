@@ -18,7 +18,7 @@ import java.util.function.BiFunction;
 public class ValueDecoderEntitySubtype implements ValueDecoderMiddleware<EntityData> {
 
   private final BiFunction<Identifier, String, EntityDataBuilder<EntityData>> newBuilderSupplier;
-  private final EventSourcing<EntityData> eventSourcing; // TODO -> ValueCache
+  private final EventSourcing<EntityData> eventSourcing;
 
   public ValueDecoderEntitySubtype(
       BiFunction<Identifier, String, EntityDataBuilder<EntityData>> newBuilderSupplier,
@@ -39,7 +39,7 @@ public class ValueDecoderEntitySubtype implements ValueDecoderMiddleware<EntityD
       EntityDataBuilder<EntityData> builder =
           newBuilderSupplier.apply(identifier, data.getEntitySubType().get());
 
-      // TODO: happens because providers declare subtypes despite not having any
+      // NOTE: happens because providers declare subtypes despite not having any
       // no builder found for subtype
       if (builder == null) {
         return data;

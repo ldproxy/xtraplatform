@@ -14,11 +14,9 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author zahnen
  */
-// TODO: KeyValueStoreWithMerging
 public interface MergeableKeyValueStore<T> extends KeyValueStore<T> {
 
   CompletableFuture<T> patch(String id, Map<String, Object> partialData, String... path);
 
-  // TODO: KeyValueStoreWithSubtypes
   <U extends T> MergeableKeyValueStore<U> forType(Class<U> type);
 }

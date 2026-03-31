@@ -163,7 +163,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
         new ValueDecoderWithBuilder<>(this::getBuilder, eventSourcing));
     valueEncoding.addDecoderMiddleware(
         new ValueDecoderEntitySubtype(this::getBuilder, eventSourcing));
-    /*TODO valueEncoding.addDecoderMiddleware(
+    /*valueEncoding.addDecoderMiddleware(
     new ValueDecoderEntityDataMigration(
         eventSourcing, entityFactories, this::addAdditionalEvent));*/
     valueEncoding.addDecoderMiddleware(new ValueDecoderIdValidator());
@@ -230,7 +230,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     return partialData;
   }
 
-  // TODO: onEmit middleware
   @SuppressWarnings({
     "PMD.CyclomaticComplexity",
     "PMD.NPathComplexity",
@@ -286,7 +285,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     ImmutableReplayEvent.Builder builder =
         ImmutableReplayEvent.builder().from(event).identifier(cacheKey);
     if (!overridesPath.getKeyPath().isEmpty()) {
-      // TODO: multiple subtypes
       Optional<KeyPathAlias> keyPathAlias =
           entityFactories
               .get(overridesPath.getEntityType())
@@ -318,8 +316,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       return (EntityDataBuilder<EntityData>)
           entityFactories.get(EntityDataStore.entityType(identifier)).emptySuperDataBuilder();
     }
-
-    // TODO: try defaults like below?
 
     return (EntityDataBuilder<EntityData>)
         entityFactories.get(EntityDataStore.entityType(identifier)).superDataBuilder();
@@ -384,7 +380,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     blobStoreReady.get();
     valueStoreReady.get();
 
-    // TODO: getAllPaths
     return playAdditionalEvents()
         .thenCompose(
             ignore -> {
@@ -456,7 +451,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     while (!additionalEvents.isEmpty()) {
       Map.Entry<Identifier, EntityData> entry = additionalEvents.remove();
 
-      // TODO: which eventType?
       completableFuture =
           completableFuture.thenCompose(
               ignore -> {
@@ -652,7 +646,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
       Map<String, Object> map = asMap(identifier, merged);
 
-      // TODO: I guess the correct way to define ignoreKeys would be in EntityFactory
       Map<String, Object> withoutDefaults =
           defaultsStore.subtractDefaults(identifier, merged.getEntitySubType(), map);
 

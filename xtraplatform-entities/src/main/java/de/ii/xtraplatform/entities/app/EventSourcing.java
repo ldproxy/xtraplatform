@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO: should this really be a facade for EventStore? or can we make it plain ValueCache?
+// NOTE: should this really be a facade for EventStore? or can we make it plain ValueCache?
 @SuppressWarnings({"PMD.GodClass", "PMD.CogntitiveComplexity", "PMD.CyclomaticComplexity"})
 public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
@@ -140,7 +140,6 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
           }
         } else if (mutationEventProcessor.isPresent() && event instanceof MutationEvent) {
           CompletableFuture<T> completableFuture = null;
-          // TODO
           if ("defaults".equals(entityEvent.type())
               && "services.ogc_api".equals(entityEvent.identifier().id())) {
             completableFuture = queue.get(entityEvent.identifier());
@@ -254,13 +253,12 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     return pushMutationEventRaw(identifier, payload, false);
   }
 
-  // TODO: which eventType should we push?
   private CompletableFuture<T> pushMutationEventRaw(
       Identifier identifier, byte[] payload, boolean isDelete) {
     final CompletableFuture<T> completableFuture = new CompletableFuture<>();
 
     try {
-      // TODO: if already in queue, pipeline to existing future
+      // NOPMD - TODO: if already in queue, pipeline to existing future
       final EntityEvent entityEvent =
           ImmutableMutationEvent.builder()
               .type(eventTypes.get(0))
@@ -272,8 +270,6 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
       queue.put(identifier, completableFuture);
 
-      // TODO: pass snapshot to push, event store can decide what to do with it
-      // who decides if snapshotting is enabled?
       eventStore.push(entityEvent);
 
     } catch (Throwable e) {

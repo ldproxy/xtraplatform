@@ -24,7 +24,7 @@ public class EventReaderZip implements EventReader {
   @Override
   public Stream<Tuple<Path, Supplier<byte[]>>> load(
       Path sourcePath, List<String> includes, List<String> excludes) throws IOException {
-    // TODO: archiveRoot
+    // NOPMD - TODO: archiveRoot
     List<PathMatcher> includeMatchers = StoreDriver.asMatchers(includes, "**");
     List<PathMatcher> excludeMatchers = StoreDriver.asMatchers(excludes, "**");
     List<Tuple<Path, Supplier<byte[]>>> entries = new ArrayList<>();

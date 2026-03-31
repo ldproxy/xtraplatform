@@ -110,7 +110,6 @@ public interface EventFilter {
 
     ImmutableEventFilter.Builder builder =
         ImmutableEventFilter.builder().addEventTypes(eventType).addEntityTypes(entityType);
-    // TODO
     if ("defaults".equals(eventType)) {
       builder.addIds(WILDCARD);
     } else if (path.getNameCount() > 2) {

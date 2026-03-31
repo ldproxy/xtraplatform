@@ -81,7 +81,6 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
         .collect(Collectors.toList());
   }
 
-  // TODO: transformPath
   @Override
   default boolean has(Identifier identifier) {
     return getDecorated().has(identifier);
@@ -92,19 +91,16 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
     return getDecorated().has(matcher);
   }
 
-  // TODO
   @Override
   default U get(Identifier identifier) {
     return (U) getDecorated().get(identifier);
   }
 
-  // TODO
   @Override
   default CompletableFuture<U> put(Identifier identifier, U value) {
     return null; // getDecorated().patch(identifier, value);
   }
 
-  // TODO
   @Override
   default CompletableFuture<Boolean> delete(Identifier identifier) {
     return null; // getDecorated().delete(identifier);

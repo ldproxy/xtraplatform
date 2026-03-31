@@ -206,7 +206,6 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         .collect(Collectors.toList());
   }
 
-  // TODO: onEmit middleware
   private Stream<EntityEvent> processEvent(EntityEvent event) {
 
     if (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format())) {
@@ -339,7 +338,6 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             valueEncodingMap.deserialize(
                 defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
-        // TODO
         defaults =
             defaults.entrySet().stream()
                 .filter(entry -> !Objects.equals(entry.getValue(), "__DEFAULT__"))
@@ -435,7 +433,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     return null;
   }
 
-  // TODO: load defaults from EntityFactory that weren't loaded by event
+  // NOPMD - TODO: load defaults from EntityFactory that weren't loaded by event
   @Override
   protected CompletableFuture<Void> onListenStart() {
 
@@ -495,7 +493,6 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       }
     }
 
-    // TODO
     defaults =
         defaults.entrySet().stream()
             .filter(entry -> !Objects.equals(entry.getValue(), "__DEFAULT__"))

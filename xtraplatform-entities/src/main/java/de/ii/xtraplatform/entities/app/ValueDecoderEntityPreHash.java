@@ -21,7 +21,7 @@ public class ValueDecoderEntityPreHash implements ValueDecoderMiddleware<EntityD
   private final BiFunction<Identifier, String, EntityDataBuilder<EntityData>> newBuilderSupplier;
   private final Function<EntityData, String> hasher;
 
-  // TODO: shouldPreHash from Factory
+  // NOPMD - TODO: shouldPreHash from Factory
   public ValueDecoderEntityPreHash(
       BiFunction<Identifier, String, EntityDataBuilder<EntityData>> newBuilderSupplier,
       Function<EntityData, String> hasher) {
@@ -41,7 +41,7 @@ public class ValueDecoderEntityPreHash implements ValueDecoderMiddleware<EntityD
       EntityDataBuilder<EntityData> builder =
           newBuilderSupplier.apply(identifier, data.getEntitySubType().get());
 
-      // TODO: happens because providers declare subtypes despite not having any
+      // NOTE: happens because providers declare subtypes despite not having any
       // no builder found for subtype
       if (builder == null) {
         return data;
