@@ -26,9 +26,9 @@ import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.JedisCluster;
-import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.JedisPubSub;
+import redis.clients.jedis.RedisClient;
+import redis.clients.jedis.RedisClusterClient;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.commands.JedisCommands;
 import redis.clients.jedis.json.commands.RedisJsonCommands;
@@ -172,17 +172,19 @@ public class RedisImpl extends AbstractVolatilePolling implements Redis, AppLife
 
     try {
       if (nodes.size() == 1) {
-        this.jedis = new JedisPooled(getHostAndPort(nodes.get(0)));
+        this.jedis = RedisClient.builder().hostAndPort(getHostAndPort(nodes.get(0))).build();
 
         // LOGGER.info("REDIS SINGLE NODE {}", getHostAndPort(nodes.get(0)));
         // LOGGER.info("REDIS PING {}", this.jedis.ping());
       } else if (nodes.size() > 1) {
         Set<HostAndPort> jedisClusterNodes =
             nodes.stream().map(RedisImpl::getHostAndPort).collect(Collectors.toSet());
-        this.jedis = new JedisCluster(jedisClusterNodes);
+        this.jedis = RedisClusterClient.builder().nodes(jedisClusterNodes).build();
         // LOGGER.info("REDIS CLUSTER NODES {}", jedisClusterNodes);
         // LOGGER.info("REDIS PING {}", this.jedis.ping());
       }
+
+      LOGGER.info("Established connection to redis");
     } catch (Throwable e) {
       this.connectionError = e;
     }
