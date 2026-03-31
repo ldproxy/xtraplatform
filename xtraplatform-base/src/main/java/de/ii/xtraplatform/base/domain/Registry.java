@@ -10,7 +10,6 @@ package de.ii.xtraplatform.base.domain;
 import java.util.Collection;
 import java.util.Optional;
 
-// TODO
 public interface Registry<T> {
 
   String ON_ARRIVAL_METHOD = "onArrival";

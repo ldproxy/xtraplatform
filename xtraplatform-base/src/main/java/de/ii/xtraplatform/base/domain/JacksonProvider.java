@@ -53,8 +53,6 @@ import org.threeten.extra.Interval;
 /**
  * @author zahnen
  */
-// TODO: to store, only use for de/serialization
-// TODO: find all usages, is a generic version needed? also see Jackson.newObjectMapper()
 @Singleton
 @AutoBind
 public class JacksonProvider implements Jackson {
@@ -97,15 +95,17 @@ public class JacksonProvider implements Jackson {
                 .addMixIn(Interval.class, IntervalMixin.class)
                 .setDefaultMergeable(false)
                 .setHandlerInstantiator(dynamicHandlerInstantiator);
-    // TODO: use new default blackbird instead, does not work with modules out of the box
+    // NOPMD - TODO: use new default blackbird instead, does not work with modules out of the box
     return optimize ? configured.registerModule(new AfterburnerModule()) : configured;
   }
 
+  @SuppressWarnings("PMD.UnnecessaryModifier")
   @Override
   public ObjectMapper getDefaultObjectMapper() {
     return jsonMapper;
   }
 
+  @SuppressWarnings("PMD.UnnecessaryModifier")
   @Override
   public ObjectMapper getNewObjectMapper(JsonFactory jsonFactory) {
     return configureMapper(new ObjectMapper(jsonFactory));
@@ -134,6 +134,7 @@ public class JacksonProvider implements Jackson {
   }
 
   public abstract static class IntervalMixin {
+    @SuppressWarnings("PMD.UnusedFormalParameter") // needed for deserialization of Interval
     IntervalMixin(
         @JsonProperty("start") Instant startInclusive, @JsonProperty("end") Instant endExclusive) {}
 
@@ -147,7 +148,7 @@ public class JacksonProvider implements Jackson {
     abstract boolean isUnboundedEnd();
   }
 
-  // TODO: needs to be in domain to access this
+  // NOTE: needs to be in domain to access this
   public class DynamicTypeIdResolver implements TypeIdResolver {
 
     private JavaType mBaseType;
@@ -200,7 +201,6 @@ public class JacksonProvider implements Jackson {
     @Override
     public JavaType typeFromId(DatabindContext context, String id) {
       if (getIdMapping().containsKey(id)) {
-        // TODO: compare baseType with getSuperType to allow the same id for different super classes
         Class<?> clazz = getIdMapping().get(id).iterator().next().getSubType();
         JavaType javaType =
             TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
@@ -208,7 +208,6 @@ public class JacksonProvider implements Jackson {
       }
       Optional<String> patternId = getIdMapping().keySet().stream().filter(id::matches).findFirst();
       if (patternId.isPresent()) {
-        // TODO: compare baseType with getSuperType to allow the same id for different super classes
         Class<?> clazz = getIdMapping().get(patternId.get()).iterator().next().getSubType();
         JavaType javaType =
             TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
@@ -229,6 +228,7 @@ public class JacksonProvider implements Jackson {
     private final Map<String, DynamicTypeIdResolver> typeIdResolvers;
 
     DynamicHandlerInstantiator() {
+      super();
       this.typeIdResolvers = new HashMap<>();
     }
 

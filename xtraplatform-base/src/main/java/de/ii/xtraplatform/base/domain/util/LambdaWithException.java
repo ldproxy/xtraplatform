@@ -15,7 +15,9 @@ import java.util.function.Supplier;
 /**
  * @author zahnen
  */
-public class LambdaWithException {
+public final class LambdaWithException {
+
+  private LambdaWithException() {}
 
   @FunctionalInterface
   public interface FunctionWithException<T, R> {
@@ -37,18 +39,20 @@ public class LambdaWithException {
     T get() throws E;
   }
 
+  @SuppressWarnings({"PMD.AvoidThrowingRawExceptionTypes", "PMD.AvoidRethrowingException"})
   public static <T, R> Function<T, R> mayThrow(FunctionWithException<T, R> fe) {
     return arg -> {
       try {
         return fe.apply(arg);
-      } catch (Error | RuntimeException ex) {
-        throw ex;
+      } catch (Error | RuntimeException e) {
+        throw e;
       } catch (Throwable throwable) {
         throw new RuntimeException(throwable);
       }
     };
   }
 
+  @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
   public static <T, R, E extends Exception> Consumer<T> consumerMayThrow(
       ConsumerWithException<T, E> ce) {
     return arg -> {
@@ -60,6 +64,7 @@ public class LambdaWithException {
     };
   }
 
+  @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
   public static <T, U, E extends Exception> BiConsumer<T, U> biConsumerMayThrow(
       BiConsumerWithException<T, U, E> ce) {
     return (arg, arg2) -> {
@@ -71,6 +76,7 @@ public class LambdaWithException {
     };
   }
 
+  @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
   public static <T, E extends Exception> Supplier<T> supplierMayThrow(
       SupplierWithException<T, E> se) {
     return () -> {

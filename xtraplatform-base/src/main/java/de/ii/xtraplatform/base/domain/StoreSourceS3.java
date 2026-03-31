@@ -36,6 +36,7 @@ public interface StoreSourceS3 extends StoreSource {
 
   @JsonIgnore
   @Value.Derived
+  @Override
   default boolean isWatchable() {
     return false;
   }

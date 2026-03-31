@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ext.Java7Support;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.collect.ImmutableMap;
@@ -73,7 +72,6 @@ public class ConfigurationReader {
               "%highlight(%-5p) %gray([%d{ISO8601,%dwTimeZone}]) %cyan(%24.-24mdc{SERVICE}) - %m %green(%replace([%mdc{REQUEST}]){'\\[\\]',''}) %n%rEx",
               APPENDER.OTHER,
               "%-5p [%d{ISO8601,%dwTimeZone}] %-24.-24mdc{SERVICE} - %m %replace([%mdc{REQUEST}]){'\\[\\]',''} %n%rEx"),
-          // TODO: is this needed?
           Constants.ENV.CONTAINER,
           ImmutableMap.of(
               APPENDER.CONSOLE,
@@ -85,15 +83,6 @@ public class ConfigurationReader {
   private final ObjectMapper mapper;
   private final ObjectMapper mergeMapper;
   private final EnvironmentVariableSubstitutor envSubstitutor;
-
-  // workaround for https://github.com/FasterXML/jackson-databind/issues/4078
-  static {
-    try {
-      Java7Support java7Support = Java7Support.instance();
-    } catch (Throwable e) {
-      // ignore
-    }
-  }
 
   public ConfigurationReader(Map<String, ByteSource> configsToMergeAfterBase) {
     this.configsToMergeAfterBase = configsToMergeAfterBase;
@@ -132,7 +121,6 @@ public class ConfigurationReader {
       mergeMapper.readerForUpdating(builder).readValue(read(envCfg));
     }
 
-    // TODO: error message with entry.getKey()
     for (Map.Entry<String, InputStream> userCfg : userCfgs.entrySet()) {
       mergeMapper
           .readerForUpdating(builder)
@@ -141,7 +129,7 @@ public class ConfigurationReader {
 
     applyLogFormat(builder.getLoggingFactory(), env);
 
-    applyForcedDefaults(builder, env);
+    applyForcedDefaults(builder);
 
     return builder.toImmutable();
   }
@@ -162,7 +150,6 @@ public class ConfigurationReader {
 
       loggingFactory =
           mapper.readerFor(LoggingConfiguration.class).readValue(jsonNodeBase.at(LOGGING_CFG_KEY));
-      // TODO: System.out.println(env + "  " + getEnvConfigs(env).keySet());
       for (ByteSource envCfg : getEnvConfigs(env).values()) {
         JsonNode jsonNodeMerge = mapper.readTree(read(envCfg));
 
@@ -176,9 +163,6 @@ public class ConfigurationReader {
         mergeMapper.readerForUpdating(loggingFactory).readValue(jsonNodeUser.at(LOGGING_CFG_KEY));
       }
     } catch (Throwable e) {
-      // use defaults
-      // loggingFactory = new LoggingConfiguration();
-      // TODO: defaults lead to error in loggingFactory.configure
       throw new IllegalStateException("Error parsing base and env configs", e);
     }
 
@@ -219,8 +203,6 @@ public class ConfigurationReader {
         .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
-  // TODO: special console pattern
-  // TODO: only set format if default is set, so custom format in cfg.yml is possible
   private static void applyLogFormat(LoggingConfiguration loggingConfiguration, Constants.ENV env) {
     loggingConfiguration.getAppenders().stream()
         .filter(
@@ -241,7 +223,7 @@ public class ConfigurationReader {
             });
   }
 
-  private static void applyForcedDefaults(AppConfiguration cfg, Constants.ENV env) {
+  private static void applyForcedDefaults(AppConfiguration cfg) {
     cfg.getServerFactory().setRegisterDefaultExceptionMappers(false);
 
     cfg.getServerFactory()

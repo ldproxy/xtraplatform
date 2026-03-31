@@ -31,6 +31,7 @@ public interface StoreSourceHttp extends StoreSource {
 
   @JsonIgnore
   @Value.Derived
+  @Override
   default boolean isWatchable() {
     return false;
   }
