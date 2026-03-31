@@ -33,7 +33,6 @@ public class CfgStoreDriverFs implements CfgStoreDriver {
     return Type.FS_KEY;
   }
 
-  // TODO: same as in BlobStoreDriverFs
   @Override
   public boolean isAvailable(StoreSource storeSource) {
     Path absolutePath = getAbsolutePath(dataDirectory, storeSource);
@@ -43,7 +42,6 @@ public class CfgStoreDriverFs implements CfgStoreDriver {
         : Files.isDirectory(absolutePath);
   }
 
-  // TODO: single content?
   @Override
   public Optional<InputStream> load(StoreSource storeSource) throws IOException {
     Path root = getAbsolutePath(dataDirectory, storeSource);

@@ -197,7 +197,6 @@ import org.immutables.value.Value;
 @Value.Modifiable
 @JsonDeserialize(as = ModifiableAuthConfiguration.class)
 public interface AuthConfiguration {
-  // TODO: could be replaced with property obligations
   @DocIgnore
   Optional<String> getPostProcessingEndpoint();
 

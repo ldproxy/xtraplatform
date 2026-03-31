@@ -232,7 +232,6 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   private void onChange(State to) {
     /*if (to.isLowerThan(getState())) {
       setState(to);
-      // TODO: messages
     }*/
     checkStates();
   }

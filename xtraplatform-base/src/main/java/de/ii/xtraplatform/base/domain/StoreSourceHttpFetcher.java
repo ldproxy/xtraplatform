@@ -47,7 +47,7 @@ public class StoreSourceHttpFetcher {
   public boolean isAvailable(StoreSource storeSource) {
     try {
       new URI(storeSource.getSrc());
-      // TODO: HEAD request
+      // NOPMD - TODO: HEAD request
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException(e);
     }

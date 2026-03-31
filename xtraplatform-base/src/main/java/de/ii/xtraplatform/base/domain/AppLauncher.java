@@ -336,7 +336,6 @@ public class AppLauncher implements AppContext {
   private Optional<CfgStoreDriver> findDriver(StoreSource storeSource, boolean warn) {
     final boolean[] foundUnavailable = {false};
 
-    // TODO: driver content types, s3 only supports resources
     Optional<CfgStoreDriver> driver =
         drivers.stream()
             .filter(d -> Objects.equals(d.getType(), storeSource.getType()))

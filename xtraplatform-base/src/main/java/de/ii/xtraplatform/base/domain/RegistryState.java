@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO
 public final class RegistryState<T> implements Registry.State<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RegistryState.class);

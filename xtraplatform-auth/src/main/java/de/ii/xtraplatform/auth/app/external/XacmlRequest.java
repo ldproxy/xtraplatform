@@ -65,7 +65,7 @@ public class XacmlRequest {
     actionAttributes.forEach((id, value) -> add(id, value, action, geoXacmlVersion));
 
     request =
-        version == XacmlJsonVersion._1_0
+        version == XacmlJsonVersion.V1_0
             ? request10(subject.build(), resource.build(), action.build())
             : request11(subject.build(), resource.build(), action.build());
   }

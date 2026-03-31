@@ -71,16 +71,10 @@ public interface JacksonModules {
 
         private boolean isImmutableBuilder(Class<?> clazz) {
           return "Builder".equals(clazz.getSimpleName());
-          // TODO: annotations not retained
-          // && Objects.nonNull(clazz.getAnnotation(Generated.class))
-          // && clazz.getAnnotation(Generated.class).generator().equals("Immutables");
         }
 
         private boolean isModifiable(Class<?> clazz) {
           return clazz.getSimpleName().startsWith("Modifiable");
-          // TODO: annotations not retained
-          // && Objects.nonNull(clazz.getAnnotation(Generated.class))
-          // && clazz.getAnnotation(Generated.class).generator().equals("Immutables");
         }
 
         private boolean isOptional(Class<?> clazz) {
