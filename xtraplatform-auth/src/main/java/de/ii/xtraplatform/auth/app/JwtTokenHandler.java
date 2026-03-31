@@ -31,7 +31,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SigningKeyResolver;
 import io.jsonwebtoken.jackson.io.JacksonDeserializer;
 import io.jsonwebtoken.security.Keys;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -356,12 +355,13 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   private SecretKey generateKey() {
     SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    try {
+    // NOTE: no longer used, just a fallback if no auth provider is enabled
+    /*try {
       keyStore.put(SIGNING_KEY_PATH, new ByteArrayInputStream(key.getEncoded()));
     } catch (IOException e) {
       LogContext.error(
           LOGGER, e, "Could not save JWT signing key, tokens will be invalidated on restart");
-    }
+    }*/
 
     return key;
   }

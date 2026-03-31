@@ -72,6 +72,11 @@ public interface ResourceStore
     }
 
     @Override
+    public boolean canHandle(Path path) {
+      return delegate.canHandle(prefix.resolve(path));
+    }
+
+    @Override
     public boolean has(Path path) throws IOException {
       return delegateWriter.has(prefix.resolve(path), writable);
     }

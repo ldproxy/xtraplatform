@@ -16,6 +16,8 @@ import java.util.stream.Stream;
 
 public interface BlobReader {
 
+  boolean canHandle(Path path);
+
   boolean has(Path path) throws IOException;
 
   Optional<InputStream> content(Path path) throws IOException;

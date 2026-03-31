@@ -208,10 +208,15 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
   }
 
   @Override
+  public boolean canHandle(Path path) {
+    return true;
+  }
+
+  @Override
   public boolean has(Path path) throws IOException {
 
     for (BlobReader source : blobReaders) {
-      if (source.has(path)) {
+      if (source.canHandle(path) && source.has(path)) {
         return true;
       }
     }
@@ -223,10 +228,12 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
   public Optional<InputStream> content(Path path) throws IOException {
 
     for (BlobReader source : blobReaders) {
-      Optional<InputStream> blob = source.content(path);
+      if (source.canHandle(path)) {
+        Optional<InputStream> blob = source.content(path);
 
-      if (blob.isPresent()) {
-        return blob;
+        if (blob.isPresent()) {
+          return blob;
+        }
       }
     }
 
@@ -236,10 +243,12 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
   @Override
   public Optional<Blob> get(Path path) throws IOException {
     for (BlobReader source : blobReaders) {
-      Optional<Blob> blob = source.get(path);
+      if (source.canHandle(path)) {
+        Optional<Blob> blob = source.get(path);
 
-      if (blob.isPresent()) {
-        return blob;
+        if (blob.isPresent()) {
+          return blob;
+        }
       }
     }
 
@@ -249,10 +258,12 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
   @Override
   public long size(Path path) throws IOException {
     for (BlobReader source : blobReaders) {
-      long size = source.size(path);
+      if (source.canHandle(path)) {
+        long size = source.size(path);
 
-      if (size > -1) {
-        return size;
+        if (size > -1) {
+          return size;
+        }
       }
     }
 
@@ -262,10 +273,12 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
   @Override
   public long lastModified(Path path) throws IOException {
     for (BlobReader source : blobReaders) {
-      long size = source.lastModified(path);
+      if (source.canHandle(path)) {
+        long size = source.lastModified(path);
 
-      if (size > -1) {
-        return size;
+        if (size > -1) {
+          return size;
+        }
       }
     }
 
@@ -277,6 +290,7 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
       throws IOException {
     try {
       return blobReaders.stream()
+          .filter(reader -> reader.canHandle(path))
           .flatMap(mayThrow(reader -> reader.walk(path, maxDepth, matcher)))
           .distinct();
     } catch (Throwable e) {

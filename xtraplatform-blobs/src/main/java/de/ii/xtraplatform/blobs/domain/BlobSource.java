@@ -7,11 +7,7 @@
  */
 package de.ii.xtraplatform.blobs.domain;
 
-import java.nio.file.Path;
-
 public interface BlobSource extends BlobReader {
-
-  boolean canHandle(Path path);
 
   default boolean canWrite() {
     return this instanceof BlobWriter;
