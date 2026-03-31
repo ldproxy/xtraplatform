@@ -46,7 +46,7 @@ class BuildableMapEncoding<T extends Buildable<T>, U extends BuildableBuilder<T>
     }
 
     @JsonProperty
-    @Encoding.Naming(value = "get*")
+    @Encoding.Naming("get*")
     public Map<String, U> get() {
       // return buildValue.build().getBuilders();
       return builderMap;
@@ -55,7 +55,6 @@ class BuildableMapEncoding<T extends Buildable<T>, U extends BuildableBuilder<T>
     @Encoding.Init
     @Encoding.Naming(standard = Encoding.StandardNaming.PUT, depluralize = true)
     void put(String key, T value) {
-      // TODO
       // buildValue.putBuilders(key, value.toBuilder());
       builderMap.put(key, (U) value.getBuilder());
     }
@@ -71,7 +70,6 @@ class BuildableMapEncoding<T extends Buildable<T>, U extends BuildableBuilder<T>
     @Encoding.Init
     @Encoding.Naming(standard = Encoding.StandardNaming.PUT_ALL, depluralize = true)
     void putAll(Map<String, T> values) {
-      // TODO
       values.forEach(this::put);
     }
 

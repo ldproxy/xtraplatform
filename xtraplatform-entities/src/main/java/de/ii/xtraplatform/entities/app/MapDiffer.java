@@ -12,8 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class MapDiffer {
+public final class MapDiffer {
 
+  private MapDiffer() {}
+
+  @SuppressWarnings("PMD.ConfusingTernary")
   public static Map<String, String> diff(Map<String, Object> source, Map<String, Object> other) {
     Map<String, String> result = new LinkedHashMap<>();
 
@@ -27,8 +30,6 @@ public class MapDiffer {
             result.putAll(diff((Map<String, Object>) value, (Map<String, Object>) other.get(key)));
           } else if (value instanceof List && other.get(key) instanceof List) {
             result.putAll(diff((List<Object>) value, (List<Object>) other.get(key), key));
-          } else if (value instanceof List && other.get(key) instanceof Map) {
-            // List<Object> diff = diff((List<Object>) value, (Map<String, Object>) other.get(key));
           } else {
             result.put(key, String.format("%s != %s", value, other.get(key)));
           }
@@ -44,6 +45,7 @@ public class MapDiffer {
     return result;
   }
 
+  @SuppressWarnings("PMD.CyclomaticComplexity")
   private static Map<String, String> diff(
       List<Object> source, List<Object> other, String parentKey) {
 
@@ -61,8 +63,6 @@ public class MapDiffer {
         result.putAll(diff((Map<String, Object>) value, (Map<String, Object>) other.get(i)));
       } else if (value instanceof List && other.get(i) instanceof List) {
         result.putAll(diff((List<Object>) value, (List<Object>) other.get(i), key));
-      } else if (value instanceof List && other.get(i) instanceof Map) {
-        // List<Object> diff = diff((List<Object>) value, (Map<String, Object>) other.get(i));
       } else {
         result.put(key, String.format("%s != %s", value, other.get(i)));
       }

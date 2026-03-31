@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.TooManyStaticImports")
 public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverFs.class);
@@ -86,19 +87,26 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
   }
 
   @Override
+  @SuppressWarnings("PMD.CyclomaticComplexity")
   public Stream<EntityEvent> load(StoreSource storeSource) {
     EventSource source = from(storeSource);
 
     if (!Files.exists(source.getPath()) && !source.getPath().startsWith(dataDirectory)) {
-      LOGGER.warn("Store source {} not found.", source.getSource().getLabel());
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn("Store source {} not found.", source.getSource().getLabel());
+      }
       return Stream.empty();
     }
     if (!storeSource.isArchive() && !Files.isDirectory(source.getPath())) {
-      LOGGER.warn("Store source {} is not a directory.", source.getSource().getLabel());
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn("Store source {} is not a directory.", source.getSource().getLabel());
+      }
       return Stream.empty();
     }
     if (storeSource.isArchive() && !Files.isRegularFile(source.getPath())) {
-      LOGGER.warn("Store source {} is not an archive.", source.getSource().getLabel());
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn("Store source {} is not an archive.", source.getSource().getLabel());
+      }
       return Stream.empty();
     }
 
@@ -107,18 +115,21 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
     return source.load(eventReader);
   }
 
-  // TODO: stopWatching, move watchService to class, watch new directories, file extension filter
+  // NOPMD - TODO: stopWatching, move watchService to class, watch new directories, file extension
+  // filter
   @Override
+  @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.CognitiveComplexity"})
   public void listen(StoreSource storeSource, Consumer<List<Path>> watchEventConsumer) {
     EventSource source = from(storeSource);
 
     if (!source.getSource().isWatchable() || source.getSource().isArchive()) {
-      LOGGER.warn("Watching is disabled for source {}.", source.getSource().getLabel());
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn("Watching is disabled for source {}.", source.getSource().getLabel());
+      }
       return;
     }
 
-    try {
-      WatchService watchService = FileSystems.getDefault().newWatchService();
+    try (WatchService watchService = FileSystems.getDefault().newWatchService()) {
       final Map<WatchKey, List<Path>> keys = new HashMap<>();
 
       try {
@@ -131,12 +142,13 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
         LogContext.error(LOGGER, e, "Cannot watch source {}", source.getSource().getLabel());
       }
 
-      WatchKey key;
-      while ((key = watchService.take()) != null) {
+      WatchKey key = watchService.take();
+      while (key != null) {
         if (!keys.containsKey(key)) {
           if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("WatchKey " + key + " not recognized!");
           }
+          key = watchService.take();
           continue;
         }
         final Path rootDir = keys.get(key).get(0);
@@ -147,7 +159,7 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
                 .filter(
                     watchEvent -> {
                       String fileExtension = getFileExtension(watchEvent.context().toString());
-                      // TODO: either inject from store or filter at a later stage
+                      // NOPMD - TODO: either inject from store or filter at a later stage
                       return Objects.equals(fileExtension, "yml")
                           || Objects.equals(fileExtension, "yaml")
                           || Objects.equals(fileExtension, "json");
@@ -193,12 +205,12 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
     EventSource source = from(storeSource);
 
     if (source.getSource().getMode() == Mode.RO) {
-      LOGGER.warn("Writing is disabled for source {}.", source.getSource().getLabel());
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn("Writing is disabled for source {}.", source.getSource().getLabel());
+      }
       return;
     }
 
-    // TODO: check mainPath first, if exists use override
-    // TODO: if override exists, merge with incoming
     Path eventPath = source.getSavePath(event);
     /*if (Files.exists(eventPath)) {
         eventPath = getEventFilePath(event.type(), event.identifier(), event.format(), savePathPattern);
@@ -211,14 +223,15 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
     }
   }
 
-  // TODO: only delete overrides if migration
   @Override
   public void deleteAll(StoreSource storeSource, String type, Identifier identifier, String format)
       throws IOException {
     EventSource source = from(storeSource);
 
     if (source.getSource().getMode() == Mode.RO) {
-      LOGGER.warn("Writing is disabled for source {}.", source.getSource().getLabel());
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn("Writing is disabled for source {}.", source.getSource().getLabel());
+      }
       return;
     }
 
@@ -227,12 +240,12 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
     }
   }
 
+  @SuppressWarnings("PMD.CognitiveComplexity")
   private void deleteEvent(Path eventPath) throws IOException {
     if (!Files.isDirectory(eventPath.getParent())) {
       return;
     }
 
-    // TODO: better error handling
     Files.list(eventPath.getParent())
         .forEach(
             consumerMayThrow(
@@ -243,7 +256,6 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
                               .toString()
                               .startsWith(eventPath.getFileName().toString() + "."))) {
                     String fileName = file.getFileName().toString();
-                    String name = file.toFile().getName();
                     Path backup;
                     if (file.getParent().endsWith("#overrides#")) {
                       backup = file.getParent().getParent().resolve(".backup/#overrides#");
@@ -264,8 +276,6 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
                         // ignore
                       }
                     }
-
-                    boolean stop = true;
                   }
                 }));
   }

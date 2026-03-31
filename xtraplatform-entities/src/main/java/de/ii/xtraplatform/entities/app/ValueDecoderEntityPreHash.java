@@ -15,17 +15,13 @@ import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
 import java.io.IOException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ValueDecoderEntityPreHash implements ValueDecoderMiddleware<EntityData> {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(ValueDecoderEntityPreHash.class);
 
   private final BiFunction<Identifier, String, EntityDataBuilder<EntityData>> newBuilderSupplier;
   private final Function<EntityData, String> hasher;
 
-  // TODO: shouldPreHash from Factory
+  // NOPMD - TODO: shouldPreHash from Factory
   public ValueDecoderEntityPreHash(
       BiFunction<Identifier, String, EntityDataBuilder<EntityData>> newBuilderSupplier,
       Function<EntityData, String> hasher) {
@@ -42,16 +38,16 @@ public class ValueDecoderEntityPreHash implements ValueDecoderMiddleware<EntityD
       boolean ignoreCache)
       throws IOException {
     if (data.getEntitySubType().isPresent()) {
-      String hash = hasher.apply(data);
-
       EntityDataBuilder<EntityData> builder =
           newBuilderSupplier.apply(identifier, data.getEntitySubType().get());
 
-      // TODO: happens because providers declare subtypes despite not having any
+      // NOTE: happens because providers declare subtypes despite not having any
       // no builder found for subtype
       if (builder == null) {
         return data;
       }
+
+      String hash = hasher.apply(data);
 
       builder.from(data);
 

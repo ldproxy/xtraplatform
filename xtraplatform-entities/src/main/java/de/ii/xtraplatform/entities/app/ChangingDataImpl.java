@@ -61,7 +61,7 @@ public class ChangingDataImpl implements ChangingData {
     if (updated.isPresent()) {
       values.get(type).put(id, updated.get());
       updateAggregate(type);
-      // TODO: does not work for count
+      // NOPMD - TODO: does not work for count
       // updateAggregate(type, updated.get());
 
       return true;

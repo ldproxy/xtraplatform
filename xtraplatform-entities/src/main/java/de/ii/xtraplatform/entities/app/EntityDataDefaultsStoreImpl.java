@@ -66,6 +66,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind(interfaces = {EntityDataDefaultsStore.class, AppLifeCycle.class})
+@SuppressWarnings("PMD.TooManyMethods")
 public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<Map<String, Object>>
     implements EntityDataDefaultsStore, AppLifeCycle {
 
@@ -87,6 +88,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       Jackson jackson,
       Substitutions substitutions,
       Lazy<Set<EntityFactory>> entityFactories) {
+    super();
     StoreConfiguration store = appContext.getConfiguration().getStore();
     this.entityFactories = new EntityFactoriesImpl(entityFactories);
     this.eventStore = eventStore;
@@ -152,7 +154,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
               @Override
               public Map<String, Object> get(Identifier identifier) {
-                return null;
+                return new LinkedHashMap<>();
               }
             }));
 
@@ -204,7 +206,6 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         .collect(Collectors.toList());
   }
 
-  // TODO: onEmit middleware
   private Stream<EntityEvent> processEvent(EntityEvent event) {
 
     if (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format())) {
@@ -290,7 +291,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
           data, defaults, factory.getIgnoreKeys(), factory.getListEntryKeys());
 
     } catch (Throwable e) {
-      boolean br = true;
+      // ignore
     }
 
     return data;
@@ -337,7 +338,6 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
             valueEncodingMap.deserialize(
                 defaultsIdentifier, payload, valueEncodingBuilder.getDefaultFormat(), false);
 
-        // TODO
         defaults =
             defaults.entrySet().stream()
                 .filter(entry -> !Objects.equals(entry.getValue(), "__DEFAULT__"))
@@ -346,7 +346,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         return Optional.ofNullable(defaults);
 
       } catch (Throwable e) {
-        boolean br = true;
+        // ignore
       }
     }
 
@@ -375,7 +375,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
           return deserialize;
         } catch (IOException e) {
-          throw new RuntimeException(e);
+          throw new IllegalStateException("Error deserializing defaults", e);
         }
       }
     }
@@ -433,7 +433,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     return null;
   }
 
-  // TODO: load defaults from EntityFactory that weren't loaded by event
+  // NOPMD - TODO: load defaults from EntityFactory that weren't loaded by event
   @Override
   protected CompletableFuture<Void> onListenStart() {
 
@@ -493,7 +493,6 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       }
     }
 
-    // TODO
     defaults =
         defaults.entrySet().stream()
             .filter(entry -> !Objects.equals(entry.getValue(), "__DEFAULT__"))

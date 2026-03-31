@@ -19,12 +19,8 @@ import java.nio.file.PathMatcher;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class EventReaderDir implements EventReader {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(EventReaderDir.class);
 
   @Override
   public Stream<Tuple<Path, Supplier<byte[]>>> load(

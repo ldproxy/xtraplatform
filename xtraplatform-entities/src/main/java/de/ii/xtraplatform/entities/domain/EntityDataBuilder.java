@@ -20,7 +20,6 @@ public interface EntityDataBuilder<T extends EntityData> extends ValueBuilder<T>
 
   EntityDataBuilder<T> from(EntityData value);
 
-  // TODO: is there a better solution?
   default EntityDataBuilder<T> fillRequiredFieldsWithPlaceholders() {
     return this;
   }

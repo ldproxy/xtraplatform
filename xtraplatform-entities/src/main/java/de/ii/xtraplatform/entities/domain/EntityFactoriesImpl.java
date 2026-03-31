@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import dagger.Lazy;
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -115,7 +116,7 @@ public class EntityFactoriesImpl implements EntityFactories {
 
   private String getSpecificEntityType(String entityType, Optional<String> entitySubType) {
     return entitySubType.isPresent()
-        ? String.format("%s/%s", entityType, entitySubType.get().toLowerCase())
+        ? String.format("%s/%s", entityType, entitySubType.get().toLowerCase(Locale.ROOT))
         : entityType;
   }
 

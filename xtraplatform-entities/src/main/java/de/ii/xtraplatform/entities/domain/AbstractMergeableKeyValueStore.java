@@ -13,18 +13,13 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValueStore<T>
     implements MergeableKeyValueStore<T> {
 
-  private static final Logger LOGGER =
-      LoggerFactory.getLogger(AbstractMergeableKeyValueStore.class);
-
   protected abstract ValueEncoding<T> getValueEncoding();
 
-  // TODO: an in-progress event (e.g. drop) might invalidate this one, do we need distributed
+  // NOTE: an in-progress event (e.g. drop) might invalidate this one, do we need distributed
   // locks???
   protected boolean isUpdateValid(Identifier identifier, byte[] payload) {
     try {
@@ -49,7 +44,6 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
       throw new IllegalArgumentException("Partial update for ... not valid");
     }
 
-    // TODO: SnapshotProvider???
     try {
       byte[] merged =
           getValueEncoding()

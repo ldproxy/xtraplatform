@@ -56,9 +56,6 @@ public class ValueEncodingJacksonWithNesting<T> extends ValueEncodingJackson<T>
       return payload;
     }
 
-    // TODO: .metadata.yml.swp leads to invisible error, should be ignored either silently or with
-    // log message
-
     ObjectMapper mapper = getMapper(format);
 
     Map<String, Object> data =

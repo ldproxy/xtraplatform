@@ -49,7 +49,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO: should this really be a facade for EventStore? or can we make it plain ValueCache?
+// NOTE: should this really be a facade for EventStore? or can we make it plain ValueCache?
+@SuppressWarnings({"PMD.GodClass", "PMD.CogntitiveComplexity", "PMD.CyclomaticComplexity"})
 public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventSourcing.class);
@@ -128,6 +129,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   }
 
   @Override
+  @SuppressWarnings("PMD.CognitiveComplexity")
   public void onEmit(Event event) {
     if (event instanceof EntityEvent) {
       EntityEvent entityEvent = (EntityEvent) event;
@@ -138,10 +140,8 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
           }
         } else if (mutationEventProcessor.isPresent() && event instanceof MutationEvent) {
           CompletableFuture<T> completableFuture = null;
-          // TODO
-          if (queue.containsKey(entityEvent.identifier())
-              && entityEvent.type().equals("defaults")
-              && entityEvent.identifier().id().equals("services.ogc_api")) {
+          if ("defaults".equals(entityEvent.type())
+              && "services.ogc_api".equals(entityEvent.identifier().id())) {
             completableFuture = queue.get(entityEvent.identifier());
             queue.remove(entityEvent.identifier());
           }
@@ -155,10 +155,8 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
         } else {
           onEmit(entityEvent);
         }
-      } catch (Throwable e) {
-        if (e instanceof NoSuchElementException
-            && Objects.nonNull(e.getMessage())
-            && e.getMessage().contains("providers/feature/")) {
+      } catch (NoSuchElementException e) {
+        if (Objects.nonNull(e.getMessage()) && e.getMessage().contains("providers/feature/")) {
           LOGGER.error(
               "Cannot load '{}', feature provider type not supported: {}",
               entityEvent.asPath(),
@@ -168,19 +166,31 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
         } else {
           LogContext.error(LOGGER, e, "Cannot load '{}'", entityEvent.asPath());
         }
+      } catch (Throwable e) {
+        LogContext.error(LOGGER, e, "Cannot load '{}'", entityEvent.asPath());
       }
-
     } else if (event instanceof StateChangeEvent) {
-      switch (((StateChangeEvent) event).state()) {
+      StateChangeEvent stateChangeEvent = (StateChangeEvent) event;
+      switch (stateChangeEvent.state()) {
         case REPLAYING:
-          LOGGER.debug("Loading {}", ((StateChangeEvent) event).type());
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Loading {}", stateChangeEvent.type());
+          }
           break;
         case LISTENING:
-          started.add(((StateChangeEvent) event).type());
-
+          started.add(stateChangeEvent.type());
           if (started.containsAll(getEventTypes())) {
-            onStart.get().thenRun(() -> LOGGER.debug("Loaded {}", String.join(" and ", started)));
+            onStart
+                .get()
+                .thenRun(
+                    () -> {
+                      if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Loaded {}", String.join(" and ", started));
+                      }
+                    });
           }
+          break;
+        default:
           break;
       }
     } else if (event instanceof ReloadEvent) {
@@ -243,13 +253,12 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     return pushMutationEventRaw(identifier, payload, false);
   }
 
-  // TODO: which eventType should we push?
   private CompletableFuture<T> pushMutationEventRaw(
       Identifier identifier, byte[] payload, boolean isDelete) {
     final CompletableFuture<T> completableFuture = new CompletableFuture<>();
 
     try {
-      // TODO: if already in queue, pipeline to existing future
+      // NOPMD - TODO: if already in queue, pipeline to existing future
       final EntityEvent entityEvent =
           ImmutableMutationEvent.builder()
               .type(eventTypes.get(0))
@@ -261,8 +270,6 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
       queue.put(identifier, completableFuture);
 
-      // TODO: pass snapshot to push, event store can decide what to do with it
-      // who decides if snapshotting is enabled?
       eventStore.push(entityEvent);
 
     } catch (Throwable e) {
@@ -273,6 +280,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     return completableFuture;
   }
 
+  @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.NPathComplexity"})
   private void onEmit(EntityEvent event) throws Throwable {
     Identifier key = event.identifier();
     FORMAT payloadFormat = FORMAT.fromString(event.format());

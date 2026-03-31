@@ -36,12 +36,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-// TODO:
 public class EntityDeserialization {
-  private static final Logger LOGGER = LoggerFactory.getLogger(EntityDeserialization.class);
 
   public static final Module DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER =
       new SimpleModule()
@@ -75,6 +71,7 @@ public class EntityDeserialization {
 
   public static class ImmutableBuilderMapWrapperDeserializer extends BeanDeserializer {
 
+    private static final long serialVersionUID = 1L;
     private final String wrappedPropertyName;
 
     ImmutableBuilderMapWrapperDeserializer(
@@ -83,7 +80,16 @@ public class EntityDeserialization {
       this.wrappedPropertyName = wrappedPropertyName;
     }
 
+    private List<SettableBeanProperty> remapBeanProperties(
+        BeanDeserializer unwrapping, SettableBeanProperty mapProp, String wrappedPropertyName) {
+      Iterable<SettableBeanProperty> iterable = unwrapping::properties;
+      return StreamSupport.stream(iterable.spliterator(), false)
+          .map(prop -> prop == mapProp ? mapProp.withSimpleName(wrappedPropertyName) : prop)
+          .collect(Collectors.toList());
+    }
+
     @Override
+    @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
     public void resolve(DeserializationContext ctxt) throws JsonMappingException {
       super.resolve(ctxt);
 
@@ -97,20 +103,13 @@ public class EntityDeserialization {
 
         JsonDeserializer<Object> orig = prop.getValueDeserializer();
         JsonDeserializer<Object> unwrapping = orig.unwrappingDeserializer(xform);
-        if (unwrapping != orig && unwrapping != null && unwrapping instanceof BeanDeserializer) {
+        if (!Objects.equals(unwrapping, orig)
+            && unwrapping != null
+            && unwrapping instanceof BeanDeserializer) {
           SettableBeanProperty mapProp = ((BeanDeserializer) unwrapping).findProperty("map");
           if (mapProp != null) {
-            Iterable<SettableBeanProperty> iterable = ((BeanDeserializer) unwrapping)::properties;
             List<SettableBeanProperty> beanProperties =
-                StreamSupport.stream(iterable.spliterator(), false)
-                    .map(
-                        settableBeanProperty -> {
-                          if (settableBeanProperty == mapProp) {
-                            return mapProp.withSimpleName(wrappedPropertyName);
-                          }
-                          return settableBeanProperty;
-                        })
-                    .collect(Collectors.toList());
+                remapBeanProperties((BeanDeserializer) unwrapping, mapProp, wrappedPropertyName);
             BeanPropertyMap beanPropertyMap =
                 new BeanPropertyMap(
                     false, beanProperties, Collections.<String, List<PropertyName>>emptyMap());
@@ -121,6 +120,10 @@ public class EntityDeserialization {
           _unwrappedPropertyHandler.addProperty(prop);
           _beanProperties.remove(prop);
         }
+
+        prop = prop.withValueDeserializer(unwrapping);
+        _unwrappedPropertyHandler.addProperty(prop);
+        _beanProperties.remove(prop);
       }
     }
   }
@@ -139,7 +142,8 @@ public class EntityDeserialization {
         }
 
         @Override
-        public void setupModule(com.fasterxml.jackson.databind.Module.SetupContext context) {
+        @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.CloseResource"})
+        public void setupModule(Module.SetupContext context) {
           context.addDeserializationProblemHandler(
               new DeserializationProblemHandler() {
                 @Override
@@ -157,8 +161,6 @@ public class EntityDeserialization {
 
                   JsonLocation currentLocation = p.getCurrentLocation();
                   byte[] sourceRef = (byte[]) currentLocation.getSourceRef();
-                  long line = currentLocation.getLineNr();
-                  long column = currentLocation.getColumnNr();
 
                   JsonParser parser2 = p.getCodec().getFactory().createParser(sourceRef);
                   parser2.nextToken();
@@ -184,6 +186,8 @@ public class EntityDeserialization {
 
                   long currentLine = parser2.getCurrentLocation().getLineNr();
                   long currentColumn = parser2.getCurrentLocation().getColumnNr();
+                  long line = currentLocation.getLineNr();
+                  long column = currentLocation.getColumnNr();
 
                   String lastExtensionType = null;
 
@@ -192,9 +196,8 @@ public class EntityDeserialization {
                     for (;
                         currentToken != JsonToken.END_OBJECT;
                         currentToken = parser2.nextToken()) {
-                      if (currentToken == JsonToken.FIELD_NAME
-                          && parser2.getCurrentName().equals("extensionType")) {
-                        currentToken = parser2.nextToken();
+                      if (JsonToken.FIELD_NAME == currentToken
+                          && "extensionType".equals(parser2.getCurrentName())) {
                         lastExtensionType = parser2.getValueAsString();
                       }
                     }

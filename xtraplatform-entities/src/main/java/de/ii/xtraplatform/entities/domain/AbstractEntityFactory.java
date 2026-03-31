@@ -101,8 +101,6 @@ public abstract class AbstractEntityFactory<
       CompletableFuture<PersistentEntity> reloaded = new CompletableFuture<>();
 
       if (Objects.nonNull(instance)) {
-        // TODO this.instanceReloadListeners.put(instanceId, reloaded);
-
         try {
           instance.setData((T) entityData, force);
           synchronized (this) {
