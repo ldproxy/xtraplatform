@@ -181,7 +181,7 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals, Closeab
 
       minioClient.putObject(
           PutObjectArgs.builder().bucket(bucket).object(pathHelper.full(path)).stream(
-                  buffer, buffer.available(), -1)
+                  buffer, (long) buffer.available(), (long) -1)
               .build());
     } catch (Throwable e) {
       throw new IOException("S3 Driver", e);
