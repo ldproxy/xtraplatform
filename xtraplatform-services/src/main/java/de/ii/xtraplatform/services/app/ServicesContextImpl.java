@@ -9,7 +9,9 @@ package de.ii.xtraplatform.services.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServicesContext;
+import de.ii.xtraplatform.web.domain.URICustomizer;
 import java.net.URI;
 import java.util.List;
 import javax.inject.Inject;
@@ -34,5 +36,12 @@ public class ServicesContextImpl implements ServicesContext {
   @Override
   public List<String> getPathPrefix() {
     return appContext.getPathPrefix();
+  }
+
+  @Override
+  public String getApiUri(ServiceData serviceData) {
+    return new URICustomizer(getUri())
+        .ensureLastPathSegments(serviceData.getSubPath().toArray(String[]::new))
+        .toString();
   }
 }

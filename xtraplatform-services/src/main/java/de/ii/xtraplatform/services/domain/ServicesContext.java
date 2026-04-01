@@ -9,4 +9,7 @@ package de.ii.xtraplatform.services.domain;
 
 import de.ii.xtraplatform.base.domain.WebContext;
 
-public interface ServicesContext extends WebContext {}
+public interface ServicesContext extends WebContext {
+
+  String getApiUri(ServiceData serviceData);
+}
