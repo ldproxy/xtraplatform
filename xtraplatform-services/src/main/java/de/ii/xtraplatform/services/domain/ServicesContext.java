@@ -8,8 +8,13 @@
 package de.ii.xtraplatform.services.domain;
 
 import de.ii.xtraplatform.base.domain.WebContext;
+import de.ii.xtraplatform.web.domain.URICustomizer;
 
 public interface ServicesContext extends WebContext {
 
-  String getApiUri(ServiceData serviceData);
+  default String getApiUri(ServiceData serviceData) {
+    return new URICustomizer(getUri())
+        .ensureLastPathSegments(serviceData.getSubPath().toArray(String[]::new))
+        .toString();
+  }
 }
