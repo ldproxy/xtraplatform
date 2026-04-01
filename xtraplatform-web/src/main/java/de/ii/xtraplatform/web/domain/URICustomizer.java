@@ -148,6 +148,8 @@ public class URICustomizer extends URIBuilder {
             .addAll(Arrays.asList(segments).subList(segmentsIndex, segments.length))
             .build());
 
+    optimize();
+
     return this;
   }
 
