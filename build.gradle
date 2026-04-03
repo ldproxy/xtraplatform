@@ -6,7 +6,7 @@ allprojects {
     group = 'de.interactive_instruments'
 }
 
-version = '6.7.0' + versionSuffix
+version = '6.8.0' + versionSuffix
 
 dependencies {
     modules subprojects
@@ -18,7 +18,6 @@ layer {
     MATURE {
         minimumCoverage = 0.0
         warningsAsErrors = false
-        ignorePmdErrors = true
     }
     CANDIDATE {
         minimumCoverage = 0.0
