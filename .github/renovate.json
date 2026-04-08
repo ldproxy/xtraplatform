@@ -8,6 +8,10 @@
       "automerge": true
     },
     {
+      "matchUpdateTypes": ["digest"],
+      "automerge": true
+    },
+    {
       "groupName": "dropwizard",
       "matchPackageNames": ["io.dropwizard:*"],
       "allowedVersions": "< 4.0.0"
