@@ -84,7 +84,11 @@ public class EntityDeserialization {
         BeanDeserializer unwrapping, SettableBeanProperty mapProp, String wrappedPropertyName) {
       Iterable<SettableBeanProperty> iterable = unwrapping::properties;
       return StreamSupport.stream(iterable.spliterator(), false)
-          .map(prop -> prop == mapProp ? mapProp.withSimpleName(wrappedPropertyName) : prop)
+          .map(
+              prop ->
+                  Objects.equals(prop, mapProp)
+                      ? mapProp.withSimpleName(wrappedPropertyName)
+                      : prop)
           .collect(Collectors.toList());
     }
 
@@ -142,7 +146,11 @@ public class EntityDeserialization {
         }
 
         @Override
-        @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.CloseResource"})
+        @SuppressWarnings({
+          "PMD.CognitiveComplexity",
+          "PMD.CyclomaticComplexity",
+          "PMD.CloseResource"
+        })
         public void setupModule(Module.SetupContext context) {
           context.addDeserializationProblemHandler(
               new DeserializationProblemHandler() {

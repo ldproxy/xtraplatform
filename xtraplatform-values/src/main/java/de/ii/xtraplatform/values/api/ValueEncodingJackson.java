@@ -22,6 +22,7 @@ import de.ii.xtraplatform.values.domain.ValueDecoderMiddleware;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
 import io.dropwizard.util.DataSize;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ import org.yaml.snakeyaml.LoaderOptions;
 
 public class ValueEncodingJackson<T> implements ValueEncoding<T> {
 
-  public static final byte[] YAML_NULL = "--- null\n".getBytes();
+  public static final byte[] YAML_NULL = "--- null\n".getBytes(StandardCharsets.UTF_8);
   private static final FORMAT DEFAULT_FORMAT = FORMAT.YML;
 
   private final Map<FORMAT, ObjectMapper> mappers;

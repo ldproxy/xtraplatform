@@ -36,6 +36,7 @@ public class JobQueueImpl extends AbstractVolatileComposed implements JobQueue {
   private final JobQueueBackend backend;
 
   @Inject
+  @SuppressWarnings({"PMD.ConstructorCallsOverridableMethod"})
   JobQueueImpl(VolatileRegistry volatileRegistry, Set<JobQueueBackend> backends) {
     super(volatileRegistry);
 

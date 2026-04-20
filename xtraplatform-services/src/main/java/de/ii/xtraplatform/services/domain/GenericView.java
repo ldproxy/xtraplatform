@@ -32,7 +32,7 @@ public class GenericView extends View {
     if (uri.getPath().endsWith("/")) {
       return "";
     } else {
-      return uri.getPath().substring(uri.getPath().lastIndexOf("/") + 1) + "/";
+      return uri.getPath().substring(uri.getPath().lastIndexOf('/') + 1) + "/";
     }
   }
 

@@ -12,6 +12,8 @@ import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class AbstractVolatile implements Volatile2, VolatileRegistered {
 
@@ -20,6 +22,7 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
 
   private final String uniqueKey;
   private final Set<String> capabilities;
+  private final Lock instanceLock;
   private State state;
   private boolean started;
   private Optional<String> message = Optional.empty();
@@ -46,24 +49,35 @@ public abstract class AbstractVolatile implements Volatile2, VolatileRegistered 
     this.noHealth = noHealth;
     this.uniqueKey = uniqueKey;
     this.capabilities = Set.of(capabilities);
+    this.instanceLock = new ReentrantLock();
     this.state = State.UNAVAILABLE;
     this.message = Optional.empty();
     this.started = false;
   }
 
-  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
-  protected synchronized void onVolatileStart() {
-    if (!started) {
-      volatileRegistry.register(this);
-      this.started = true;
+  protected void onVolatileStart() {
+    try {
+      instanceLock.lock();
+
+      if (!started) {
+        volatileRegistry.register(this);
+        this.started = true;
+      }
+    } finally {
+      instanceLock.unlock();
     }
   }
 
-  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
-  protected synchronized void onVolatileStop() {
-    if (started) {
-      this.started = false;
-      setState(State.UNAVAILABLE);
+  protected void onVolatileStop() {
+    try {
+      instanceLock.lock();
+
+      if (started) {
+        this.started = false;
+        setState(State.UNAVAILABLE);
+      }
+    } finally {
+      instanceLock.unlock();
     }
   }
 

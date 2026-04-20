@@ -276,7 +276,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
             .build());
   }
 
-  @SuppressWarnings("PMD.CognitiveComplexity")
+  @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.AvoidDeeplyNestedIfStmts"})
   private void reload(
       StoreSource storeSource, EventStoreDriver driver, EventFilter filter, boolean doDelete) {
     Set<EntityEvent> deleteEvents = new HashSet<>();

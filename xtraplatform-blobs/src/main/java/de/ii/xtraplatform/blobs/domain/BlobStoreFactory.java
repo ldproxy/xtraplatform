@@ -9,6 +9,7 @@ package de.ii.xtraplatform.blobs.domain;
 
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 
+@FunctionalInterface
 public interface BlobStoreFactory {
   BlobStore createBlobStore(Content contentType);
 }

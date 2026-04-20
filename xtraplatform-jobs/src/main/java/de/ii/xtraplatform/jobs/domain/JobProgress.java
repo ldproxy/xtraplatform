@@ -38,7 +38,7 @@ public interface JobProgress {
       return 100;
     }
 
-    return (int) ((((float) Math.max(current, 0)) / total) * 100);
+    return (int) (((float) Math.max(current, 0)) / total) * 100;
   }
 
   default boolean isDone() {

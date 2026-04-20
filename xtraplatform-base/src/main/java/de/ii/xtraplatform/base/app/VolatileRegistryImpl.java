@@ -33,6 +33,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javax.inject.Inject;
@@ -42,7 +44,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class VolatileRegistryImpl implements VolatileRegistry {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(VolatileRegistryImpl.class);
@@ -56,6 +58,7 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   private final Queue<Runnable> cancelTasks;
   private final List<BiConsumer<String, Volatile2>> onRegister;
   private final List<Consumer<String>> onUnRegister;
+  private final Lock instanceLock;
   private ScheduledFuture<?> currentSchedule;
   private int currentRate;
 
@@ -78,12 +81,15 @@ public class VolatileRegistryImpl implements VolatileRegistry {
     this.cancelTasks = new ArrayDeque<>();
     this.onRegister = new ArrayList<>();
     this.onUnRegister = new ArrayList<>();
+    this.instanceLock = new ReentrantLock();
     this.currentRate = 0;
   }
 
   @Override
   public void register(Volatile2 dependency) {
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       if (volatiles.containsKey(dependency.getUniqueKey())) {
         return;
       }
@@ -111,13 +117,16 @@ public class VolatileRegistryImpl implements VolatileRegistry {
           schedulePoll(polling.getIntervalMs());
         }
       }
+    } finally {
+      instanceLock.unlock();
     }
   }
 
   @Override
-  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
-  public synchronized void unregister(Volatile2 dependency) {
-    synchronized (this) {
+  public void unregister(Volatile2 dependency) {
+    try {
+      instanceLock.lock();
+
       volatiles.remove(dependency.getUniqueKey());
       watchers.remove(dependency.getUniqueKey());
 
@@ -126,6 +135,8 @@ public class VolatileRegistryImpl implements VolatileRegistry {
       if (dependency instanceof Polling) {
         polls.remove(dependency.getUniqueKey());
       }
+    } finally {
+      instanceLock.unlock();
     }
   }
 
@@ -143,15 +154,20 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   }
 
   private void notifyWatchers(String key, State from, State to) {
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       if (watchers.containsKey(key)) {
         for (ChangeHandler handler : watchers.get(key)) {
           executeHandler(handler, from, to);
         }
       }
+    } finally {
+      instanceLock.unlock();
     }
   }
 
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   private void executeHandler(ChangeHandler handler, State from, State to) {
     if (Objects.nonNull(handler)) {
       changeExecutor.submit(
@@ -172,7 +188,9 @@ public class VolatileRegistryImpl implements VolatileRegistry {
   public Runnable watch(Volatile2 dependency, ChangeHandler handler) {
     String key = dependency.getUniqueKey();
 
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       if (!watchers.containsKey(key)) {
         watchers.put(key, new ArrayList<>());
       }
@@ -184,6 +202,8 @@ public class VolatileRegistryImpl implements VolatileRegistry {
           watchers.get(key).set(index, null);
         }
       };
+    } finally {
+      instanceLock.unlock();
     }
   }
 
@@ -198,7 +218,9 @@ public class VolatileRegistryImpl implements VolatileRegistry {
     Map<String, State> states = new ConcurrentHashMap<>();
     List<Runnable> unwatchs = new ArrayList<>();
 
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       for (Volatile2 vol : volatiles) {
         states.put(vol.getUniqueKey(), vol.getState());
       }
@@ -220,17 +242,23 @@ public class VolatileRegistryImpl implements VolatileRegistry {
                   }
                 }));
       }
+    } finally {
+      instanceLock.unlock();
     }
     return onAvailable;
   }
 
   @Override
   public void listen(BiConsumer<String, Volatile2> onRegister, Consumer<String> onUnRegister) {
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       this.onRegister.add(onRegister);
       this.onUnRegister.add(onUnRegister);
 
       volatiles.forEach(onRegister);
+    } finally {
+      instanceLock.unlock();
     }
   }
 

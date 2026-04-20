@@ -24,6 +24,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 // NOTE: the queue was introduced as a mean to protect the connection pool and prevent deadlocks
 // because of a bug (running.get() < queueSize instead of running.get() < capacity) it was never
@@ -38,9 +40,10 @@ public class RunnerRx implements Runner {
   private final int queueSize;
   private final Queue<Runnable> queue;
   private final AtomicInteger running;
+  private final Lock instanceLock;
 
   public RunnerRx() {
-    this(Runner.DYNAMIC_CAPACITY, Runner.DYNAMIC_CAPACITY);
+    this(DYNAMIC_CAPACITY, DYNAMIC_CAPACITY);
   }
 
   public RunnerRx(int capacity, int queueSize) {
@@ -60,6 +63,7 @@ public class RunnerRx implements Runner {
     this.queueSize = queueSize;
     this.queue = new LinkedList<>();
     this.running = new AtomicInteger(0);
+    this.instanceLock = new ReentrantLock();
   }
 
   @Override
@@ -74,7 +78,7 @@ public class RunnerRx implements Runner {
     SubscriberRx<T> subscriber = graph.second();
     StreamContext<U> context = graph.third();
 
-    if (getCapacity() == Runner.DYNAMIC_CAPACITY) {
+    if (getCapacity() == DYNAMIC_CAPACITY) {
       flowable
           .subscribeOn(scheduler)
           .doOnError(throwable -> context.onError(result, throwable))
@@ -109,7 +113,9 @@ public class RunnerRx implements Runner {
   }
 
   private void run(Runnable task) {
-    synchronized (running) {
+    try {
+      instanceLock.lock();
+
       if (running.get() < queueSize) { // correct would be running.get() < capacity, see above
         running.incrementAndGet();
         task.run();
@@ -119,11 +125,15 @@ public class RunnerRx implements Runner {
         }*/
         queue.offer(task);
       }
+    } finally {
+      instanceLock.unlock();
     }
   }
 
   private void runNext() {
-    synchronized (running) {
+    try {
+      instanceLock.lock();
+
       int current = running.get() - 1;
       if (current < queueSize) { // correct would be current < capacity, see above
         Runnable task = queue.poll();
@@ -133,6 +143,8 @@ public class RunnerRx implements Runner {
           running.decrementAndGet();
         }
       }
+    } finally {
+      instanceLock.unlock();
     }
   }
 
@@ -147,9 +159,7 @@ public class RunnerRx implements Runner {
   }
 
   private static ExecutorService getConfig(int capacity) {
-    return capacity == Runner.DYNAMIC_CAPACITY
-        ? getDefaultConfig()
-        : createExecutorService(capacity);
+    return capacity == DYNAMIC_CAPACITY ? getDefaultConfig() : createExecutorService(capacity);
   }
 
   private static ExecutorService getDefaultConfig() {

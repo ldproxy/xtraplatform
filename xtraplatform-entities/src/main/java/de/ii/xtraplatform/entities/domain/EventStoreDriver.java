@@ -28,6 +28,7 @@ public interface EventStoreDriver extends StoreDriver {
         throws IOException;
   }
 
+  @FunctionalInterface
   interface Watcher {
     void listen(StoreSource storeSource, Consumer<List<Path>> watchEventConsumer);
   }

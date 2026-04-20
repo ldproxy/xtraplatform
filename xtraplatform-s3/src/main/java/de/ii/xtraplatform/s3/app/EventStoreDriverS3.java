@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-@SuppressWarnings({"PMD.CloseResource"})
+@SuppressWarnings({"PMD.AvoidCatchingGenericException"})
 public class EventStoreDriverS3 implements EventStoreDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverS3.class);
@@ -73,8 +73,8 @@ public class EventStoreDriverS3 implements EventStoreDriver {
   }
 
   private Tuple<MinioClient, String> getClient(StoreSourceS3 storeSource) {
-    String host = storeSource.getSrc().substring(0, storeSource.getSrc().lastIndexOf("/"));
-    String bucket = storeSource.getSrc().substring(storeSource.getSrc().lastIndexOf("/") + 1);
+    String host = storeSource.getSrc().substring(0, storeSource.getSrc().lastIndexOf('/'));
+    String bucket = storeSource.getSrc().substring(storeSource.getSrc().lastIndexOf('/') + 1);
 
     MinioClient minioClient =
         MinioClient.builder()

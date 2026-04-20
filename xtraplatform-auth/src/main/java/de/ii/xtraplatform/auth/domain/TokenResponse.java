@@ -10,6 +10,7 @@ package de.ii.xtraplatform.auth.domain;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@FunctionalInterface
 public interface TokenResponse {
 
   String getAccessToken();

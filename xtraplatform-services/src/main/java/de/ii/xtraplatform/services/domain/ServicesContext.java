@@ -10,6 +10,7 @@ package de.ii.xtraplatform.services.domain;
 import de.ii.xtraplatform.base.domain.WebContext;
 import de.ii.xtraplatform.web.domain.URICustomizer;
 
+@FunctionalInterface
 public interface ServicesContext extends WebContext {
 
   default String getApiUri(ServiceData serviceData) {

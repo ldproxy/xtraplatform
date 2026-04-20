@@ -159,8 +159,7 @@ public abstract class AppConfiguration extends Configuration {
 
   @JsonIgnore
   @Override
-  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
-  public synchronized void setLoggingFactory(LoggingFactory factory) {
+  public void setLoggingFactory(LoggingFactory factory) {
     throw new NotImplementedException();
   }
 

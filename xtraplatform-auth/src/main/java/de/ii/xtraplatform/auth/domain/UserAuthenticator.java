@@ -9,6 +9,7 @@ package de.ii.xtraplatform.auth.domain;
 
 import java.util.Optional;
 
+@FunctionalInterface
 public interface UserAuthenticator {
 
   Optional<User> authenticate(String username, String password);

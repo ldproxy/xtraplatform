@@ -59,7 +59,6 @@ public final class ResourceURL {
           filename =
               filename.substring(
                   filename.indexOf('!') + 2); // leaves just the relative file path inside the jar
-          @SuppressWarnings("PMD.CloseResource")
           final JarFile jarFile = jarConnection.getJarFile();
           final ZipEntry zipEntry = jarFile.getEntry(filename);
           try (InputStream inputStream = jarFile.getInputStream(zipEntry)) {
@@ -108,7 +107,7 @@ public final class ResourceURL {
    * @return the last modified time of the resource, expressed as the number of milliseconds since
    *     the epoch, or 0 if there was a problem
    */
-  @SuppressWarnings("PMD.CyclomaticComplexity")
+  @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.UseTryWithResources"})
   public static long getLastModified(URL resourceURL) {
     final String protocol = resourceURL.getProtocol();
     switch (protocol) {

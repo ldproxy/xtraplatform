@@ -20,6 +20,7 @@ public class StaticResourceReaderJar implements StaticResourceReader {
   }
 
   @Override
+  @SuppressWarnings({"PMD.AvoidCatchingGenericException", "PMD.ExceptionAsFlowControl"})
   public Optional<CachedResource> load(String path, Optional<String> defaultPage) {
     URL requestedResourceURL = null;
     byte[] requestedResourceBytes = null;

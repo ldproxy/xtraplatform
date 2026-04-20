@@ -12,6 +12,8 @@ import it.sauronsoftware.cron4j.TaskExecutor;
 import it.sauronsoftware.cron4j.TaskExecutorListener;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -25,6 +27,7 @@ public class TaskStatusCron4j implements TaskStatus {
   private final String threadName;
   private long endTime;
   private final TaskExecutor taskExecutor;
+  private final Lock instanceLock;
 
   public TaskStatusCron4j(TaskCron4j taskCron4j, TaskExecutor taskExecutor) {
     this.id = taskCron4j.getTask().getId();
@@ -32,6 +35,7 @@ public class TaskStatusCron4j implements TaskStatus {
     this.threadName = taskCron4j.getThreadName();
     this.taskExecutor = taskExecutor;
     this.endTime = 0;
+    this.instanceLock = new ReentrantLock();
 
     taskExecutor.addTaskExecutorListener(
         new TaskExecutorListener() {
@@ -143,23 +147,31 @@ public class TaskStatusCron4j implements TaskStatus {
 
           @Override
           public void statusMessageChanged(TaskExecutor taskExecutor, String s) {
-            synchronized (this) {
+            try {
+              instanceLock.lock();
+
               long now = Instant.now().toEpochMilli();
               if (now - last > minInterval) {
                 statusConsumer.accept(taskExecutor.getCompleteness(), s);
                 last = now;
               }
+            } finally {
+              instanceLock.unlock();
             }
           }
 
           @Override
           public void completenessValueChanged(TaskExecutor taskExecutor, double v) {
-            synchronized (this) {
+            try {
+              instanceLock.lock();
+
               long now = Instant.now().toEpochMilli();
               if (now - last > minInterval) {
                 statusConsumer.accept(v, taskExecutor.getStatusMessage());
                 last = now;
               }
+            } finally {
+              instanceLock.unlock();
             }
           }
         });

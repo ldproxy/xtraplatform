@@ -19,7 +19,6 @@ import de.ii.xtraplatform.base.domain.Constants.ENV;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Type;
-import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,6 +50,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author zahnen
  */
+@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.AvoidCatchingGenericException"})
 public class AppLauncher implements AppContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(AppLauncher.class);
 
@@ -397,9 +397,7 @@ public class AppLauncher implements AppContext {
 
   private int getApplicationPort() {
     return ((HttpConnectorFactory)
-            ((DefaultServerFactory) getConfiguration().getServerFactory())
-                .getApplicationConnectors()
-                .get(0))
+            getConfiguration().getServerFactory().getApplicationConnectors().get(0))
         .getPort();
   }
 }

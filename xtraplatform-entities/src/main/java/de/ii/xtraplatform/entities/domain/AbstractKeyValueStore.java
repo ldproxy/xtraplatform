@@ -17,7 +17,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
-@SuppressWarnings("PMD.TooManyMethods")
 public abstract class AbstractKeyValueStore<T> extends AbstractVolatile
     implements KeyValueStore<T> {
 

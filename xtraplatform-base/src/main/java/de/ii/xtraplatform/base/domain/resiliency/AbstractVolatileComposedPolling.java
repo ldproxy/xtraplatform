@@ -12,7 +12,7 @@ import de.ii.xtraplatform.base.domain.util.Tuple;
 import java.util.Objects;
 
 public abstract class AbstractVolatileComposedPolling extends AbstractVolatileComposed
-    implements VolatileComposed, Polling {
+    implements Polling {
 
   protected AbstractVolatileComposedPolling(
       VolatileRegistry volatileRegistry, String... capabilities) {

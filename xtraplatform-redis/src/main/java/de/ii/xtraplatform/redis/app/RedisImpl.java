@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -35,12 +37,14 @@ import redis.clients.jedis.json.commands.RedisJsonCommands;
 
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 public class RedisImpl extends AbstractVolatilePolling implements Redis, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RedisImpl.class);
 
   private final List<String> nodes;
   private final boolean asyncStartup;
+  private final Lock instanceLock;
   private UnifiedJedis jedis;
   private Throwable connectionError;
 
@@ -49,6 +53,7 @@ public class RedisImpl extends AbstractVolatilePolling implements Redis, AppLife
     super(volatileRegistry, "app/redis");
     this.nodes = appContext.getConfiguration().getRedis().getNodes();
     this.asyncStartup = appContext.getConfiguration().getModules().isStartupAsync();
+    this.instanceLock = new ReentrantLock();
   }
 
   @Override
@@ -74,25 +79,30 @@ public class RedisImpl extends AbstractVolatilePolling implements Redis, AppLife
     AppLifeCycle.super.onStop();
   }
 
-  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
   @Override
-  protected synchronized void onVolatileStart() {
-    super.onVolatileStart();
+  protected void onVolatileStart() {
+    try {
+      instanceLock.lock();
 
-    if (asyncStartup) {
-      if (getState() == State.UNAVAILABLE) {
-        LOGGER.warn("Could not establish connection to redis");
+      super.onVolatileStart();
+
+      if (asyncStartup) {
+        if (getState() == State.UNAVAILABLE) {
+          LOGGER.warn("Could not establish connection to redis");
+        }
+
+        onStateChange(
+            (from, to) -> {
+              if (to == State.AVAILABLE) {
+                LOGGER.info("Re-established connection to redis");
+              } else if (to == State.UNAVAILABLE) {
+                LOGGER.warn("Lost connection to redis");
+              }
+            },
+            false);
       }
-
-      onStateChange(
-          (from, to) -> {
-            if (to == State.AVAILABLE) {
-              LOGGER.info("Re-established connection to redis");
-            } else if (to == State.UNAVAILABLE) {
-              LOGGER.warn("Lost connection to redis");
-            }
-          },
-          false);
+    } finally {
+      instanceLock.unlock();
     }
   }
 

@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
  */
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 public class DropwizardProvider implements AppLifeCycle {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(DropwizardProvider.class);
@@ -96,10 +97,7 @@ public class DropwizardProvider implements AppLifeCycle {
             new MetricFilter() {
               @Override
               public boolean matches(String name, Metric metric) {
-                if (name.startsWith("jvm.memory.pools") || name.startsWith("ch.qos.logback")) {
-                  return true;
-                }
-                return false;
+                return name.startsWith("jvm.memory.pools") || name.startsWith("ch.qos.logback");
               }
             });
 

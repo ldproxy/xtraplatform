@@ -9,6 +9,7 @@ package de.ii.xtraplatform.entities.domain.maptobuilder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+@FunctionalInterface
 public interface Buildable<T extends Buildable<T>> {
 
   @JsonIgnore

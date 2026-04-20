@@ -21,6 +21,7 @@ public abstract class AbstractMergeableKeyValueStore<T> extends AbstractKeyValue
 
   // NOTE: an in-progress event (e.g. drop) might invalidate this one, do we need distributed
   // locks???
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   protected boolean isUpdateValid(Identifier identifier, byte[] payload) {
     try {
       return getEventSourcing().has(identifier)

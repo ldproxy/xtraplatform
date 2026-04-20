@@ -50,7 +50,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // NOTE: should this really be a facade for EventStore? or can we make it plain ValueCache?
-@SuppressWarnings({"PMD.GodClass", "PMD.CogntitiveComplexity", "PMD.CyclomaticComplexity"})
+@SuppressWarnings({
+  "PMD.GodClass",
+  "PMD.CouplingBetweenObjects",
+  "PMD.CyclomaticComplexity",
+  "PMD.AvoidCatchingGenericException"
+})
 public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventSourcing.class);
@@ -129,7 +134,7 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
   }
 
   @Override
-  @SuppressWarnings("PMD.CognitiveComplexity")
+  @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.AvoidDeeplyNestedIfStmts"})
   public void onEmit(Event event) {
     if (event instanceof EntityEvent) {
       EntityEvent entityEvent = (EntityEvent) event;
@@ -189,8 +194,6 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
                       }
                     });
           }
-          break;
-        default:
           break;
       }
     } else if (event instanceof ReloadEvent) {
@@ -280,7 +283,6 @@ public class EventSourcing<T> implements EventStoreSubscriber, ValueCache<T> {
     return completableFuture;
   }
 
-  @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.NPathComplexity"})
   private void onEmit(EntityEvent event) throws Throwable {
     Identifier key = event.identifier();
     FORMAT payloadFormat = FORMAT.fromString(event.format());

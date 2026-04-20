@@ -35,6 +35,7 @@ public interface ETag {
     EntityTag build(Type type);
   }
 
+  @SuppressWarnings("PMD.ReplaceJavaUtilDate")
   static EntityTag from(Date date) {
     if (Objects.isNull(date)) {
       return null;

@@ -54,7 +54,7 @@ public class FallbackMustacheViewRenderer extends MustacheViewRenderer implement
     this.factories =
         CacheBuilder.newBuilder()
             .build(
-                new CacheLoader<Class<? extends View>, MustacheFactory>() {
+                new CacheLoader<>() {
                   @Override
                   public MustacheFactory load(Class<? extends View> key) throws Exception {
                     return createNewMustacheFactory(key);
@@ -81,6 +81,7 @@ public class FallbackMustacheViewRenderer extends MustacheViewRenderer implement
   }
 
   @Override
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   public void render(View view, OutputStreamWriter writer) throws IOException {
     try {
       final MustacheFactory mustacheFactory =
@@ -100,7 +101,6 @@ public class FallbackMustacheViewRenderer extends MustacheViewRenderer implement
 
   //  @Override
   @VisibleForTesting
-  @SuppressWarnings("PMD.MissingOverride")
   boolean isUseCache() {
     return useCache;
   }

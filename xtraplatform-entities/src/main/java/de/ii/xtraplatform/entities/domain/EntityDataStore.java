@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
  *
  * @author zahnen
  */
-@SuppressWarnings("PMD.TooManyMethods")
 public interface EntityDataStore<T extends EntityData> extends MergeableKeyValueStore<T> {
 
   String EVENT_TYPE_ENTITIES = "entities";

@@ -13,6 +13,7 @@ import io.reactivex.rxjava3.core.Flowable;
 import java.util.function.Function;
 import org.reactivestreams.Subscriber;
 
+@FunctionalInterface
 public interface RunnableGraphWrapper<T, U> {
 
   Triple<Flowable<T>, Subscriber<T>, StreamContext<U>> getGraph();

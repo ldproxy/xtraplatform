@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * @author zahnen
  */
 @PreMatching
-@SuppressWarnings("PMD.SingularField")
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<String, P> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDynamicAuthFilter.class);
 
@@ -171,7 +171,10 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
 
   private PolicyDecision askPDP(String user, String method, String path, byte[] body) {
 
-    LOGGER.debug("EDA {} {} {} {}", user, method, path, new String(body, Charset.forName("utf-8")));
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "EDA {} {} {} {}", user, method, path, new String(body, Charset.forName("utf-8")));
+    }
 
     try {
       byte[] xacmlRequest = getXacmlRequest();

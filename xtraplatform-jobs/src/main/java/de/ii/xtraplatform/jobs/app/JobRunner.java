@@ -16,7 +16,6 @@ import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatileComposed;
-import de.ii.xtraplatform.base.domain.resiliency.VolatileComposed;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.base.domain.util.Tuple;
 import de.ii.xtraplatform.jobs.domain.Job;
@@ -52,8 +51,8 @@ import org.threeten.extra.AmountFormats;
 
 @Singleton
 @AutoBind(interfaces = {AppLifeCycle.class})
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.GuardLogStatement"})
-public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle, VolatileComposed {
+@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.AvoidCatchingGenericException"})
+public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JobRunner.class);
   private static final String JOB_TYPE_WILDCARD = "*";
@@ -200,6 +199,7 @@ public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle,
     }
   }
 
+  @SuppressWarnings({"PMD.GuardLogStatement"})
   private void logActiveJobSetProgress() {
     if (logJobsDebug()) {
       activeJobSets.forEach(
@@ -273,6 +273,7 @@ public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle,
     return false;
   }
 
+  @SuppressWarnings({"PMD.GuardLogStatement"})
   private void assignJobToProcessor(JobProcessor<?, ?> processor, Job job) {
     if (logJobsTrace()) {
       LOGGER.trace(
@@ -382,6 +383,7 @@ public class JobRunner extends AbstractVolatileComposed implements AppLifeCycle,
     logJobProcessingEnd(result, start);
   }
 
+  @SuppressWarnings({"PMD.GuardLogStatement"})
   private void logJobProcessingEnd(JobResult result, Instant start) {
     if (logJobsTrace()) {
       if (result.isOnHold()) {

@@ -27,6 +27,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+@SuppressWarnings({
+  "PMD.TypeParameterNamingConventions",
+  "PMD.CouplingBetweenObjects",
+  "PMD.AvoidCatchingGenericException"
+})
 public class StreamDefault<V, W>
     implements BasicStream<V, W>, StreamWithResult<V, W>, StreamContext<W> {
 
@@ -37,7 +42,6 @@ public class StreamDefault<V, W>
   private Optional<BiFunction<W, Throwable, W>> errorHandler;
   private Optional<BiFunction<W, V, W>> itemHandler;
 
-  @SuppressWarnings("PMD.NullAssignment") // null is a valid value in this case
   public StreamDefault(Source<V> source, SinkReduced<V, W> sink) {
     this(
         source,
@@ -161,7 +165,7 @@ public class StreamDefault<V, W>
       return new RunnableStreamDefault<>(runner, this);
     }
 
-    public StreamDefault<V, W> getStream() {
+    StreamDefault<V, W> getStream() {
       return StreamDefault.this;
     }
 

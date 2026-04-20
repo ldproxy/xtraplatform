@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JwtTokenHandler.class);
@@ -139,6 +139,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   }
 
   @Override
+  @SuppressWarnings("PMD.ReplaceJavaUtilDate")
   public String generateToken(User user, Date expiration, boolean rememberMe) {
     JwtBuilder jwtBuilder =
         Jwts.builder()
@@ -172,7 +173,12 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     return claims.get(claim, String.class);
   }
 
-  @SuppressWarnings("PMD.CognitiveComplexity")
+  @SuppressWarnings({
+    "PMD.CognitiveComplexity",
+    "PMD.AvoidDeeplyNestedIfStmts",
+    "PMD.AvoidCatchingGenericException",
+    "PMD.ExceptionAsFlowControl"
+  })
   private List<String> readList(Claims claims, String claim) {
     boolean isComplex = isComplex(claim);
     String baseKey = baseKey(claim);
@@ -209,6 +215,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     return list;
   }
 
+  @SuppressWarnings({"PMD.AvoidDeeplyNestedIfStmts"})
   private Map<String, Set<String>> readListPerApi(Claims claims, String claim) {
     Map<String, Set<String>> lists = new LinkedHashMap<>();
 
@@ -275,6 +282,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   }
 
   @Override
+  @SuppressWarnings({"PMD.AvoidCatchingGenericException"})
   public Optional<User> parseToken(String token) {
     try {
       Claims claimsJws = parser.parseSignedClaims(token).getPayload();
@@ -302,6 +310,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
   }
 
   @Override
+  @SuppressWarnings({"PMD.AvoidCatchingGenericException"})
   public <T> Optional<T> parseTokenClaim(String token, String name, Class<T> type) {
     if (Objects.nonNull(signingKey)) {
       try {
@@ -352,17 +361,8 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     return Optional.empty();
   }
 
+  // NOTE: no longer used, just a fallback if no auth provider is enabled
   private SecretKey generateKey() {
-    SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-
-    // NOTE: no longer used, just a fallback if no auth provider is enabled
-    /*try {
-      keyStore.put(SIGNING_KEY_PATH, new ByteArrayInputStream(key.getEncoded()));
-    } catch (IOException e) {
-      LogContext.error(
-          LOGGER, e, "Could not save JWT signing key, tokens will be invalidated on restart");
-    }*/
-
-    return key;
+    return Keys.secretKeyFor(SignatureAlgorithm.HS256);
   }
 }

@@ -22,7 +22,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.CloseResource"})
+@SuppressWarnings({"PMD.AvoidCatchingGenericException"})
 public class CfgStoreDriverS3 implements CfgStoreDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CfgStoreDriverS3.class);
@@ -71,8 +71,8 @@ public class CfgStoreDriverS3 implements CfgStoreDriver {
   }
 
   private Tuple<MinioClient, String> getClient(StoreSourceS3 storeSource) {
-    String host = storeSource.getSrc().substring(0, storeSource.getSrc().lastIndexOf("/"));
-    String bucket = storeSource.getSrc().substring(storeSource.getSrc().lastIndexOf("/") + 1);
+    String host = storeSource.getSrc().substring(0, storeSource.getSrc().lastIndexOf('/'));
+    String bucket = storeSource.getSrc().substring(storeSource.getSrc().lastIndexOf('/') + 1);
 
     MinioClient minioClient =
         MinioClient.builder()

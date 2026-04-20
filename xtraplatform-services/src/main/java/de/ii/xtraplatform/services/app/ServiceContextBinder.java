@@ -25,8 +25,7 @@ import org.glassfish.jersey.process.internal.RequestScoped;
 @Singleton
 @AutoBind(interfaces = {Binder.class, ServiceInjectableContext.class})
 @Provider
-public class ServiceContextBinder extends AbstractBinder
-    implements Binder, ServiceInjectableContext {
+public class ServiceContextBinder extends AbstractBinder implements ServiceInjectableContext {
 
   @Inject
   public ServiceContextBinder() {
@@ -44,7 +43,7 @@ public class ServiceContextBinder extends AbstractBinder
 
   @Override
   public void inject(ContainerRequestContext containerRequestContext, Service service) {
-    containerRequestContext.setProperty(ServiceInjectableContext.SERVICE_CONTEXT_KEY, service);
+    containerRequestContext.setProperty(SERVICE_CONTEXT_KEY, service);
   }
 
   public static class ServiceFactory implements Supplier<Service> {
@@ -58,8 +57,7 @@ public class ServiceContextBinder extends AbstractBinder
 
     @Override
     public Service get() {
-      return (Service)
-          containerRequestContext.getProperty(ServiceInjectableContext.SERVICE_CONTEXT_KEY);
+      return (Service) containerRequestContext.getProperty(SERVICE_CONTEXT_KEY);
     }
   }
 }

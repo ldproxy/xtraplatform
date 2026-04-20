@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-@SuppressWarnings("PMD.TooManyMethods")
 public class ServiceBackgroundTasksImpl implements ServiceBackgroundTasks, AppLifeCycle {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServiceBackgroundTasksImpl.class);
@@ -56,8 +55,7 @@ public class ServiceBackgroundTasksImpl implements ServiceBackgroundTasks, AppLi
     this.tasks = tasks;
     this.scheduler = scheduler;
     this.commonQueue =
-        scheduler.createQueue(
-            ServiceBackgroundTasks.COMMON_QUEUE, appContext.getConfiguration().getJobConcurrency());
+        scheduler.createQueue(COMMON_QUEUE, appContext.getConfiguration().getJobConcurrency());
     this.taskQueues = new ConcurrentHashMap<>();
     this.cronJobs = new ConcurrentHashMap<>();
     taskQueues.put(COMMON_QUEUE, commonQueue);

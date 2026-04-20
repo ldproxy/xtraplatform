@@ -18,7 +18,7 @@ public enum Role {
   SUPERADMIN;
 
   public static Role fromString(String role) {
-    for (Role v : Role.values()) {
+    for (Role v : values()) {
       if (v.toString().equalsIgnoreCase(role)) {
         return v;
       }

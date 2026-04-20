@@ -11,6 +11,7 @@ import java.util.Optional;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@FunctionalInterface
 public interface JobResult {
 
   static JobResult success() {

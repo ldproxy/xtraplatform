@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+@SuppressWarnings("PMD.DataClass")
 public class Constants {
   public static final String APPLICATION_KEY = "de.ii.xtraplatform.application.name";
   public static final String VERSION_KEY = "de.ii.xtraplatform.application.version";

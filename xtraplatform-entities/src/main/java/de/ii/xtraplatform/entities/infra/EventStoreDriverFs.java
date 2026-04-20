@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-@SuppressWarnings("PMD.TooManyStaticImports")
+@SuppressWarnings({"PMD.TooManyStaticImports", "PMD.AvoidCatchingGenericException"})
 public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventStoreDriverFs.class);
@@ -185,7 +185,7 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
 
     Files.walkFileTree(
         rootDir,
-        new SimpleFileVisitor<Path>() {
+        new SimpleFileVisitor<>() {
           @Override
           public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
               throws IOException {

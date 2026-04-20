@@ -23,6 +23,11 @@ public interface EntityDataDefaultsPath {
 
   Splitter DOT_SPLITTER = Splitter.on('.');
 
+  @SuppressWarnings({
+    "PMD.CognitiveComplexity",
+    "PMD.CyclomaticComplexity",
+    "PMD.AvoidCatchingGenericException"
+  })
   static EntityDataDefaultsPath from(Identifier identifier, Set<String> entityTypes) {
     ModifiableEntityDataDefaultsPath defaultsPath = ModifiableEntityDataDefaultsPath.create();
 
@@ -69,7 +74,7 @@ public interface EntityDataDefaultsPath {
 
     if (!found) {
       if (identifier.id().contains(".")) {
-        int firstDot = identifier.id().indexOf(".");
+        int firstDot = identifier.id().indexOf('.');
         defaultsPath.setEntityType(identifier.id().substring(0, firstDot));
         pathSegments = DOT_SPLITTER.splitToList(identifier.id().substring(firstDot + 1));
       } else {

@@ -47,6 +47,8 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,7 +59,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind(interfaces = {ValueStore.class, AppLifeCycle.class})
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.GodClass"})
+@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.GodClass"})
 public class ValueStoreImpl extends AbstractVolatile
     implements ValueStore, KeyValueStore<StoredValue>, ValueCache<StoredValue>, AppLifeCycle {
 
@@ -70,6 +72,7 @@ public class ValueStoreImpl extends AbstractVolatile
   private final ValueEncodingJackson<StoredValue> valueEncoding;
   private final CompletableFuture<Void> ready;
   private final Map<Class<? extends StoredValue>, List<String>> valueTypes;
+  private final Lock instanceLock;
 
   @Inject
   public ValueStoreImpl(
@@ -90,6 +93,7 @@ public class ValueStoreImpl extends AbstractVolatile
     this.lastModified = new ConcurrentHashMap<>();
     this.ready = new CompletableFuture<>();
     this.valueTypes = new ConcurrentHashMap<>();
+    this.instanceLock = new ReentrantLock();
 
     valueEncoding.getMapper(FORMAT.YAML).setDefaultMergeable(false);
     valueEncoding.getMapper(FORMAT.JSON).setDefaultMergeable(false);
@@ -152,8 +156,7 @@ public class ValueStoreImpl extends AbstractVolatile
     Path typePath = Path.of(valueFactory.type());
     int count = 0;
 
-    valueTypes.put(
-        valueFactory.valueClass(), KeyValueStore.TYPE_SPLITTER.splitToList(valueFactory.type()));
+    valueTypes.put(valueFactory.valueClass(), TYPE_SPLITTER.splitToList(valueFactory.type()));
 
     try (Stream<Path> paths =
         blobStore.walk(
@@ -305,10 +308,14 @@ public class ValueStoreImpl extends AbstractVolatile
       return CompletableFuture.failedFuture(e);
     }
 
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       memCache.put(identifier, value);
 
       lastModified.put(identifier, Instant.now().toEpochMilli());
+    } finally {
+      instanceLock.unlock();
     }
 
     return CompletableFuture.completedFuture(value);
@@ -330,10 +337,14 @@ public class ValueStoreImpl extends AbstractVolatile
 
     StoredValue removed;
 
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       removed = memCache.remove(identifier);
 
       lastModified.remove(identifier);
+    } finally {
+      instanceLock.unlock();
     }
 
     return CompletableFuture.completedFuture(Objects.nonNull(removed));

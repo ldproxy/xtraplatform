@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableMap;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LoggingFilter;
 import de.ii.xtraplatform.ops.domain.OpsEndpoint;
+import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -64,13 +65,13 @@ public class OpsEndpointLogs implements OpsEndpoint {
         .build();
   }
 
-  private ImmutableMap<String, Object> getLogInfo(
+  private Map<String, Object> getLogInfo(
       String level, Optional<LoggingFilter> optionalThirdPartyLoggingFilter) {
     return ImmutableMap.of(
         "level", level, "filter", getFilterInfo(optionalThirdPartyLoggingFilter));
   }
 
-  private ImmutableMap<String, Boolean> getFilterInfo(
+  private Map<String, Boolean> getFilterInfo(
       Optional<LoggingFilter> optionalThirdPartyLoggingFilter) {
     return optionalThirdPartyLoggingFilter
         .map(

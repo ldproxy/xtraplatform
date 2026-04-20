@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface OptionalVolatileCapability<T> extends OptionalCapability<T>, Volatile2 {
 
   static <T> OptionalVolatileCapability<T> unsupported(Class<T> clazz) {
-    return new OptionalVolatileCapability<T>() {
+    return new OptionalVolatileCapability<>() {
       @Override
       public boolean isSupported() {
         return false;

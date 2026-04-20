@@ -61,7 +61,7 @@ public class StoreReloadTask extends Task implements DropwizardPlugin {
   }
 
   @Override
-  @SuppressWarnings({"PMD.NPathComplexity", "PMD.CyclomaticComplexity", "PMD.CognitiveComplexity"})
+  @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.CognitiveComplexity"})
   public void execute(Map<String, List<String>> parameters, PrintWriter output) throws Exception {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("Reload request: {}", parameters);

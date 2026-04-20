@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@SuppressWarnings({"PMD.AvoidCatchingGenericException", "PMD.CouplingBetweenObjects"})
 public class OidcImpl extends AbstractVolatile implements Oidc, AppLifeCycle, SigningKeyResolver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OidcImpl.class);
@@ -89,6 +90,7 @@ public class OidcImpl extends AbstractVolatile implements Oidc, AppLifeCycle, Si
   @Value.Immutable
   @Value.Style(builder = "new")
   @JsonDeserialize(builder = ImmutableOidcCerts.Builder.class)
+  @FunctionalInterface
   interface OidcCerts {
     List<Map<String, Object>> getKeys();
   }

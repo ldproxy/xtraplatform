@@ -31,7 +31,6 @@ import java.util.function.Predicate;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.ExcessivePublicCount"})
 public interface Reactive {
 
   Runner runner(String name);
@@ -101,9 +100,7 @@ public interface Reactive {
 
     default <W, X> SinkReducedTransformed<T, X, W> to(SinkReducedTransformed<U, X, W> sink) {
       if (sink instanceof SinkTransformedImpl) {
-        SinkReducedTransformed<T, X, W> merge = merge((SinkTransformedImpl<U, X, W>) sink);
-
-        return merge;
+        return merge((SinkTransformedImpl<U, X, W>) sink);
       }
       throw new UnsupportedOperationException();
     }
@@ -113,9 +110,8 @@ public interface Reactive {
       SinkReduced<V, W> sink1 = sink.getSink();
 
       Transformer<T, V> via = via(transformer);
-      SinkReducedTransformed<T, V, W> to = via.to(sink1);
 
-      return to;
+      return via.to(sink1);
     }
 
     default SinkTransformed<T, U> to(Sink<U> sink) {
@@ -238,7 +234,7 @@ public interface Reactive {
       Transformer<ByteArrayOutputStream, byte[]> map =
           Transformer.map(ByteArrayOutputStream::toByteArray);
 
-      return reduce.via(map).to(Sink.head());
+      return reduce.via(map).to(head());
     }
   }
 
@@ -248,6 +244,7 @@ public interface Reactive {
 
   interface SinkReducedTransformed<T, U, V> extends SinkTransformed<T, U>, SinkReduced<T, V> {}
 
+  @FunctionalInterface
   interface Stream<V> {
 
     RunnableStream<V> on(Runner runner);
@@ -267,6 +264,7 @@ public interface Reactive {
     <X> Stream<X> handleEnd(Function<W, X> finalizer);
   }
 
+  @FunctionalInterface
   interface RunnableStream<X> {
 
     CompletionStage<X> run();

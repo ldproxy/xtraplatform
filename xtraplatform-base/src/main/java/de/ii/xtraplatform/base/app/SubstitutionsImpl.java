@@ -64,6 +64,7 @@ public class SubstitutionsImpl implements Substitutions {
 
   public class VariableSubstitutor extends StringSubstitutor {
 
+    @SuppressWarnings("PMD.ConstructorCallsOverridableMethod")
     public VariableSubstitutor(boolean strict, boolean substitutionInVariables) {
       super(SubstitutionsImpl.this::lookup);
       this.setEnableUndefinedVariableException(strict);

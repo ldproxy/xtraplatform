@@ -61,6 +61,7 @@ import org.slf4j.LoggerFactory;
 @Produces(MediaType.APPLICATION_JSON)
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OpsRequestDispatcherImpl.class);
@@ -109,6 +110,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   }
 
   @Override
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   public void init(ServletConfig servletConfig, ServletHolder tasksServlet) {
     try {
       // otherwise health endpoint will return 500 when not all health checks are healthy
@@ -122,7 +124,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
       tasksServlet.start();
       tasksServlet.initialize();
       this.tasksServlet = tasksServlet.getServletInstance();
-    } catch (Exception e) {
+    } catch (Throwable e) {
       throw new IllegalStateException("Failed to initialize servlets", e);
     }
   }
@@ -144,6 +146,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
         .build(); */
   }
 
+  @SuppressWarnings("PMD.DataClass")
   public class AppInfo {
     @Schema(description = "Application name", example = "ldproxy")
     public String name;
@@ -163,17 +166,16 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   @Operation(
       summary = "Get application info",
       description = "Returns the application's name, version, URL, and environment")
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Successful operation",
-            content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = AppInfo.class))),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-      })
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Successful operation",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = AppInfo.class))),
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
   public Response getInfo() {
     return Response.ok(
             "{\n"
@@ -202,6 +204,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
             "{\"app/crs\":{\"healthy\":true,\"duration\":0,\"state\":\"AVAILABLE\",\"timestamp\":\"2025-01-16T11:39:12.721+01:00\"}}")
     public Map<String, ComponentHealth> components;
 
+    @SuppressWarnings("PMD.DataClass")
     public static class ComponentHealth {
       @Schema(description = "Health status", example = "true")
       public boolean healthy;
@@ -246,23 +249,23 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   @Operation(
       summary = "Get health status",
       description = "Returns the health status of various components")
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Successful operation",
-            content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = HealthResponse.class))),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-      })
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Successful operation",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = HealthResponse.class))),
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
   public void health(@Context HttpServletRequest request, @Context HttpServletResponse response)
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
     healthCheckServlet.service(request, response);
   }
 
+  @SuppressWarnings("PMD.DataClass")
   public class MetricsResponse {
     public String version;
     public Map<String, Gauge> gauges;
@@ -302,19 +305,18 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
       summary = "Get metrics",
       description =
           "Returns the metrics of the application containing the five metric types: Gauges, Counters, Histograms, Meters, and Timers.")
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Successful operation",
-            content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = MetricsResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Bad request"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-      })
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Successful operation",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = MetricsResponse.class))),
+    @ApiResponse(responseCode = "400", description = "Bad request"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
   public void metrics(@Context HttpServletRequest request, @Context HttpServletResponse response)
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
@@ -330,17 +332,16 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   @Operation(
       summary = "Ping the server",
       description = "Returns a simple pong response to check if the server is running")
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Successful operation",
-            content =
-                @Content(
-                    mediaType = "text/plain",
-                    schema = @Schema(implementation = PingResponse.class))),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-      })
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Successful operation",
+        content =
+            @Content(
+                mediaType = "text/plain",
+                schema = @Schema(implementation = PingResponse.class))),
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
   public void ping(@Context HttpServletRequest request, @Context HttpServletResponse response)
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
@@ -350,20 +351,19 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   @GET
   @Path("/api/threads")
   @Operation(summary = "Get thread dump", description = "Returns a thread dump of the server")
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Successful operation",
-            content =
-                @Content(
-                    mediaType = "text/plain",
-                    schema =
-                        @Schema(
-                            example =
-                                "\"dw-admin-105\" id=105 state=TIMED_WAITING - waiting on <0x04941bd8> (a java.util.concurrent.SynchronousQueue$Transferer) - locked <0x04941bd8> (a java.util.concurrent.SynchronousQueue$Transferer) at java.base@21.0.5/jdk.internal.misc.Unsafe.park(Native Method) at java.base@21.0.5/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410) at java.base@21.0.5/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452) at java.base@21.0.5/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194) at java.base@21.0.5/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235) at java.base@21.0.5/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.reservedWait(ReservedThreadExecutor.java:325) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:401) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:969) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.doRunJob(QueuedThreadPool.java:1194) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1149) at java.base@21.0.5/java.lang.Thread.runWith(Thread.java:1596) at java.base@21.0.5/java.lang.Thread.run(Thread.java:1583)"))),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-      })
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Successful operation",
+        content =
+            @Content(
+                mediaType = "text/plain",
+                schema =
+                    @Schema(
+                        example =
+                            "\"dw-admin-105\" id=105 state=TIMED_WAITING - waiting on <0x04941bd8> (a java.util.concurrent.SynchronousQueue$Transferer) - locked <0x04941bd8> (a java.util.concurrent.SynchronousQueue$Transferer) at java.base@21.0.5/jdk.internal.misc.Unsafe.park(Native Method) at java.base@21.0.5/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410) at java.base@21.0.5/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452) at java.base@21.0.5/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194) at java.base@21.0.5/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235) at java.base@21.0.5/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.reservedWait(ReservedThreadExecutor.java:325) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:401) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:969) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.doRunJob(QueuedThreadPool.java:1194) at app/de.ii.xtraplatform.runtime.tpl@6.3.0-SNAPSHOT/org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1149) at java.base@21.0.5/java.lang.Thread.runWith(Thread.java:1596) at java.base@21.0.5/java.lang.Thread.run(Thread.java:1583)"))),
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
   public void threads(@Context HttpServletRequest request, @Context HttpServletResponse response)
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
@@ -373,12 +373,11 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   @POST
   @Path("/api/tasks/{task}")
   @Operation(summary = "Post a task", description = "Posts a task to the server")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "Task posted successfully"),
-        @ApiResponse(responseCode = "400", description = "Bad request"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-      })
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Task posted successfully"),
+    @ApiResponse(responseCode = "400", description = "Bad request"),
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
   public void postTasks(
       @PathParam("task") String task,
       @Context HttpServletRequest request,
@@ -399,12 +398,11 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   @Operation(
       summary = "Get sub-endpoint",
       description = "Returns the sub-endpoint based on the entrypoint")
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "Successful operation"),
-        @ApiResponse(responseCode = "404", description = "Sub-endpoint not found"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-      })
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Successful operation"),
+    @ApiResponse(responseCode = "404", description = "Sub-endpoint not found"),
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
   public OpsEndpoint getOther(@PathParam("entrypoint") String entrypoint) {
     Optional<OpsEndpoint> subEndpoint =
         subEndpoints.get().stream()

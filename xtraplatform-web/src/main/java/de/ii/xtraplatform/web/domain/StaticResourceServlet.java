@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 public class StaticResourceServlet extends HttpServlet {
 
   private static final long serialVersionUID = 1L;

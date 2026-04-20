@@ -24,13 +24,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.AvoidCatchingGenericException"})
 public interface StoreMigration extends Migration<StoreMigrationContext, StoreSourceFs> {
   enum Type {
     BLOB,
     EVENT
   }
 
+  @FunctionalInterface
   interface StoreMigrationContext extends MigrationContext {
     BlobReader reader();
   }

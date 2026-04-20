@@ -54,7 +54,7 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
                 return;
               }
 
-              String path = StaticResourceHandler.PREFIX + staticResources1.getUrlPath();
+              String path = PREFIX + staticResources1.getUrlPath();
 
               StaticResourceServlet servlet =
                   new StaticResourceServlet(
@@ -84,7 +84,7 @@ public class StaticPlugin implements DropwizardPlugin, StaticResourceHandler {
   }
 
   @Override
-  @SuppressWarnings("PMD.UselessParentheses")
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   public boolean handle(String path, HttpServletRequest request, HttpServletResponse response) {
     for (String prefix : servlets.keySet()) {
       if (path.startsWith(prefix) || ("/" + path).startsWith(prefix)) {

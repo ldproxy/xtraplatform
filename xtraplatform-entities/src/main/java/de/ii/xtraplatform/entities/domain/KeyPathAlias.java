@@ -9,6 +9,7 @@ package de.ii.xtraplatform.entities.domain;
 
 import java.util.Map;
 
+@FunctionalInterface
 public interface KeyPathAlias {
   Map<String, Object> wrapMap(Map<String, Object> value);
 }

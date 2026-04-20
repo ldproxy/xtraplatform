@@ -14,6 +14,7 @@ public interface TokenHandler {
 
   String generateToken(User user, int expiresIn, boolean rememberMe);
 
+  @SuppressWarnings("PMD.ReplaceJavaUtilDate")
   String generateToken(User user, Date expiration, boolean rememberMe);
 
   Optional<User> parseToken(String token);

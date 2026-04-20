@@ -84,13 +84,15 @@ public class HttpClientApache implements HttpClient {
     if (Objects.nonNull(uri.getUserInfo())) {
       byte[] encodedAuth =
           Base64.encodeBase64(uri.getUserInfo().getBytes(StandardCharsets.ISO_8859_1));
-      httpPost.addHeader("Authorization", "Basic " + new String(encodedAuth));
+      httpPost.addHeader(
+          "Authorization", "Basic " + new String(encodedAuth, StandardCharsets.UTF_8));
       httpPost.setUri(URI.create(new URIBuilder(uri).setUserInfo(null).toString()));
     }
 
     return getAsInputStream(httpClient, httpPost);
   }
 
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   private static InputStream getAsInputStream(CloseableHttpClient client, HttpUriRequest request) {
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("HTTP {} request: {}", request.getMethod(), request.getRequestUri());

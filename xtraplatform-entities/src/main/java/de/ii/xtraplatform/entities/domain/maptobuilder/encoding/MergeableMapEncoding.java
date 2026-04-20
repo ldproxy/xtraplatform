@@ -31,14 +31,14 @@ class MergeableMapEncoding<T, U> {
     @JsonIgnore
     @Encoding.Init // <-- specify builder initializer method
     @Encoding.Copy // <-- marks it as "canonical" copy method
-    public void set(Map<T, U> values) {
+    void set(Map<T, U> values) {
       this.mergeableMap = new LinkedHashMap<>();
       values.forEach(this::put);
     }
 
     @JsonProperty
     @Encoding.Naming("get*")
-    public Map<T, U> get() {
+    Map<T, U> get() {
       return mergeableMap;
     }
 

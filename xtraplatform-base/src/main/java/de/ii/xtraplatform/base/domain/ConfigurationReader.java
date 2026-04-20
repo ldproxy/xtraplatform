@@ -43,6 +43,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 public class ConfigurationReader {
 
   enum APPENDER {
@@ -108,8 +109,8 @@ public class ConfigurationReader {
 
   private String read(ByteSource byteSource) throws IOException {
     String read = byteSource.asCharSource(StandardCharsets.UTF_8).read();
-    String replace = envSubstitutor.replace(read);
-    return replace;
+
+    return envSubstitutor.replace(read);
   }
 
   public AppConfiguration loadMergedConfig(Map<String, InputStream> userCfgs, Constants.ENV env)

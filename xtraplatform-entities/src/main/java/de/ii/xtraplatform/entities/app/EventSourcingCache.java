@@ -34,6 +34,7 @@ public class EventSourcingCache<T> {
   private final String defaultFormat;
   private static final Logger LOGGER = LoggerFactory.getLogger(EventSourcingCache.class);
 
+  @FunctionalInterface
   public interface Deserializer<T> {
     T deserialize(Identifier identifier, byte[] payload, String format);
   }
@@ -79,6 +80,7 @@ public class EventSourcingCache<T> {
     return pushMutationEventRaw(identifier, payload, false);
   }
 
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   private CompletableFuture<T> pushMutationEventRaw(
       Identifier identifier, byte[] payload, boolean isDelete) {
     final CompletableFuture<T> completableFuture = new CompletableFuture<>();

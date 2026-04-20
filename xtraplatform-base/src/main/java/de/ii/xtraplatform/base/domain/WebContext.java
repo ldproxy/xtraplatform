@@ -12,6 +12,7 @@ import com.google.common.base.Strings;
 import java.net.URI;
 import java.util.List;
 
+@FunctionalInterface
 public interface WebContext {
 
   URI getUri();

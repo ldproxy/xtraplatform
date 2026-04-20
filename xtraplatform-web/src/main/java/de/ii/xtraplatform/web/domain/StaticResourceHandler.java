@@ -10,6 +10,7 @@ package de.ii.xtraplatform.web.domain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+@FunctionalInterface
 public interface StaticResourceHandler {
 
   String PREFIX = "/___static___";

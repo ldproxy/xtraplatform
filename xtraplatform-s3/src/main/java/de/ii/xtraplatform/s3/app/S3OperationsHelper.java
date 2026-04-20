@@ -19,6 +19,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"PMD.AvoidCatchingGenericException"})
 class S3OperationsHelper {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(S3OperationsHelper.class);

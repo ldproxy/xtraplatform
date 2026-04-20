@@ -64,24 +64,11 @@ public class ExternalBearerAuthProvider implements AuthProvider<User>, Dropwizar
             tokenAuthenticator,
             CaffeineSpec.parse("maximumSize=10000, expireAfterAccess=10m"));
 
-    OAuthCredentialAuthFilter<User> authFilter =
-        new OAuthCredentialAuthFilter.Builder<User>()
-            .setAuthenticator(cachingAuthenticator)
-            .setAuthorizer(new UserAuthorizer())
-            .setPrefix("Bearer")
-            .buildAuthFilter();
-
-    /*if (authConfig.getXacmlJson().isPresent()) {
-      return new ExternalDynamicAuthFilter<>(
-          authConfig.getXacmlJson().get().getEndpoint(),
-          authConfig.getXacmlJson().get().getVersion(),
-          authConfig.getXacmlJson().get().getMediaType(),
-          authConfig.getPostProcessingEndpoint().orElse(""),
-          httpClient,
-          authFilter);
-    }*/
-
-    return authFilter;
+    return new OAuthCredentialAuthFilter.Builder<User>()
+        .setAuthenticator(cachingAuthenticator)
+        .setAuthorizer(new UserAuthorizer())
+        .setPrefix("Bearer")
+        .buildAuthFilter();
   }
 
   @Override

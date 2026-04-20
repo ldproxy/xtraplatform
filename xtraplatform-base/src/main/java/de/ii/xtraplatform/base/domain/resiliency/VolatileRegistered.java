@@ -10,6 +10,7 @@ package de.ii.xtraplatform.base.domain.resiliency;
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
 
 @AutoMultiBind
+@FunctionalInterface
 public interface VolatileRegistered {
   VolatileRegistry getVolatileRegistry();
 }

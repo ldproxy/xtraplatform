@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
+@SuppressWarnings({"PMD.AvoidCatchingGenericException"})
 public class BlobStoreDriverS3 implements BlobStoreDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BlobStoreDriverS3.class);
@@ -79,7 +80,6 @@ public class BlobStoreDriverS3 implements BlobStoreDriver {
     return new BlobSourceS3(minioClient, bucket, root, cache);
   }
 
-  @SuppressWarnings("PMD.CloseResource")
   private Tuple<MinioClient, String> getClient(StoreSourceS3 storeSource) {
     boolean hasScheme = storeSource.getSrc().matches("^[a-zA-Z0-9]+://.*");
     String scheme = storeSource.getInsecure() ? "http://" : "https://";

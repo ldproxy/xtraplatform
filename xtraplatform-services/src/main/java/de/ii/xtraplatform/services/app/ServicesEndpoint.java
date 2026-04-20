@@ -65,7 +65,7 @@ import org.slf4j.LoggerFactory;
 @Hidden
 @Path("/")
 @Produces(MediaTypeCharset.APPLICATION_JSON_UTF8)
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ServicesEndpoint implements Endpoint {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ServicesEndpoint.class);
@@ -99,7 +99,6 @@ public class ServicesEndpoint implements Endpoint {
 
   @GET
   @Produces(MediaType.WILDCARD)
-  @SuppressWarnings("PMD.UnusedFormalParameter") // callback parameter part of API contract
   public Response getServices(
       @QueryParam("callback") String callback,
       @QueryParam("f") String f,
@@ -235,7 +234,6 @@ public class ServicesEndpoint implements Endpoint {
   }
 
   @Path("/{service}/")
-  @SuppressWarnings("PMD.UnusedFormalParameter") // callback parameter part of API contract
   public ServiceEndpoint getServiceResource(
       @PathParam("service") String id,
       @QueryParam("callback") String callback,
@@ -244,7 +242,7 @@ public class ServicesEndpoint implements Endpoint {
   }
 
   @Path("/{service}/v{version}/")
-  @SuppressWarnings("PMD.UnusedFormalParameter") // callback parameter part of API contract
+  @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   public ServiceEndpoint getVersionedServiceResource(
       @PathParam("service") String id,
       @QueryParam("callback") String callback,
@@ -373,7 +371,6 @@ public class ServicesEndpoint implements Endpoint {
     }
   }
 
-  @SuppressWarnings("PMD.GuardLogStatement")
   private void logRequestUser(ContainerRequestContext containerRequestContext) {
     if (LOGGER.isDebugEnabled(MARKER.REQUEST_USER)) {
       Principal principal = containerRequestContext.getSecurityContext().getUserPrincipal();

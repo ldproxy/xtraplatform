@@ -12,6 +12,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 /**
  * @author zahnen
  */
+@FunctionalInterface
 public interface InjectableContext<T> {
   void inject(ContainerRequestContext requestContext, T injectable);
 }

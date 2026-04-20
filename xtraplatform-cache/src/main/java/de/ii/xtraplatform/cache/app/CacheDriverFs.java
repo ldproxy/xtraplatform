@@ -24,6 +24,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -32,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-@SuppressWarnings("PMD.TooManyMethods")
 public class CacheDriverFs implements CacheDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CacheDriverFs.class);
@@ -43,11 +44,13 @@ public class CacheDriverFs implements CacheDriver {
 
   private final Path cache;
   private final ValueEncoding<Object> valueEncoding;
+  private final Lock instanceLock;
 
   @Inject
   public CacheDriverFs(AppContext appContext, Jackson jackson) {
     this.cache = appContext.getTmpDir().resolve("cache");
     this.valueEncoding = new ValueEncodingJackson<>(jackson, null, false);
+    this.instanceLock = new ReentrantLock();
   }
 
   @Override
@@ -143,18 +146,21 @@ public class CacheDriverFs implements CacheDriver {
     try {
       byte[] serialized = serialize(value);
 
-      synchronized (this) {
-        Files.createDirectories(entry);
-        Files.write(entry.resolve(validator), serialized);
-        if (ttl > 0) {
-          long expires = Instant.now().toEpochMilli() + (ttl * 1000L);
-          Files.writeString(entry.resolve(TTL), Long.toString(expires));
-        } else {
-          Files.deleteIfExists(entry.resolve(TTL));
-        }
+      instanceLock.lock();
+
+      Files.createDirectories(entry);
+      Files.write(entry.resolve(validator), serialized);
+      if (ttl > 0) {
+        long expires = Instant.now().toEpochMilli() + (ttl * 1000L);
+        Files.writeString(entry.resolve(TTL), Long.toString(expires));
+      } else {
+        Files.deleteIfExists(entry.resolve(TTL));
       }
+
     } catch (IOException e) {
       // ignore
+    } finally {
+      instanceLock.unlock();
     }
   }
 
@@ -179,12 +185,14 @@ public class CacheDriverFs implements CacheDriver {
   }
 
   private void delete(String key) {
-    synchronized (this) {
-      try (Stream<Path> entries = Files.walk(keyPath(key))) {
-        entries.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-      } catch (IOException e) {
-        // ignore
-      }
+    instanceLock.lock();
+
+    try (Stream<Path> entries = Files.walk(keyPath(key))) {
+      entries.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+    } catch (IOException e) {
+      // ignore
+    } finally {
+      instanceLock.unlock();
     }
   }
 

@@ -19,6 +19,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -28,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Cron4j implementation of TaskQueue with support for parallel execution and task queuing. */
-@SuppressWarnings("PMD.TooManyMethods")
 public class TaskQueueCron4j implements TaskQueue {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TaskQueueCron4j.class);
@@ -38,6 +39,7 @@ public class TaskQueueCron4j implements TaskQueue {
   private final BlockingQueue<Pair<Task, CompletableFuture<TaskStatus>>> queue;
   private final BlockingQueue<TaskStatus> currentTasks;
   private final BlockingQueue<Integer> threadNumbers;
+  private final Lock instanceLock;
 
   public TaskQueueCron4j(
       it.sauronsoftware.cron4j.Scheduler scheduler,
@@ -50,11 +52,14 @@ public class TaskQueueCron4j implements TaskQueue {
     this.threadNumbers =
         new LinkedBlockingQueue<>(
             IntStream.rangeClosed(1, maxConcurrentTasks).boxed().collect(Collectors.toList()));
+    this.instanceLock = new ReentrantLock();
   }
 
   @Override
   public CompletableFuture<TaskStatus> launch(Task task) {
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       Thread.currentThread().setName("bg-task-0");
       task.logContext();
       cleanup();
@@ -70,6 +75,8 @@ public class TaskQueueCron4j implements TaskQueue {
       }
 
       return queueTask(task);
+    } finally {
+      instanceLock.unlock();
     }
   }
 
@@ -147,7 +154,9 @@ public class TaskQueueCron4j implements TaskQueue {
   }
 
   private void checkQueue() {
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       cleanup();
 
       if (currentTasks.remainingCapacity() <= 0) {
@@ -165,6 +174,8 @@ public class TaskQueueCron4j implements TaskQueue {
       } else {
         launchSingleTask(task, taskPair.getRight());
       }
+    } finally {
+      instanceLock.unlock();
     }
   }
 
@@ -223,8 +234,12 @@ public class TaskQueueCron4j implements TaskQueue {
   }
 
   private void cleanup() {
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       currentTasks.removeIf(TaskStatus::isDone);
+    } finally {
+      instanceLock.unlock();
     }
   }
 }

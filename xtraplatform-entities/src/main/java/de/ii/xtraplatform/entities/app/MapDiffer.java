@@ -25,7 +25,7 @@ public final class MapDiffer {
           if (!other.containsKey(key)) {
             result.put(key, "other missing");
           } else if (Objects.equals(value, other.get(key))) {
-            return;
+            return; // NOPMD
           } else if (value instanceof Map && other.get(key) instanceof Map) {
             result.putAll(diff((Map<String, Object>) value, (Map<String, Object>) other.get(key)));
           } else if (value instanceof List && other.get(key) instanceof List) {
@@ -45,7 +45,6 @@ public final class MapDiffer {
     return result;
   }
 
-  @SuppressWarnings("PMD.CyclomaticComplexity")
   private static Map<String, String> diff(
       List<Object> source, List<Object> other, String parentKey) {
 

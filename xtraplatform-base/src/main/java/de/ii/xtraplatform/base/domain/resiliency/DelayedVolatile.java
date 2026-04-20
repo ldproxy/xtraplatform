@@ -10,11 +10,13 @@ package de.ii.xtraplatform.base.domain.resiliency;
 import com.codahale.metrics.health.HealthCheck;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class DelayedVolatile<T extends Volatile2> extends AbstractVolatileComposed
-    implements Volatile2 {
+public class DelayedVolatile<T extends Volatile2> extends AbstractVolatileComposed {
 
   private final boolean delegateHealth;
+  private final Lock instanceLock;
   private T dependency;
 
   public DelayedVolatile(
@@ -30,6 +32,7 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatileCompos
     super(uniqueKey, volatileRegistry, false, capabilities);
 
     this.delegateHealth = delegateHealth;
+    this.instanceLock = new ReentrantLock();
   }
 
   @Override
@@ -49,13 +52,19 @@ public class DelayedVolatile<T extends Volatile2> extends AbstractVolatileCompos
         : Optional.empty();
   }
 
-  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
-  public synchronized void set(T volatile2) {
-    addSubcomponent("delayed", volatile2, false, getVolatileCapabilities().toArray(new String[0]));
+  public void set(T volatile2) {
+    try {
+      instanceLock.lock();
 
-    this.dependency = volatile2;
+      addSubcomponent(
+          "delayed", volatile2, false, getVolatileCapabilities().toArray(new String[0]));
 
-    onVolatileStarted();
+      this.dependency = volatile2;
+
+      onVolatileStarted();
+    } finally {
+      instanceLock.unlock();
+    }
   }
 
   public boolean isPresent() {

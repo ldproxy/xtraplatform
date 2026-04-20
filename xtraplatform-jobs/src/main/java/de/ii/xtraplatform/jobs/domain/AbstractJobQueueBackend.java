@@ -19,7 +19,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-@SuppressWarnings("PMD.TooManyMethods")
 public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileComposed
     implements JobQueueBackend {
 
@@ -121,6 +120,7 @@ public abstract class AbstractJobQueueBackend<T> extends AbstractVolatileCompose
   }
 
   @Override
+  @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   public boolean error(String jobId, String error, boolean retry) {
     Optional<Job> job = untakeJob(jobId);
 

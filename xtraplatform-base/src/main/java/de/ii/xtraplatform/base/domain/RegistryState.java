@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +29,9 @@ public final class RegistryState<T> implements Registry.State<T> {
   private static final Joiner JOINER = Joiner.on('.').skipNulls();
 
   private final String componentName;
-  private final ImmutableList<String> componentProperties;
+  private final List<String> componentProperties;
   private final Map<String, T> items;
+  private final Lock instanceLock;
 
   public RegistryState(String name, String... componentProperties) {
     this.componentName = name;
@@ -37,6 +40,7 @@ public final class RegistryState<T> implements Registry.State<T> {
             ? ImmutableList.copyOf(componentProperties)
             : ImmutableList.of("instance.name");
     this.items = new ConcurrentHashMap<>();
+    this.instanceLock = new ReentrantLock();
   }
 
   @Override
@@ -50,42 +54,54 @@ public final class RegistryState<T> implements Registry.State<T> {
   }
 
   @Override
-  @SuppressWarnings({"PMD.AvoidSynchronizedAtMethodLevel", "PMD.AvoidDeeplyNestedIfStmts"})
-  public synchronized Optional<T> onArrival(T ref) {
-    if (Objects.nonNull(ref)) {
-      Optional<String> identifier = getComponentIdentifier(ref, componentProperties);
-      T service = ref; // bundleContext.getService(ref);
+  @SuppressWarnings({"PMD.AvoidDeeplyNestedIfStmts"})
+  public Optional<T> onArrival(T ref) {
+    try {
+      instanceLock.lock();
 
-      if (identifier.isPresent()) {
-        this.items.put(identifier.get(), service);
+      if (Objects.nonNull(ref)) {
+        Optional<String> identifier = getComponentIdentifier(ref, componentProperties);
+        T service = ref; // bundleContext.getService(ref);
 
-        if (LOGGER.isDebugEnabled(MARKER.DI)) {
-          LOGGER.debug(MARKER.DI, "Registered {}: {}", componentName, identifier.get());
+        if (identifier.isPresent()) {
+          this.items.put(identifier.get(), service);
+
+          if (LOGGER.isDebugEnabled(MARKER.DI)) {
+            LOGGER.debug(MARKER.DI, "Registered {}: {}", componentName, identifier.get());
+          }
         }
+
+        return Optional.ofNullable(service);
       }
 
-      return Optional.ofNullable(service);
+      return Optional.empty();
+    } finally {
+      instanceLock.unlock();
     }
-
-    return Optional.empty();
   }
 
   @Override
-  @SuppressWarnings({"PMD.AvoidSynchronizedAtMethodLevel", "PMD.AvoidDeeplyNestedIfStmts"})
-  public synchronized Optional<T> onDeparture(T ref) {
-    if (Objects.nonNull(ref)) {
-      Optional<String> identifier = getComponentIdentifier(ref, componentProperties);
+  @SuppressWarnings({"PMD.AvoidDeeplyNestedIfStmts"})
+  public Optional<T> onDeparture(T ref) {
+    try {
+      instanceLock.lock();
 
-      if (identifier.isPresent()) {
-        this.items.remove(identifier.get());
+      if (Objects.nonNull(ref)) {
+        Optional<String> identifier = getComponentIdentifier(ref, componentProperties);
 
-        if (LOGGER.isDebugEnabled(MARKER.DI)) {
-          LOGGER.debug(MARKER.DI, "Deregistered {}: {}", componentName, identifier.get());
+        if (identifier.isPresent()) {
+          this.items.remove(identifier.get());
+
+          if (LOGGER.isDebugEnabled(MARKER.DI)) {
+            LOGGER.debug(MARKER.DI, "Deregistered {}: {}", componentName, identifier.get());
+          }
         }
       }
-    }
 
-    return Optional.empty();
+      return Optional.empty();
+    } finally {
+      instanceLock.unlock();
+    }
   }
 
   private Optional<String> getComponentIdentifier(T component, List<String> properties) {

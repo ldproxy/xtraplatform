@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
+@FunctionalInterface
 public interface HealthChecks {
   void register(String name, HealthCheck check);
 

@@ -11,6 +11,7 @@ import com.google.common.hash.Hashing;
 import java.util.Optional;
 import org.immutables.value.Value;
 
+@FunctionalInterface
 public interface StaticResourceReader {
 
   Optional<CachedResource> load(String path, Optional<String> defaultPage);
@@ -38,7 +39,7 @@ public interface StaticResourceReader {
       }
 
       // zero out the millis since the date we get back from If-Modified-Since will not have them
-      lastModified = (lastModified / 1000) * 1000;
+      lastModified = lastModified / 1000 * 1000;
 
       return lastModified;
     }

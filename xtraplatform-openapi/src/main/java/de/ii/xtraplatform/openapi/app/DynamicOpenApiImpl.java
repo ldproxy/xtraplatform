@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,11 +54,13 @@ public class DynamicOpenApiImpl extends BaseOpenApiResource
   public static final MediaType YAML_TYPE = new MediaType("application", "yaml");
   public static final String YAML = "application/yaml";
 
+  private final Lock instanceLock;
   private OpenAPI openApiSpec;
 
   @Inject
   public DynamicOpenApiImpl() {
     super();
+    this.instanceLock = new ReentrantLock();
   }
 
   @Override
@@ -65,7 +69,9 @@ public class DynamicOpenApiImpl extends BaseOpenApiResource
   }
 
   private void scan(Set<Object> resources) {
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       Set<Class<?>> resourceClasses =
           resources.stream()
               .flatMap(
@@ -95,6 +101,8 @@ public class DynamicOpenApiImpl extends BaseOpenApiResource
                     .bearerFormat("JWT"));
       }
       openApiSpec.addSecurityItem(new SecurityRequirement().addList("JWT"));
+    } finally {
+      instanceLock.unlock();
     }
   }
 

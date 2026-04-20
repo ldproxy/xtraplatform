@@ -97,12 +97,9 @@ public class BlobStoreDriverFs implements BlobStoreDriver {
     List<PathMatcher> includes = StoreDriver.asMatchers(storeSource.getIncludes(), root.toString());
     List<PathMatcher> excludes = StoreDriver.asMatchers(storeSource.getExcludes(), root.toString());
 
-    BlobSource blobSource =
-        storeSource.isSingleContent() && storeSource.getPrefix().isPresent()
-            ? new BlobSourceFs(root, Path.of(storeSource.getPrefix().get()), includes, excludes)
-            : new BlobSourceFs(root, null, includes, excludes);
-
-    return blobSource;
+    return storeSource.isSingleContent() && storeSource.getPrefix().isPresent()
+        ? new BlobSourceFs(root, Path.of(storeSource.getPrefix().get()), includes, excludes)
+        : new BlobSourceFs(root, null, includes, excludes);
   }
 
   private static Path getAbsolutePath(Path dataDir, StoreSource storeSource) {

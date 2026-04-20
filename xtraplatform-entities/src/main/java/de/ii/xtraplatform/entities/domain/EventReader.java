@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+@FunctionalInterface
 public interface EventReader {
   Stream<Tuple<Path, Supplier<byte[]>>> load(
       Path sourcePath, List<String> includes, List<String> excludes) throws IOException;

@@ -82,6 +82,7 @@ public class ChangingDataImpl implements ChangingData {
     return false;
   }
 
+  @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   private <S, T extends ChangingValue<S>> void updateAggregate(Class<T> type, T next) {
     if (values.containsKey(type)) {
       if (values.get(type).containsKey(AGGREGATED)) {

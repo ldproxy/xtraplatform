@@ -71,8 +71,9 @@ public class SinkDefault<U, V> implements SinkReduced<U, V> {
     this.outputStream = outputStream;
   }
 
+  @SuppressWarnings("PMD.TypeParameterNamingConventions")
   <V1> SinkDefault<U, V1> withResult(V1 item) {
-    return new SinkDefault<U, V1>(type, subscriber, consumer, item, null, outputStream);
+    return new SinkDefault<>(type, subscriber, consumer, item, null, outputStream);
   }
 
   public Type getType() {

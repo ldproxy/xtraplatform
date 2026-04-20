@@ -55,6 +55,7 @@ import org.threeten.extra.Interval;
  */
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class JacksonProvider implements Jackson {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JacksonProvider.class);
@@ -99,13 +100,11 @@ public class JacksonProvider implements Jackson {
     return optimize ? configured.registerModule(new AfterburnerModule()) : configured;
   }
 
-  @SuppressWarnings("PMD.UnnecessaryModifier")
   @Override
   public ObjectMapper getDefaultObjectMapper() {
     return jsonMapper;
   }
 
-  @SuppressWarnings("PMD.UnnecessaryModifier")
   @Override
   public ObjectMapper getNewObjectMapper(JsonFactory jsonFactory) {
     return configureMapper(new ObjectMapper(jsonFactory));
@@ -134,7 +133,6 @@ public class JacksonProvider implements Jackson {
   }
 
   public abstract static class IntervalMixin {
-    @SuppressWarnings("PMD.UnusedFormalParameter") // needed for deserialization of Interval
     IntervalMixin(
         @JsonProperty("start") Instant startInclusive, @JsonProperty("end") Instant endExclusive) {}
 
@@ -202,16 +200,14 @@ public class JacksonProvider implements Jackson {
     public JavaType typeFromId(DatabindContext context, String id) {
       if (getIdMapping().containsKey(id)) {
         Class<?> clazz = getIdMapping().get(id).iterator().next().getSubType();
-        JavaType javaType =
-            TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
-        return javaType;
+
+        return TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
       }
       Optional<String> patternId = getIdMapping().keySet().stream().filter(id::matches).findFirst();
       if (patternId.isPresent()) {
         Class<?> clazz = getIdMapping().get(patternId.get()).iterator().next().getSubType();
-        JavaType javaType =
-            TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
-        return javaType;
+
+        return TypeFactory.defaultInstance().constructSpecializedType(mBaseType, clazz);
       }
 
       return null;

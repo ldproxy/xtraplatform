@@ -48,8 +48,8 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
   @Path(PATH_LOGIN)
   @Produces(MediaType.TEXT_HTML)
   public Response getLogin(
-      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
-      @QueryParam(LoginHandler.PARAM_LOGIN_SCOPES) String scopes,
+      @QueryParam(PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @QueryParam(PARAM_LOGIN_SCOPES) String scopes,
       @Context ContainerRequestContext containerRequestContext) {
 
     return handle(containerRequestContext, redirectUri, scopes, "/", false, null, null);
@@ -59,9 +59,9 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
   @Path(PATH_CALLBACK)
   @Produces(MediaType.TEXT_HTML)
   public Response getCallback(
-      @QueryParam(LoginHandler.PARAM_CALLBACK_STATE) String state,
-      @QueryParam(LoginHandler.PARAM_LOGIN_REDIRECT_URI) String redirectUri,
-      @QueryParam(LoginHandler.PARAM_CALLBACK_TOKEN) String token,
+      @QueryParam(PARAM_CALLBACK_STATE) String state,
+      @QueryParam(PARAM_LOGIN_REDIRECT_URI) String redirectUri,
+      @QueryParam(PARAM_CALLBACK_TOKEN) String token,
       @Context ContainerRequestContext containerRequestContext) {
 
     return handle(containerRequestContext, redirectUri, null, "/", true, state, token);
@@ -71,7 +71,7 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
   @Path(PATH_LOGOUT)
   @Produces(MediaType.TEXT_HTML)
   public Response getLogout(
-      @QueryParam(LoginHandler.PARAM_LOGOUT_REDIRECT_URI) String redirectUri,
+      @QueryParam(PARAM_LOGOUT_REDIRECT_URI) String redirectUri,
       @Context ContainerRequestContext containerRequestContext) {
 
     return logout(containerRequestContext, redirectUri);
@@ -89,7 +89,7 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
     return URI.create(
         ForwardedUri.base(containerRequestContext, servicesContext)
             .appendPath(PATH_CALLBACK)
-            .addParameter(LoginHandler.PARAM_LOGIN_REDIRECT_URI, redirectUri)
+            .addParameter(PARAM_LOGIN_REDIRECT_URI, redirectUri)
             .toString());
   }
 
@@ -145,8 +145,8 @@ public class OidcEndpoint implements Endpoint, LoginHandler {
     URI logoutUri =
         Objects.nonNull(redirectUri)
             ? UriBuilder.fromUri(oidc.getLogoutUri())
-                .queryParam(LoginHandler.PARAM_LOGOUT_CLIENT_ID, oidc.getClientId())
-                .queryParam(LoginHandler.PARAM_LOGOUT_REDIRECT_URI, redirectUri)
+                .queryParam(PARAM_LOGOUT_CLIENT_ID, oidc.getClientId())
+                .queryParam(PARAM_LOGOUT_REDIRECT_URI, redirectUri)
                 .build()
             : oidc.getLogoutUri();
 
