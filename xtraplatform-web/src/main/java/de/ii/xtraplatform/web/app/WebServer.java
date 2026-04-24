@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
  */
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 public class WebServer implements AppLifeCycle, DropwizardPlugin {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(WebServer.class);

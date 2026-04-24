@@ -9,7 +9,6 @@ package de.ii.xtraplatform.values.domain;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.google.common.collect.ObjectArrays;
-import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import de.ii.xtraplatform.values.app.ValueStoreImpl;
 import java.util.Arrays;
@@ -20,8 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("PMD.TooManyMethods")
-public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U>, Volatile2 {
+public interface ValueStoreDecorator<T, U extends T> extends KeyValueStore<U> {
 
   KeyValueStore<T> getDecorated();
 

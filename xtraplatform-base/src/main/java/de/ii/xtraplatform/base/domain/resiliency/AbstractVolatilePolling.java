@@ -10,8 +10,7 @@ package de.ii.xtraplatform.base.domain.resiliency;
 import de.ii.xtraplatform.base.domain.resiliency.Volatile2.Polling;
 import de.ii.xtraplatform.base.domain.util.Tuple;
 
-public abstract class AbstractVolatilePolling extends AbstractVolatile
-    implements Volatile2, Polling {
+public abstract class AbstractVolatilePolling extends AbstractVolatile implements Polling {
 
   protected AbstractVolatilePolling(VolatileRegistry volatileRegistry) {
     super(volatileRegistry);

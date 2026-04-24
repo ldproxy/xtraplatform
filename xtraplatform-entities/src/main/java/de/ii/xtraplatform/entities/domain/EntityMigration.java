@@ -23,6 +23,7 @@ public abstract class EntityMigration<T extends EntityData, U extends EntityData
     this.context = context;
   }
 
+  @FunctionalInterface
   public interface EntityMigrationContext extends MigrationContext {
     boolean exists(Predicate<Identifier> matcher);
   }

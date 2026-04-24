@@ -27,7 +27,7 @@ public interface StoreSourceS3 extends StoreSource {
     return false;
   }
 
-  @JsonProperty(StoreSource.MODE_PROP)
+  @JsonProperty(MODE_PROP)
   @Value.Default
   @Override
   default Mode getDesiredMode() {

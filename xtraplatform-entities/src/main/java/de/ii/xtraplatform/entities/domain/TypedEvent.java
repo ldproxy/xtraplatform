@@ -9,6 +9,7 @@ package de.ii.xtraplatform.entities.domain;
 
 import de.ii.xtraplatform.streams.domain.Event;
 
+@FunctionalInterface
 public interface TypedEvent extends Event {
   String type();
 }

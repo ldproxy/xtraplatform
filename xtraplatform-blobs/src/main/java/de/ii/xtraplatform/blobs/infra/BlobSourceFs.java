@@ -27,7 +27,6 @@ import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("PMD.TooManyMethods")
 public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BlobSourceFs.class);
@@ -52,11 +51,7 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
   @Override
   public boolean has(Path path) throws IOException {
-    if (!canHandle(path)) {
-      return false;
-    }
-
-    return Files.exists(full(path));
+    return canHandle(path) && Files.exists(full(path));
   }
 
   @Override

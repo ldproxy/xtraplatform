@@ -20,6 +20,7 @@ import java.util.zip.ZipInputStream;
 
 public interface ZipWalker {
 
+  @SuppressWarnings({"PMD.AvoidCatchingGenericException", "PMD.PreserveStackTrace"})
   static void walkEntries(Path zipFile, BiConsumer<Path, Supplier<byte[]>> entryHandler)
       throws IOException {
     try (ZipInputStream zip = new ZipInputStream(Files.newInputStream(zipFile))) {

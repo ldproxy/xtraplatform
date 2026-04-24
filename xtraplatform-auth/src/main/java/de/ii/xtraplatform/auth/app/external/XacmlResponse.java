@@ -49,7 +49,7 @@ public class XacmlResponse {
     return null;
   }
 
-  @SuppressWarnings(("PMD.AvoidDeeplyNestedIfStmts"))
+  @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   Map<String, String> getObligations() {
     if (Objects.nonNull(response)
         && !response.isEmpty()
@@ -70,27 +70,27 @@ public class XacmlResponse {
   }
 
   static class Response {
-    public String decision;
-    public Status status;
-    public List<Obligation> obligations;
+    String decision;
+    Status status;
+    List<Obligation> obligations;
   }
 
   static class Status {
-    public StatusCode statusCode;
-    public String statusMessage;
+    StatusCode statusCode;
+    String statusMessage;
   }
 
   static class StatusCode {
-    public String value;
+    String value;
   }
 
   static class Obligation {
-    public String id;
-    public List<Attribute> attributeAssignment;
+    String id;
+    List<Attribute> attributeAssignment;
   }
 
   static class Attribute {
-    public String attributeId;
-    public String value;
+    String attributeId;
+    String value;
   }
 }

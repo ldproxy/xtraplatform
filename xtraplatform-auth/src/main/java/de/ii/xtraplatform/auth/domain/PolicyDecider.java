@@ -10,6 +10,7 @@ package de.ii.xtraplatform.auth.domain;
 import java.util.Map;
 import java.util.Optional;
 
+@FunctionalInterface
 public interface PolicyDecider {
   PolicyDecision request(
       String resourceId,

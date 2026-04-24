@@ -99,6 +99,7 @@ import org.apache.commons.text.StringSubstitutor;
  *     </code>
  */
 @DocFile(path = "application/20-configuration", name = "95-substitutions.md")
+@FunctionalInterface
 public interface Substitutions {
 
   StringSubstitutor getSubstitutor(boolean strict, boolean substitutionInVariables);

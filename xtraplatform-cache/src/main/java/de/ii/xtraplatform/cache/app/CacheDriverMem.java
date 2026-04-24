@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
@@ -22,7 +24,6 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-@SuppressWarnings("PMD.TooManyMethods")
 public class CacheDriverMem implements CacheDriver {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CacheDriverMem.class);
@@ -32,10 +33,12 @@ public class CacheDriverMem implements CacheDriver {
   private static final String TTL = "ttl";
 
   private final Map<String, Map<String, Object>> cache;
+  private final Lock instanceLock;
 
   @Inject
   public CacheDriverMem() {
     this.cache = new ConcurrentHashMap<>();
+    this.instanceLock = new ReentrantLock();
   }
 
   @Override
@@ -103,14 +106,22 @@ public class CacheDriverMem implements CacheDriver {
   }
 
   private void set(String key, Map<String, Object> entry) {
-    synchronized (cache) {
+    try {
+      instanceLock.lock();
+
       cache.put(key, entry);
+    } finally {
+      instanceLock.unlock();
     }
   }
 
   private void delete(String key) {
-    synchronized (cache) {
+    try {
+      instanceLock.lock();
+
       cache.remove(key);
+    } finally {
+      instanceLock.unlock();
     }
   }
 

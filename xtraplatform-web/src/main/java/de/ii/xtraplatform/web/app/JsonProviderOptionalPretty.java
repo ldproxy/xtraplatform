@@ -39,6 +39,7 @@ public class JsonProviderOptionalPretty extends JacksonJaxbJsonProvider
   private final ObjectMapper mapper;
   private final ObjectMapper mapperPretty;
 
+  @SuppressWarnings("PMD.ConstructorCallsOverridableMethod")
   public JsonProviderOptionalPretty(ObjectMapper mapper) {
     super();
     this.mapper = mapper;

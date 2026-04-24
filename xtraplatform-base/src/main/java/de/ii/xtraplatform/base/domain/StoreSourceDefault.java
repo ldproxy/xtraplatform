@@ -17,7 +17,7 @@ public interface StoreSourceDefault extends StoreSourceFs {
 
   String KEY = "FS_DEFAULT";
 
-  @JsonProperty(StoreSource.TYPE_PROP)
+  @JsonProperty(TYPE_PROP)
   @Value.Derived
   @Override
   default String getType() {

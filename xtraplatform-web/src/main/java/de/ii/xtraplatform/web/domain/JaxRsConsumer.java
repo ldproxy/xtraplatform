@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 @AutoMultiBind
+@FunctionalInterface
 public interface JaxRsConsumer {
   Consumer<Set<Object>> getConsumer();
 }

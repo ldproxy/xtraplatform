@@ -11,7 +11,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.resiliency.AbstractVolatileComposed;
-import de.ii.xtraplatform.base.domain.resiliency.VolatileComposed;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.entities.app.ChangingDataImpl;
 import java.util.List;
@@ -30,10 +29,9 @@ import org.slf4j.MDC;
 /**
  * @author zahnen
  */
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods", "PMD.AvoidUsingVolatile"})
+@SuppressWarnings({"PMD.GodClass", "PMD.AvoidUsingVolatile"})
 public abstract class AbstractPersistentEntity<T extends EntityData>
-    extends AbstractVolatileComposed
-    implements PersistentEntity, Reloadable, EntityState, VolatileComposed {
+    extends AbstractVolatileComposed implements PersistentEntity, Reloadable, EntityState {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPersistentEntity.class);
 
@@ -104,8 +102,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
 
   // @Validate // is ignored here, but added by @EntityComponent stereotype
   public final void onValidate() {
-    try (MDC.MDCCloseable closeable =
-        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+    try (MDC.MDCCloseable ignored = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (shouldRegister()) {
         if (LOGGER.isTraceEnabled()) {
           LOGGER.trace("STARTING {} {} {} {}", getType(), getId(), shouldRegister(), register);
@@ -123,8 +120,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
 
   // @Invalidate // is ignored here, but added by @EntityComponent stereotype
   public final void onInvalidate() {
-    try (MDC.MDCCloseable closeable =
-        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+    try (MDC.MDCCloseable ignored = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STOPPING {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
@@ -137,8 +133,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
 
   // @PostRegistration // is ignored here, but added by @EntityComponent stereotype
   public final void onPostRegistration() {
-    try (MDC.MDCCloseable closeable =
-        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+    try (MDC.MDCCloseable ignored = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STARTED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
@@ -155,8 +150,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
 
   // @PostUnregistration // is ignored here, but added by @EntityComponent stereotype
   public final void onPostUnregistration() {
-    try (MDC.MDCCloseable closeable =
-        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+    try (MDC.MDCCloseable ignored = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("STOPPED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
@@ -166,8 +160,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   }
 
   private void onReload() {
-    try (MDC.MDCCloseable closeable =
-        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+    try (MDC.MDCCloseable ignored = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("RELOADING {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
@@ -208,8 +201,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
   private void afterReload() {
     reloadListeners.forEach(listener -> listener.accept(this));
 
-    try (MDC.MDCCloseable closeable =
-        LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
+    try (MDC.MDCCloseable ignored = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, getId())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("RELOADED {} {} {} {}", getType(), getId(), shouldRegister(), register);
       }
@@ -224,7 +216,7 @@ public abstract class AbstractPersistentEntity<T extends EntityData>
     }
   }
 
-  @SuppressWarnings("PMD.CognitiveComplexity")
+  @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.AvoidCatchingGenericException"})
   private void triggerStartup(boolean wait, Runnable then) {
     this.startup =
         executorService.submit(

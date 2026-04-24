@@ -24,10 +24,11 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 class JacksonHelper<T> {
 
-  private static final byte[] JSON_NULL = "null".getBytes();
-  private static final byte[] YAML_NULL = "--- null\n".getBytes();
+  private static final byte[] JSON_NULL = "null".getBytes(StandardCharsets.UTF_8);
+  private static final byte[] YAML_NULL = "--- null\n".getBytes(StandardCharsets.UTF_8);
   private static final Pattern JSON_EMPTY = Pattern.compile("(\\s)*");
   private static final Pattern YAML_EMPTY = Pattern.compile("---(\\s)*");
 

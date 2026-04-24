@@ -93,7 +93,8 @@ public class OpsPlugin implements DropwizardPlugin {
     private String urlPattern;
     private String contextPath;
 
-    public OpsResourceConfig() {
+    @SuppressWarnings("PMD.ConstructorCallsOverridableMethod")
+    OpsResourceConfig() {
       super();
       this.urlPattern = "/*";
       this.contextPath = "/";
@@ -101,19 +102,19 @@ public class OpsPlugin implements DropwizardPlugin {
       this.property("jersey.config.server.wadl.disableWadl", Boolean.TRUE);
     }
 
-    public String getUrlPattern() {
+    String getUrlPattern() {
       return this.urlPattern;
     }
 
-    public void setUrlPattern(String urlPattern) {
+    void setUrlPattern(String urlPattern) {
       this.urlPattern = urlPattern;
     }
 
-    public String getContextPath() {
+    String getContextPath() {
       return this.contextPath;
     }
 
-    public void setContextPath(String contextPath) {
+    void setContextPath(String contextPath) {
       this.contextPath = contextPath;
     }
   }

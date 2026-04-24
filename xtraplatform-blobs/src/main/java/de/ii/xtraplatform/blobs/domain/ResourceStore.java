@@ -19,7 +19,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
-@SuppressWarnings("PMD.TooManyMethods")
 public interface ResourceStore
     extends BlobReader, BlobWriter, BlobLocals, Volatile2, VolatileRegistered {
 

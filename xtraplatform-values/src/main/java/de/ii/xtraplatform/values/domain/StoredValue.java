@@ -10,6 +10,7 @@ package de.ii.xtraplatform.values.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.annotation.Nullable;
 
+@FunctionalInterface
 public interface StoredValue {
 
   // NOPMD - TODO: removing/emptying breaks builders, no from(Value) is generated

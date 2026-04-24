@@ -54,6 +54,7 @@ public class StoreSourceHttpFetcher {
     return true;
   }
 
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   public Optional<Path> load(StoreSource storeSource) {
     Path cachePath = getAbsolutePath(storeSource);
 

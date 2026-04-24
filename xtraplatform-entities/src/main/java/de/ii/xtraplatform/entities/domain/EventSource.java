@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 public class EventSource {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventSource.class);
@@ -117,7 +118,6 @@ public class EventSource {
                 + (Objects.nonNull(format) ? "." + format.toLowerCase(Locale.ROOT) : "")));
   }
 
-  @SuppressWarnings("PMD.CognitiveComplexity")
   public EntityEvent pathToEvent(Pattern pathPattern, Path path, Supplier<byte[]> readPayload) {
     Path relPath = rootPath.relativize(path);
     Path fullRelPath = applyPrefixes(relPath);
@@ -206,15 +206,14 @@ public class EventSource {
       // matcher.group(NAME_GROUP), matcher.group("separator"), matcher.group("glob"));
       if (Objects.isNull(matcher.group("glob"))) {
         names.add(matcher.group(NAME_GROUP));
-        pattern.append(matcher.group("separator").replaceAll("/", "\\\\/"));
-        pattern.append("(?<");
-        pattern.append(matcher.group(NAME_GROUP));
-        pattern.append(">[\\w][\\w-\\.]+?)");
+        pattern
+            .append(matcher.group("separator").replaceAll("/", "\\\\/"))
+            .append("(?<")
+            .append(matcher.group(NAME_GROUP))
+            .append(">[\\w][\\w-\\.]+?)");
         if (Objects.equals(matcher.group(NAME_GROUP), "id")) {
           names.add(FORMAT_GROUP);
-          pattern.append("(?:\\.(?<");
-          pattern.append(FORMAT_GROUP);
-          pattern.append(">[\\w]+))?");
+          pattern.append("(?:\\.(?<").append(FORMAT_GROUP).append(">[\\w]+))?");
         }
       } else {
         if (!Objects.equals(matcher.group("glob"), "**")) {

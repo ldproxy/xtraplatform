@@ -9,6 +9,7 @@ package de.ii.xtraplatform.entities.domain;
 
 import de.ii.xtraplatform.entities.app.EventSourcingCache;
 
+@FunctionalInterface
 public interface EventSourcing {
 
   <T> EventSourcingCache<T> createCache(EventSourcedStore<T> store);

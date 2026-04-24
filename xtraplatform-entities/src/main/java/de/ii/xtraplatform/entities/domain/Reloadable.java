@@ -9,6 +9,7 @@ package de.ii.xtraplatform.entities.domain;
 
 import java.util.function.Consumer;
 
+@FunctionalInterface
 public interface Reloadable {
   <T extends PersistentEntity> void addReloadListener(Class<T> type, Consumer<T> listener);
 }

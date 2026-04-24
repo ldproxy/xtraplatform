@@ -33,8 +33,7 @@ public class TokenAuthenticator implements Authenticator<String, User> {
   private static final Logger LOGGER = LoggerFactory.getLogger(TokenAuthenticator.class);
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
-  private static final TypeReference<Map<String, Object>> TYPE_REF =
-      new TypeReference<Map<String, Object>>() {};
+  private static final TypeReference<Map<String, Object>> TYPE_REF = new TypeReference<>() {};
 
   private final AuthConfiguration authConfig;
   private final HttpClient httpClient;
@@ -45,6 +44,7 @@ public class TokenAuthenticator implements Authenticator<String, User> {
   }
 
   @Override
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   public Optional<User> authenticate(String token) throws AuthenticationException {
     if (authConfig.getUserInfo().isPresent()) {
       UserInfo userInfoProvider = authConfig.getUserInfo().get();

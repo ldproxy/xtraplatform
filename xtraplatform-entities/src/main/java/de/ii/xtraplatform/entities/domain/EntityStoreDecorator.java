@@ -8,7 +8,6 @@
 package de.ii.xtraplatform.entities.domain;
 
 import com.codahale.metrics.health.HealthCheck;
-import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
 import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
@@ -20,9 +19,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("PMD.TooManyMethods")
 public interface EntityStoreDecorator<T extends EntityData, U extends T>
-    extends EntityDataStore<U>, Volatile2 {
+    extends EntityDataStore<U> {
 
   EntityDataStore<T> getDecorated();
 
@@ -107,6 +105,7 @@ public interface EntityStoreDecorator<T extends EntityData, U extends T>
   }
 
   @Override
+  @SuppressWarnings("PMD.TypeParameterNamingConventions")
   default <U1 extends U> EntityDataStore<U1> forType(Class<U1> type) {
     throw new IllegalArgumentException();
   }

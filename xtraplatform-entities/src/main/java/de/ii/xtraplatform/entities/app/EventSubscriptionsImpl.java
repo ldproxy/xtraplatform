@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +37,7 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
   private final Map<String, EventStream<Event>> eventStreams;
   private final Reactive.Runner streamRunner;
   private final ExecutorService executorService;
+  private final Lock instanceLock;
   private boolean isStarted;
 
   protected EventSubscriptionsImpl(Reactive.Runner streamRunner) {
@@ -45,14 +48,11 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
             (ThreadPoolExecutor)
                 Executors.newFixedThreadPool(
                     1, new ThreadFactoryBuilder().setNameFormat("events-%d").build()));
+    this.instanceLock = new ReentrantLock();
   }
 
   @Override
-  @SuppressWarnings({
-    "PMD.CyclomaticComplexity",
-    "PMD.AvoidInstantiatingObjectsInLoops",
-    "PMD.CognitiveComplexity"
-  })
+  @SuppressWarnings({"PMD.AvoidInstantiatingObjectsInLoops", "PMD.CognitiveComplexity"})
   public void addSubscriber(EventStoreSubscriber subscriber) {
     executorService.submit(
         () -> {
@@ -82,7 +82,9 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
                   }
 
                   // only emit one event at a time
-                  synchronized (streamRunner) {
+                  try {
+                    instanceLock.lock();
+
                     if (LOGGER.isTraceEnabled() && event instanceof EntityEvent) {
                       LOGGER.trace(
                           "EMIT: {} {}",
@@ -96,6 +98,8 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
                           ((EntityEvent) event).type(),
                           ((EntityEvent) event).identifier());
                     }
+                  } finally {
+                    instanceLock.unlock();
                   }
                 });
             cmp.join();
@@ -105,14 +109,19 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
   }
 
   @Override
-  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
-  public synchronized void emitEvent(TypedEvent event) {
-    if (LOGGER.isTraceEnabled() && event instanceof EntityEvent) {
-      LOGGER.trace("Emitting event: {} {}", event.type(), ((EntityEvent) event).identifier());
-    }
-    final EventStream<Event> eventStream = getEventStream(event.type());
+  public void emitEvent(TypedEvent event) {
+    try {
+      instanceLock.lock();
 
-    eventStream.queue(event);
+      if (LOGGER.isTraceEnabled() && event instanceof EntityEvent) {
+        LOGGER.trace("Emitting event: {} {}", event.type(), ((EntityEvent) event).identifier());
+      }
+      final EventStream<Event> eventStream = getEventStream(event.type());
+
+      eventStream.queue(event);
+    } finally {
+      instanceLock.unlock();
+    }
   }
 
   @Override
@@ -126,10 +135,15 @@ public class EventSubscriptionsImpl implements EventSubscriptions {
     this.isStarted = true;
   }
 
-  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
-  private synchronized EventStream<Event> getEventStream(String eventType) {
-    Objects.requireNonNull(eventType, "eventType may not be null");
-    return eventStreams.computeIfAbsent(eventType, prefix -> createEventStream(eventType));
+  private EventStream<Event> getEventStream(String eventType) {
+    try {
+      instanceLock.lock();
+
+      Objects.requireNonNull(eventType, "eventType may not be null");
+      return eventStreams.computeIfAbsent(eventType, prefix -> createEventStream(eventType));
+    } finally {
+      instanceLock.unlock();
+    }
   }
 
   private EventStream<Event> createEventStream(String eventType) {

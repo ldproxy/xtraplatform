@@ -19,7 +19,6 @@ import org.slf4j.Marker;
 /**
  * @author zahnen
  */
-@SuppressWarnings("PMD.GodClass")
 public class LoggingFilter extends TurboFilter {
 
   private boolean showThirdPartyLoggers;

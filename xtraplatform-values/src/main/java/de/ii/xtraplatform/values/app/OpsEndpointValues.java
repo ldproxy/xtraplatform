@@ -69,7 +69,7 @@ public class OpsEndpointValues implements OpsEndpoint {
     return Response.ok(objectMapper.writeValueAsString(values)).build();
   }
 
-  private ImmutableMap<String, String> getValueInfo(Identifier identifier) {
+  private Map<String, String> getValueInfo(Identifier identifier) {
     return ImmutableMap.of("path", identifier.asPath());
   }
 }

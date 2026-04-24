@@ -15,6 +15,7 @@ import org.immutables.value.Value;
  * @author zahnen
  */
 @AutoMultiBind
+@FunctionalInterface
 public interface JacksonSubTypeIds {
 
   @Value.Immutable

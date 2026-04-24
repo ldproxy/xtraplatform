@@ -513,6 +513,7 @@ public interface AuthConfiguration {
     @JsonSubTypes.Type(value = Jwt.class, name = JWT),
     @JsonSubTypes.Type(value = XacmlJson.class, name = XACML_JSON),
   })
+  @FunctionalInterface
   interface AuthProvider {
     AuthProviderType getType();
   }
@@ -530,6 +531,7 @@ public interface AuthConfiguration {
     }
   }
 
+  @FunctionalInterface
   interface LoginProvider {
     /**
      * @langEn Login settings, see [Login](#login).
@@ -650,7 +652,7 @@ public interface AuthConfiguration {
 
     @JsonCreator
     public static XacmlJsonVersion fromString(String type) {
-      for (XacmlJsonVersion v : XacmlJsonVersion.values()) {
+      for (XacmlJsonVersion v : values()) {
         if (v.toString().equals(type)) {
           return v;
         }
@@ -676,7 +678,7 @@ public interface AuthConfiguration {
 
     @JsonCreator
     public static GeoXacmlVersion fromString(String type) {
-      for (GeoXacmlVersion v : GeoXacmlVersion.values()) {
+      for (GeoXacmlVersion v : values()) {
         if (v.toString().equals(type)) {
           return v;
         }

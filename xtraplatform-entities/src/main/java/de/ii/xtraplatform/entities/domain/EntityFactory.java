@@ -16,7 +16,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 @AutoMultiBind
-@SuppressWarnings("PMD.TooManyMethods")
 public interface EntityFactory {
 
   String type();

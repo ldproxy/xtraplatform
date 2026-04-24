@@ -10,6 +10,7 @@ package de.ii.xtraplatform.ops.app;
 import javax.servlet.ServletConfig;
 import org.eclipse.jetty.servlet.ServletHolder;
 
+@FunctionalInterface
 public interface OpsRequestDispatcher {
 
   void init(ServletConfig servletConfig, ServletHolder tasksServlet);

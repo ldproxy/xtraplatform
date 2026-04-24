@@ -30,7 +30,7 @@ import org.reactivestreams.Subscriber;
 
 @Singleton
 @AutoBind
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ReactiveRx implements Reactive {
 
   @Inject
@@ -207,9 +207,8 @@ public class ReactiveRx implements Reactive {
     Transformer<U, V> transformer1 = transformer.getTransformer1();
     Transformer<V, W> transformer2 = transformer.getTransformer2();
     Flowable<V> akkaSource1 = assemble(akkaSource, transformer1);
-    Flowable<W> akkaSource2 = assemble(akkaSource1, transformer2);
 
-    return akkaSource2;
+    return assemble(akkaSource1, transformer2);
   }
 
   static <U, V> SubscriberRx<U> assemble(SinkReduced<U, V> sink, StreamContext<V> stream) {
@@ -223,15 +222,16 @@ public class ReactiveRx implements Reactive {
     throw new IllegalStateException();
   }
 
+  @SuppressWarnings({"PMD.AvoidCatchingGenericException"})
   static <U, V> SubscriberRx<U> assemble(SinkDefault<U, V> sink, StreamContext<V> stream) {
     switch (sink.getType()) {
       case IGNORE:
-        return new SubscriberRx<U>() {
+        return new SubscriberRx<>() {
           @Override
           public void onNext(U next) {}
         };
       case HEAD:
-        return new SubscriberRx<U>() {
+        return new SubscriberRx<>() {
           boolean first = true;
 
           @Override
@@ -324,7 +324,7 @@ public class ReactiveRx implements Reactive {
     public void onComplete() {}
   }
 
-  static class SubscriberRxWrapper<T> extends SubscriberRx<T> {
+  static final class SubscriberRxWrapper<T> extends SubscriberRx<T> {
 
     private final Subscriber<T> delegate;
 

@@ -13,6 +13,7 @@ import com.github.azahnen.dagger.annotations.AutoMultiBind;
  * @author zahnen
  */
 @AutoMultiBind
+@FunctionalInterface
 public interface ServiceEndpoint {
 
   String getServiceType();

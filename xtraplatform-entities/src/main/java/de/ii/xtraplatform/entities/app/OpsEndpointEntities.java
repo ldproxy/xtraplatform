@@ -84,21 +84,20 @@ public class OpsEndpointEntities implements OpsEndpoint {
       summary = "Get all entities",
       description =
           "Returns a list of all entities with their statuses. The keys of the returned object are the type of the entity.")
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Successful operation",
-            content =
-                @Content(
-                    mediaType = "application/json",
-                    schema =
-                        @Schema(
-                            implementation = EntityResponse.class,
-                            example =
-                                "{\n  \"providers\" : [ {\n    \"id\" : \"testOpenApi\",\n    \"status\" : \"ACTIVE\",\n    \"subType\" : \"feature/wfs\"\n  } ],\n  \"services\" : [ {\n    \"id\" : \"testOpenApi\",\n    \"status\" : \"ACTIVE\",\n    \"subType\" : \"ogc_api\"\n  } ]\n}"))),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
-      })
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Successful operation",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema =
+                    @Schema(
+                        implementation = EntityResponse.class,
+                        example =
+                            "{\n  \"providers\" : [ {\n    \"id\" : \"testOpenApi\",\n    \"status\" : \"ACTIVE\",\n    \"subType\" : \"feature/wfs\"\n  } ],\n  \"services\" : [ {\n    \"id\" : \"testOpenApi\",\n    \"status\" : \"ACTIVE\",\n    \"subType\" : \"ogc_api\"\n  } ]\n}"))),
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
   public Response getEntities() throws JsonProcessingException {
     Map<String, List<Map<String, String>>> entities =
         entityFactories.getTypes().stream()
@@ -121,7 +120,7 @@ public class OpsEndpointEntities implements OpsEndpoint {
     return Response.ok(objectMapper.writeValueAsString(entities)).build();
   }
 
-  private ImmutableMap<String, String> getEntityInfo(Identifier identifier) {
+  private Map<String, String> getEntityInfo(Identifier identifier) {
     Optional<EntityState.STATE> state =
         entityRegistry.getEntityState(entityType(identifier), identifier.id());
     Optional<String> entitySubType = entityDataStore.get(identifier).getEntitySubType();

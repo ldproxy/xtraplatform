@@ -18,6 +18,7 @@ import java.util.Map;
 import org.immutables.encode.Encoding;
 
 @Encoding
+@SuppressWarnings("PMD.LooseCoupling")
 class BuildableMapEncoding<T extends Buildable<T>, U extends BuildableBuilder<T>> {
   @Encoding.Impl private BuildableMap<T, U> field;
 
@@ -38,7 +39,7 @@ class BuildableMapEncoding<T extends Buildable<T>, U extends BuildableBuilder<T>
     @JsonIgnore
     @Encoding.Init // <-- specify builder initializer method
     @Encoding.Copy // <-- marks it as "canonical" copy method
-    public void set(Map<String, T> values) {
+    void set(Map<String, T> values) {
       // this.buildValue = new ImmutableValueOrBuilderMap.Builder<T, U>();//.from(value);
       // values.forEach(this::put);
       this.builderMap = new LinkedHashMap<>();
@@ -47,7 +48,7 @@ class BuildableMapEncoding<T extends Buildable<T>, U extends BuildableBuilder<T>
 
     @JsonProperty
     @Encoding.Naming("get*")
-    public Map<String, U> get() {
+    Map<String, U> get() {
       // return buildValue.build().getBuilders();
       return builderMap;
     }

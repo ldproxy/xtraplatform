@@ -8,7 +8,6 @@
 package de.ii.xtraplatform.openapi.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.web.domain.PartialMustacheResolver;
 import de.ii.xtraplatform.web.domain.PerClassMustacheResolver;
 import java.io.Reader;
 import javax.inject.Inject;
@@ -17,8 +16,7 @@ import javax.inject.Singleton;
 /** Reuse the per class loader, but switch to the OpenAPI module context. */
 @Singleton
 @AutoBind
-public class MustacheResolverOpenApi extends PerClassMustacheResolver
-    implements PartialMustacheResolver {
+public class MustacheResolverOpenApi extends PerClassMustacheResolver {
 
   @Inject
   MustacheResolverOpenApi() {

@@ -23,7 +23,6 @@ public interface EventSourcedKeyValueStore<T> extends EventSourcedStore<T>, KeyV
   EventSourcingCache<T> getEventSourcing();
 
   @Override
-  @SuppressWarnings("PMD.TooFewBranchesForASwitchStatement")
   default void onEmit(Event event) {
     // NOTE: when isReplay switches, notify EntityInstantiator
     if (event instanceof EntityEvent) {
@@ -32,7 +31,9 @@ public interface EventSourcedKeyValueStore<T> extends EventSourcedStore<T>, KeyV
     } else if (event instanceof StateChangeEvent) {
       switch (((StateChangeEvent) event).state()) {
         case REPLAYING:
-          LOGGER.debug("Replaying events for {}", getEventTypes());
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Replaying events for {}", getEventTypes());
+          }
           break;
         case LISTENING:
           onStart().thenRun(() -> LOGGER.debug("Listening for events for {}", getEventTypes()));

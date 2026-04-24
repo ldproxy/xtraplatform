@@ -119,9 +119,9 @@ public class XacmlRequest {
   }
 
   static class Attribute {
-    public final String attributeId;
-    public final Object value;
-    public final String dataType;
+    final String attributeId;
+    final Object value;
+    final String dataType;
 
     Attribute(String attributeId, String value) {
       this(attributeId, value, "http://www.w3.org/2001/XMLSchema#string");

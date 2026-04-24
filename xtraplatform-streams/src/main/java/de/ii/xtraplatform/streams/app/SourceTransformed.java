@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
 
+@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.TypeParameterNamingConventions"})
 public class SourceTransformed<T, U> implements Source<U> {
 
   private final SourceDefault<T> source;
@@ -45,12 +46,9 @@ public class SourceTransformed<T, U> implements Source<U> {
             ? via((TransformerChained<U, ?, U1>) transformer1)
             : via(transformer1);
 
-    Source<W> via2 =
-        transformer2 instanceof TransformerChained
-            ? via1.via((TransformerChained<U1, ?, W>) transformer2)
-            : via1.via(transformer2);
-
-    return via2;
+    return transformer2 instanceof TransformerChained
+        ? via1.via((TransformerChained<U1, ?, W>) transformer2)
+        : via1.via(transformer2);
   }
 
   @Override

@@ -46,6 +46,7 @@ public class TokenEndpoint implements Endpoint {
   private final TokenHandler tokenGenerator;
   private final URI servicesUri;
 
+  @SuppressWarnings("PMD.DataClass")
   public static class Credentials {
     @JsonProperty public String user;
     @JsonProperty public String password;

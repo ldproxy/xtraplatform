@@ -27,6 +27,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.inject.Inject;
@@ -36,9 +38,8 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind(interfaces = JobQueueBackend.class)
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.AvoidSynchronizedAtMethodLevel"})
-public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>>
-    implements JobQueueBackend {
+@SuppressWarnings({"PMD.CouplingBetweenObjects"})
+public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JobQueueBackendLocal.class);
 
@@ -48,8 +49,10 @@ public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>>
   private final List<String> takenQueue;
   private final List<String> errorQueue;
   private final List<Consumer<String>> observers;
+  private final Lock instanceLock;
 
   @Inject
+  @SuppressWarnings({"PMD.ConstructorCallsOverridableMethod"})
   JobQueueBackendLocal(AppContext appContext, VolatileRegistry volatileRegistry) {
     super(volatileRegistry);
 
@@ -59,6 +62,7 @@ public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>>
     this.takenQueue = new CopyOnWriteArrayList<>();
     this.errorQueue = new CopyOnWriteArrayList<>();
     this.observers = new CopyOnWriteArrayList<>();
+    this.instanceLock = new ReentrantLock();
 
     if (volatileRegistry != null) {
       onVolatileStart();
@@ -127,22 +131,28 @@ public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>>
   }
 
   @Override
-  protected synchronized void queueJob(Job job, boolean untake) {
-    Deque<String> queue = getQueue(job.getType(), job.getPriority());
-    updateJob(job);
+  protected void queueJob(Job job, boolean untake) {
+    try {
+      instanceLock.lock();
 
-    if (untake) {
-      takenQueue.remove(job.getId());
-      queue.addFirst(job.getId());
-    } else {
-      queue.add(job.getId());
+      Deque<String> queue = getQueue(job.getType(), job.getPriority());
+      updateJob(job);
+
+      if (untake) {
+        takenQueue.remove(job.getId());
+        queue.addFirst(job.getId());
+      } else {
+        queue.add(job.getId());
+      }
+    } finally {
+      instanceLock.unlock();
     }
   }
 
   @Override
   protected Job resetJob(Job job, Optional<JobSet> jobSet) {
     if (jobSet.isPresent()) {
-      jobSet.get().update(-(job.getCurrent().get()));
+      jobSet.get().update(-job.getCurrent().get());
       getJobSetDetails(JobSetDetails.class, jobSet.get()).reset(job);
       updateJobSet(jobSet.get());
     }
@@ -179,29 +189,41 @@ public class JobQueueBackendLocal extends AbstractJobQueueBackend<Deque<String>>
   }
 
   @Override
-  protected synchronized Optional<Job> takeJob(Deque<String> queue) {
-    if (!queue.isEmpty()) {
-      String jobId = queue.remove();
-      takenQueue.add(jobId);
+  protected Optional<Job> takeJob(Deque<String> queue) {
+    try {
+      instanceLock.lock();
 
-      return getJob(jobId);
+      if (!queue.isEmpty()) {
+        String jobId = queue.remove();
+        takenQueue.add(jobId);
+
+        return getJob(jobId);
+      }
+
+      return Optional.empty();
+    } finally {
+      instanceLock.unlock();
     }
-
-    return Optional.empty();
   }
 
   @Override
-  protected synchronized Optional<Job> untakeJob(String jobId) {
-    Optional<String> id =
-        takenQueue.stream().filter(takenId -> Objects.equals(takenId, jobId)).findFirst();
+  protected Optional<Job> untakeJob(String jobId) {
+    try {
+      instanceLock.lock();
 
-    if (id.isPresent()) {
-      takenQueue.remove(id.get());
+      Optional<String> id =
+          takenQueue.stream().filter(takenId -> Objects.equals(takenId, jobId)).findFirst();
 
-      return getJob(id.get());
+      if (id.isPresent()) {
+        takenQueue.remove(id.get());
+
+        return getJob(id.get());
+      }
+
+      return Optional.empty();
+    } finally {
+      instanceLock.unlock();
     }
-
-    return Optional.empty();
   }
 
   @Override

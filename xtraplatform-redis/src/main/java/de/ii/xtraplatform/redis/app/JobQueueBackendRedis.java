@@ -47,9 +47,12 @@ import redis.clients.jedis.json.Path2;
 
 @Singleton
 @AutoBind(interfaces = JobQueueBackend.class)
-@SuppressWarnings("PMD.TooManyMethods")
-public class JobQueueBackendRedis extends AbstractJobQueueBackend<String>
-    implements JobQueueBackend {
+@SuppressWarnings({
+  "PMD.TooManyMethods",
+  "PMD.CouplingBetweenObjects",
+  "PMD.AvoidCatchingGenericException"
+})
+public class JobQueueBackendRedis extends AbstractJobQueueBackend<String> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JobQueueBackendRedis.class);
   private static final List<Integer> INITIAL_LEVELS =
@@ -70,6 +73,7 @@ public class JobQueueBackendRedis extends AbstractJobQueueBackend<String>
   private Function<String, Optional<? extends Class<?>>> jobTypes;
 
   @Inject
+  @SuppressWarnings("PMD.ConstructorCallsOverridableMethod")
   JobQueueBackendRedis(
       AppContext appContext, Jackson jackson, VolatileRegistry volatileRegistry, Redis redis) {
     super(volatileRegistry);
@@ -220,7 +224,7 @@ public class JobQueueBackendRedis extends AbstractJobQueueBackend<String>
   @Override
   protected Job resetJob(Job job, Optional<JobSet> jobSet) {
     if (jobSet.isPresent()) {
-      jobSet.get().update(-(job.getCurrent().get()));
+      jobSet.get().update(-job.getCurrent().get());
       JobSetDetails details = getJobSetDetails(JobSetDetails.class, jobSet.get());
       details.reset(job);
       updateJobSet(jobSet.get().with(details));

@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+@FunctionalInterface
 public interface Mergeable<T> {
   T mergeInto(T source);
 }

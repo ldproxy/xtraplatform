@@ -22,6 +22,7 @@ import javax.inject.Singleton;
 
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.AvoidCatchingGenericException")
 public class PerClassMustacheResolver implements PartialMustacheResolver {
 
   @Inject
@@ -62,7 +63,7 @@ public class PerClassMustacheResolver implements PartialMustacheResolver {
   private String getQualifiedName(String templateName, Class<?> viewClass) {
     Module module = viewClass.getModule();
     String pkg = module.getName().replaceAll("\\.", "/");
-    String tmpl = String.format("/%s%s", pkg, templateName);
-    return tmpl;
+
+    return String.format("/%s%s", pkg, templateName);
   }
 }

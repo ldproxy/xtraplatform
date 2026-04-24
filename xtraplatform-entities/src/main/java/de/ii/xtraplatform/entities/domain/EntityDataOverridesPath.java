@@ -16,7 +16,6 @@ import java.util.Set;
 import org.immutables.value.Value;
 
 @Value.Modifiable
-@SuppressWarnings("PMD.PrematureDeclaration")
 public interface EntityDataOverridesPath {
 
   Splitter DOT_SPLITTER = Splitter.on('.');

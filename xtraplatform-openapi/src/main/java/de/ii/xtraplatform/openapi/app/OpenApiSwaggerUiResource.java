@@ -34,6 +34,7 @@ public class OpenApiSwaggerUiResource implements OpenApiViewerResource {
   public OpenApiSwaggerUiResource() {}
 
   @Override
+  @SuppressWarnings({"PMD.AvoidCatchingGenericException", "PMD.ExceptionAsFlowControl"})
   public Response getFile(String file) {
     try {
       URL url = Resources.getResource(getClass(), "/" + file);

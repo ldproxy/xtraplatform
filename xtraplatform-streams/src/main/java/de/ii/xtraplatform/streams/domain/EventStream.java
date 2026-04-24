@@ -15,12 +15,15 @@ import io.reactivex.rxjava3.core.FlowableEmitter;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 public class EventStream<T extends Event> {
   private final Reactive.Runner streamRunner;
   private final String eventType;
   private final Queue<T> eventQueue;
+  private final Lock instanceLock;
   private final Flowable<T> eventStream;
   private FlowableEmitter<T> emitter;
 
@@ -28,6 +31,7 @@ public class EventStream<T extends Event> {
     this.streamRunner = streamRunner;
     this.eventType = eventType;
     this.eventQueue = new ConcurrentLinkedQueue<>();
+    this.instanceLock = new ReentrantLock();
     this.eventStream =
         Flowable.create(
             emitter -> {
@@ -44,11 +48,15 @@ public class EventStream<T extends Event> {
   }
 
   public void queue(T event) {
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       if (Objects.nonNull(emitter)) {
         emitter.onNext(event);
       }
       eventQueue.offer(event);
+    } finally {
+      instanceLock.unlock();
     }
   }
 

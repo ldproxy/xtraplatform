@@ -12,7 +12,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
 import com.google.common.collect.Maps;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -148,7 +147,7 @@ public final class MapSubtractor {
       Map<String, String> listEntryKeys,
       boolean keepIndexes,
       String parentKey) {
-    ArrayList<Object> diff = Lists.newArrayList(left);
+    List<Object> diff = Lists.newArrayList(left);
 
     for (Object item : right) {
       boolean removed = false;

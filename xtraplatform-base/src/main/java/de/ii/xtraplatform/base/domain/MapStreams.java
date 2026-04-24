@@ -21,6 +21,7 @@ public interface MapStreams {
     return Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue);
   }
 
+  @SuppressWarnings("PMD.LooseCoupling")
   static <T, U> Collector<Map.Entry<T, U>, ?, ImmutableMap<T, U>> toImmutableMap() {
     return ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue);
   }

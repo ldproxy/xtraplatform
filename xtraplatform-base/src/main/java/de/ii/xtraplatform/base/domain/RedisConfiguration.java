@@ -40,6 +40,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Value.Modifiable
 @JsonDeserialize(as = ModifiableRedisConfiguration.class)
+@FunctionalInterface
 public interface RedisConfiguration {
 
   /**

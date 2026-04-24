@@ -66,7 +66,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind(interfaces = {EntityDataDefaultsStore.class, AppLifeCycle.class})
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.AvoidCatchingGenericException", "PMD.CouplingBetweenObjects"})
 public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<Map<String, Object>>
     implements EntityDataDefaultsStore, AppLifeCycle {
 
@@ -99,7 +99,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
-            ImmutableList.of(EntityDataDefaultsStore.EVENT_TYPE),
+            ImmutableList.of(EVENT_TYPE),
             valueEncoding,
             this::onListenStart,
             Optional.of(this::processReplayEvent),
@@ -118,7 +118,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     valueEncodingBuilder.addDecoderMiddleware(
         new ValueDecoderBase<>(
             this::getNewBuilder,
-            new ValueCache<EntityDataBuilder<EntityData>>() {
+            new ValueCache<>() {
               @Override
               public boolean has(Identifier identifier) {
                 return false;
@@ -141,7 +141,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
             identifier -> new LinkedHashMap<>(),
-            new ValueCache<Map<String, Object>>() {
+            new ValueCache<>() {
               @Override
               public boolean has(Identifier identifier) {
                 return false;
@@ -164,7 +164,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
     valueEncodingEntity.addDecoderMiddleware(
         new ValueDecoderWithBuilder<>(
             this::getBuilder,
-            new ValueCache<EntityData>() {
+            new ValueCache<>() {
               @Override
               public boolean has(Identifier identifier) {
                 return false;
@@ -264,7 +264,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
                             .addAllPath(Lists.reverse(defaultsPath.getGroups()))
                             .addPath(defaultsPath.getEntityType())
                             .addPath(subType)
-                            .id(EntityDataDefaultsStore.EVENT_TYPE)
+                            .id(EVENT_TYPE)
                             .build())
                 .collect(Collectors.toList()))
         .build();
@@ -366,14 +366,12 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               .build();
       if (eventSourcing.has(parent)) {
         try {
-          Map<String, Object> deserialize =
-              valueEncodingMap.deserialize(
-                  parent,
-                  valueEncodingEntity.serialize(eventSourcing.get(parent)),
-                  valueEncoding.getDefaultFormat(),
-                  false);
 
-          return deserialize;
+          return valueEncodingMap.deserialize(
+              parent,
+              valueEncodingEntity.serialize(eventSourcing.get(parent)),
+              valueEncoding.getDefaultFormat(),
+              false);
         } catch (IOException e) {
           throw new IllegalStateException("Error deserializing defaults", e);
         }
@@ -502,9 +500,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
         .thenRun(
             () -> {
               eventStore.replay(
-                  EventFilter.fromPath(Path.of(EntityDataDefaultsStore.EVENT_TYPE, defaultId)),
-                  false,
-                  List.of());
+                  EventFilter.fromPath(Path.of(EVENT_TYPE, defaultId)), false, List.of());
             });
 
     return CompletableFuture.completedFuture(defaults);

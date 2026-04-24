@@ -12,6 +12,7 @@ import javax.ws.rs.core.Response;
 /**
  * @author zahnen
  */
+@FunctionalInterface
 public interface OpenApiViewerResource {
   Response getFile(String file);
 }

@@ -10,6 +10,7 @@ package de.ii.xtraplatform.jobs.domain;
 import java.util.Map;
 
 // @AutoMultiBind
+@FunctionalInterface
 public interface JobTypes {
   Map<String, Class<?>> getJobTypes();
 }

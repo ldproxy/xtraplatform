@@ -13,6 +13,7 @@ import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 
 @AutoMultiBind
+@FunctionalInterface
 public interface DropwizardPlugin {
 
   default int getPriority() {

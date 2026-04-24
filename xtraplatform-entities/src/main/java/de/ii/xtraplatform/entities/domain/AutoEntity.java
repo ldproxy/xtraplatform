@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.immutables.value.Value;
 
+@FunctionalInterface
 public interface AutoEntity {
 
   /**

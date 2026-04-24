@@ -74,7 +74,11 @@ import org.slf4j.MDC;
  */
 @Singleton
 @AutoBind(interfaces = {EntityDataStore.class, AppLifeCycle.class})
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
+@SuppressWarnings({
+  "PMD.GodClass",
+  "PMD.AvoidCatchingGenericException",
+  "PMD.CouplingBetweenObjects"
+})
 public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityData>
     implements EntityDataStore<EntityData>, AppLifeCycle {
 
@@ -140,7 +144,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     this.eventSourcing =
         new EventSourcing<>(
             eventStore,
-            EntityDataStore.EVENT_TYPES,
+            EVENT_TYPES,
             valueEncoding,
             this::onListenStart,
             Optional.of(this::processEvent),
@@ -173,7 +177,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     valueEncodingMap.addDecoderMiddleware(
         new ValueDecoderBase<>(
             identifier -> new LinkedHashMap<>(),
-            new ValueCache<Map<String, Object>>() {
+            new ValueCache<>() {
               @Override
               public boolean has(Identifier identifier) {
                 return false;
@@ -232,7 +236,6 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @SuppressWarnings({
     "PMD.CyclomaticComplexity",
-    "PMD.NPathComplexity",
     "PMD.CognitiveComplexity",
     "PMD.CollapsibleIfStatements"
   })
@@ -243,7 +246,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     }
 
     if (!event.isDelete()
-        && EntityDataStore.EVENT_TYPE_ENTITIES.equals(event.type())
+        && EVENT_TYPE_ENTITIES.equals(event.type())
         && eventSourcing.has(isDuplicate(event.identifier()))) {
       if (LOGGER.isWarnEnabled()) {
         LOGGER.warn(
@@ -255,7 +258,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     }
 
     if (!event.isDelete()
-        && EntityDataStore.EVENT_TYPE_ENTITIES.equals(event.type())
+        && EVENT_TYPE_ENTITIES.equals(event.type())
         && eventSourcing.has(event.identifier())) {
       if (LOGGER.isWarnEnabled()) {
         LOGGER.warn(
@@ -265,7 +268,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       }
     }
 
-    if (!EntityDataStore.EVENT_TYPE_OVERRIDES.equals(event.type())) {
+    if (!EVENT_TYPE_OVERRIDES.equals(event.type())) {
       return List.of(event);
     }
 
@@ -394,17 +397,17 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
               if (asyncStartup) {
                 List<List<Identifier>> groups =
                     identifiers().stream()
-                        .sorted(EntityDataStore.COMPARATOR)
+                        .sorted(COMPARATOR)
                         .reduce(
                             new ArrayList<>(),
                             (list, identifier) -> {
                               if (list.isEmpty()
-                                  || EntityDataStore.COMPARATOR.compare(
+                                  || COMPARATOR.compare(
                                           list.get(list.size() - 1)
                                               .get(list.get(list.size() - 1).size() - 1),
                                           identifier)
                                       != 0) {
-                                ArrayList<Identifier> newList = new ArrayList<>();
+                                List<Identifier> newList = new ArrayList<>();
                                 newList.add(identifier);
                                 list.add(newList);
                               } else {
@@ -434,7 +437,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
               }
 
               return identifiers().stream()
-                  .sorted(EntityDataStore.COMPARATOR)
+                  .sorted(COMPARATOR)
                   .reduce(
                       CompletableFuture.completedFuture((Void) null),
                       (completableFuture, identifier) ->
@@ -458,7 +461,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
                   getEventSourcing()
                       .onEmit(
                           ImmutableReplayEvent.builder()
-                              .type(EntityDataStore.EVENT_TYPE_ENTITIES)
+                              .type(EVENT_TYPE_ENTITIES)
                               .identifier(entry.getKey())
                               .payload(valueEncoding.serialize(entry.getValue()))
                               .format(valueEncoding.getDefaultFormat().toString())
@@ -477,7 +480,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   protected CompletableFuture<Void> onCreate(Identifier identifier, EntityData entityData) {
-    try (MDC.MDCCloseable closeable =
+    try (MDC.MDCCloseable ignored =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
       if (LOGGER.isTraceEnabled()) {
         LOGGER.trace("Entity creating: {}", identifier);
@@ -506,7 +509,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   @Override
   protected CompletableFuture<Void> onUpdate(
       Identifier identifier, EntityData entityData, boolean force) {
-    try (MDC.MDCCloseable closeable =
+    try (MDC.MDCCloseable ignored =
         LogContext.putCloseable(LogContext.CONTEXT.SERVICE, identifier.id())) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Reloading entity: {}", identifier);
@@ -555,7 +558,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   @Override
   public EntityDataStore<EntityData> forType(String type) {
-    return new EntityStoreDecorator<EntityData, EntityData>() {
+    return new EntityStoreDecorator<>() {
       @Override
       public EntityDataStore<EntityData> getDecorated() {
         return EntityDataStoreImpl.this;

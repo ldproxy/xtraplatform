@@ -13,14 +13,13 @@ import de.ii.xtraplatform.auth.app.User.UserData;
 import de.ii.xtraplatform.entities.domain.AbstractEntityFactory;
 import de.ii.xtraplatform.entities.domain.EntityData;
 import de.ii.xtraplatform.entities.domain.EntityDataBuilder;
-import de.ii.xtraplatform.entities.domain.EntityFactory;
 import de.ii.xtraplatform.entities.domain.PersistentEntity;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
 @AutoBind
-public class UserFactory extends AbstractEntityFactory<UserData, User> implements EntityFactory {
+public class UserFactory extends AbstractEntityFactory<UserData, User> {
 
   @Inject
   public UserFactory(UserFactoryAssisted userFactoryAssisted) {
@@ -53,6 +52,7 @@ public class UserFactory extends AbstractEntityFactory<UserData, User> implement
   }
 
   @AssistedFactory
+  @FunctionalInterface
   public interface UserFactoryAssisted extends FactoryAssisted<UserData, User> {
     @Override
     User create(UserData data);

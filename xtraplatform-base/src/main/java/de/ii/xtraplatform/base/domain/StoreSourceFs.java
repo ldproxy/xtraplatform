@@ -18,7 +18,7 @@ import org.immutables.value.Value;
 @JsonDeserialize(builder = ImmutableStoreSourceFs.Builder.class)
 public interface StoreSourceFs extends StoreSource {
 
-  @JsonProperty(StoreSource.MODE_PROP)
+  @JsonProperty(MODE_PROP)
   @Value.Default
   @Override
   default Mode getDesiredMode() {

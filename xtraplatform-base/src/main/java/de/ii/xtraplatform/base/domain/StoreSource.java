@@ -441,6 +441,7 @@ public interface StoreSource {
   String MODE_PROP = "mode";
   String ZIP_SUFFIX = ".zip";
 
+  @SuppressWarnings("PMD.DataClass")
   enum Type {
     EMPTY(Type.EMPTY_KEY),
     FS(Type.FS_KEY),
@@ -509,7 +510,7 @@ public interface StoreSource {
    * @langDe Der [Source Type](#source-types).
    * @since v3.5
    */
-  @JsonProperty(StoreSource.TYPE_PROP)
+  @JsonProperty(TYPE_PROP)
   String getType();
 
   /**
@@ -530,7 +531,7 @@ public interface StoreSource {
    * @default RO
    * @since v3.5
    */
-  @JsonProperty(StoreSource.MODE_PROP)
+  @JsonProperty(MODE_PROP)
   @Value.Default
   default Mode getDesiredMode() {
     return Mode.RO;

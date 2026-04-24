@@ -69,6 +69,7 @@ public class EntityRegistryImpl implements EntityRegistry {
   }
 
   @Override
+  @SuppressWarnings("PMD.UnnecessaryCast")
   public Optional<PersistentEntity> getEntity(String type, String id) {
     return entityFactories.getAll(type).stream()
         .map(entityFactory -> entityFactory.instance(id))

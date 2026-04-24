@@ -130,7 +130,7 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
     configure(metricRegistry, name);
 
     if (record.isPresent()) {
-      ImmutableList<Appender<ILoggingEvent>> appenders =
+      List<Appender<ILoggingEvent>> appenders =
           ImmutableList.copyOf(
               LoggingUtil.getLoggerContext().getLogger("ROOT").iteratorForAppenders());
 
@@ -295,7 +295,7 @@ public class LoggingConfiguration extends DefaultLoggingFactory {
   private static class BufferAppenderFactory extends AbstractAppenderFactory<ILoggingEvent> {
     private final ListAppender<ILoggingEvent> appender;
 
-    public BufferAppenderFactory() {
+    BufferAppenderFactory() {
       super();
 
       this.appender = new ListAppender<>();

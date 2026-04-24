@@ -26,7 +26,6 @@ import org.slf4j.event.Level;
 /**
  * @author zahnen
  */
-@SuppressWarnings("PMD.TooManyMethods")
 public final class LogContext {
 
   private static final String MESSAGE_SUFFIX = ": {}";
@@ -84,6 +83,7 @@ public final class LogContext {
     return MDC.putCloseable(context.name(), value);
   }
 
+  @FunctionalInterface
   public interface MdcCloseable extends Closeable {
     @Override
     void close();
@@ -305,6 +305,7 @@ public final class LogContext {
     return new UUID(mostSig, leastSig);
   }
 
+  @FunctionalInterface
   private interface MyMarker extends Marker {
 
     @Override

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 
+@FunctionalInterface
 public interface BlobLocals {
 
   Optional<Path> asLocalPath(Path path, boolean writable) throws IOException;

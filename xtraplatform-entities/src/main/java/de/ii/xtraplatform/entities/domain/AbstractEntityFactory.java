@@ -17,6 +17,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,7 @@ public abstract class AbstractEntityFactory<
   private final Map<String, Integer> instanceConfigurationHashes;
   private final List<Consumer<PersistentEntity>> entityListeners;
   private final List<Consumer<PersistentEntity>> entityGoneListeners;
+  private final Lock instanceLock;
 
   public AbstractEntityFactory(FactoryAssisted<T, U> assistedFactory) {
     this.assistedFactory = assistedFactory;
@@ -40,6 +43,7 @@ public abstract class AbstractEntityFactory<
     this.instanceConfigurationHashes = new ConcurrentHashMap<>();
     this.entityListeners = new ArrayList<>();
     this.entityGoneListeners = new ArrayList<>();
+    this.instanceLock = new ReentrantLock();
   }
 
   @Override
@@ -59,9 +63,13 @@ public abstract class AbstractEntityFactory<
     }
 
     U entity = assistedFactory.create((T) entityData);
-    synchronized (this) {
+    try {
+      instanceLock.lock();
+
       instances.put(entityData.getId(), entity);
       instanceConfigurationHashes.put(entityData.getId(), entityData.hashCode());
+    } finally {
+      instanceLock.unlock();
     }
     entity.onValidate();
     entity.onPostRegistration();
@@ -71,12 +79,13 @@ public abstract class AbstractEntityFactory<
   }
 
   @Override
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   public CompletableFuture<PersistentEntity> updateInstance(EntityData entityData, boolean force) {
     String id = entityData.getId();
     String entityTypeSingular = type().substring(0, type().length() - 1);
     U instance = instances.get(id);
 
-    try (MDC.MDCCloseable closeable = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
+    try (MDC.MDCCloseable ignored = LogContext.putCloseable(LogContext.CONTEXT.SERVICE, id)) {
       if (!force && Objects.equals(entityData.hashCode(), instanceConfigurationHashes.get(id))) {
 
         LOGGER.info(
@@ -92,19 +101,25 @@ public abstract class AbstractEntityFactory<
         return CompletableFuture.completedFuture(null);
       }
 
-      LOGGER.info(
-          "Reloading configuration for {} with id '{}'{}",
-          entityTypeSingular,
-          id,
-          force ? " (forced)" : "");
+      if (LOGGER.isInfoEnabled()) {
+        LOGGER.info(
+            "Reloading configuration for {} with id '{}'{}",
+            entityTypeSingular,
+            id,
+            force ? " (forced)" : "");
+      }
 
       CompletableFuture<PersistentEntity> reloaded = new CompletableFuture<>();
 
       if (Objects.nonNull(instance)) {
         try {
           instance.setData((T) entityData, force);
-          synchronized (this) {
+          try {
+            instanceLock.lock();
+
             instanceConfigurationHashes.put(id, entityData.hashCode());
+          } finally {
+            instanceLock.unlock();
           }
           reloaded.complete(instance);
         } catch (Throwable e) {
@@ -129,9 +144,13 @@ public abstract class AbstractEntityFactory<
       U entity = instances.get(id);
       entity.onInvalidate();
       entity.onPostUnregistration();
-      synchronized (this) {
+      try {
+        instanceLock.lock();
+
         instances.remove(id);
         instanceConfigurationHashes.remove(id);
+      } finally {
+        instanceLock.unlock();
       }
       entityGoneListeners.forEach(listener -> listener.accept(entity));
     }
@@ -150,6 +169,7 @@ public abstract class AbstractEntityFactory<
     this.entityGoneListeners.add(listener);
   }
 
+  @FunctionalInterface
   public interface FactoryAssisted<T extends EntityData, U extends PersistentEntity> {
     U create(T data);
   }

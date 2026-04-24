@@ -40,7 +40,12 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.TooManyMethods", "PMD.GodClass"})
+@SuppressWarnings({
+  "PMD.CyclomaticComplexity",
+  "PMD.CouplingBetweenObjects",
+  "PMD.GodClass",
+  "PMD.AvoidCatchingGenericException"
+})
 public class BlobStoreImpl extends AbstractVolatileComposedPolling
     implements BlobStore, BlobWriterReader {
 

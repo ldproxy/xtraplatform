@@ -10,6 +10,7 @@ package de.ii.xtraplatform.values.domain;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 
+@FunctionalInterface
 public interface ValueDecoderMiddleware<T> {
 
   T process(

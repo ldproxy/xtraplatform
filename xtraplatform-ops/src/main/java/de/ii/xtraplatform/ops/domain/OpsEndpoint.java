@@ -11,6 +11,7 @@ import com.github.azahnen.dagger.annotations.AutoMultiBind;
 import java.util.Optional;
 
 @AutoMultiBind
+@FunctionalInterface
 public interface OpsEndpoint {
 
   default Optional<String> getLabel() {

@@ -29,6 +29,7 @@ import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"PMD.AvoidCatchingGenericException"})
 class EventReaderS3 implements EventReader {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EventReaderS3.class);

@@ -40,6 +40,7 @@ public class SinkTransformedImpl<T, U, V> implements SinkReducedTransformed<T, U
     return new AtomicReference<>();
   }
 
+  @SuppressWarnings("PMD.TypeParameterNamingConventions")
   <V1> SinkReducedTransformed<T, U, V1> withResult(V1 initial) {
     if (sink instanceof SinkTransformedImpl) {
       return new SinkTransformedImpl<>(

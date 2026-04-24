@@ -16,12 +16,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.GodClass"})
 public abstract class AbstractVolatileComposed extends AbstractVolatile
     implements VolatileComposed {
 
@@ -32,6 +34,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   private final Map<String, Set<String>> componentCapabilities;
   private final Map<String, AbstractVolatile> capabilities;
   private final boolean noHealth;
+  private final Lock instanceLock;
   private State baseState;
   private boolean ready;
   private boolean initialized;
@@ -57,6 +60,7 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
     this.componentCapabilities = new LinkedHashMap<>();
     this.capabilities = new LinkedHashMap<>();
     this.noHealth = noHealth;
+    this.instanceLock = new ReentrantLock();
     this.baseState = State.UNAVAILABLE;
 
     Arrays.stream(capabilities)
@@ -118,10 +122,15 @@ public abstract class AbstractVolatileComposed extends AbstractVolatile
   }
 
   @Override
-  @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
-  protected synchronized void onVolatileStop() {
-    super.onVolatileStop();
-    this.initialized = false;
+  protected void onVolatileStop() {
+    try {
+      instanceLock.lock();
+
+      super.onVolatileStop();
+      this.initialized = false;
+    } finally {
+      instanceLock.unlock();
+    }
   }
 
   @Override
