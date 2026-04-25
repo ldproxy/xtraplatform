@@ -20,7 +20,7 @@ buildscript {
 }
 
 plugins {
-    id "de.interactive_instruments.xtraplatform-settings" version "6.2.1"
+    id "de.interactive_instruments.xtraplatform-settings" version "6.2.2"
 }
 
 rootProject.name = 'xtraplatform-core'
