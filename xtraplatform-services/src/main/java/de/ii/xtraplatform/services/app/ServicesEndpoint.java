@@ -322,7 +322,7 @@ public class ServicesEndpoint implements Endpoint {
     }
 
     List<MediaType> acceptableTypes = containerRequestContext.getAcceptableMediaTypes();
-    if (!acceptableTypes.isEmpty() && !acceptableTypes.get(0).equals(MediaType.WILDCARD_TYPE)) {
+    if (!acceptableTypes.isEmpty() && !MediaType.WILDCARD_TYPE.equals(acceptableTypes.get(0))) {
       return acceptableTypes.get(0);
     }
 

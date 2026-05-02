@@ -42,7 +42,7 @@ public final class SplitCookie {
 
     // with rememberMe a user will be logged out after 30 days of inactivity
     // without rememberMe a user will be logged out after 1 hour of inactivity or a session end
-    int payloadExpires = rememberMe ? 2_592_000 : 3_600;
+    int payloadExpires = rememberMe ? 2_592_000 : 3600;
     int signatureExpires = rememberMe ? 2_592_000 : -1;
 
     return ImmutableList.of(
