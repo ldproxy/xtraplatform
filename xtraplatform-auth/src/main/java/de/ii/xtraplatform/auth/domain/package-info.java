@@ -5,4 +5,4 @@
 package de.ii.xtraplatform.auth.domain;
 
 import com.github.azahnen.dagger.annotations.AutoModule;
-import javax.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.container.ContainerResponseFilter;

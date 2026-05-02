@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.web.domain;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * @author fischer

@@ -12,11 +12,11 @@ import com.github.mustachejava.MustacheResolver;
 import de.ii.xtraplatform.web.domain.MustacheResolverRegistry;
 import de.ii.xtraplatform.web.domain.PartialMustacheResolver;
 import io.dropwizard.views.common.View;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.Set;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

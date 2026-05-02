@@ -17,14 +17,14 @@ import de.ii.xtraplatform.web.domain.StaticResourceReaderJar;
 import de.ii.xtraplatform.web.domain.StaticResourceServlet;
 import de.ii.xtraplatform.web.domain.StaticResources;
 import io.dropwizard.core.setup.Environment;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.servlet.ServletRegistration.Dynamic;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.servlet.ServletRegistration.Dynamic;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 @Singleton
 @AutoBind

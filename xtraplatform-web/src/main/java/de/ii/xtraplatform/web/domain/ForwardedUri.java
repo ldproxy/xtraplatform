@@ -9,8 +9,8 @@ package de.ii.xtraplatform.web.domain;
 
 import com.google.common.base.Splitter;
 import de.ii.xtraplatform.base.domain.WebContext;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import java.util.List;
-import javax.ws.rs.container.ContainerRequestContext;
 
 public interface ForwardedUri {
 

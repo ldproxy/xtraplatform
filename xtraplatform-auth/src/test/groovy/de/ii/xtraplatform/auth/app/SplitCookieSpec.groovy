@@ -4,8 +4,8 @@ import de.ii.xtraplatform.auth.domain.SplitCookie
 import spock.lang.Shared
 import spock.lang.Specification
 
-import javax.ws.rs.core.Cookie
-import javax.ws.rs.core.NewCookie
+import jakarta.ws.rs.core.Cookie
+import jakarta.ws.rs.core.NewCookie
 
 class SplitCookieSpec extends Specification {
 

@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.blobs.domain;
 
 import de.ii.xtraplatform.base.domain.ETag;
+import jakarta.ws.rs.core.EntityTag;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +16,6 @@ import java.net.URLConnection;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Supplier;
-import javax.ws.rs.core.EntityTag;
 import org.immutables.value.Value;
 
 @Value.Immutable

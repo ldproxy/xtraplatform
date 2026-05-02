@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.web.app;
 
+import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,7 +19,6 @@ import java.net.URLConnection;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
-import javax.ws.rs.NotFoundException;
 
 /** Helper methods for dealing with {@link URL} objects for local resources. */
 public final class ResourceURL {

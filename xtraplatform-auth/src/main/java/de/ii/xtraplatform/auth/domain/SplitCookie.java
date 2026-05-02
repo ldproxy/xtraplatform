@@ -8,11 +8,11 @@
 package de.ii.xtraplatform.auth.domain;
 
 import com.google.common.collect.ImmutableList;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.NewCookie;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.NewCookie;
 
 public final class SplitCookie {
 

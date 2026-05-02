@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoMultiBind;
-import javax.servlet.Servlet;
+import jakarta.servlet.Servlet;
 
 @AutoMultiBind
 public interface ServletRegistration extends Servlet {

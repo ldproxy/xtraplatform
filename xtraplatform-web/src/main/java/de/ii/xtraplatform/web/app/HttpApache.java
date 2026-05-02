@@ -13,9 +13,9 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.web.domain.Http;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.client.HttpClientBuilder;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.net.URI;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 @AutoBind

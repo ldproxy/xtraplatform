@@ -12,7 +12,7 @@
 package de.ii.xtraplatform.services.domain;
 
 import com.github.azahnen.dagger.annotations.AutoModule;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.ContainerResponseFilter;
 import org.glassfish.jersey.internal.inject.Binder;
 import org.immutables.value.Value;

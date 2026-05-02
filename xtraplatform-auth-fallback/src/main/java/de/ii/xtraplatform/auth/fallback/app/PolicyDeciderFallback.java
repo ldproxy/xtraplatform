@@ -11,10 +11,10 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.domain.PolicyDecider;
 import de.ii.xtraplatform.auth.domain.PolicyDecision;
 import de.ii.xtraplatform.auth.domain.User;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.Map;
 import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 @AutoBind

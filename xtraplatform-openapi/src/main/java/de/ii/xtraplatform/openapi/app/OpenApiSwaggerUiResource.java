@@ -14,13 +14,13 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.net.URL;
 import java.util.Objects;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

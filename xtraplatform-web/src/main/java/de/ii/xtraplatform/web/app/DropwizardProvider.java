@@ -12,7 +12,7 @@ import com.codahale.metrics.MetricFilter;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.jaxrs.xml.JacksonJaxbXMLProvider;
+import com.fasterxml.jackson.jakarta.rs.xml.JacksonXmlBindXMLProvider;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
@@ -28,15 +28,15 @@ import io.dropwizard.core.cli.Cli;
 import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.util.JarLocation;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.validation.Validator;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.validation.Validator;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -104,7 +104,7 @@ public class DropwizardProvider implements AppLifeCycle {
     environment.jersey().setUrlPattern(JERSEY_ENDPOINT);
 
     environment.jersey().register(new JsonProviderOptionalPretty(environment.getObjectMapper()));
-    environment.jersey().register(new JacksonJaxbXMLProvider());
+    environment.jersey().register(new JacksonXmlBindXMLProvider());
 
     appContext.getConfiguration().getServerFactory().build(environment);
 

@@ -46,6 +46,8 @@ import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.values.domain.ValueCache;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -59,8 +61,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

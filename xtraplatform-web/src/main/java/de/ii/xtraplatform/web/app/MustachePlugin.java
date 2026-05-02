@@ -17,9 +17,9 @@ import de.ii.xtraplatform.web.domain.MustacheRenderer;
 import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.views.common.ViewBundle;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.Map;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 @AutoBind

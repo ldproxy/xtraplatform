@@ -18,6 +18,8 @@ import de.ii.xtraplatform.jobs.domain.Job;
 import de.ii.xtraplatform.jobs.domain.JobQueueBackend;
 import de.ii.xtraplatform.jobs.domain.JobSet;
 import de.ii.xtraplatform.jobs.domain.JobSet.JobSetDetails;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
@@ -31,8 +33,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

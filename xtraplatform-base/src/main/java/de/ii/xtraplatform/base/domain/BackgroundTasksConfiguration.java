@@ -13,7 +13,7 @@ import de.ii.xtraplatform.docs.DocStep;
 import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Min;
 import org.immutables.value.Value;
 
 /**

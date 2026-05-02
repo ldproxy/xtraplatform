@@ -14,11 +14,11 @@ import de.ii.xtraplatform.values.domain.Identifier;
 import de.ii.xtraplatform.values.domain.StoredValue;
 import de.ii.xtraplatform.values.domain.ValueFactories;
 import de.ii.xtraplatform.values.domain.ValueFactory;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 @AutoBind

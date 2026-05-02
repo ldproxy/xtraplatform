@@ -20,9 +20,9 @@ import io.dropwizard.core.Configuration;
 import io.dropwizard.core.server.ServerFactory;
 import io.dropwizard.logging.common.LoggingFactory;
 import io.dropwizard.metrics.common.MetricsFactory;
+import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.Objects;
-import javax.validation.Valid;
 import org.apache.commons.lang3.NotImplementedException;
 import org.immutables.value.Value;
 

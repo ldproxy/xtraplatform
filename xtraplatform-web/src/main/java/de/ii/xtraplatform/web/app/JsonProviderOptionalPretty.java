@@ -9,21 +9,21 @@ package de.ii.xtraplatform.web.app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import com.fasterxml.jackson.jaxrs.json.JsonEndpointConfig;
+import com.fasterxml.jackson.jakarta.rs.json.JacksonXmlBindJsonProvider;
+import com.fasterxml.jackson.jakarta.rs.json.JsonEndpointConfig;
 import de.ii.xtraplatform.web.domain.JsonPretty;
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.ext.Provider;
+import jakarta.ws.rs.ext.WriterInterceptor;
+import jakarta.ws.rs.ext.WriterInterceptorContext;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import javax.annotation.Priority;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.Priorities;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.ext.Provider;
-import javax.ws.rs.ext.WriterInterceptor;
-import javax.ws.rs.ext.WriterInterceptorContext;
 
 /**
  * Custom JSON reader and writer that supports optional pretty JSON output via request context
@@ -33,7 +33,7 @@ import javax.ws.rs.ext.WriterInterceptorContext;
 @Consumes({"*/*"})
 @Produces({"application/json", "text/json", "*/*"})
 @Priority(Priorities.ENTITY_CODER)
-public class JsonProviderOptionalPretty extends JacksonJaxbJsonProvider
+public class JsonProviderOptionalPretty extends JacksonXmlBindJsonProvider
     implements WriterInterceptor {
 
   private final ObjectMapper mapper;

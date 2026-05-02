@@ -23,6 +23,7 @@ import io.minio.RemoveObjectArgs;
 import io.minio.Result;
 import io.minio.StatObjectResponse;
 import io.minio.messages.Item;
+import jakarta.ws.rs.core.EntityTag;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -37,7 +38,6 @@ import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.ws.rs.core.EntityTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

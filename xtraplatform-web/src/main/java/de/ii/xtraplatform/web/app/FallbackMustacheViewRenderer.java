@@ -21,6 +21,8 @@ import de.ii.xtraplatform.web.domain.MustacheResolverRegistry;
 import io.dropwizard.views.common.View;
 import io.dropwizard.views.common.ViewRenderException;
 import io.dropwizard.views.mustache.MustacheViewRenderer;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -29,8 +31,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
