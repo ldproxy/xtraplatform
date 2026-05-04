@@ -1,0 +1,21 @@
+plugins {
+    id "de.interactive_instruments.xtraplatform-application"
+}
+
+allprojects {
+    group = 'de.interactive_instruments'
+    version = '0.0.1'
+}
+
+
+layer {
+    MATURE {
+        minimumCoverage = 0.0
+        warningsAsErrors = false
+        ignorePmdErrors = true
+    }
+    CANDIDATE {
+        minimumCoverage = 0.0
+    }
+}
+
