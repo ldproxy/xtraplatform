@@ -15,7 +15,6 @@ rs = '1.0.4'
 uuid = '5.2.0'
 jsr305 = '3.0.2'
 jedis = '7.5.0'
-legacy-inject = '1.0.5'
 
 [libraries]
 # auth
@@ -46,8 +45,6 @@ xml-bind-api = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref =
 jackson-xml = { module = "com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-xml-provider", version.ref = "jackson" }
 jackson-smile = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-smile", version.ref = "jackson" }
 jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
-#NOTE: needed for dagger
-legacy-inject = { module = "jakarta.inject:jakarta.inject-api", version.ref = "legacy-inject" }
 
 #s3
 minio = { module = "io.minio:minio", version.ref = "minio" }
