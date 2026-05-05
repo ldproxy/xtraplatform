@@ -4,14 +4,14 @@ when:
 steps:
 
   build:
-    image: eclipse-temurin:25
+    image: eclipse-temurin:25@sha256:c3a5cfd77c9a43dd95269a266290d365b79b174381d8336a3f76a7ae117beefa
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew check assemble -Prelease=true -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
     secrets: [ snapshot_user, snapshot_pass]
 
   publish:
-    image: eclipse-temurin:25
+    image: eclipse-temurin:25@sha256:c3a5cfd77c9a43dd95269a266290d365b79b174381d8336a3f76a7ae117beefa
     commands:
       - export GRADLE_USER_HOME=$${DRONE_WORKSPACE}/.gradle
       - ./gradlew publish -Prelease=true -PdeployUser=$SNAPSHOT_USER -PdeployPassword=$SNAPSHOT_PASS
