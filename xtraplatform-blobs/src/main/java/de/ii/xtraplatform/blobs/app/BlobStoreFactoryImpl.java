@@ -15,9 +15,9 @@ import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
 import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import de.ii.xtraplatform.blobs.domain.BlobStoreFactory;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.Set;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 @AutoBind

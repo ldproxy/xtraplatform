@@ -10,10 +10,10 @@ package de.ii.xtraplatform.services.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.services.domain.ServicesContext;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.net.URI;
 import java.util.List;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 @AutoBind

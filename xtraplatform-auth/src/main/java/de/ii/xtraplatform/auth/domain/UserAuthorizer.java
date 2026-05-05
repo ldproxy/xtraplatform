@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.auth.domain;
 
 import io.dropwizard.auth.Authorizer;
-import javax.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

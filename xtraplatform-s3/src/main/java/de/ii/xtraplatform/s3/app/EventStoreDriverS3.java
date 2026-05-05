@@ -18,11 +18,11 @@ import de.ii.xtraplatform.entities.domain.EventSource;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver;
 import io.minio.BucketExistsArgs;
 import io.minio.MinioClient;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.nio.file.Path;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

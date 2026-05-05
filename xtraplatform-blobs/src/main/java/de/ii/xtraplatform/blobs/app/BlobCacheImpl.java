@@ -10,14 +10,14 @@ package de.ii.xtraplatform.blobs.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.blobs.domain.BlobCache;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 @AutoBind

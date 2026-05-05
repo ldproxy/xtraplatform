@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.web.domain;
 
+import jakarta.ws.rs.ext.WriterInterceptorContext;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -15,7 +16,6 @@ import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.ws.rs.ext.WriterInterceptorContext;
 
 public interface JsonPretty {
 

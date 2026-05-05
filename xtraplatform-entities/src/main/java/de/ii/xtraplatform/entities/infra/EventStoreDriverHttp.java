@@ -16,12 +16,12 @@ import de.ii.xtraplatform.entities.domain.EntityEvent;
 import de.ii.xtraplatform.entities.domain.EventReader;
 import de.ii.xtraplatform.entities.domain.EventSource;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

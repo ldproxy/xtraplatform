@@ -16,6 +16,8 @@ import de.ii.xtraplatform.base.domain.LoggingFilter;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.servlets.tasks.Task;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
@@ -23,8 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

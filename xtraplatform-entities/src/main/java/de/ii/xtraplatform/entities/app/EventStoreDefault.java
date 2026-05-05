@@ -32,6 +32,8 @@ import de.ii.xtraplatform.streams.domain.Reactive;
 import de.ii.xtraplatform.values.api.ValueEncodingJackson;
 import de.ii.xtraplatform.values.domain.ImmutableIdentifier;
 import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -42,8 +44,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

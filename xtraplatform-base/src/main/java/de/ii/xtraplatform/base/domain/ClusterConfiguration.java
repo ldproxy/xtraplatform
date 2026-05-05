@@ -9,10 +9,10 @@ package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 
 public class ClusterConfiguration {
   @Valid @NotNull @JsonProperty public Integer nodeId;

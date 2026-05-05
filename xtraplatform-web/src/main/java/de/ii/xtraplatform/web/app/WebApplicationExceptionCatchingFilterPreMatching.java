@@ -7,12 +7,12 @@
  */
 package de.ii.xtraplatform.web.app;
 
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.PreMatching;
 import java.io.IOException;
 import java.util.Objects;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.PreMatching;
 
 @PreMatching
 public class WebApplicationExceptionCatchingFilterPreMatching implements ContainerRequestFilter {

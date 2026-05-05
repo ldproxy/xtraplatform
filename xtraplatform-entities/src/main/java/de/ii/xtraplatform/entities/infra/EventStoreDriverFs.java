@@ -27,6 +27,8 @@ import de.ii.xtraplatform.entities.domain.EventStoreDriver;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver.Watcher;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver.Writer;
 import de.ii.xtraplatform.values.domain.Identifier;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -45,8 +47,6 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

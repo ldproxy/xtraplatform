@@ -10,12 +10,12 @@ package de.ii.xtraplatform.auth.fallback.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.domain.Oidc;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry.ChangeHandler;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.net.URI;
 import java.security.Key;
 import java.util.Map;
 import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 @AutoBind

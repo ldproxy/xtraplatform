@@ -11,13 +11,13 @@ import com.google.common.hash.Funnel;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
+import jakarta.ws.rs.core.EntityTag;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Objects;
 import java.util.SimpleTimeZone;
-import javax.ws.rs.core.EntityTag;
 
 @SuppressWarnings("UnstableApiUsage") // com.google.common.hash.*
 public interface ETag {

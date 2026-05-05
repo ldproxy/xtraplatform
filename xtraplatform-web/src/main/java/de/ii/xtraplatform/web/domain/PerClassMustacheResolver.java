@@ -9,6 +9,8 @@ package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.io.Resources;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,8 +19,6 @@ import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 @AutoBind

@@ -20,6 +20,8 @@ import de.ii.xtraplatform.services.domain.ServiceBackgroundTasks;
 import de.ii.xtraplatform.services.domain.Task;
 import de.ii.xtraplatform.services.domain.TaskQueue;
 import de.ii.xtraplatform.services.domain.TaskStatus;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,8 +31,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

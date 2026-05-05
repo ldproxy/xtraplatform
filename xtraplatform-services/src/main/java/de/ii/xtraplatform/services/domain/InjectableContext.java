@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.services.domain;
 
-import javax.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestContext;
 
 /**
  * @author zahnen

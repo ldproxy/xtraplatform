@@ -8,11 +8,11 @@
 package de.ii.xtraplatform.auth.domain;
 
 import com.google.common.collect.ImmutableList;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.NewCookie;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.NewCookie;
 
 public final class SplitCookie {
 
@@ -42,7 +42,7 @@ public final class SplitCookie {
 
     // with rememberMe a user will be logged out after 30 days of inactivity
     // without rememberMe a user will be logged out after 1 hour of inactivity or a session end
-    int payloadExpires = rememberMe ? 2_592_000 : 3_600;
+    int payloadExpires = rememberMe ? 2_592_000 : 3600;
     int signatureExpires = rememberMe ? 2_592_000 : -1;
 
     return ImmutableList.of(

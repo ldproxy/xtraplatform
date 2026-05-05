@@ -7,7 +7,7 @@
  */
 package de.ii.xtraplatform.ops.app;
 
-import javax.servlet.ServletConfig;
+import jakarta.servlet.ServletConfig;
 import org.eclipse.jetty.servlet.ServletHolder;
 
 @FunctionalInterface

@@ -16,6 +16,8 @@ import de.ii.xtraplatform.cache.domain.CacheDriver;
 import de.ii.xtraplatform.values.api.ValueEncodingJackson;
 import de.ii.xtraplatform.values.domain.ValueEncoding;
 import de.ii.xtraplatform.values.domain.ValueEncoding.FORMAT;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,8 +29,6 @@ import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

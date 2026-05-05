@@ -16,13 +16,13 @@ import de.ii.xtraplatform.base.domain.StoreSource.Type;
 import de.ii.xtraplatform.base.domain.StoreSourceHttpFetcher;
 import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -14,6 +14,8 @@ import hu.akarnokd.rxjava3.operators.Flowables;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.processors.UnicastProcessor;
 import io.reactivex.rxjava3.subscribers.DefaultSubscriber;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,8 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Subscriber;
 

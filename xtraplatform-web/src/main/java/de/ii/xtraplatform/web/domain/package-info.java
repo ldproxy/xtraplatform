@@ -10,7 +10,7 @@
 package de.ii.xtraplatform.web.domain;
 
 import com.github.azahnen.dagger.annotations.AutoModule;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.ext.ExceptionMapper;
 import org.glassfish.jersey.internal.inject.Binder;

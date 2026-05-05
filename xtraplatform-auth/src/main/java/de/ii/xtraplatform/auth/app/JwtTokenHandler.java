@@ -31,6 +31,8 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SigningKeyResolver;
 import io.jsonwebtoken.jackson.io.JacksonDeserializer;
 import io.jsonwebtoken.security.Keys;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -52,8 +54,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
