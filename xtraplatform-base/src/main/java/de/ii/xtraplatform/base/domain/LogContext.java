@@ -36,7 +36,8 @@ public final class LogContext {
 
   public enum CONTEXT {
     SERVICE,
-    REQUEST
+    REQUEST,
+    AUDIT
   }
 
   public enum MARKER implements MyMarker {
