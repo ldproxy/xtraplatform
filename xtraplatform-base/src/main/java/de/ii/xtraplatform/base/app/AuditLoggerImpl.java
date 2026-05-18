@@ -16,11 +16,15 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
 public class AuditLoggerImpl implements AuditLogger {
   private final Map<String, AuditLog> auditLogMapping = new ConcurrentHashMap<>();
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AuditLoggerImpl.class);
 
   @Inject
   AuditLoggerImpl() {}
@@ -50,14 +54,28 @@ public class AuditLoggerImpl implements AuditLogger {
   }
 
   @Override
+  public void initPropertyToAccessTrack(String requestUuid, String property) {
+    lazyInitOrGetAuditLog(requestUuid).initPropertyToAccessTrack(property);
+  }
+
+  @Override
+  public void markAccessed(String requestUuid, String property) {
+    lazyInitOrGetAuditLog(requestUuid).markAccessed(property);
+  }
+
+  @Override
   public void saveToFileAndRemove(String requestUuid) {
     // ToDo Implement
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info(lazyInitOrGetAuditLog(requestUuid).toJson());
+    }
   }
 
   private static class AuditLogImpl implements AuditLogger.AuditLog {
     private String user;
     private String type;
     private final Map<String, Set<String>> valueLog = new LinkedHashMap<>();
+    private final Map<String, Boolean> accessLog = new LinkedHashMap<>();
 
     AuditLogImpl() {}
 
@@ -86,9 +104,29 @@ public class AuditLoggerImpl implements AuditLogger {
     }
 
     @Override
+    public void initPropertyToAccessTrack(String property) {
+      accessLog.computeIfAbsent(property, p -> false);
+    }
+
+    @Override
+    public void markAccessed(String property) {
+      if (accessLog.containsKey(property)) {
+        accessLog.put(property, true);
+      }
+    }
+
+    @Override
     public String toJson() {
       // ToDo implement
-      return user + type;
+      return "\n------------------\nuser: "
+          + user
+          + ",\ntype: "
+          + type
+          + ",\naccess-track: "
+          + accessLog
+          + ",\nvalue-track: "
+          + valueLog
+          + "\n------------------\n";
     }
   }
 }

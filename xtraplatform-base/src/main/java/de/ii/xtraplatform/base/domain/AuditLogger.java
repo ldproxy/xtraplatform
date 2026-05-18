@@ -17,6 +17,10 @@ public interface AuditLogger {
 
     void appendPropertyValue(String property, String value);
 
+    void initPropertyToAccessTrack(String property);
+
+    void markAccessed(String property);
+
     String toJson();
   }
 
@@ -27,6 +31,10 @@ public interface AuditLogger {
   void initPropertyToValueTrack(String requestUuid, String property);
 
   void appendPropertyValue(String requestUuid, String property, String value);
+
+  void initPropertyToAccessTrack(String requestUuid, String property);
+
+  void markAccessed(String requestUuid, String property);
 
   void saveToFileAndRemove(String requestUuid);
 }
