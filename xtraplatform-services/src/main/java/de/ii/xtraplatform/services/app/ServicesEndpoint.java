@@ -360,7 +360,6 @@ public class ServicesEndpoint implements Endpoint {
       String serviceId, Integer version, ContainerRequestContext containerRequestContext) {
     String uuid = LogContext.generateRandomUuid().toString();
     containerRequestContext.setProperty("REQUEST_ID", uuid);
-    LogContext.put(LogContext.CONTEXT.AUDIT, uuid);
     if (LOGGER.isDebugEnabled() || LOGGER.isDebugEnabled(MARKER.REQUEST)) {
       LogContext.put(LogContext.CONTEXT.REQUEST, uuid);
 
