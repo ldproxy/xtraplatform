@@ -6,7 +6,7 @@ allprojects {
     group = 'de.interactive_instruments'
 }
 
-version = '6.8.0' + versionSuffix
+version = '6.7.1' + versionSuffix
 
 dependencies {
     modules subprojects
