@@ -8,33 +8,35 @@
 package de.ii.xtraplatform.base.domain;
 
 public interface AuditLogger {
+  void initApi(String requestId, String api);
+
+  void initActor(String requestId, String actorType, String actorId);
+
+  void initPropertyToValueTrack(String requestId, String type, String property);
+
+  // ToDo: Evaluate if warnig is justified
+  @SuppressWarnings("PMD.UseObjectForClearerAPI")
+  void appendPropertyValue(String requestId, String type, String property, String value);
+
+  void initPropertyToAccessTrack(String requestId, String type, String property);
+
+  void markAccessed(String requestId, String type, String property);
+
+  void saveToFileAndRemove(String requestId);
+
   interface AuditLog {
-    void initUser(String user);
+    void initApi(String api);
 
-    void initType(String type);
+    void initActor(String actorType, String actorId);
 
-    void initPropertyToValueTrack(String property);
+    void initPropertyToValueTrack(String type, String property);
 
-    void appendPropertyValue(String property, String value);
+    void appendPropertyValue(String type, String property, String value);
 
-    void initPropertyToAccessTrack(String property);
+    void initPropertyToAccessTrack(String type, String property);
 
-    void markAccessed(String property);
+    void markAccessed(String type, String property);
 
     String toJson();
   }
-
-  void initUser(String requestUuid, String user);
-
-  void initType(String requestUuid, String type);
-
-  void initPropertyToValueTrack(String requestUuid, String property);
-
-  void appendPropertyValue(String requestUuid, String property, String value);
-
-  void initPropertyToAccessTrack(String requestUuid, String property);
-
-  void markAccessed(String requestUuid, String property);
-
-  void saveToFileAndRemove(String requestUuid);
 }

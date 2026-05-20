@@ -11,9 +11,11 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AuditLogger;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -29,102 +31,127 @@ public class AuditLoggerImpl implements AuditLogger {
   @Inject
   AuditLoggerImpl() {}
 
-  private AuditLog lazyInitOrGetAuditLog(String requestUuid) {
-    return auditLogMapping.computeIfAbsent(requestUuid, k -> new AuditLogImpl());
+  private AuditLog lazyInitOrGetAuditLog(String requestId) {
+    return auditLogMapping.computeIfAbsent(requestId, k -> new AuditLogImpl(requestId));
   }
 
   @Override
-  public void initUser(String requestUuid, String user) {
-    lazyInitOrGetAuditLog(requestUuid).initUser(user);
+  public void initApi(String requestId, String api) {
+    lazyInitOrGetAuditLog(requestId).initApi(api);
   }
 
   @Override
-  public void initType(String requestUuid, String type) {
-    lazyInitOrGetAuditLog(requestUuid).initType(type);
+  public void initActor(String requestId, String actorType, String actorId) {
+    lazyInitOrGetAuditLog(requestId).initActor(actorType, actorId);
   }
 
   @Override
-  public void initPropertyToValueTrack(String requestUuid, String property) {
-    lazyInitOrGetAuditLog(requestUuid).initPropertyToValueTrack(property);
+  public void initPropertyToValueTrack(String requestId, String type, String property) {
+    lazyInitOrGetAuditLog(requestId).initPropertyToValueTrack(type, property);
+  }
+
+  // ToDo: Evaluate if warnig is justified
+  @SuppressWarnings("PMD.UseObjectForClearerAPI")
+  @Override
+  public void appendPropertyValue(String requestId, String type, String property, String value) {
+    lazyInitOrGetAuditLog(requestId).appendPropertyValue(type, property, value);
   }
 
   @Override
-  public void appendPropertyValue(String requestUuid, String property, String value) {
-    lazyInitOrGetAuditLog(requestUuid).appendPropertyValue(property, value);
+  public void initPropertyToAccessTrack(String requestId, String type, String property) {
+    lazyInitOrGetAuditLog(requestId).initPropertyToAccessTrack(type, property);
   }
 
   @Override
-  public void initPropertyToAccessTrack(String requestUuid, String property) {
-    lazyInitOrGetAuditLog(requestUuid).initPropertyToAccessTrack(property);
+  public void markAccessed(String requestId, String type, String property) {
+    lazyInitOrGetAuditLog(requestId).markAccessed(type, property);
   }
 
   @Override
-  public void markAccessed(String requestUuid, String property) {
-    lazyInitOrGetAuditLog(requestUuid).markAccessed(property);
-  }
-
-  @Override
-  public void saveToFileAndRemove(String requestUuid) {
+  public void saveToFileAndRemove(String requestId) {
     // ToDo Implement
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info(lazyInitOrGetAuditLog(requestUuid).toJson());
+    if (auditLogMapping.containsKey(requestId)) {
+      if (LOGGER.isInfoEnabled()) {
+        LOGGER.info(lazyInitOrGetAuditLog(requestId).toJson());
+      }
+      auditLogMapping.remove(requestId);
+    } else {
+      if (LOGGER.isErrorEnabled()) {
+        LOGGER.error("No AuditLog-object found for requestId " + requestId);
+      }
     }
   }
 
   private static class AuditLogImpl implements AuditLogger.AuditLog {
-    private String user;
-    private String type;
-    private final Map<String, Set<String>> valueLog = new LinkedHashMap<>();
-    private final Map<String, Boolean> accessLog = new LinkedHashMap<>();
+    private final String id;
+    private final Instant started;
+    private String api;
+    private final Map<String, String> actor = new LinkedHashMap<>();
 
-    AuditLogImpl() {}
+    private final Map<String, Map<String, Set<String>>> valueLog = new LinkedHashMap<>();
+    private final Map<String, Map<String, Set<Boolean>>> accessLog = new LinkedHashMap<>();
 
-    @Override
-    public void initUser(String user) {
-      // ToDo Safety checks
-      this.user = user;
+    AuditLogImpl(String id) {
+      this.id = id;
+      this.started = Instant.now();
     }
 
     @Override
-    public void initType(String type) {
-      // ToDo Safety checks
-      this.type = type;
-    }
-
-    @Override
-    public void initPropertyToValueTrack(String property) {
-      valueLog.computeIfAbsent(property, p -> new LinkedHashSet<>());
-    }
-
-    @Override
-    public void appendPropertyValue(String property, String value) {
-      if (valueLog.containsKey(property)) {
-        valueLog.get(property).add(value);
+    public void initApi(String api) {
+      if (Objects.isNull(this.api)) {
+        this.api = api;
       }
     }
 
     @Override
-    public void initPropertyToAccessTrack(String property) {
-      accessLog.computeIfAbsent(property, p -> false);
+    public void initActor(String actorType, String actorId) {
+      actor.computeIfAbsent("type", k -> actorType);
+      actor.computeIfAbsent("id", k -> actorId);
     }
 
     @Override
-    public void markAccessed(String property) {
-      if (accessLog.containsKey(property)) {
-        accessLog.put(property, true);
+    public void initPropertyToValueTrack(String type, String property) {
+      valueLog.computeIfAbsent(type, k -> new LinkedHashMap<>());
+      valueLog.get(type).computeIfAbsent(property, k -> new LinkedHashSet<>());
+    }
+
+    @Override
+    public void appendPropertyValue(String type, String property, String value) {
+      if (valueLog.containsKey(type) && valueLog.get(type).containsKey(property)) {
+        valueLog.get(type).get(property).add(value);
+      }
+    }
+
+    @Override
+    public void initPropertyToAccessTrack(String type, String property) {
+      accessLog.computeIfAbsent(type, k -> new LinkedHashMap<>());
+      accessLog.get(type).computeIfAbsent(property, k -> new LinkedHashSet<>());
+    }
+
+    @Override
+    public void markAccessed(String type, String property) {
+      if (accessLog.containsKey(type) && accessLog.get(type).containsKey(property)) {
+        accessLog.get(type).get(property).add(true);
       }
     }
 
     @Override
     public String toJson() {
+      Instant finished = Instant.now();
       // ToDo implement
-      return "\n------------------\nuser: "
-          + user
-          + ",\ntype: "
-          + type
-          + ",\naccess-track: "
+      return "\n------------------\nid: "
+          + id
+          + "\nstarted: "
+          + started
+          + "\nfinished: "
+          + finished
+          + "\napi: "
+          + api
+          + "\nactor: "
+          + actor
+          + "\naccess-track: "
           + accessLog
-          + ",\nvalue-track: "
+          + "\nvalue-track: "
           + valueLog
           + "\n------------------\n";
     }

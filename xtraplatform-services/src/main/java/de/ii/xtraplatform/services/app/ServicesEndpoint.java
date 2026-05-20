@@ -10,6 +10,7 @@ package de.ii.xtraplatform.services.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Joiner;
 import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.AuditLogger;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.entities.domain.EntityRegistry;
@@ -79,6 +80,8 @@ public class ServicesEndpoint implements Endpoint {
   private final Lazy<Set<ServiceEndpoint>> serviceResources;
   private final Lazy<Set<ServiceListingProvider>> serviceListingProviders;
 
+  private final AuditLogger auditLogger;
+
   @Inject
   public ServicesEndpoint(
       EntityRegistry entityRegistry,
@@ -87,7 +90,8 @@ public class ServicesEndpoint implements Endpoint {
       StaticResourceHandler staticResourceHandler,
       Lazy<Set<LoginHandler>> loginHandler,
       Lazy<Set<ServiceEndpoint>> serviceResources,
-      Lazy<Set<ServiceListingProvider>> serviceListingProviders) {
+      Lazy<Set<ServiceListingProvider>> serviceListingProviders,
+      AuditLogger auditLogger) {
     this.entityRegistry = entityRegistry;
     this.servicesContext = servicesContext;
     this.serviceContext = serviceContext;
@@ -95,6 +99,7 @@ public class ServicesEndpoint implements Endpoint {
     this.loginHandler = loginHandler;
     this.serviceResources = serviceResources;
     this.serviceListingProviders = serviceListingProviders;
+    this.auditLogger = auditLogger;
   }
 
   @GET
@@ -360,6 +365,19 @@ public class ServicesEndpoint implements Endpoint {
       String serviceId, Integer version, ContainerRequestContext containerRequestContext) {
     String uuid = LogContext.generateRandomUuid().toString();
     containerRequestContext.setProperty("REQUEST_ID", uuid);
+
+    // ToDo: To avoid memory leak: Either check if this request should be logged or pass the
+    // necessary information down to FeatureStream
+    if (Objects.nonNull(serviceId)) {
+      auditLogger.initApi(uuid, serviceId);
+    }
+    Principal principal = containerRequestContext.getSecurityContext().getUserPrincipal();
+    if (Objects.nonNull(principal)) {
+      // ToDo: Find a way to get userType (cant cast to User because of circular dependency, also
+      // find a way to set the user
+      auditLogger.initActor(uuid, "MISSING", principal.getName());
+    }
+
     if (LOGGER.isDebugEnabled() || LOGGER.isDebugEnabled(MARKER.REQUEST)) {
       LogContext.put(LogContext.CONTEXT.REQUEST, uuid);
 
