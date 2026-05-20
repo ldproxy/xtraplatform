@@ -63,8 +63,8 @@ public class AuditLoggerImpl implements AuditLogger {
   }
 
   @Override
-  public void markAccessed(String requestId, String type, String property) {
-    lazyInitOrGetAuditLog(requestId).markAccessed(type, property);
+  public void markPropertyAccessed(String requestId, String type, String property) {
+    lazyInitOrGetAuditLog(requestId).markPropertyAccessed(type, property);
   }
 
   @Override
@@ -129,7 +129,7 @@ public class AuditLoggerImpl implements AuditLogger {
     }
 
     @Override
-    public void markAccessed(String type, String property) {
+    public void markPropertyAccessed(String type, String property) {
       if (accessLog.containsKey(type) && accessLog.get(type).containsKey(property)) {
         accessLog.get(type).get(property).add(true);
       }
