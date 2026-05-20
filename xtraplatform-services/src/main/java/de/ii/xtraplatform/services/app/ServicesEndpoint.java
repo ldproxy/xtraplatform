@@ -42,6 +42,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
@@ -374,9 +375,23 @@ public class ServicesEndpoint implements Endpoint {
     Principal principal = containerRequestContext.getSecurityContext().getUserPrincipal();
     if (Objects.nonNull(principal)) {
       // ToDo: Find a way to get userType (cant cast to User because of circular dependency, also
-      // find a way to set the user
+      // for testing purposes find a way to set the user
       auditLogger.initActor(uuid, "MISSING", principal.getName());
     }
+    String method = containerRequestContext.getMethod();
+    if (Objects.nonNull(method)) {
+      auditLogger.initOperationMethod(uuid, method);
+    }
+    String path = containerRequestContext.getUriInfo().getPath();
+    if (Objects.nonNull(path)) {
+      auditLogger.initOperationPath(uuid, path);
+    }
+    // ToDo Check if headers should be set
+    MultivaluedMap<String, String> headers = containerRequestContext.getHeaders();
+    if (Objects.nonNull(headers)) {
+      auditLogger.initOperationHeaders(uuid, headers);
+    }
+    // ToDo: Find a way to get status
 
     if (LOGGER.isDebugEnabled() || LOGGER.isDebugEnabled(MARKER.REQUEST)) {
       LogContext.put(LogContext.CONTEXT.REQUEST, uuid);

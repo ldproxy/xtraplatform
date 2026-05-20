@@ -11,12 +11,14 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AuditLogger;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.MultivaluedMap;
 import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+// ToDo Evaluate if ConcurrentHashMap is actually needed. Current analysis: Threads could access
+// the auditLogMapping at the same time. But there is no scenario in which two threads will access
+// the same auditLog object. So apart from the auditLogMapping, no ConcurrentHashMap is needed.
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +45,26 @@ public class AuditLoggerImpl implements AuditLogger {
   @Override
   public void initActor(String requestId, String actorType, String actorId) {
     lazyInitOrGetAuditLog(requestId).initActor(actorType, actorId);
+  }
+
+  @Override
+  public void initOperationMethod(String requestId, String method) {
+    lazyInitOrGetAuditLog(requestId).initOperationMethod(method);
+  }
+
+  @Override
+  public void initOperationPath(String requestId, String path) {
+    lazyInitOrGetAuditLog(requestId).initOperationPath(path);
+  }
+
+  @Override
+  public void initOperationHeaders(String requestId, MultivaluedMap<String, String> headers) {
+    lazyInitOrGetAuditLog(requestId).initOperationHeaders(headers);
+  }
+
+  @Override
+  public void initOperationStatus(String requestId, String status) {
+    lazyInitOrGetAuditLog(requestId).initOperationStatus(status);
   }
 
   @Override
@@ -77,7 +99,7 @@ public class AuditLoggerImpl implements AuditLogger {
       auditLogMapping.remove(requestId);
     } else {
       if (LOGGER.isErrorEnabled()) {
-        LOGGER.error("No AuditLog-object found for requestId " + requestId);
+        LOGGER.error("No AuditLog-object found for requestId {}", requestId);
       }
     }
   }
@@ -86,14 +108,16 @@ public class AuditLoggerImpl implements AuditLogger {
     private final String id;
     private final Instant started;
     private String api;
-    private final Map<String, String> actor = new LinkedHashMap<>();
+    private final Map<String, String> actor = new ConcurrentHashMap<>();
+    private final Operation operation;
 
-    private final Map<String, Map<String, Set<String>>> valueLog = new LinkedHashMap<>();
-    private final Map<String, Map<String, Set<Boolean>>> accessLog = new LinkedHashMap<>();
+    private final Map<String, Map<String, Set<String>>> valueLog = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, Set<Boolean>>> accessLog = new ConcurrentHashMap<>();
 
     AuditLogImpl(String id) {
       this.id = id;
       this.started = Instant.now();
+      this.operation = new Operation();
     }
 
     @Override
@@ -110,9 +134,29 @@ public class AuditLoggerImpl implements AuditLogger {
     }
 
     @Override
+    public void initOperationMethod(String method) {
+      operation.method = method;
+    }
+
+    @Override
+    public void initOperationPath(String path) {
+      operation.path = path;
+    }
+
+    @Override
+    public void initOperationHeaders(MultivaluedMap<String, String> headers) {
+      operation.headers = headers;
+    }
+
+    @Override
+    public void initOperationStatus(String status) {
+      operation.status = status;
+    }
+
+    @Override
     public void initPropertyToValueTrack(String type, String property) {
-      valueLog.computeIfAbsent(type, k -> new LinkedHashMap<>());
-      valueLog.get(type).computeIfAbsent(property, k -> new LinkedHashSet<>());
+      valueLog.computeIfAbsent(type, k -> new ConcurrentHashMap<>());
+      valueLog.get(type).computeIfAbsent(property, k -> ConcurrentHashMap.newKeySet());
     }
 
     @Override
@@ -124,8 +168,8 @@ public class AuditLoggerImpl implements AuditLogger {
 
     @Override
     public void initPropertyToAccessTrack(String type, String property) {
-      accessLog.computeIfAbsent(type, k -> new LinkedHashMap<>());
-      accessLog.get(type).computeIfAbsent(property, k -> new LinkedHashSet<>());
+      accessLog.computeIfAbsent(type, k -> new ConcurrentHashMap<>());
+      accessLog.get(type).computeIfAbsent(property, k -> ConcurrentHashMap.newKeySet());
     }
 
     @Override
@@ -149,11 +193,37 @@ public class AuditLoggerImpl implements AuditLogger {
           + api
           + "\nactor: "
           + actor
+          + "\noperation: "
+          + operation
           + "\naccess-track: "
           + accessLog
           + "\nvalue-track: "
           + valueLog
           + "\n------------------\n";
+    }
+
+    private static final class Operation {
+      private String method;
+      private String path;
+      private MultivaluedMap<String, String> headers;
+      private String status;
+
+      @Override
+      public String toString() {
+        return "Operation{"
+            + "method='"
+            + method
+            + '\''
+            + ", path='"
+            + path
+            + '\''
+            + ", headers="
+            + headers
+            + ", status='"
+            + status
+            + '\''
+            + '}';
+      }
     }
   }
 }

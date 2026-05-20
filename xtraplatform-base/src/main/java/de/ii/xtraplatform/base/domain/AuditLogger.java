@@ -7,12 +7,22 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import jakarta.ws.rs.core.MultivaluedMap;
+
 public interface AuditLogger {
   void initApi(String requestId, String api);
 
   void initActor(String requestId, String actorType, String actorId);
 
   void initPropertyToValueTrack(String requestId, String type, String property);
+
+  void initOperationMethod(String requestId, String method);
+
+  void initOperationPath(String requestId, String path);
+
+  void initOperationHeaders(String requestId, MultivaluedMap<String, String> headers);
+
+  void initOperationStatus(String requestId, String status);
 
   // ToDo: Evaluate if warnig is justified
   @SuppressWarnings("PMD.UseObjectForClearerAPI")
@@ -28,6 +38,14 @@ public interface AuditLogger {
     void initApi(String api);
 
     void initActor(String actorType, String actorId);
+
+    void initOperationMethod(String method);
+
+    void initOperationPath(String path);
+
+    void initOperationHeaders(MultivaluedMap<String, String> headers);
+
+    void initOperationStatus(String status);
 
     void initPropertyToValueTrack(String type, String property);
 
