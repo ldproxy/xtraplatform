@@ -7,12 +7,18 @@
  */
 package de.ii.xtraplatform.base.app;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AuditLogger;
+import de.ii.xtraplatform.base.domain.Jackson;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -26,12 +32,15 @@ import org.slf4j.LoggerFactory;
 @Singleton
 @AutoBind
 public class AuditLoggerImpl implements AuditLogger {
+  private final ObjectMapper objectMapper;
   private final Map<String, AuditLog> auditLogMapping = new ConcurrentHashMap<>();
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AuditLoggerImpl.class);
 
   @Inject
-  AuditLoggerImpl() {}
+  AuditLoggerImpl(Jackson jackson) {
+    this.objectMapper = jackson.getDefaultObjectMapper();
+  }
 
   private AuditLog lazyInitOrGetAuditLog(String requestId) {
     return auditLogMapping.computeIfAbsent(requestId, k -> new AuditLogImpl(requestId));
@@ -72,7 +81,7 @@ public class AuditLoggerImpl implements AuditLogger {
     lazyInitOrGetAuditLog(requestId).initPropertyToValueTrack(type, property);
   }
 
-  // ToDo: Evaluate if warnig is justified
+  // ToDo: Evaluate if warning is justified
   @SuppressWarnings("PMD.UseObjectForClearerAPI")
   @Override
   public void appendPropertyValue(String requestId, String type, String property, String value) {
@@ -90,11 +99,11 @@ public class AuditLoggerImpl implements AuditLogger {
   }
 
   @Override
-  public void saveToFileAndRemove(String requestId) {
+  public void saveToFileAndRemove(String requestId) throws JsonProcessingException {
     // ToDo Implement
     if (auditLogMapping.containsKey(requestId)) {
       if (LOGGER.isInfoEnabled()) {
-        LOGGER.info(lazyInitOrGetAuditLog(requestId).toJson());
+        LOGGER.info(lazyInitOrGetAuditLog(requestId).toJson(objectMapper.createObjectNode()));
       }
       auditLogMapping.remove(requestId);
     } else {
@@ -104,7 +113,7 @@ public class AuditLoggerImpl implements AuditLogger {
     }
   }
 
-  private static class AuditLogImpl implements AuditLogger.AuditLog {
+  private static class AuditLogImpl implements AuditLog {
     private final String id;
     private final Instant started;
     private String api;
@@ -180,26 +189,80 @@ public class AuditLoggerImpl implements AuditLogger {
     }
 
     @Override
-    public String toJson() {
-      Instant finished = Instant.now();
-      // ToDo implement
-      return "\n------------------\nid: "
-          + id
-          + "\nstarted: "
-          + started
-          + "\nfinished: "
-          + finished
-          + "\napi: "
-          + api
-          + "\nactor: "
-          + actor
-          + "\noperation: "
-          + operation
-          + "\naccess-track: "
-          + accessLog
-          + "\nvalue-track: "
-          + valueLog
-          + "\n------------------\n";
+    public String toJson(ObjectNode root) {
+      root.put("id", id);
+      root.put("started", started.toString());
+      // ToDo Evaluate if it is okay to measure the finish time this early
+      root.put("finished", Instant.now().toString());
+
+      ObjectNode actorNode = root.putObject("actor");
+      putWithCheck(actorNode, "type", actor.get("type"));
+      putWithCheck(actorNode, "id", actor.get("id"));
+
+      ObjectNode operationNode = root.putObject("operation");
+      putWithCheck(operationNode, "method", operation.method);
+      putWithCheck(operationNode, "path", operation.path);
+      putMultivaluedMap(operationNode, "headers", operation.headers);
+      putWithCheck(operationNode, "status", operation.status);
+
+      ObjectNode targetNode = root.putObject("target");
+      putTarget(targetNode, valueLog, accessLog);
+
+      return root + "\n" + valueLog + "\n" + accessLog;
+    }
+
+    private void putWithCheck(ObjectNode root, String key, Object value) {
+      if (Objects.nonNull(value)) {
+        root.put(key, value.toString());
+      } else {
+        root.putNull(key);
+      }
+    }
+
+    private void putCollection(ObjectNode root, String key, Collection collection) {
+      if (Objects.isNull(collection)) {
+        root.putNull(key);
+        return;
+      }
+
+      ArrayNode arrayNode = root.putArray(key);
+      for (Object item : collection) {
+        arrayNode.addPOJO(item);
+      }
+    }
+
+    private void putMultivaluedMap(
+        ObjectNode root, String key, MultivaluedMap<String, String> multiMap) {
+      if (Objects.isNull(multiMap)) {
+        root.putNull(key);
+        return;
+      }
+
+      ObjectNode mapNode = root.putObject(key);
+      for (String mapKey : multiMap.keySet()) {
+        if (multiMap.get(mapKey).isEmpty()) {
+          mapNode.putNull(mapKey);
+          continue;
+        }
+
+        if (multiMap.get(mapKey).size() > 1) {
+          putCollection(mapNode, mapKey, multiMap.get(mapKey));
+          continue;
+        }
+
+        mapNode.put(mapKey, multiMap.getFirst(mapKey));
+      }
+    }
+
+    private void putTarget(
+        ObjectNode root,
+        Map<String, Map<String, Set<String>>> valueLog,
+        Map<String, Map<String, Set<Boolean>>> accessLog) {
+      // ToDo finish
+      ObjectNode typesNode = root.putObject("typesNode");
+      for (String type : valueLog.keySet()) {
+        continue;
+      }
     }
 
     private static final class Operation {
