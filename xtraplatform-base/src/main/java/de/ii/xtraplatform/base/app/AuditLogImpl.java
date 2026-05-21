@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.base.domain.AuditLogger;
+import de.ii.xtraplatform.base.domain.AuditLog;
 import de.ii.xtraplatform.base.domain.Jackson;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -31,19 +31,19 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
-public class AuditLoggerImpl implements AuditLogger {
+public class AuditLogImpl implements AuditLog {
   private final ObjectMapper objectMapper;
-  private final Map<String, AuditLog> auditLogMapping = new ConcurrentHashMap<>();
+  private final Map<String, Log> auditLogMapping = new ConcurrentHashMap<>();
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AuditLoggerImpl.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AuditLogImpl.class);
 
   @Inject
-  AuditLoggerImpl(Jackson jackson) {
+  AuditLogImpl(Jackson jackson) {
     this.objectMapper = jackson.getDefaultObjectMapper();
   }
 
-  private AuditLog lazyInitOrGetAuditLog(String requestId) {
-    return auditLogMapping.computeIfAbsent(requestId, k -> new AuditLogImpl(requestId));
+  private Log lazyInitOrGetAuditLog(String requestId) {
+    return auditLogMapping.computeIfAbsent(requestId, k -> new LogImpl(requestId));
   }
 
   @Override
@@ -99,11 +99,14 @@ public class AuditLoggerImpl implements AuditLogger {
   }
 
   @Override
-  public void saveToFileAndRemove(String requestId) throws JsonProcessingException {
+  public void saveLogToFileAndRemove(String requestId) throws JsonProcessingException {
     // ToDo Implement
     if (auditLogMapping.containsKey(requestId)) {
       if (LOGGER.isInfoEnabled()) {
-        LOGGER.info(lazyInitOrGetAuditLog(requestId).toJson(objectMapper.createObjectNode()));
+        LOGGER.info(
+            lazyInitOrGetAuditLog(requestId)
+                .toObjectNode(objectMapper.createObjectNode())
+                .toString());
       }
       auditLogMapping.remove(requestId);
     } else {
@@ -113,7 +116,7 @@ public class AuditLoggerImpl implements AuditLogger {
     }
   }
 
-  private static class AuditLogImpl implements AuditLog {
+  private static class LogImpl implements Log {
     private final String id;
     private final Instant started;
     private String api;
@@ -123,7 +126,7 @@ public class AuditLoggerImpl implements AuditLogger {
     private final Map<String, Map<String, Set<String>>> valueLog = new ConcurrentHashMap<>();
     private final Map<String, Map<String, Set<Boolean>>> accessLog = new ConcurrentHashMap<>();
 
-    AuditLogImpl(String id) {
+    LogImpl(String id) {
       this.id = id;
       this.started = Instant.now();
       this.operation = new Operation();
@@ -189,7 +192,7 @@ public class AuditLoggerImpl implements AuditLogger {
     }
 
     @Override
-    public String toJson(ObjectNode root) {
+    public ObjectNode toObjectNode(ObjectNode root) {
       root.put("id", id);
       root.put("started", started.toString());
       // ToDo Evaluate if it is okay to measure the finish time this early
@@ -208,7 +211,7 @@ public class AuditLoggerImpl implements AuditLogger {
       ObjectNode targetNode = root.putObject("target");
       putTarget(targetNode, valueLog, accessLog);
 
-      return root + "\n" + valueLog + "\n" + accessLog;
+      return root;
     }
 
     private void putWithCheck(ObjectNode root, String key, Object value) {
@@ -254,6 +257,7 @@ public class AuditLoggerImpl implements AuditLogger {
       }
     }
 
+    @SuppressWarnings("PMD")
     private void putTarget(
         ObjectNode root,
         Map<String, Map<String, Set<String>>> valueLog,
@@ -270,23 +274,6 @@ public class AuditLoggerImpl implements AuditLogger {
       private String path;
       private MultivaluedMap<String, String> headers;
       private String status;
-
-      @Override
-      public String toString() {
-        return "Operation{"
-            + "method='"
-            + method
-            + '\''
-            + ", path='"
-            + path
-            + '\''
-            + ", headers="
-            + headers
-            + ", status='"
-            + status
-            + '\''
-            + '}';
-      }
     }
   }
 }

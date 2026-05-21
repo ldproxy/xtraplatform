@@ -11,7 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.core.MultivaluedMap;
 
-public interface AuditLogger {
+public interface AuditLog {
   void initApi(String requestId, String api);
 
   void initActor(String requestId, String actorType, String actorId);
@@ -34,9 +34,9 @@ public interface AuditLogger {
 
   void markPropertyAccessed(String requestId, String type, String property);
 
-  void saveToFileAndRemove(String requestId) throws JsonProcessingException;
+  void saveLogToFileAndRemove(String requestId) throws JsonProcessingException;
 
-  interface AuditLog {
+  interface Log {
     void initApi(String api);
 
     void initActor(String actorType, String actorId);
@@ -57,6 +57,6 @@ public interface AuditLogger {
 
     void markPropertyAccessed(String type, String property);
 
-    String toJson(ObjectNode root);
+    ObjectNode toObjectNode(ObjectNode root);
   }
 }
