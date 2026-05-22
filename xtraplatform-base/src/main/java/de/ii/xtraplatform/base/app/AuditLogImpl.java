@@ -18,6 +18,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 // ToDo Evaluate if ConcurrentHashMap is actually needed. Current analysis: Threads could access
@@ -99,9 +100,7 @@ public class AuditLogImpl implements AuditLog {
     private final Instant started;
     private final Map<String, String> actor = new ConcurrentHashMap<>();
     private final Map<String, Object> operation = new ConcurrentHashMap<>();
-
     private Map<String, Object> target;
-    private Instant finished;
     private String api;
 
     LogImpl(String id) {
@@ -170,7 +169,22 @@ public class AuditLogImpl implements AuditLog {
 
     @Override
     public void initOperationHeaders(MultivaluedMap<String, String> headers) {
-      operation.computeIfAbsent("headers", k -> headers);
+      Map<String, Object> headersReduced = new HashMap<>();
+
+      for (String key : headers.keySet()) {
+        if (headers.get(key).isEmpty()) {
+          continue;
+        }
+
+        if (headers.get(key).size() == 1) {
+          headersReduced.put(key, headers.get(key).get(0));
+          continue;
+        }
+
+        headersReduced.put(key, headers.get(key));
+      }
+
+      operation.computeIfAbsent("headers", k -> headersReduced);
     }
 
     @Override
