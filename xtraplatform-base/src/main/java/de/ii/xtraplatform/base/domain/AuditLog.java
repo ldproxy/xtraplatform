@@ -8,15 +8,13 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.util.Map;
 
 public interface AuditLog {
   void initApi(String requestId, String api);
 
   void initActor(String requestId, String actorType, String actorId);
-
-  void initPropertyToValueTrack(String requestId, String type, String property);
 
   void initOperationMethod(String requestId, String method);
 
@@ -26,13 +24,7 @@ public interface AuditLog {
 
   void initOperationStatus(String requestId, String status);
 
-  // ToDo: Evaluate if warnig is justified
-  @SuppressWarnings("PMD.UseObjectForClearerAPI")
-  void appendPropertyValue(String requestId, String type, String property, String value);
-
-  void initPropertyToAccessTrack(String requestId, String type, String property);
-
-  void markPropertyAccessed(String requestId, String type, String property);
+  void initTarget(String requestId, Map<String, Object> target);
 
   void saveLogToFileAndRemove(String requestId) throws JsonProcessingException;
 
@@ -49,14 +41,6 @@ public interface AuditLog {
 
     void initOperationStatus(String status);
 
-    void initPropertyToValueTrack(String type, String property);
-
-    void appendPropertyValue(String type, String property, String value);
-
-    void initPropertyToAccessTrack(String type, String property);
-
-    void markPropertyAccessed(String type, String property);
-
-    ObjectNode toObjectNode(ObjectNode root);
+    void initTarget(Map<String, Object> target);
   }
 }
