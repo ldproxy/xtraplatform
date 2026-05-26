@@ -19,11 +19,9 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-// ToDo Evaluate if ConcurrentHashMap is actually needed. Current analysis: Threads could access
-// the auditLogMapping at the same time. But there is no scenario in which two threads will access
-// the same auditLog object. So apart from the auditLogMapping, no ConcurrentHashMap is needed.
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,8 +96,8 @@ public class AuditLogImpl implements AuditLog {
   public static class LogImpl implements Log {
     private final String id;
     private final Instant started;
-    private final Map<String, String> actor = new ConcurrentHashMap<>();
-    private final Map<String, Object> operation = new ConcurrentHashMap<>();
+    private final Map<String, String> actor = new LinkedHashMap<>();
+    private final Map<String, Object> operation = new LinkedHashMap<>();
     private Map<String, Object> target;
     private String api;
 
@@ -118,7 +116,7 @@ public class AuditLogImpl implements AuditLog {
       return started.toString();
     }
 
-    // Hier bin ich mir unsicher, ob das so sinnvoll ist.
+    // This works but im still analysing if it could result in undesired behavior
     @JsonProperty("finished")
     public String finish() {
       return Instant.now().toString();
