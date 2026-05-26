@@ -10,7 +10,6 @@ package de.ii.xtraplatform.services.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Joiner;
 import dagger.Lazy;
-import de.ii.xtraplatform.base.domain.AuditLog;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.entities.domain.EntityRegistry;
@@ -42,7 +41,6 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
@@ -81,8 +79,6 @@ public class ServicesEndpoint implements Endpoint {
   private final Lazy<Set<ServiceEndpoint>> serviceResources;
   private final Lazy<Set<ServiceListingProvider>> serviceListingProviders;
 
-  private final AuditLog auditLog;
-
   @Inject
   public ServicesEndpoint(
       EntityRegistry entityRegistry,
@@ -91,8 +87,7 @@ public class ServicesEndpoint implements Endpoint {
       StaticResourceHandler staticResourceHandler,
       Lazy<Set<LoginHandler>> loginHandler,
       Lazy<Set<ServiceEndpoint>> serviceResources,
-      Lazy<Set<ServiceListingProvider>> serviceListingProviders,
-      AuditLog auditLog) {
+      Lazy<Set<ServiceListingProvider>> serviceListingProviders) {
     this.entityRegistry = entityRegistry;
     this.servicesContext = servicesContext;
     this.serviceContext = serviceContext;
@@ -100,7 +95,6 @@ public class ServicesEndpoint implements Endpoint {
     this.loginHandler = loginHandler;
     this.serviceResources = serviceResources;
     this.serviceListingProviders = serviceListingProviders;
-    this.auditLog = auditLog;
   }
 
   @GET
@@ -366,32 +360,6 @@ public class ServicesEndpoint implements Endpoint {
       String serviceId, Integer version, ContainerRequestContext containerRequestContext) {
     String uuid = LogContext.generateRandomUuid().toString();
     containerRequestContext.setProperty("REQUEST_ID", uuid);
-
-    // ToDo: To avoid memory leak: Either check if this request should be logged or pass the
-    // necessary information down to FeatureStream
-    if (Objects.nonNull(serviceId)) {
-      auditLog.initApi(uuid, serviceId);
-    }
-    Principal principal = containerRequestContext.getSecurityContext().getUserPrincipal();
-    if (Objects.nonNull(principal)) {
-      // ToDo: Find a way to get userType (cant cast to User because of circular dependency, also
-      // for testing purposes find a way to set the user
-      auditLog.initActor(uuid, "MISSING", principal.getName());
-    }
-    String method = containerRequestContext.getMethod();
-    if (Objects.nonNull(method)) {
-      auditLog.initOperationMethod(uuid, method);
-    }
-    String path = containerRequestContext.getUriInfo().getPath();
-    if (Objects.nonNull(path)) {
-      auditLog.initOperationPath(uuid, path);
-    }
-    // ToDo Check if headers should be set
-    MultivaluedMap<String, String> headers = containerRequestContext.getHeaders();
-    if (Objects.nonNull(headers)) {
-      auditLog.initOperationHeaders(uuid, headers);
-    }
-    // ToDo: Find a way to get status
 
     if (LOGGER.isDebugEnabled() || LOGGER.isDebugEnabled(MARKER.REQUEST)) {
       LogContext.put(LogContext.CONTEXT.REQUEST, uuid);
