@@ -5,15 +5,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.base.app;
+package de.ii.xtraplatform.audit.log.app;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.base.domain.AuditLog;
+import de.ii.xtraplatform.audit.log.domain.AuditLog;
 import de.ii.xtraplatform.base.domain.Jackson;
+import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -32,10 +33,12 @@ public class AuditLogImpl implements AuditLog {
   private static final Logger LOGGER = LoggerFactory.getLogger(AuditLogImpl.class);
   private final ObjectMapper objectMapper;
   private final Map<String, Log> auditLogMapping = new ConcurrentHashMap<>();
+  ResourceStore auditLogStore;
 
   @Inject
-  AuditLogImpl(Jackson jackson) {
+  AuditLogImpl(Jackson jackson, ResourceStore resourceStore) {
     this.objectMapper = jackson.getDefaultObjectMapper();
+    this.auditLogStore = resourceStore.writableWith("logs", "audit");
   }
 
   private Log lazyInitOrGetAuditLog(String requestId) {
@@ -83,7 +86,8 @@ public class AuditLogImpl implements AuditLog {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(objectMapper.writeValueAsString(auditLogMapping.get(requestId)));
       }
-      // ToDo save to file
+      // ToDo fix
+      // auditLogStore.put(Path.of(""), objectMapper.);
       auditLogMapping.remove(requestId);
     } else {
       if (LOGGER.isErrorEnabled()) {

@@ -1,7 +1,4 @@
-@AutoModule(
-    single = true,
-    encapsulate = true,
-    multiBindings = {ContainerResponseFilter.class})
+@AutoModule(single = true, encapsulate = true)
 @Value.Style(
     builder = "new",
     deepImmutablesDetection = true,
@@ -11,6 +8,5 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.github.azahnen.dagger.annotations.AutoModule;
-import jakarta.ws.rs.container.ContainerResponseFilter;
 import org.immutables.value.Value;
 import de.ii.xtraplatform.docs.DocIgnore;

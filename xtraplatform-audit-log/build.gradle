@@ -1,0 +1,9 @@
+// ToDo It is necessary to be mature and maintaned fully to compile
+maturity = 'MATURE'
+maintenance = 'FULL'
+description = 'Audit logging for the Application'
+descriptionDe = 'Audit logging für die Applikation.'
+
+dependencies {
+    provided project(':xtraplatform-blobs')
+}
