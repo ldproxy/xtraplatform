@@ -33,7 +33,7 @@ public class AuditLogImpl implements AuditLog {
   private static final Logger LOGGER = LoggerFactory.getLogger(AuditLogImpl.class);
   private final ObjectMapper objectMapper;
   private final Map<String, Log> auditLogMapping = new ConcurrentHashMap<>();
-  ResourceStore auditLogStore;
+  private final ResourceStore auditLogStore;
 
   @Inject
   AuditLogImpl(Jackson jackson, ResourceStore resourceStore) {
@@ -46,49 +46,49 @@ public class AuditLogImpl implements AuditLog {
   }
 
   @Override
-  public void initApi(String requestId, String api) {
-    lazyInitOrGetAuditLog(requestId).initApi(api);
+  public void setApi(String requestId, String api) {
+    lazyInitOrGetAuditLog(requestId).setApi(api);
   }
 
   @Override
-  public void initActor(String requestId, String actorType, String actorId) {
-    lazyInitOrGetAuditLog(requestId).initActor(actorType, actorId);
+  public void setActor(String requestId, String actorType, String actorId) {
+    lazyInitOrGetAuditLog(requestId).setActor(actorType, actorId);
   }
 
   @Override
-  public void initOperationMethod(String requestId, String method) {
-    lazyInitOrGetAuditLog(requestId).initOperationMethod(method);
+  public void setOperationMethod(String requestId, String method) {
+    lazyInitOrGetAuditLog(requestId).setOperationMethod(method);
   }
 
   @Override
-  public void initOperationPath(String requestId, String path) {
-    lazyInitOrGetAuditLog(requestId).initOperationPath(path);
+  public void setOperationPath(String requestId, String path) {
+    lazyInitOrGetAuditLog(requestId).setOperationPath(path);
   }
 
   @Override
-  public void initOperationHeaders(String requestId, MultivaluedMap<String, String> headers) {
-    lazyInitOrGetAuditLog(requestId).initOperationHeaders(headers);
+  public void setOperationHeaders(String requestId, MultivaluedMap<String, String> headers) {
+    lazyInitOrGetAuditLog(requestId).setOperationHeaders(headers);
   }
 
   @Override
-  public void initOperationStatus(String requestId, String status) {
-    lazyInitOrGetAuditLog(requestId).initOperationStatus(status);
+  public void setOperationStatus(String requestId, String status) {
+    lazyInitOrGetAuditLog(requestId).setOperationStatus(status);
   }
 
   @Override
-  public void initTarget(String requestId, Map<String, Object> target) {
-    lazyInitOrGetAuditLog(requestId).initTarget(target);
+  public void setTarget(String requestId, Map<String, Object> target) {
+    lazyInitOrGetAuditLog(requestId).setTarget(target);
   }
 
   @Override
   public void saveLogToFileAndRemove(String requestId) throws JsonProcessingException {
     if (auditLogMapping.containsKey(requestId)) {
+      Log log = auditLogMapping.remove(requestId);
+      log.finish();
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(objectMapper.writeValueAsString(auditLogMapping.get(requestId)));
+        LOGGER.debug(objectMapper.writeValueAsString(log));
       }
-      // ToDo fix
-      // auditLogStore.put(Path.of(""), objectMapper.);
-      auditLogMapping.remove(requestId);
+      // ToDo: Save to file
     } else {
       if (LOGGER.isErrorEnabled()) {
         LOGGER.error("No AuditLog-object found for requestId {}", requestId);
@@ -102,6 +102,7 @@ public class AuditLogImpl implements AuditLog {
     private final Instant started;
     private final Map<String, String> actor = new LinkedHashMap<>();
     private final Map<String, Object> operation = new LinkedHashMap<>();
+    private Instant finished;
     private Map<String, Object> target;
     private String api;
 
@@ -110,95 +111,107 @@ public class AuditLogImpl implements AuditLog {
       this.started = Instant.now();
     }
 
-    @JsonProperty("id")
-    public String getId() {
-      return id;
-    }
-
-    @JsonProperty("started")
-    public String getStarted() {
-      return started.toString();
-    }
-
-    // This works but im still analysing if it could result in undesired behavior
-    @JsonProperty("finished")
-    public String finish() {
-      return Instant.now().toString();
-    }
-
-    @JsonProperty("api")
-    public String getApi() {
-      return api;
-    }
-
-    @JsonProperty("actor")
-    public Map<String, String> getActor() {
-      return actor;
-    }
-
-    @JsonProperty("operation")
-    public Map<String, Object> getOperation() {
-      return operation;
-    }
-
-    @JsonProperty("target")
-    public Map<String, Object> getTarget() {
-      return target;
+    @Override
+    public void finish() {
+      finished = Instant.now();
     }
 
     @Override
-    public void initApi(String api) {
+    public void setApi(String api) {
       if (Objects.isNull(this.api)) {
         this.api = api;
       }
     }
 
     @Override
-    public void initActor(String actorType, String actorId) {
-      actor.computeIfAbsent("type", k -> actorType);
-      actor.computeIfAbsent("id", k -> actorId);
+    public void setActor(String actorType, String actorId) {
+      actor.put("type", actorType);
+      actor.put("id", actorId);
     }
 
     @Override
-    public void initOperationMethod(String method) {
-      operation.computeIfAbsent("method", k -> method);
+    public void setOperationMethod(String method) {
+      operation.put("method", method);
     }
 
     @Override
-    public void initOperationPath(String path) {
-      operation.computeIfAbsent("path", k -> path);
+    public void setOperationPath(String path) {
+      operation.put("path", path);
     }
 
     @Override
-    public void initOperationHeaders(MultivaluedMap<String, String> headers) {
+    public void setOperationHeaders(MultivaluedMap<String, String> headers) {
       Map<String, Object> headersReduced = new HashMap<>();
 
-      for (String key : headers.keySet()) {
-        if (headers.get(key).isEmpty()) {
-          continue;
-        }
+      headers.forEach(
+          (key, values) -> {
+            if (!values.isEmpty()) {
+              headersReduced.put(key, values.size() == 1 ? values.get(0) : values);
+            }
+          });
 
-        if (headers.get(key).size() == 1) {
-          headersReduced.put(key, headers.get(key).get(0));
-          continue;
-        }
-
-        headersReduced.put(key, headers.get(key));
-      }
-
-      operation.computeIfAbsent("headers", k -> headersReduced);
+      operation.put("headers", headersReduced);
     }
 
     @Override
-    public void initOperationStatus(String status) {
-      operation.computeIfAbsent("status", k -> status);
+    public void setOperationStatus(String status) {
+      operation.put("status", status);
     }
 
     @Override
-    public void initTarget(Map<String, Object> target) {
-      if (Objects.isNull(this.target)) {
-        this.target = target;
+    public void setTarget(Map<String, Object> target) {
+      this.target = target;
+    }
+
+    @JsonProperty("id")
+    @Override
+    public String getId() {
+      return id;
+    }
+
+    @JsonProperty("started")
+    @Override
+    public String getStarted() {
+      return started.toString();
+    }
+
+    @JsonProperty("finished")
+    @Override
+    public String getFinished() {
+      if (Objects.isNull(finished)) {
+        return "";
       }
+      return finished.toString();
+    }
+
+    @JsonProperty("api")
+    @Override
+    public String getApi() {
+      if (Objects.isNull(api)) {
+        return "";
+      }
+      return api;
+    }
+
+    @JsonProperty("actor")
+    @Override
+    public Map<String, String> getActor() {
+      return actor;
+    }
+
+    @JsonProperty("operation")
+    @Override
+    public Map<String, Object> getOperation() {
+      return operation;
+    }
+
+    @JsonProperty("target")
+    @Override
+    public Map<String, Object> getTarget() {
+      if (Objects.isNull(target)) {
+        return new LinkedHashMap<>();
+      }
+      return target;
     }
   }
 }

@@ -12,35 +12,52 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Map;
 
 public interface AuditLog {
-  void initApi(String requestId, String api);
+  void setApi(String requestId, String api);
 
-  void initActor(String requestId, String actorType, String actorId);
+  void setActor(String requestId, String actorType, String actorId);
 
-  void initOperationMethod(String requestId, String method);
+  void setOperationMethod(String requestId, String method);
 
-  void initOperationPath(String requestId, String path);
+  void setOperationPath(String requestId, String path);
 
-  void initOperationHeaders(String requestId, MultivaluedMap<String, String> headers);
+  void setOperationHeaders(String requestId, MultivaluedMap<String, String> headers);
 
-  void initOperationStatus(String requestId, String status);
+  void setOperationStatus(String requestId, String status);
 
-  void initTarget(String requestId, Map<String, Object> target);
+  void setTarget(String requestId, Map<String, Object> target);
 
   void saveLogToFileAndRemove(String requestId) throws JsonProcessingException;
 
   interface Log {
-    void initApi(String api);
 
-    void initActor(String actorType, String actorId);
+    void finish();
 
-    void initOperationMethod(String method);
+    void setApi(String api);
 
-    void initOperationPath(String path);
+    void setActor(String actorType, String actorId);
 
-    void initOperationHeaders(MultivaluedMap<String, String> headers);
+    void setOperationMethod(String method);
 
-    void initOperationStatus(String status);
+    void setOperationPath(String path);
 
-    void initTarget(Map<String, Object> target);
+    void setOperationHeaders(MultivaluedMap<String, String> headers);
+
+    void setOperationStatus(String status);
+
+    void setTarget(Map<String, Object> target);
+
+    String getId();
+
+    String getStarted();
+
+    String getFinished();
+
+    String getApi();
+
+    Map<String, String> getActor();
+
+    Map<String, Object> getOperation();
+
+    Map<String, Object> getTarget();
   }
 }

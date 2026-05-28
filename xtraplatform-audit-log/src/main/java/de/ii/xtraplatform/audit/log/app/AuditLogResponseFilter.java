@@ -15,6 +15,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import java.io.IOException;
+import java.util.Objects;
 
 @Singleton
 @AutoBind
@@ -31,6 +32,12 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
   public void filter(
       ContainerRequestContext requestContext, ContainerResponseContext responseContext)
       throws IOException {
-    auditLog.saveLogToFileAndRemove(requestContext.getProperty("REQUEST_ID").toString());
+    if (Objects.nonNull(requestContext)) {
+      String requestId = requestContext.getProperty("REQUEST_ID").toString();
+      if (Objects.nonNull(responseContext)) {
+        auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
+      }
+      auditLog.saveLogToFileAndRemove(requestId);
+    }
   }
 }
