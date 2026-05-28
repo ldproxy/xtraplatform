@@ -37,7 +37,7 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
       if (Objects.nonNull(responseContext)) {
         auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
       }
-      auditLog.saveLogToFileAndRemove(requestId);
+      auditLog.writeAndRemoveLog(requestId);
     }
   }
 }

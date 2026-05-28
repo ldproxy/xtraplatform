@@ -18,6 +18,10 @@ import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -81,18 +85,28 @@ public class AuditLogImpl implements AuditLog {
   }
 
   @Override
-  public void saveLogToFileAndRemove(String requestId) throws JsonProcessingException {
-    if (auditLogMapping.containsKey(requestId)) {
-      Log log = auditLogMapping.remove(requestId);
-      log.finish();
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(objectMapper.writeValueAsString(log));
-      }
-      // ToDo: Save to file
-    } else {
+  public void writeAndRemoveLog(String requestId) {
+    Log log = auditLogMapping.remove(requestId);
+    if (Objects.isNull(log)) {
       if (LOGGER.isErrorEnabled()) {
         LOGGER.error("No AuditLog-object found for requestId {}", requestId);
       }
+      return;
+    }
+
+    log.finish();
+
+    try {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(objectMapper.writeValueAsString(log));
+      }
+      auditLogStore.put(
+          Path.of(log.getStarted() + "_" + requestId + ".json"),
+          new ByteArrayInputStream(objectMapper.writeValueAsBytes(log)));
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("Failed to serialize log " + requestId, e);
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to write log " + requestId, e);
     }
   }
 

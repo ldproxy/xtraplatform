@@ -7,7 +7,6 @@
  */
 package de.ii.xtraplatform.audit.log.domain;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Map;
 
@@ -26,7 +25,7 @@ public interface AuditLog {
 
   void setTarget(String requestId, Map<String, Object> target);
 
-  void saveLogToFileAndRemove(String requestId) throws JsonProcessingException;
+  void writeAndRemoveLog(String requestId);
 
   interface Log {
 
