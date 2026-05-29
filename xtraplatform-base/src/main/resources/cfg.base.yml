@@ -69,3 +69,6 @@ metrics:
   frequency: 1 minute
   reporters: [ ]
   reportOnStop: false
+
+auditLog:
+  enabled: false

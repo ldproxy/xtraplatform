@@ -151,6 +151,10 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   public abstract RedisConfiguration getRedis();
 
+  @JsonProperty("auditLog")
+  @Valid
+  public abstract AuditLogConfiguration getAuditLog();
+
   @JsonIgnore
   @Override
   public void setServerFactory(ServerFactory factory) {

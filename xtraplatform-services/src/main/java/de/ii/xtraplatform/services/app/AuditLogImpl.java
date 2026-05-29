@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.services.domain.AuditLog;
@@ -38,11 +39,13 @@ public class AuditLogImpl implements AuditLog {
   private final ObjectMapper objectMapper;
   private final Map<String, Log> auditLogMapping = new ConcurrentHashMap<>();
   private final ResourceStore auditLogStore;
+  private final AppContext appContext;
 
   @Inject
-  AuditLogImpl(Jackson jackson, ResourceStore resourceStore) {
+  AuditLogImpl(Jackson jackson, ResourceStore resourceStore, AppContext appContext) {
     this.objectMapper = jackson.getDefaultObjectMapper();
     this.auditLogStore = resourceStore.writableWith("logs", "audit");
+    this.appContext = appContext;
   }
 
   private Log lazyInitOrGetAuditLog(String requestId) {
