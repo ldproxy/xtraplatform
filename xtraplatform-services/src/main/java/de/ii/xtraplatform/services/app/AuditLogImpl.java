@@ -5,14 +5,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package de.ii.xtraplatform.audit.log.app;
+package de.ii.xtraplatform.services.app;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.audit.log.domain.AuditLog;
+import de.ii.xtraplatform.services.domain.AuditLog;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import jakarta.inject.Inject;
@@ -192,18 +192,12 @@ public class AuditLogImpl implements AuditLog {
     @JsonProperty("finished")
     @Override
     public String getFinished() {
-      if (Objects.isNull(finished)) {
-        return "";
-      }
       return finished.toString();
     }
 
     @JsonProperty("api")
     @Override
     public String getApi() {
-      if (Objects.isNull(api)) {
-        return "";
-      }
       return api;
     }
 
@@ -222,9 +216,6 @@ public class AuditLogImpl implements AuditLog {
     @JsonProperty("target")
     @Override
     public Map<String, Object> getTarget() {
-      if (Objects.isNull(target)) {
-        return new LinkedHashMap<>();
-      }
       return target;
     }
   }
