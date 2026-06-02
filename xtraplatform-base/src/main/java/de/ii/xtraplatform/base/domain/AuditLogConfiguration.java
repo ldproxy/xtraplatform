@@ -38,8 +38,8 @@ public interface AuditLogConfiguration {
   }
 
   @Default
-  default HeaderConfiguration getHeaders() {
-    return ModifiableHeaderConfiguration.create();
+  default HeadersConfiguration getHeaders() {
+    return ModifiableHeadersConfiguration.create();
   }
 
   enum TYPE {
@@ -49,18 +49,18 @@ public interface AuditLogConfiguration {
 
   @Value.Immutable
   @Value.Modifiable
-  @JsonDeserialize(as = ModifiableHeaderConfiguration.class)
-  interface HeaderConfiguration {
+  @JsonDeserialize(as = ModifiableHeadersConfiguration.class)
+  interface HeadersConfiguration {
     @Value.Default
     default List<String> getIncluded() {
       // Find out how to stop default values to merge with custom values
       // return List.of("*");
-      return List.of("");
+      return List.of();
     }
 
     @Value.Default
     default List<String> getExcluded() {
-      return List.of("");
+      return List.of();
     }
   }
 }

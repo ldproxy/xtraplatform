@@ -139,9 +139,7 @@ public class AuditLogImpl implements AuditLog {
     }
 
     List<String> includes = appContext.getConfiguration().getAuditLog().getHeaders().getIncluded();
-    LOGGER.error(includes.toString());
     List<String> excludes = appContext.getConfiguration().getAuditLog().getHeaders().getExcluded();
-    LOGGER.error(excludes.toString());
     MultivaluedMap<String, String> headersFiltered = new MultivaluedHashMap<>();
 
     headers.forEach(
