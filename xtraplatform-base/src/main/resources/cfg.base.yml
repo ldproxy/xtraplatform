@@ -73,3 +73,4 @@ metrics:
 auditLog:
   enabled: false
   retries: 3
+  pathPrefix: "{api}/{date}"

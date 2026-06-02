@@ -24,4 +24,9 @@ public interface AuditLogConfiguration {
   default int getRetries() {
     return 3;
   }
+
+  @Value.Default
+  default String getPathPrefix() {
+    return "{api}/{date}";
+  }
 }

@@ -63,13 +63,21 @@ public class AuditLogImpl implements AuditLog {
     return !appContext.getConfiguration().getAuditLog().getEnabled();
   }
 
-  private Path getPath(String requestId, Log log) {
-    // ToDo: Custom Path
+  private Path createPath(String requestId, Log log) {
+    String pathPrefix = appContext.getConfiguration().getAuditLog().getPathPrefix();
+
+    // Replace api
+    String api = Objects.isNull(log.getApi()) ? "homepage" : log.getApi();
+    pathPrefix = pathPrefix.replace("{api}", api);
+
+    // Replace date
     String isoDate =
         DateTimeFormatter.ISO_LOCAL_DATE
             .withZone(ZoneOffset.UTC)
             .format(Instant.parse(log.getStarted()));
-    return Path.of(isoDate + "_" + requestId + ".json");
+    pathPrefix = pathPrefix.replace("{date}", isoDate);
+
+    return Path.of(pathPrefix).resolve(Path.of(requestId + ".json"));
   }
 
   @Override
@@ -165,7 +173,7 @@ public class AuditLogImpl implements AuditLog {
     }
 
     int maxRetries = appContext.getConfiguration().getAuditLog().getRetries();
-    Path path = getPath(requestId, log);
+    Path path = createPath(requestId, log);
 
     int retries = 0;
     do {
