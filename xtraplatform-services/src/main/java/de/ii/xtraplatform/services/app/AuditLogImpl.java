@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,43 +49,53 @@ public class AuditLogImpl implements AuditLog {
     this.appContext = appContext;
   }
 
-  private Log lazyInitOrGetAuditLog(String requestId) {
-    return auditLogMapping.computeIfAbsent(requestId, k -> new LogImpl(requestId));
+  private Optional<Log> getOptionalLog(String requestId) {
+    if (auditLogMapping.containsKey(requestId)) {
+      return Optional.of(auditLogMapping.get(requestId));
+    } else {
+      LOGGER.error("No AuditLog-object found for requestId {}", requestId);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public void createLog(String requestId) {
+    auditLogMapping.computeIfAbsent(requestId, k -> new LogImpl(requestId));
   }
 
   @Override
   public void setApi(String requestId, String api) {
-    lazyInitOrGetAuditLog(requestId).setApi(api);
+    getOptionalLog(requestId).ifPresent(log -> log.setApi(api));
   }
 
   @Override
   public void setActor(String requestId, String actorType, String actorId) {
-    lazyInitOrGetAuditLog(requestId).setActor(actorType, actorId);
+    getOptionalLog(requestId).ifPresent(log -> log.setActor(actorType, actorId));
   }
 
   @Override
   public void setOperationMethod(String requestId, String method) {
-    lazyInitOrGetAuditLog(requestId).setOperationMethod(method);
+    getOptionalLog(requestId).ifPresent(log -> log.setOperationMethod(method));
   }
 
   @Override
   public void setOperationPath(String requestId, String path) {
-    lazyInitOrGetAuditLog(requestId).setOperationPath(path);
+    getOptionalLog(requestId).ifPresent(log -> log.setOperationPath(path));
   }
 
   @Override
   public void setOperationHeaders(String requestId, MultivaluedMap<String, String> headers) {
-    lazyInitOrGetAuditLog(requestId).setOperationHeaders(headers);
+    getOptionalLog(requestId).ifPresent(log -> log.setOperationHeaders(headers));
   }
 
   @Override
   public void setOperationStatus(String requestId, String status) {
-    lazyInitOrGetAuditLog(requestId).setOperationStatus(status);
+    getOptionalLog(requestId).ifPresent(log -> log.setOperationStatus(status));
   }
 
   @Override
   public void setTarget(String requestId, Map<String, Object> target) {
-    lazyInitOrGetAuditLog(requestId).setTarget(target);
+    getOptionalLog(requestId).ifPresent(log -> log.setTarget(target));
   }
 
   @Override
@@ -104,7 +115,7 @@ public class AuditLogImpl implements AuditLog {
         LOGGER.debug(objectMapper.writeValueAsString(log));
       }
       auditLogStore.put(
-          Path.of(log.getStarted() + "_" + requestId + ".json"),
+          Path.of(log.getStarted().substring(0, 10) + "_" + requestId + ".json"),
           new ByteArrayInputStream(objectMapper.writeValueAsBytes(log)));
     } catch (JsonProcessingException e) {
       throw new IllegalStateException("Failed to serialize log " + requestId, e);
@@ -135,9 +146,7 @@ public class AuditLogImpl implements AuditLog {
 
     @Override
     public void setApi(String api) {
-      if (Objects.isNull(this.api)) {
-        this.api = api;
-      }
+      this.api = api;
     }
 
     @Override
@@ -177,7 +186,7 @@ public class AuditLogImpl implements AuditLog {
 
     @Override
     public void setTarget(Map<String, Object> target) {
-      this.target = target;
+      this.target = new LinkedHashMap<>(target);
     }
 
     @JsonProperty("id")

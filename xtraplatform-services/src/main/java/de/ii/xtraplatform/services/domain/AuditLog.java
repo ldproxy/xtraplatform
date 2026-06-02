@@ -11,6 +11,8 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import java.util.Map;
 
 public interface AuditLog {
+  void createLog(String requestId);
+
   void setApi(String requestId, String api);
 
   void setActor(String requestId, String actorType, String actorId);

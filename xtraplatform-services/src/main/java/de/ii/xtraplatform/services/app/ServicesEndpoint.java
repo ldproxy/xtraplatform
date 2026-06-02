@@ -13,6 +13,7 @@ import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.LogContext.MARKER;
 import de.ii.xtraplatform.entities.domain.EntityRegistry;
+import de.ii.xtraplatform.services.domain.AuditLog;
 import de.ii.xtraplatform.services.domain.Service;
 import de.ii.xtraplatform.services.domain.ServiceData;
 import de.ii.xtraplatform.services.domain.ServiceEndpoint;
@@ -79,6 +80,8 @@ public class ServicesEndpoint implements Endpoint {
   private final Lazy<Set<ServiceEndpoint>> serviceResources;
   private final Lazy<Set<ServiceListingProvider>> serviceListingProviders;
 
+  private final AuditLog auditLog;
+
   @Inject
   public ServicesEndpoint(
       EntityRegistry entityRegistry,
@@ -87,7 +90,8 @@ public class ServicesEndpoint implements Endpoint {
       StaticResourceHandler staticResourceHandler,
       Lazy<Set<LoginHandler>> loginHandler,
       Lazy<Set<ServiceEndpoint>> serviceResources,
-      Lazy<Set<ServiceListingProvider>> serviceListingProviders) {
+      Lazy<Set<ServiceListingProvider>> serviceListingProviders,
+      AuditLog auditLog) {
     this.entityRegistry = entityRegistry;
     this.servicesContext = servicesContext;
     this.serviceContext = serviceContext;
@@ -95,6 +99,7 @@ public class ServicesEndpoint implements Endpoint {
     this.loginHandler = loginHandler;
     this.serviceResources = serviceResources;
     this.serviceListingProviders = serviceListingProviders;
+    this.auditLog = auditLog;
   }
 
   @GET
@@ -360,6 +365,7 @@ public class ServicesEndpoint implements Endpoint {
       String serviceId, Integer version, ContainerRequestContext containerRequestContext) {
     String uuid = LogContext.generateRandomUuid().toString();
     containerRequestContext.setProperty("REQUEST_ID", uuid);
+    auditLog.createLog(uuid);
 
     if (LOGGER.isDebugEnabled() || LOGGER.isDebugEnabled(MARKER.REQUEST)) {
       LogContext.put(LogContext.CONTEXT.REQUEST, uuid);
