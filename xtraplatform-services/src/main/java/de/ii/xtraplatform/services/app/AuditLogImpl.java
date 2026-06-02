@@ -21,9 +21,10 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -58,70 +59,135 @@ public class AuditLogImpl implements AuditLog {
     }
   }
 
+  private boolean isDisabled() {
+    return !appContext.getConfiguration().getAuditLog().getEnabled();
+  }
+
+  private Path getPath(String requestId, Log log) {
+    // ToDo: Custom Path
+    String isoDate =
+        DateTimeFormatter.ISO_LOCAL_DATE
+            .withZone(ZoneOffset.UTC)
+            .format(Instant.parse(log.getStarted()));
+    return Path.of(isoDate + "_" + requestId + ".json");
+  }
+
   @Override
   public void createLog(String requestId) {
+    if (isDisabled()) {
+      return;
+    }
     auditLogMapping.computeIfAbsent(requestId, k -> new LogImpl(requestId));
   }
 
   @Override
   public void setApi(String requestId, String api) {
+    if (isDisabled()) {
+      return;
+    }
     getOptionalLog(requestId).ifPresent(log -> log.setApi(api));
   }
 
   @Override
   public void setActor(String requestId, String actorType, String actorId) {
+    if (isDisabled()) {
+      return;
+    }
     getOptionalLog(requestId).ifPresent(log -> log.setActor(actorType, actorId));
   }
 
   @Override
   public void setOperationMethod(String requestId, String method) {
+    if (isDisabled()) {
+      return;
+    }
     getOptionalLog(requestId).ifPresent(log -> log.setOperationMethod(method));
   }
 
   @Override
   public void setOperationPath(String requestId, String path) {
+    if (isDisabled()) {
+      return;
+    }
     getOptionalLog(requestId).ifPresent(log -> log.setOperationPath(path));
   }
 
   @Override
   public void setOperationHeaders(String requestId, MultivaluedMap<String, String> headers) {
+    if (isDisabled()) {
+      return;
+    }
     getOptionalLog(requestId).ifPresent(log -> log.setOperationHeaders(headers));
   }
 
   @Override
   public void setOperationStatus(String requestId, String status) {
+    if (isDisabled()) {
+      return;
+    }
     getOptionalLog(requestId).ifPresent(log -> log.setOperationStatus(status));
   }
 
   @Override
   public void setTarget(String requestId, Map<String, Object> target) {
+    if (isDisabled()) {
+      return;
+    }
     getOptionalLog(requestId).ifPresent(log -> log.setTarget(target));
   }
 
   @Override
-  public void writeAndRemoveLog(String requestId) {
+  @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.CyclomaticComplexity"})
+  public boolean writeAndRemoveLog(String requestId) {
+    if (isDisabled()) {
+      return false;
+    }
+
     Log log = auditLogMapping.remove(requestId);
     if (Objects.isNull(log)) {
       if (LOGGER.isErrorEnabled()) {
         LOGGER.error("No AuditLog-object found for requestId {}", requestId);
       }
-      return;
+      return false;
     }
 
     log.finish();
 
+    final ByteArrayInputStream inputStream;
     try {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(objectMapper.writeValueAsString(log));
       }
-      auditLogStore.put(
-          Path.of(log.getStarted().substring(0, 10) + "_" + requestId + ".json"),
-          new ByteArrayInputStream(objectMapper.writeValueAsBytes(log)));
+      inputStream = new ByteArrayInputStream(objectMapper.writeValueAsBytes(log));
     } catch (JsonProcessingException e) {
-      throw new IllegalStateException("Failed to serialize log " + requestId, e);
-    } catch (IOException e) {
-      throw new UncheckedIOException("Failed to write log " + requestId, e);
+      LOGGER.error("Failed to serialize log " + requestId, e);
+      return false;
     }
+
+    int maxRetries = appContext.getConfiguration().getAuditLog().getRetries();
+    Path path = getPath(requestId, log);
+
+    int retries = 0;
+    do {
+      try {
+        inputStream.reset();
+        auditLogStore.put(path, inputStream);
+        return true;
+      } catch (IOException e) {
+        // ToDo: Delay until next try
+        if (retries < maxRetries) {
+          if (LOGGER.isWarnEnabled()) {
+            LOGGER.warn("Failed to write audit log {}, retrying...", requestId);
+          }
+        } else {
+          LOGGER.error("Giving up writing audit log {} after {} retries", requestId, retries, e);
+          return false;
+        }
+      }
+      retries++;
+    } while (retries <= maxRetries);
+
+    return false;
   }
 
   @JsonPropertyOrder({"id", "started", "finished", "api", "actor", "operation", "target"})

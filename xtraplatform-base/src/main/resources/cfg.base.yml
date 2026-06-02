@@ -72,3 +72,4 @@ metrics:
 
 auditLog:
   enabled: false
+  retries: 3

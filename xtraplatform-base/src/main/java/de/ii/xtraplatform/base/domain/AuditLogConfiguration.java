@@ -19,4 +19,9 @@ public interface AuditLogConfiguration {
   default boolean getEnabled() {
     return false;
   }
+
+  @Value.Default
+  default int getRetries() {
+    return 3;
+  }
 }

@@ -27,7 +27,7 @@ public interface AuditLog {
 
   void setTarget(String requestId, Map<String, Object> target);
 
-  void writeAndRemoveLog(String requestId);
+  boolean writeAndRemoveLog(String requestId);
 
   interface Log {
 

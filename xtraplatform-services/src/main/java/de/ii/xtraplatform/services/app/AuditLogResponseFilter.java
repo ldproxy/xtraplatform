@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.services.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.services.domain.AuditLog;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -24,16 +25,22 @@ import org.slf4j.LoggerFactory;
 public class AuditLogResponseFilter implements ContainerResponseFilter {
   private static final Logger LOGGER = LoggerFactory.getLogger(AuditLogResponseFilter.class);
   private final AuditLog auditLog;
+  private final AppContext appContext;
 
   @Inject
-  public AuditLogResponseFilter(AuditLog auditLog) {
+  public AuditLogResponseFilter(AuditLog auditLog, AppContext appContext) {
     this.auditLog = auditLog;
+    this.appContext = appContext;
   }
 
   @Override
   public void filter(
       ContainerRequestContext requestContext, ContainerResponseContext responseContext)
       throws IOException {
+    if (!appContext.getConfiguration().getAuditLog().getEnabled()) {
+      return;
+    }
+
     if (Objects.isNull(requestContext) || Objects.isNull(responseContext)) {
       return;
     }
@@ -45,6 +52,7 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
 
     String requestId = requestIdObject.toString();
     auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
+    // ToDo: Abort response if false is returned!
     auditLog.writeAndRemoveLog(requestId);
   }
 }
