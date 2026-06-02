@@ -15,6 +15,11 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ModifiableAuditLogConfiguration.class)
 public interface AuditLogConfiguration {
 
+  enum TYPE {
+    JSON,
+    JSON_PRETTY
+  }
+
   @Value.Default
   default boolean getEnabled() {
     return false;
@@ -28,5 +33,10 @@ public interface AuditLogConfiguration {
   @Value.Default
   default String getPathPrefix() {
     return "{api}/{date}";
+  }
+
+  @Value.Default
+  default TYPE getType() {
+    return TYPE.JSON;
   }
 }

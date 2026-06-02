@@ -73,4 +73,5 @@ metrics:
 auditLog:
   enabled: false
   retries: 3
-  pathPrefix: "{api}/{date}"
+  type: ${TYPE:-JSON}
+  pathPrefix: '{api}/{date}'

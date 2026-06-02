@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.services.domain;
 
 import jakarta.ws.rs.core.MultivaluedMap;
+import java.time.Instant;
 import java.util.Map;
 
 public interface AuditLog {
@@ -49,9 +50,9 @@ public interface AuditLog {
 
     String getId();
 
-    String getStarted();
+    Instant getStarted();
 
-    String getFinished();
+    Instant getFinished();
 
     String getApi();
 

@@ -10,9 +10,11 @@ package de.ii.xtraplatform.services.app;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
+import de.ii.xtraplatform.base.domain.AuditLogConfiguration;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.services.domain.AuditLog;
@@ -38,14 +40,25 @@ import org.slf4j.LoggerFactory;
 @AutoBind
 public class AuditLogImpl implements AuditLog {
   private static final Logger LOGGER = LoggerFactory.getLogger(AuditLogImpl.class);
-  private final ObjectMapper objectMapper;
+  private ObjectWriter objectWriter;
   private final Map<String, Log> auditLogMapping = new ConcurrentHashMap<>();
   private final ResourceStore auditLogStore;
   private final AppContext appContext;
 
   @Inject
   AuditLogImpl(Jackson jackson, ResourceStore resourceStore, AppContext appContext) {
-    this.objectMapper = jackson.getDefaultObjectMapper();
+    objectWriter =
+        jackson
+            .getDefaultObjectMapper()
+            .writer()
+            .without(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+    if (appContext.getConfiguration().getAuditLog().getType() == AuditLogConfiguration.TYPE.JSON) {
+      objectWriter = objectWriter.without(SerializationFeature.INDENT_OUTPUT);
+    } else {
+      objectWriter = objectWriter.with(SerializationFeature.INDENT_OUTPUT);
+    }
+
     this.auditLogStore = resourceStore.writableWith("logs", "audit");
     this.appContext = appContext;
   }
@@ -72,9 +85,7 @@ public class AuditLogImpl implements AuditLog {
 
     // Replace date
     String isoDate =
-        DateTimeFormatter.ISO_LOCAL_DATE
-            .withZone(ZoneOffset.UTC)
-            .format(Instant.parse(log.getStarted()));
+        DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC).format(log.getStarted());
     pathPrefix = pathPrefix.replace("{date}", isoDate);
 
     return Path.of(pathPrefix).resolve(Path.of(requestId + ".json"));
@@ -164,9 +175,9 @@ public class AuditLogImpl implements AuditLog {
     final ByteArrayInputStream inputStream;
     try {
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(objectMapper.writeValueAsString(log));
+        LOGGER.debug(objectWriter.writeValueAsString(log));
       }
-      inputStream = new ByteArrayInputStream(objectMapper.writeValueAsBytes(log));
+      inputStream = new ByteArrayInputStream(objectWriter.writeValueAsBytes(log));
     } catch (JsonProcessingException e) {
       LOGGER.error("Failed to serialize log " + requestId, e);
       return false;
@@ -271,14 +282,14 @@ public class AuditLogImpl implements AuditLog {
 
     @JsonProperty("started")
     @Override
-    public String getStarted() {
-      return started.toString();
+    public Instant getStarted() {
+      return started;
     }
 
     @JsonProperty("finished")
     @Override
-    public String getFinished() {
-      return finished.toString();
+    public Instant getFinished() {
+      return finished;
     }
 
     @JsonProperty("api")
