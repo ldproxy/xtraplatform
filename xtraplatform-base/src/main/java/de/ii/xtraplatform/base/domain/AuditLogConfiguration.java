@@ -8,35 +8,59 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.List;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 @Value.Immutable
 @Value.Modifiable
 @JsonDeserialize(as = ModifiableAuditLogConfiguration.class)
 public interface AuditLogConfiguration {
 
+  @Default
+  default boolean getEnabled() {
+    return false;
+  }
+
+  @Default
+  default int getRetries() {
+    return 3;
+  }
+
+  @Default
+  default String getPathPrefix() {
+    return "{api}/{date}";
+  }
+
+  @Default
+  default TYPE getType() {
+    return TYPE.JSON;
+  }
+
+  @Default
+  default HeaderConfiguration getHeaders() {
+    return ModifiableHeaderConfiguration.create();
+  }
+
   enum TYPE {
     JSON,
     JSON_PRETTY
   }
 
-  @Value.Default
-  default boolean getEnabled() {
-    return false;
-  }
+  @Value.Immutable
+  @Value.Modifiable
+  @JsonDeserialize(as = ModifiableHeaderConfiguration.class)
+  interface HeaderConfiguration {
+    @Value.Default
+    default List<String> getIncluded() {
+      // Find out how to stop default values to merge with custom values
+      // return List.of("*");
+      return List.of("");
+    }
 
-  @Value.Default
-  default int getRetries() {
-    return 3;
-  }
-
-  @Value.Default
-  default String getPathPrefix() {
-    return "{api}/{date}";
-  }
-
-  @Value.Default
-  default TYPE getType() {
-    return TYPE.JSON;
+    @Value.Default
+    default List<String> getExcluded() {
+      return List.of("");
+    }
   }
 }

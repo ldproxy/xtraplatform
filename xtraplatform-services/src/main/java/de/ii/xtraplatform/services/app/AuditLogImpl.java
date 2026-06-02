@@ -20,6 +20,7 @@ import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.services.domain.AuditLog;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -27,8 +28,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -136,7 +137,24 @@ public class AuditLogImpl implements AuditLog {
     if (isDisabled()) {
       return;
     }
-    getOptionalLog(requestId).ifPresent(log -> log.setOperationHeaders(headers));
+
+    List<String> includes = appContext.getConfiguration().getAuditLog().getHeaders().getIncluded();
+    LOGGER.error(includes.toString());
+    List<String> excludes = appContext.getConfiguration().getAuditLog().getHeaders().getExcluded();
+    LOGGER.error(excludes.toString());
+    MultivaluedMap<String, String> headersFiltered = new MultivaluedHashMap<>();
+
+    headers.forEach(
+        (k, v) -> {
+          LOGGER.error(k);
+          if (!excludes.contains(k)
+              && !excludes.contains("*")
+              && (includes.contains("*") || includes.contains(k))) {
+            headersFiltered.addAll(k, v);
+          }
+        });
+
+    getOptionalLog(requestId).ifPresent(log -> log.setOperationHeaders(headersFiltered));
   }
 
   @Override
@@ -252,7 +270,7 @@ public class AuditLogImpl implements AuditLog {
 
     @Override
     public void setOperationHeaders(MultivaluedMap<String, String> headers) {
-      Map<String, Object> headersReduced = new HashMap<>();
+      Map<String, Object> headersReduced = new LinkedHashMap<>();
 
       headers.forEach(
           (key, values) -> {
