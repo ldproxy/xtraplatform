@@ -28,6 +28,18 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
   private final AuditLog auditLog;
   private final AppContext appContext;
 
+  private boolean sufficientHttpCode(int statusCodeInt) {
+    String statusCode = String.valueOf(statusCodeInt);
+    List<String> included =
+        appContext.getConfiguration().getAuditLog().getHttpStatus().getIncluded();
+    List<String> excluded =
+        appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded();
+
+    return !excluded.contains("*")
+        && !excluded.contains(statusCode)
+        && (included.contains("*") || included.contains(statusCode));
+  }
+
   @Inject
   public AuditLogResponseFilter(AuditLog auditLog, AppContext appContext) {
     this.auditLog = auditLog;
@@ -52,17 +64,15 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
     }
 
     String requestId = requestIdObject.toString();
-    String statusCode = String.valueOf(responseContext.getStatus());
-    List<String> included =
-        appContext.getConfiguration().getAuditLog().getHttpStatus().getIncluded();
-    List<String> excluded =
-        appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded();
-    if (!excluded.contains("*")
-        && !excluded.contains(statusCode)
-        && (included.contains("*") || included.contains(statusCode))) {
+    if (sufficientHttpCode(responseContext.getStatus())) {
       auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
-      // ToDo: Abort response if false is returned!
-      auditLog.writeAndRemoveLog(requestId);
+      boolean logSuccessful = auditLog.writeAndRemoveLog(requestId);
+      if (!logSuccessful) {
+        // ToDo: Evaluate if there is a better way to abort the response
+        responseContext.setStatus(500);
+        responseContext.setEntity(null);
+        responseContext.getHeaders().clear();
+      }
     }
   }
 }
