@@ -92,6 +92,23 @@ public class AuditLogImpl implements AuditLog {
     return Path.of(pathPrefix).resolve(Path.of(requestId + ".json"));
   }
 
+  private Map<String, Object> filterClaims(Map<String, Object> claims) {
+    Map<String, Object> filteredClaims = new LinkedHashMap<>();
+    List<String> includes = appContext.getConfiguration().getAuditLog().getClaims().getIncluded();
+    List<String> excludes = appContext.getConfiguration().getAuditLog().getClaims().getExcluded();
+
+    claims.forEach(
+        (k, v) -> {
+          if (!excludes.contains(k)
+              && !excludes.contains("*")
+              && (includes.contains("*") || includes.contains(k))) {
+            filteredClaims.put(k, v);
+          }
+        });
+
+    return filteredClaims;
+  }
+
   @Override
   public void createLog(String requestId) {
     if (isDisabled()) {
@@ -109,11 +126,13 @@ public class AuditLogImpl implements AuditLog {
   }
 
   @Override
-  public void setActor(String requestId, String actorType, String actorId) {
+  public void setActor(
+      String requestId, String actorType, String actorId, Map<String, Object> claims) {
     if (isDisabled()) {
       return;
     }
-    getOptionalLog(requestId).ifPresent(log -> log.setActor(actorType, actorId));
+    getOptionalLog(requestId)
+        .ifPresent(log -> log.setActor(actorType, actorId, filterClaims(claims)));
   }
 
   @Override
@@ -227,7 +246,7 @@ public class AuditLogImpl implements AuditLog {
   public static class LogImpl implements Log {
     private final String id;
     private final Instant started;
-    private final Map<String, String> actor = new LinkedHashMap<>();
+    private final Map<String, Object> actor = new LinkedHashMap<>();
     private final Map<String, Object> operation = new LinkedHashMap<>();
     private Instant finished;
     private Map<String, Object> target;
@@ -249,9 +268,10 @@ public class AuditLogImpl implements AuditLog {
     }
 
     @Override
-    public void setActor(String actorType, String actorId) {
+    public void setActor(String actorType, String actorId, Map<String, Object> claims) {
       actor.put("type", actorType);
       actor.put("id", actorId);
+      actor.put("claims", claims);
     }
 
     @Override
@@ -314,7 +334,7 @@ public class AuditLogImpl implements AuditLog {
 
     @JsonProperty("actor")
     @Override
-    public Map<String, String> getActor() {
+    public Map<String, Object> getActor() {
       return actor;
     }
 

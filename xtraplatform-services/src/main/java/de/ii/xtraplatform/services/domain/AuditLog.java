@@ -16,7 +16,7 @@ public interface AuditLog {
 
   void setApi(String requestId, String api);
 
-  void setActor(String requestId, String actorType, String actorId);
+  void setActor(String requestId, String actorType, String actorId, Map<String, Object> claims);
 
   void setOperationMethod(String requestId, String method);
 
@@ -36,7 +36,7 @@ public interface AuditLog {
 
     void setApi(String api);
 
-    void setActor(String actorType, String actorId);
+    void setActor(String actorType, String actorId, Map<String, Object> claims);
 
     void setOperationMethod(String method);
 
@@ -56,7 +56,7 @@ public interface AuditLog {
 
     String getApi();
 
-    Map<String, String> getActor();
+    Map<String, Object> getActor();
 
     Map<String, Object> getOperation();
 
