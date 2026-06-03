@@ -42,6 +42,11 @@ public interface AuditLogConfiguration {
     return ModifiableHeadersConfiguration.create();
   }
 
+  @Default
+  default ClaimsConfiguration getClaims() {
+    return ModifiableClaimsConfiguration.create();
+  }
+
   enum TYPE {
     JSON,
     JSON_PRETTY
@@ -53,7 +58,24 @@ public interface AuditLogConfiguration {
   interface HeadersConfiguration {
     @Value.Default
     default List<String> getIncluded() {
-      // Find out how to stop default values to merge with custom values
+      // ToDo: Find out how to stop default values from merging with custom values
+      // return List.of("*");
+      return List.of();
+    }
+
+    @Value.Default
+    default List<String> getExcluded() {
+      return List.of();
+    }
+  }
+
+  @Value.Immutable
+  @Value.Modifiable
+  @JsonDeserialize(as = ModifiableClaimsConfiguration.class)
+  interface ClaimsConfiguration {
+    @Value.Default
+    default List<String> getIncluded() {
+      // ToDo: Find out how to stop default values from merging with custom values
       // return List.of("*");
       return List.of();
     }

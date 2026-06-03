@@ -144,7 +144,6 @@ public class AuditLogImpl implements AuditLog {
 
     headers.forEach(
         (k, v) -> {
-          LOGGER.error(k);
           if (!excludes.contains(k)
               && !excludes.contains("*")
               && (includes.contains("*") || includes.contains(k))) {
@@ -199,9 +198,8 @@ public class AuditLogImpl implements AuditLog {
       return false;
     }
 
-    int maxRetries = appContext.getConfiguration().getAuditLog().getRetries();
     Path path = createPath(requestId, log);
-
+    int maxRetries = appContext.getConfiguration().getAuditLog().getRetries();
     int retries = 0;
     do {
       try {
