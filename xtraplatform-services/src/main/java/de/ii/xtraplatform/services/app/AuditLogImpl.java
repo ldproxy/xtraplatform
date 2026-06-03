@@ -94,14 +94,14 @@ public class AuditLogImpl implements AuditLog {
 
   private Map<String, Object> filterClaims(Map<String, Object> claims) {
     Map<String, Object> filteredClaims = new LinkedHashMap<>();
-    List<String> includes = appContext.getConfiguration().getAuditLog().getClaims().getIncluded();
-    List<String> excludes = appContext.getConfiguration().getAuditLog().getClaims().getExcluded();
+    List<String> included = appContext.getConfiguration().getAuditLog().getClaims().getIncluded();
+    List<String> excluded = appContext.getConfiguration().getAuditLog().getClaims().getExcluded();
 
     claims.forEach(
         (k, v) -> {
-          if (!excludes.contains(k)
-              && !excludes.contains("*")
-              && (includes.contains("*") || includes.contains(k))) {
+          if (!excluded.contains("*")
+              && !excluded.contains(k)
+              && (included.contains("*") || included.contains(k))) {
             filteredClaims.put(k, v);
           }
         });
@@ -157,15 +157,15 @@ public class AuditLogImpl implements AuditLog {
       return;
     }
 
-    List<String> includes = appContext.getConfiguration().getAuditLog().getHeaders().getIncluded();
-    List<String> excludes = appContext.getConfiguration().getAuditLog().getHeaders().getExcluded();
+    List<String> included = appContext.getConfiguration().getAuditLog().getHeaders().getIncluded();
+    List<String> excluded = appContext.getConfiguration().getAuditLog().getHeaders().getExcluded();
     MultivaluedMap<String, String> headersFiltered = new MultivaluedHashMap<>();
 
     headers.forEach(
         (k, v) -> {
-          if (!excludes.contains(k)
-              && !excludes.contains("*")
-              && (includes.contains("*") || includes.contains(k))) {
+          if (!excluded.contains("*")
+              && !excluded.contains(k)
+              && (included.contains("*") || included.contains(k))) {
             headersFiltered.addAll(k, v);
           }
         });

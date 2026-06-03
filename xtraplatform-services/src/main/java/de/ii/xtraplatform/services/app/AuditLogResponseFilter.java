@@ -16,6 +16,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,8 +52,17 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
     }
 
     String requestId = requestIdObject.toString();
-    auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
-    // ToDo: Abort response if false is returned!
-    auditLog.writeAndRemoveLog(requestId);
+    String statusCode = String.valueOf(responseContext.getStatus());
+    List<String> included =
+        appContext.getConfiguration().getAuditLog().getHttpStatus().getIncluded();
+    List<String> excluded =
+        appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded();
+    if (!excluded.contains("*")
+        && !excluded.contains(statusCode)
+        && (included.contains("*") || included.contains(statusCode))) {
+      auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
+      // ToDo: Abort response if false is returned!
+      auditLog.writeAndRemoveLog(requestId);
+    }
   }
 }

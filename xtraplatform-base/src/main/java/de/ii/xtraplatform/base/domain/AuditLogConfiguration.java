@@ -47,6 +47,11 @@ public interface AuditLogConfiguration {
     return ModifiableClaimsConfiguration.create();
   }
 
+  @Default
+  default HttpStatusConfiguration getHttpStatus() {
+    return ModifiableHttpStatusConfiguration.create();
+  }
+
   enum TYPE {
     JSON,
     JSON_PRETTY
@@ -77,6 +82,23 @@ public interface AuditLogConfiguration {
     default List<String> getIncluded() {
       // ToDo: Find out how to stop default values from merging with custom values
       // return List.of("*");
+      return List.of();
+    }
+
+    @Value.Default
+    default List<String> getExcluded() {
+      return List.of();
+    }
+  }
+
+  @Value.Immutable
+  @Value.Modifiable
+  @JsonDeserialize(as = ModifiableHttpStatusConfiguration.class)
+  interface HttpStatusConfiguration {
+    @Value.Default
+    default List<String> getIncluded() {
+      // ToDo: Find out how to stop default values from merging with custom values
+      // return List.of("200");
       return List.of();
     }
 

@@ -84,3 +84,7 @@ auditLog:
     # included: [ '*' ]
     included: [ ]
     excluded: [ ]
+  httpStatus:
+    # included: [ '200' ]
+    included: [ ]
+    excluded: [ ]
