@@ -151,6 +151,10 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   public abstract RedisConfiguration getRedis();
 
+  /**
+   * @langEn See [AuditLog](120-auditLog.md).
+   * @langDe Siehe [AuditLog](120-auditLog.md).
+   */
   @JsonProperty("auditLog")
   @Valid
   public abstract AuditLogConfiguration getAuditLog();
