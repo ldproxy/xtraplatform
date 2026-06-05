@@ -41,10 +41,10 @@ import org.slf4j.LoggerFactory;
 @AutoBind
 public class AuditLogImpl implements AuditLog {
   private static final Logger LOGGER = LoggerFactory.getLogger(AuditLogImpl.class);
-  private ObjectWriter objectWriter;
   private final Map<String, Log> auditLogMapping = new ConcurrentHashMap<>();
   private final ResourceStore auditLogStore;
   private final AppContext appContext;
+  private ObjectWriter objectWriter;
 
   @Inject
   AuditLogImpl(Jackson jackson, ResourceStore resourceStore, AppContext appContext) {
@@ -158,13 +158,7 @@ public class AuditLogImpl implements AuditLog {
     }
 
     List<String> included = appContext.getConfiguration().getAuditLog().getHeaders().getIncluded();
-    if (LOGGER.isErrorEnabled()) {
-      LOGGER.error(included.toString());
-    }
     List<String> excluded = appContext.getConfiguration().getAuditLog().getHeaders().getExcluded();
-    if (LOGGER.isErrorEnabled()) {
-      LOGGER.error(excluded.toString());
-    }
     MultivaluedMap<String, String> headersFiltered = new MultivaluedHashMap<>();
 
     headers.forEach(
@@ -269,11 +263,6 @@ public class AuditLogImpl implements AuditLog {
     }
 
     @Override
-    public void setApi(String api) {
-      this.api = api;
-    }
-
-    @Override
     public void setActor(String actorType, String actorId, Map<String, Object> claims) {
       actor.put("type", actorType);
       actor.put("id", actorId);
@@ -309,11 +298,6 @@ public class AuditLogImpl implements AuditLog {
       operation.put("status", status);
     }
 
-    @Override
-    public void setTarget(Map<String, Object> target) {
-      this.target = new LinkedHashMap<>(target);
-    }
-
     @JsonProperty("id")
     @Override
     public String getId() {
@@ -338,6 +322,11 @@ public class AuditLogImpl implements AuditLog {
       return api;
     }
 
+    @Override
+    public void setApi(String api) {
+      this.api = api;
+    }
+
     @JsonProperty("actor")
     @Override
     public Map<String, Object> getActor() {
@@ -354,6 +343,11 @@ public class AuditLogImpl implements AuditLog {
     @Override
     public Map<String, Object> getTarget() {
       return target;
+    }
+
+    @Override
+    public void setTarget(Map<String, Object> target) {
+      this.target = new LinkedHashMap<>(target);
     }
   }
 }
