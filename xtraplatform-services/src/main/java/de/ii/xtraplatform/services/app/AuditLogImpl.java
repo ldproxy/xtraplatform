@@ -74,7 +74,7 @@ public class AuditLogImpl implements AuditLog {
   }
 
   private boolean isDisabled() {
-    return !appContext.getConfiguration().getAuditLog().getEnabled();
+    return !isEnabled();
   }
 
   private Path createPath(String requestId, Log log) {
@@ -115,6 +115,16 @@ public class AuditLogImpl implements AuditLog {
       return;
     }
     auditLogMapping.computeIfAbsent(requestId, k -> new LogImpl(requestId));
+  }
+
+  @Override
+  public boolean logIsAvaible(String requestId) {
+    return !isDisabled() && auditLogMapping.containsKey(requestId);
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return appContext.getConfiguration().getAuditLog().getEnabled();
   }
 
   @Override

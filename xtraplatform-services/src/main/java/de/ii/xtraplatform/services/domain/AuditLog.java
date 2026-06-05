@@ -14,6 +14,10 @@ import java.util.Map;
 public interface AuditLog {
   void createLog(String requestId);
 
+  boolean logIsAvaible(String requestId);
+
+  boolean isEnabled();
+
   void setApi(String requestId, String api);
 
   void setActor(String requestId, String actorType, String actorId, Map<String, Object> claims);
