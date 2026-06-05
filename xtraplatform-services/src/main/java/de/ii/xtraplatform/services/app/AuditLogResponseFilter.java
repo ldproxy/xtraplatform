@@ -12,6 +12,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.services.domain.AuditLog;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
@@ -68,10 +69,10 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
       auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
       boolean logSuccessful = auditLog.writeAndRemoveLog(requestId);
       if (!logSuccessful) {
-        // ToDo: Evaluate if there is a better way to abort the response (Fehler werfen)
         responseContext.setStatus(500);
         responseContext.setEntity(null);
         responseContext.getHeaders().clear();
+        throw new ServerErrorException("Internal Server Error", 500);
       }
     }
   }
