@@ -158,7 +158,13 @@ public class AuditLogImpl implements AuditLog {
     }
 
     List<String> included = appContext.getConfiguration().getAuditLog().getHeaders().getIncluded();
+    if (LOGGER.isErrorEnabled()) {
+      LOGGER.error(included.toString());
+    }
     List<String> excluded = appContext.getConfiguration().getAuditLog().getHeaders().getExcluded();
+    if (LOGGER.isErrorEnabled()) {
+      LOGGER.error(excluded.toString());
+    }
     MultivaluedMap<String, String> headersFiltered = new MultivaluedHashMap<>();
 
     headers.forEach(

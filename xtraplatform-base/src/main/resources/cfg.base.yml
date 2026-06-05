@@ -75,16 +75,12 @@ auditLog:
   retries: 3
   type: ${TYPE:-JSON}
   pathPrefix: '{api}/{date}'
-  # Find out how to stop default values to merge with custom values
   headers:
-    # included: [ '*' ]
-    included: [ ]
+    included: [ '*' ]
     excluded: [ ]
   claims:
-    # included: [ '*' ]
     included: [ ]
     excluded: [ ]
   httpStatus:
-    # included: [ '200' ]
-    included: [ ]
+    included: [ '200' ]
     excluded: [ ]

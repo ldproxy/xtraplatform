@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.base.domain;
 
+import com.fasterxml.jackson.annotation.JsonMerge;
+import com.fasterxml.jackson.annotation.OptBoolean;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.docs.DocFile;
 import de.ii.xtraplatform.docs.DocStep;
@@ -103,7 +105,7 @@ public interface AuditLogConfiguration {
    *     gibt an, welche Header gemäß `included` geloggt würden, aber nicht geloggt werden sollen.
    *     Der spezielle Wert `*` kann für beide Listen verwendet werden und umfasst alle Header. Wenn
    *     `excluded = [ '*' ]`, werden keine Header geloggt.
-   * @default included: []\nexcluded: []
+   * @default included: [ '*' ]\nexcluded: []
    */
   @Default
   default HeadersConfiguration getHeaders() {
@@ -117,7 +119,7 @@ public interface AuditLogConfiguration {
    * @langDe Gibt mit `included`/`excluded`-Listen an, welche Claims aus dem Token geloggt werden
    *     sollen bzw. explizit nicht geloggt werden dürfen. Die genaue Logik entspricht der in
    *     `headers`.
-   * @default included: []\nexcluded: []
+   * @default included: [ '*' ]\nexcluded: []
    */
   @Default
   default ClaimsConfiguration getClaims() {
@@ -131,7 +133,7 @@ public interface AuditLogConfiguration {
    * @langDe Gibt mit `included`/`excluded`-Listen an, bei welchen HTTP-Status-Codes Anfragen
    *     geloggt werden sollen bzw. explizit nicht geloggt werden dürfen. Die genaue Logik
    *     entspricht der in `headers`.
-   * @default included: []\nexcluded: []
+   * @default included: [ '200' ]\nexcluded: []
    */
   @Default
   default HttpStatusConfiguration getHttpStatus() {
@@ -150,12 +152,13 @@ public interface AuditLogConfiguration {
   @JsonDeserialize(as = ModifiableHeadersConfiguration.class)
   interface HeadersConfiguration {
     @Value.Default
+    @JsonMerge(OptBoolean.FALSE)
     default List<String> getIncluded() {
-      // return List.of("*");
-      return List.of();
+      return List.of("*");
     }
 
     @Value.Default
+    @JsonMerge(OptBoolean.FALSE)
     default List<String> getExcluded() {
       return List.of();
     }
@@ -166,12 +169,13 @@ public interface AuditLogConfiguration {
   @JsonDeserialize(as = ModifiableClaimsConfiguration.class)
   interface ClaimsConfiguration {
     @Value.Default
+    @JsonMerge(OptBoolean.FALSE)
     default List<String> getIncluded() {
-      // return List.of("*");
       return List.of();
     }
 
     @Value.Default
+    @JsonMerge(OptBoolean.FALSE)
     default List<String> getExcluded() {
       return List.of();
     }
@@ -182,12 +186,13 @@ public interface AuditLogConfiguration {
   @JsonDeserialize(as = ModifiableHttpStatusConfiguration.class)
   interface HttpStatusConfiguration {
     @Value.Default
+    @JsonMerge(OptBoolean.FALSE)
     default List<String> getIncluded() {
-      // return List.of("200");
-      return List.of();
+      return List.of("200");
     }
 
     @Value.Default
+    @JsonMerge(OptBoolean.FALSE)
     default List<String> getExcluded() {
       return List.of();
     }
