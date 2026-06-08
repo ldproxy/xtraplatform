@@ -29,6 +29,12 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
   private final AuditLog auditLog;
   private final AppContext appContext;
 
+  @Inject
+  public AuditLogResponseFilter(AuditLog auditLog, AppContext appContext) {
+    this.auditLog = auditLog;
+    this.appContext = appContext;
+  }
+
   private boolean sufficientHttpCode(int statusCodeInt) {
     String statusCode = String.valueOf(statusCodeInt);
     List<String> included =
@@ -41,39 +47,46 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
         && (included.contains("*") || included.contains(statusCode));
   }
 
-  @Inject
-  public AuditLogResponseFilter(AuditLog auditLog, AppContext appContext) {
-    this.auditLog = auditLog;
-    this.appContext = appContext;
-  }
-
   @Override
   public void filter(
       ContainerRequestContext requestContext, ContainerResponseContext responseContext)
       throws IOException {
+    // Return if auditLog is disabled in global config (cfg.yml)
     if (!appContext.getConfiguration().getAuditLog().getEnabled()) {
       return;
     }
 
+    // Return if any of the context objects are missing
     if (Objects.isNull(requestContext) || Objects.isNull(responseContext)) {
       return;
     }
 
+    // Return if the requestId is missing
     Object requestIdObject = requestContext.getProperty("REQUEST_ID");
-    if (Objects.isNull(requestIdObject)) {
+    if (!(requestIdObject instanceof String requestId)) {
       return;
     }
 
-    String requestId = requestIdObject.toString();
-    if (sufficientHttpCode(responseContext.getStatus())) {
-      auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
-      boolean logSuccessful = auditLog.writeAndRemoveLog(requestId);
-      if (!logSuccessful) {
-        responseContext.setStatus(500);
-        responseContext.setEntity(null);
-        responseContext.getHeaders().clear();
-        throw new ServerErrorException("Internal Server Error", 500);
-      }
+    // Return if no log is available (for example if the log was aborted during another step)
+    if (!auditLog.logIsAvailable(requestId)) {
+      return;
+    }
+
+    // Abort log and return if HTTP-Code is not applicable according to the global config
+    if (!sufficientHttpCode(responseContext.getStatus())) {
+      auditLog.abortLog(requestId);
+      return;
+    }
+
+    // Log status and write log
+    auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
+    boolean logSuccessful = auditLog.removeAndWriteLog(requestId);
+    // Abort request if writing the log was not successful!
+    if (!logSuccessful) {
+      responseContext.setStatus(500);
+      responseContext.setEntity(null);
+      responseContext.getHeaders().clear();
+      throw new ServerErrorException("Internal Server Error", 500);
     }
   }
 }

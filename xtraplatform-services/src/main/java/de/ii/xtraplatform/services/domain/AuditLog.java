@@ -14,9 +14,11 @@ import java.util.Map;
 public interface AuditLog {
   void createLog(String requestId);
 
-  boolean logIsAvaible(String requestId);
+  void abortLog(String requestId);
 
   boolean isEnabled();
+
+  boolean logIsAvailable(String requestId);
 
   void setApi(String requestId, String api);
 
@@ -32,13 +34,11 @@ public interface AuditLog {
 
   void setTarget(String requestId, Map<String, Object> target);
 
-  boolean writeAndRemoveLog(String requestId);
+  boolean removeAndWriteLog(String requestId);
 
   interface Log {
 
     void finish();
-
-    void setApi(String api);
 
     void setActor(String actorType, String actorId, Map<String, Object> claims);
 
@@ -50,8 +50,6 @@ public interface AuditLog {
 
     void setOperationStatus(String status);
 
-    void setTarget(Map<String, Object> target);
-
     String getId();
 
     Instant getStarted();
@@ -60,10 +58,14 @@ public interface AuditLog {
 
     String getApi();
 
+    void setApi(String api);
+
     Map<String, Object> getActor();
 
     Map<String, Object> getOperation();
 
     Map<String, Object> getTarget();
+
+    void setTarget(Map<String, Object> target);
   }
 }

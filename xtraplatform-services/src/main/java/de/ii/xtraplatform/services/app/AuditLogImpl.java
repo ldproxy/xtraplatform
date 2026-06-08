@@ -118,7 +118,12 @@ public class AuditLogImpl implements AuditLog {
   }
 
   @Override
-  public boolean logIsAvaible(String requestId) {
+  public void abortLog(String requestId) {
+    auditLogMapping.remove(requestId);
+  }
+
+  @Override
+  public boolean logIsAvailable(String requestId) {
     return !isDisabled() && auditLogMapping.containsKey(requestId);
   }
 
@@ -201,7 +206,7 @@ public class AuditLogImpl implements AuditLog {
 
   @Override
   @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.CyclomaticComplexity"})
-  public boolean writeAndRemoveLog(String requestId) {
+  public boolean removeAndWriteLog(String requestId) {
     if (isDisabled()) {
       return false;
     }
