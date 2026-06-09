@@ -16,6 +16,8 @@ import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.core.StreamingOutput;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -25,25 +27,39 @@ import java.util.Objects;
 public class AuditLogResponseFilter implements ContainerResponseFilter {
   private final AuditLog auditLog;
   private final AppContext appContext;
+  private final List<String> included;
+  private final List<String> excluded;
 
   @Inject
   public AuditLogResponseFilter(AuditLog auditLog, AppContext appContext) {
     this.auditLog = auditLog;
     this.appContext = appContext;
+    included = appContext.getConfiguration().getAuditLog().getHttpStatus().getIncluded();
+    excluded = appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded();
   }
 
   private boolean sufficientHttpCode(int statusCodeInt) {
     String statusCode = String.valueOf(statusCodeInt);
-    List<String> included =
-        appContext.getConfiguration().getAuditLog().getHttpStatus().getIncluded();
-    List<String> excluded =
-        appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded();
 
     return !excluded.contains("*")
         && !excluded.contains(statusCode)
         && (included.contains("*") || included.contains(statusCode));
   }
 
+  private void waitForEntity(ContainerResponseContext responseContext) throws IOException {
+    if (responseContext.getEntity() instanceof StreamingOutput streamingOutput) {
+      // Block until stream is finished
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      streamingOutput.write(baos);
+
+      // Manually set entity
+      byte[] buffered = baos.toByteArray();
+      responseContext.setEntity(buffered);
+      responseContext.getHeaders().putSingle("Content-Length", buffered.length);
+    }
+  }
+
+  @SuppressWarnings("PMD.CyclomaticComplexity")
   @Override
   public void filter(
       ContainerRequestContext requestContext, ContainerResponseContext responseContext)
@@ -59,8 +75,7 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
     }
 
     // Return if the requestId is missing
-    Object requestIdObject = requestContext.getProperty("REQUEST_ID");
-    if (!(requestIdObject instanceof String requestId)) {
+    if (!(requestContext.getProperty("REQUEST_ID") instanceof String requestId)) {
       return;
     }
 
@@ -73,6 +88,16 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
     if (Objects.isNull(responseContext)) {
       auditLog.abortLog(requestId);
       return;
+    }
+
+    try {
+      waitForEntity(responseContext);
+    } catch (IOException e) {
+      auditLog.abortLog(requestId);
+      responseContext.setStatus(500);
+      responseContext.setEntity(null);
+      responseContext.getHeaders().clear();
+      throw new ServerErrorException("Internal Server Error", 500, e);
     }
 
     // Abort log and return if HTTP-Code is not applicable according to the global config
