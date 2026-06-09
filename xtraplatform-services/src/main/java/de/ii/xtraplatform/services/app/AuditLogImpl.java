@@ -205,7 +205,7 @@ public class AuditLogImpl implements AuditLog {
   }
 
   @Override
-  @SuppressWarnings({"PMD.CognitiveComplexity", "PMD.CyclomaticComplexity"})
+  @SuppressWarnings({"PMD.CognitiveComplexity"})
   public boolean removeAndWriteLog(String requestId) {
     if (isDisabled()) {
       return false;
@@ -213,9 +213,7 @@ public class AuditLogImpl implements AuditLog {
 
     Log log = auditLogMapping.remove(requestId);
     if (Objects.isNull(log)) {
-      if (LOGGER.isErrorEnabled()) {
-        LOGGER.error("No AuditLog-object found for requestId {}", requestId);
-      }
+      LOGGER.error("No AuditLog-object found for requestId {}", requestId);
       return false;
     }
 
@@ -228,7 +226,7 @@ public class AuditLogImpl implements AuditLog {
       }
       inputStream = new ByteArrayInputStream(objectWriter.writeValueAsBytes(log));
     } catch (JsonProcessingException e) {
-      LOGGER.error("Failed to serialize log " + requestId, e);
+      LOGGER.error("Failed to serialize log {}", requestId, e);
       return false;
     }
 

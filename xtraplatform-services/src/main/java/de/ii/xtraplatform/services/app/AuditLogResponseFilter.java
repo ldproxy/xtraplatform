@@ -19,13 +19,10 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Singleton
 @AutoBind
 public class AuditLogResponseFilter implements ContainerResponseFilter {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AuditLogResponseFilter.class);
   private final AuditLog auditLog;
   private final AppContext appContext;
 
@@ -52,12 +49,12 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
       ContainerRequestContext requestContext, ContainerResponseContext responseContext)
       throws IOException {
     // Return if auditLog is disabled in global config (cfg.yml)
-    if (!appContext.getConfiguration().getAuditLog().getEnabled()) {
+    if (!auditLog.isEnabled()) {
       return;
     }
 
-    // Return if any of the context objects are missing
-    if (Objects.isNull(requestContext) || Objects.isNull(responseContext)) {
+    // Return if the request context is missing
+    if (Objects.isNull(requestContext)) {
       return;
     }
 
@@ -72,15 +69,24 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
       return;
     }
 
+    // Abort log and return if the response context is missing
+    if (Objects.isNull(responseContext)) {
+      auditLog.abortLog(requestId);
+      return;
+    }
+
     // Abort log and return if HTTP-Code is not applicable according to the global config
     if (!sufficientHttpCode(responseContext.getStatus())) {
       auditLog.abortLog(requestId);
       return;
     }
 
-    // Log status and write log
+    // Log status
     auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
+
+    // Write the final log and save result
     boolean logSuccessful = auditLog.removeAndWriteLog(requestId);
+
     // Abort request if writing the log was not successful!
     if (!logSuccessful) {
       responseContext.setStatus(500);
