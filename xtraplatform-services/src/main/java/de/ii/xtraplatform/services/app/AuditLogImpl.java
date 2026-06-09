@@ -343,6 +343,12 @@ public class AuditLogImpl implements AuditLog {
     @JsonProperty("actor")
     @Override
     public Map<String, Object> getActor() {
+      // Apply the anonymous user if no actor has been set
+      if (!actor.containsKey("type") && !actor.containsKey("id")) {
+        actor.put("type", "AnonymousUser");
+        actor.put("id", "Anonymous");
+      }
+
       return actor;
     }
 
