@@ -26,14 +26,12 @@ import java.util.Objects;
 @AutoBind
 public class AuditLogResponseFilter implements ContainerResponseFilter {
   private final AuditLog auditLog;
-  private final AppContext appContext;
   private final List<String> included;
   private final List<String> excluded;
 
   @Inject
   public AuditLogResponseFilter(AuditLog auditLog, AppContext appContext) {
     this.auditLog = auditLog;
-    this.appContext = appContext;
     included = appContext.getConfiguration().getAuditLog().getHttpStatus().getIncluded();
     excluded = appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded();
   }
@@ -91,8 +89,10 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
     }
 
     try {
+      // Wait for the pipeline to finish (sync mode).
       waitForEntity(responseContext);
     } catch (IOException e) {
+      // Abort log and request on error.
       auditLog.abortLog(requestId);
       responseContext.setStatus(500);
       responseContext.setEntity(null);

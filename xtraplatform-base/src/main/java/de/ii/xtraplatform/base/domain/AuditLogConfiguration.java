@@ -145,8 +145,6 @@ public interface AuditLogConfiguration {
     JSON_PRETTY
   }
 
-  // ToDo: Find out how to stop default values from merging with custom values
-
   @Value.Immutable
   @Value.Modifiable
   @JsonDeserialize(as = ModifiableHeadersConfiguration.class)
