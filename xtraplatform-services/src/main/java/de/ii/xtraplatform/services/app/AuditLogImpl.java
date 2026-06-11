@@ -85,7 +85,7 @@ public class AuditLogImpl implements AuditLog {
     String pathPrefix = appContext.getConfiguration().getAuditLog().getPathPrefix();
 
     // Replace api
-    String api = Objects.isNull(log.getApi()) ? "landingpage" : log.getApi();
+    String api = log.getApi();
     pathPrefix = pathPrefix.replace("{api}", api);
 
     // Replace date

@@ -69,13 +69,12 @@ public interface AuditLogConfiguration {
 
   /**
    * @langEn Specifies the path to prepend to the log file. `{api}` and `{date}` are replaced with
-   *     the API ID and the request's ISO date, respectively. If the request is API-independent,
-   *     `{api}` is replaced with "landingpage". For example, log files for `{api}/foo/{date}/bar`
-   *     could be stored at `resources/logs/audit/vineyards/foo/2026-06-03/bar`.
+   *     the API ID and the request's ISO date, respectively. For example, log files for
+   *     `{api}/foo/{date}/bar` could be stored at
+   *     `resources/logs/audit/vineyards/foo/2026-06-03/bar`.
    * @langDe Gibt den Pfad an, der vor der Log-Datei angehängt werden soll. Dabei werden `{api}` und
-   *     `{date}` jeweils mit der API-ID bzw. dem ISO-Datum der Anfrage ersetzt. Falls die Anfrage
-   *     API-unabhängig ist, wird `{api}` mit "landingpage" ersetzt. Beispielsweise könnten die
-   *     Log-Dateien für `{api}/foo/{date}/bar` unter
+   *     `{date}` jeweils mit der API-ID bzw. dem ISO-Datum der Anfrage ersetzt. Beispielsweise
+   *     könnten die Log-Dateien für `{api}/foo/{date}/bar` unter
    *     `resources/logs/audit/vineyards/foo/2026-06-03/bar` gespeichert werden.
    * @default {api}/{date}
    */
