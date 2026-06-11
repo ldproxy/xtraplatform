@@ -1,20 +1,20 @@
 [versions]
 jjwt = '0.13.0'
-swagger = '2.2.49'
+swagger = '2.2.50'
 classgraph = "4.8.184"
 dropwizard = '4.0.17'
 jackson = '2.20.0'
 commons-codec = '1.22.0'
-threeten = '1.8.0'
+threeten = '1.9.0'
 jakarta-xml = '3.0.1'
-minio = '9.0.0'
+minio = '9.0.2'
 cron4j = '2.2.5'
 rxjava = '3.1.12'
 rxjava-ext = '3.1.1'
 rs = '1.0.4'
 uuid = '5.2.0'
 jsr305 = '3.0.2'
-jedis = '7.5.0'
+jedis = '7.5.2'
 
 [libraries]
 # auth
