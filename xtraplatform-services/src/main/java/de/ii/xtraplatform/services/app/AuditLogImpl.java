@@ -17,6 +17,7 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AuditLogConfiguration;
 import de.ii.xtraplatform.base.domain.Jackson;
+import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.services.domain.AuditLog;
 import jakarta.inject.Inject;
@@ -25,6 +26,7 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -41,7 +43,9 @@ import org.slf4j.LoggerFactory;
 @Singleton
 @AutoBind
 public class AuditLogImpl implements AuditLog {
+
   private static final Logger LOGGER = LoggerFactory.getLogger(AuditLogImpl.class);
+
   private final Map<String, Log> auditLogMapping = new ConcurrentHashMap<>();
   private final ResourceStore auditLogStore;
   private final AppContext appContext;
@@ -69,7 +73,6 @@ public class AuditLogImpl implements AuditLog {
     if (auditLogMapping.containsKey(requestId)) {
       return Optional.of(auditLogMapping.get(requestId));
     } else {
-      LOGGER.error("No AuditLog-object found for requestId {}", requestId);
       return Optional.empty();
     }
   }
@@ -219,7 +222,11 @@ public class AuditLogImpl implements AuditLog {
   }
 
   @Override
-  @SuppressWarnings({"PMD.CognitiveComplexity"})
+  @SuppressWarnings({
+    "PMD.CognitiveComplexity",
+    "PMD.CyclomaticComplexity",
+    "PMD.AvoidInstantiatingObjectsInLoops"
+  })
   public boolean removeAndWriteLog(String requestId) {
     if (isDisabled()) {
       return false;
@@ -227,20 +234,19 @@ public class AuditLogImpl implements AuditLog {
 
     Log log = auditLogMapping.remove(requestId);
     if (Objects.isNull(log)) {
-      LOGGER.error("No AuditLog-object found for requestId {}", requestId);
       return false;
     }
 
     log.finish();
 
-    final ByteArrayInputStream inputStream;
+    final byte[] serializedLog;
     try {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(objectWriter.writeValueAsString(log));
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace(objectWriter.writeValueAsString(log));
       }
-      inputStream = new ByteArrayInputStream(objectWriter.writeValueAsBytes(log));
+      serializedLog = objectWriter.writeValueAsBytes(log);
     } catch (JsonProcessingException e) {
-      LOGGER.error("Failed to serialize log {}", requestId, e);
+      LOGGER.error("Failed to serialize audit log {}", requestId, e);
       return false;
     }
 
@@ -249,17 +255,24 @@ public class AuditLogImpl implements AuditLog {
     int retries = 0;
     do {
       try {
-        inputStream.reset();
-        auditLogStore.put(path, inputStream);
+        auditLogStore.put(path, new ByteArrayInputStream(serializedLog));
         return true;
       } catch (IOException e) {
-        // ToDo: Delay until next try
         if (retries < maxRetries) {
+          int delay = 100 * (retries + 1);
           if (LOGGER.isWarnEnabled()) {
-            LOGGER.warn("Failed to write audit log {}, retrying...", requestId);
+            LOGGER.warn("Failed to write audit log {}, retrying in {}ms", requestId, delay);
+          }
+          try {
+            Thread.sleep(delay);
+          } catch (InterruptedException ex) {
+            // ignore
           }
         } else {
-          LOGGER.error("Giving up writing audit log {} after {} retries", requestId, retries, e);
+          LogContext.error(
+              LOGGER, e, "Giving up writing audit log {} after {} retries", requestId, retries + 1);
+          LOGGER.error(
+              "Audit log for {}: {}", requestId, new String(serializedLog, StandardCharsets.UTF_8));
           return false;
         }
       }
