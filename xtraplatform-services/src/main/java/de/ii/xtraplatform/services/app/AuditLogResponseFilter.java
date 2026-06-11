@@ -10,14 +10,14 @@ package de.ii.xtraplatform.services.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.services.domain.AuditLog;
+import de.ii.xtraplatform.web.domain.JoinableStreamingOutput;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.ServerErrorException;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
-import jakarta.ws.rs.core.StreamingOutput;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +25,7 @@ import java.util.Objects;
 @Singleton
 @AutoBind
 public class AuditLogResponseFilter implements ContainerResponseFilter {
+
   private final AuditLog auditLog;
   private final List<String> included;
   private final List<String> excluded;
@@ -32,8 +33,8 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
   @Inject
   public AuditLogResponseFilter(AuditLog auditLog, AppContext appContext) {
     this.auditLog = auditLog;
-    included = appContext.getConfiguration().getAuditLog().getHttpStatus().getIncluded();
-    excluded = appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded();
+    this.included = appContext.getConfiguration().getAuditLog().getHttpStatus().getIncluded();
+    this.excluded = appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded();
   }
 
   private boolean sufficientHttpCode(int statusCodeInt) {
@@ -44,20 +45,6 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
         && (included.contains("*") || included.contains(statusCode));
   }
 
-  private void waitForEntity(ContainerResponseContext responseContext) throws IOException {
-    if (responseContext.getEntity() instanceof StreamingOutput streamingOutput) {
-      // Block until stream is finished
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      streamingOutput.write(baos);
-
-      // Manually set entity
-      byte[] buffered = baos.toByteArray();
-      responseContext.setEntity(buffered);
-      responseContext.getHeaders().putSingle("Content-Length", buffered.length);
-    }
-  }
-
-  @SuppressWarnings("PMD.CyclomaticComplexity")
   @Override
   public void filter(
       ContainerRequestContext requestContext, ContainerResponseContext responseContext)
@@ -88,36 +75,51 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
       return;
     }
 
-    try {
-      // Wait for the pipeline to finish (sync mode).
-      waitForEntity(responseContext);
-    } catch (IOException e) {
-      // Abort log and request on error.
-      auditLog.abortLog(requestId);
-      responseContext.setStatus(500);
-      responseContext.setEntity(null);
-      responseContext.getHeaders().clear();
-      throw new ServerErrorException("Internal Server Error", 500, e);
-    }
+    if (responseContext.getEntity() instanceof JoinableStreamingOutput streamingOutput) {
+      streamingOutput.whenComplete(
+          (throwable) -> {
+            int statusCode = getStatusCode(responseContext.getStatus(), throwable);
 
-    // Abort log and return if HTTP-Code is not applicable according to the global config
-    if (!sufficientHttpCode(responseContext.getStatus())) {
-      auditLog.abortLog(requestId);
+            writeLogEntry(requestId, statusCode);
+          });
       return;
     }
 
+    writeLogEntry(requestId, responseContext.getStatus());
+  }
+
+  private void writeLogEntry(String requestId, int statusCode) {
+    // Abort log and return if HTTP-Code is not applicable according to the global config
+    if (!sufficientHttpCode(statusCode)) {
+      auditLog.abortLog(requestId);
+      return;
+    }
     // Log status
-    auditLog.setOperationStatus(requestId, Integer.toString(responseContext.getStatus()));
+    auditLog.setOperationStatus(requestId, Integer.toString(statusCode));
 
     // Write the final log and save result
     boolean logSuccessful = auditLog.removeAndWriteLog(requestId);
 
     // Abort request if writing the log was not successful!
     if (!logSuccessful) {
-      responseContext.setStatus(500);
-      responseContext.setEntity(null);
-      responseContext.getHeaders().clear();
-      throw new ServerErrorException("Internal Server Error", 500);
+      throw new InternalServerErrorException();
     }
+  }
+
+  // This is not one hundred percent correct. If the web server already started writing the response
+  // to the client before an exception occurred, the returned status code will always be 200, even
+  // if the response is broken and the log shows an error. But there is no way to determine this
+  // case, so we log the status code that should have been returned.
+  private static int getStatusCode(int initialStatusCode, Throwable throwable) {
+    int statusCode = initialStatusCode;
+
+    if (Objects.nonNull(throwable)) {
+      if (throwable instanceof WebApplicationException webAppException) {
+        statusCode = webAppException.getResponse().getStatus();
+      } else {
+        statusCode = 500;
+      }
+    }
+    return statusCode;
   }
 }
