@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.services.app;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -120,6 +121,19 @@ public class AuditLogImpl implements AuditLog {
   @Override
   public void abortLog(String requestId) {
     auditLogMapping.remove(requestId);
+  }
+
+  @Override
+  public void setIncludePropertyValues(String requestId, boolean value) {
+    if (isDisabled()) {
+      return;
+    }
+    getOptionalLog(requestId).ifPresent(log -> log.setIncludePropertyValues(value));
+  }
+
+  @Override
+  public boolean getIncludePropertyValues(String requestId) {
+    return getOptionalLog(requestId).map(Log::getIncludePropertyValues).orElse(false);
   }
 
   @Override
@@ -264,6 +278,7 @@ public class AuditLogImpl implements AuditLog {
     private Instant finished;
     private Map<String, Object> target;
     private String api;
+    private boolean includePropertyValues = true;
 
     LogImpl(String id) {
       this.id = id;
@@ -309,6 +324,17 @@ public class AuditLogImpl implements AuditLog {
     @Override
     public void setOperationStatus(String status) {
       operation.put("status", status);
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean getIncludePropertyValues() {
+      return includePropertyValues;
+    }
+
+    @Override
+    public void setIncludePropertyValues(boolean value) {
+      includePropertyValues = value;
     }
 
     @JsonProperty("id")

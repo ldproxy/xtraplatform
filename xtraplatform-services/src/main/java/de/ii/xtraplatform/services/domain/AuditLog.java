@@ -16,6 +16,10 @@ public interface AuditLog {
 
   void abortLog(String requestId);
 
+  void setIncludePropertyValues(String requestId, boolean value);
+
+  boolean getIncludePropertyValues(String requestId);
+
   boolean isEnabled();
 
   boolean logIsAvailable(String requestId);
@@ -49,6 +53,10 @@ public interface AuditLog {
     void setOperationHeaders(MultivaluedMap<String, String> headers);
 
     void setOperationStatus(String status);
+
+    void setIncludePropertyValues(boolean value);
+
+    boolean getIncludePropertyValues();
 
     String getId();
 
