@@ -37,7 +37,7 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
     this.excluded = appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded();
   }
 
-  private boolean sufficientHttpCode(int statusCodeInt) {
+  private boolean isStatusCodeIncluded(int statusCodeInt) {
     String statusCode = String.valueOf(statusCodeInt);
 
     return !excluded.contains("*")
@@ -78,9 +78,9 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
     if (responseContext.getEntity() instanceof JoinableStreamingOutput streamingOutput) {
       streamingOutput.whenComplete(
           (throwable) -> {
-            int statusCode = getStatusCode(responseContext.getStatus(), throwable);
-
-            writeLogEntry(requestId, statusCode);
+            int preStatusCode = responseContext.getStatus();
+            int postStatusCode = getStatusCode(responseContext.getStatus(), throwable);
+            writeLogEntry(requestId, preStatusCode, postStatusCode);
           });
       return;
     }
@@ -88,15 +88,34 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
     writeLogEntry(requestId, responseContext.getStatus());
   }
 
-  private void writeLogEntry(String requestId, int statusCode) {
-    // Abort log and return if HTTP-Code is not applicable according to the global config
-    if (!sufficientHttpCode(statusCode)) {
+  private void writeLogEntry(String requestId, int preStatusCode, int postStatusCode) {
+    // Abort log and return if both HTTP-Codes are not included according to the global config
+    if (!isStatusCodeIncluded(preStatusCode) && !isStatusCodeIncluded(postStatusCode)) {
       auditLog.abortLog(requestId);
       return;
     }
+
+    // Log postStatusCode if included, preStatusCode else
+    int statusCode = isStatusCodeIncluded(postStatusCode) ? postStatusCode : preStatusCode;
+    auditLog.setOperationStatus(requestId, Integer.toString(statusCode));
+
+    writeLogEntry(requestId);
+  }
+
+  private void writeLogEntry(String requestId, int statusCode) {
+    // Abort log and return if HTTP-Code is not included according to the global config
+    if (!isStatusCodeIncluded(statusCode)) {
+      auditLog.abortLog(requestId);
+      return;
+    }
+
     // Log status
     auditLog.setOperationStatus(requestId, Integer.toString(statusCode));
 
+    writeLogEntry(requestId);
+  }
+
+  private void writeLogEntry(String requestId) {
     // Write the final log and save result
     boolean logSuccessful = auditLog.removeAndWriteLog(requestId);
 
@@ -109,7 +128,8 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
   // This is not one hundred percent correct. If the web server already started writing the response
   // to the client before an exception occurred, the returned status code will always be 200, even
   // if the response is broken and the log shows an error. But there is no way to determine this
-  // case, so we log the status code that should have been returned.
+  // case, so we log if either the returned status code or the status code that should have been
+  // returned are included.
   private static int getStatusCode(int initialStatusCode, Throwable throwable) {
     int statusCode = initialStatusCode;
 
