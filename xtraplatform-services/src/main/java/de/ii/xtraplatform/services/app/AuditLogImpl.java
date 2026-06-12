@@ -206,6 +206,16 @@ public class AuditLogImpl implements AuditLog {
   }
 
   @Override
+  public void setOperationQueryParameter(
+      String requestId, MultivaluedMap<String, String> queryParameter) {
+    if (isDisabled()) {
+      return;
+    }
+
+    getOptionalLog(requestId).ifPresent(log -> log.setOperationQueryParameter(queryParameter));
+  }
+
+  @Override
   public void setOperationStatus(String requestId, String status) {
     if (isDisabled()) {
       return;
@@ -322,16 +332,26 @@ public class AuditLogImpl implements AuditLog {
 
     @Override
     public void setOperationHeaders(MultivaluedMap<String, String> headers) {
-      Map<String, Object> headersReduced = new LinkedHashMap<>();
+      operation.put("headers", reduceMultiValuedMap(headers));
+    }
 
-      headers.forEach(
+    @Override
+    public void setOperationQueryParameter(MultivaluedMap<String, String> queryParameter) {
+      operation.put("parameter", reduceMultiValuedMap(queryParameter));
+    }
+
+    private Map<String, Object> reduceMultiValuedMap(
+        MultivaluedMap<String, String> multivaluedMap) {
+      Map<String, Object> multivaluedMapReduced = new LinkedHashMap<>();
+
+      multivaluedMap.forEach(
           (key, values) -> {
             if (!values.isEmpty()) {
-              headersReduced.put(key, values.size() == 1 ? values.get(0) : values);
+              multivaluedMapReduced.put(key, values.size() == 1 ? values.get(0) : values);
             }
           });
 
-      operation.put("headers", headersReduced);
+      return multivaluedMapReduced;
     }
 
     @Override

@@ -34,6 +34,8 @@ public interface AuditLog {
 
   void setOperationHeaders(String requestId, MultivaluedMap<String, String> headers);
 
+  void setOperationQueryParameter(String requestId, MultivaluedMap<String, String> queryParameter);
+
   void setOperationStatus(String requestId, String status);
 
   void setTarget(String requestId, Map<String, Object> target);
@@ -51,6 +53,8 @@ public interface AuditLog {
     void setOperationPath(String path);
 
     void setOperationHeaders(MultivaluedMap<String, String> headers);
+
+    void setOperationQueryParameter(MultivaluedMap<String, String> queryParameter);
 
     void setOperationStatus(String status);
 
