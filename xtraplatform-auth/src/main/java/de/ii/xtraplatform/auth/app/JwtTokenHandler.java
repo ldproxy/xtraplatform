@@ -295,6 +295,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
               .permissions(readList(claimsJws, claimsProvider.getClaims().getPermissions()))
               .apiPermissions(
                   readListPerApi(claimsJws, claimsProvider.getClaims().getPermissions()))
+              .claims(claimsJws)
               .build();
 
       if (LOGGER.isTraceEnabled()) {

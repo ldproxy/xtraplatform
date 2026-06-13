@@ -14,11 +14,11 @@ import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 import de.ii.xtraplatform.openapi.domain.OpenApiViewerResource;
+import de.ii.xtraplatform.web.domain.JoinableStreamingOutput;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
 import java.net.URL;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -43,7 +43,8 @@ public class OpenApiSwaggerUiResource implements OpenApiViewerResource {
         throw new NotFoundException();
       }
 
-      return Response.ok((StreamingOutput) output -> Resources.asByteSource(url).copyTo(output))
+      return Response.ok(
+              new JoinableStreamingOutput(output -> Resources.asByteSource(url).copyTo(output)))
           .type(getMimeType(file))
           .build();
     } catch (Throwable e) {

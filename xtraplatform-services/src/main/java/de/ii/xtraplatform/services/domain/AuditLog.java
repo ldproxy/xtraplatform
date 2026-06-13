@@ -1,0 +1,83 @@
+/*
+ * Copyright 2026 interactive instruments GmbH
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+package de.ii.xtraplatform.services.domain;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import java.time.Instant;
+import java.util.Map;
+
+public interface AuditLog {
+  void createLog(String requestId);
+
+  void abortLog(String requestId);
+
+  void setIncludePropertyValues(String requestId, boolean value);
+
+  boolean getIncludePropertyValues(String requestId);
+
+  boolean isEnabled();
+
+  boolean logIsAvailable(String requestId);
+
+  void setApi(String requestId, String api);
+
+  void setActor(String requestId, String actorType, String actorId, Map<String, Object> claims);
+
+  void setOperationMethod(String requestId, String method);
+
+  void setOperationPath(String requestId, String path);
+
+  void setOperationHeaders(String requestId, MultivaluedMap<String, String> headers);
+
+  void setOperationQueryParameter(String requestId, MultivaluedMap<String, String> queryParameter);
+
+  void setOperationStatus(String requestId, String status);
+
+  void setTarget(String requestId, Map<String, Object> target);
+
+  boolean removeAndWriteLog(String requestId);
+
+  interface Log {
+
+    void finish();
+
+    void setActor(String actorType, String actorId, Map<String, Object> claims);
+
+    void setOperationMethod(String method);
+
+    void setOperationPath(String path);
+
+    void setOperationHeaders(MultivaluedMap<String, String> headers);
+
+    void setOperationQueryParameter(MultivaluedMap<String, String> queryParameter);
+
+    void setOperationStatus(String status);
+
+    void setIncludePropertyValues(boolean value);
+
+    boolean getIncludePropertyValues();
+
+    String getId();
+
+    Instant getStarted();
+
+    Instant getFinished();
+
+    String getApi();
+
+    void setApi(String api);
+
+    Map<String, Object> getActor();
+
+    Map<String, Object> getOperation();
+
+    Map<String, Object> getTarget();
+
+    void setTarget(Map<String, Object> target);
+  }
+}

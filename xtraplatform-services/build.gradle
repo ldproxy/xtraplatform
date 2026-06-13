@@ -1,4 +1,3 @@
-
 maturity = 'MATURE'
 maintenance = 'FULL'
 description = 'Service entities, background tasks.'
@@ -9,6 +8,7 @@ dependencies {
     provided project(':xtraplatform-entities')
     provided project(':xtraplatform-values')
     provided project(':xtraplatform-openapi')
+    provided project(':xtraplatform-blobs')
 
     embedded libs.cron4j
 }
