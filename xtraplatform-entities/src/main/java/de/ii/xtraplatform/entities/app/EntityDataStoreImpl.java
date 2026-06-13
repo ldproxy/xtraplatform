@@ -241,7 +241,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
   })
   private List<ReplayEvent> processEvent(ReplayEvent event) {
 
-    if (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format())) {
+    if (!event.isDelete()
+        && (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format()))) {
       return List.of();
     }
 
@@ -266,6 +267,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             event.asPathNoType(),
             event.source().orElse("UNKNOWN"));
       }
+      return List.of();
     }
 
     if (!EVENT_TYPE_OVERRIDES.equals(event.type())) {
