@@ -23,9 +23,29 @@ import org.immutables.value.Value.Default;
  * @langEn # AuditLog
  *     <p>## Options
  *     <p>{@docTable:properties}
+ *     <p>Example configuration:
  * @langDe # AuditLog
  *     <p>## Optionen
  *     <p>{@docTable:properties}
+ *     <p>Beispiel Konfiguration:
+ * @langAll <code>
+ * ```yml
+ * auditLog:
+ *   enabled: true # default false
+ *   retries: 3
+ *   type: JSON_PRETTY # default JSON
+ *   pathPrefix: "{api}/{date}/subdirectory" # default {api}/{date}
+ *   headers:
+ *     included: [ "*" ] # default [*]
+ *     excluded: [ "Accept" ] # default []
+ *   claims:
+ *     included: [ "*" ] # default []
+ *     excluded: [ ] # default []
+ *   httpStatus:
+ *     included: [ "200" ] # default [200]
+ *     excluded: [ ] # default []
+ * ```
+ *     </code>
  * @ref:cfgProperties {@link de.ii.xtraplatform.base.domain.ImmutableAuditLogConfiguration}
  */
 @DocFile(
@@ -46,8 +66,11 @@ import org.immutables.value.Value.Default;
 public interface AuditLogConfiguration {
 
   /**
-   * @langEn If `true`, audit logging is enabled; otherwise, it is disabled.
-   * @langDe Wenn `true`, wird das Audit-Logging eingeschaltet, ansonsten deaktiviert.
+   * @langEn If `true`, audit logging is enabled for all APIs except it's explicitly disabled in the
+   *     [API config](../services/#audit-logging). Audit logging is globally deactivated if `false`.
+   * @langDe Wenn `true`, wird das Audit-Logging für alle APIs eingeschaltet, außer es ist in der
+   *     [API-Konfiguration](../services/#audit-logging) explizit deaktiviert. Audit-Logging ist
+   *     global deaktiviert wenn `false`.
    * @default false
    */
   @Default
@@ -118,7 +141,7 @@ public interface AuditLogConfiguration {
    * @langDe Gibt mit `included`/`excluded`-Listen an, welche Claims aus dem Token geloggt werden
    *     sollen bzw. explizit nicht geloggt werden dürfen. Die genaue Logik entspricht der in
    *     `headers`.
-   * @default included: [ '*' ]\nexcluded: []
+   * @default included: []\nexcluded: []
    */
   @Default
   default ClaimsConfiguration getClaims() {
