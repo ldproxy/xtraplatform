@@ -127,7 +127,7 @@ public interface AuditLogConfiguration {
    *     gibt an, welche Header gemäß `included` geloggt würden, aber nicht geloggt werden sollen.
    *     Der spezielle Wert `*` kann für beide Listen verwendet werden und umfasst alle Header. Wenn
    *     `excluded = [ '*' ]`, werden keine Header geloggt.
-   * @default included: [ '*' ]\nexcluded: []
+   * @default included: [ '*' ], excluded: []
    */
   @Default
   default HeadersConfiguration getHeaders() {
@@ -141,7 +141,7 @@ public interface AuditLogConfiguration {
    * @langDe Gibt mit `included`/`excluded`-Listen an, welche Claims aus dem Token geloggt werden
    *     sollen bzw. explizit nicht geloggt werden dürfen. Die genaue Logik entspricht der in
    *     `headers`.
-   * @default included: []\nexcluded: []
+   * @default included: [], excluded: []
    */
   @Default
   default ClaimsConfiguration getClaims() {
@@ -155,7 +155,7 @@ public interface AuditLogConfiguration {
    * @langDe Gibt mit `included`/`excluded`-Listen an, bei welchen HTTP-Status-Codes Anfragen
    *     geloggt werden sollen bzw. explizit nicht geloggt werden dürfen. Die genaue Logik
    *     entspricht der in `headers`.
-   * @default included: [ '200' ]\nexcluded: []
+   * @default included: [ '200' ], excluded: []
    */
   @Default
   default HttpStatusConfiguration getHttpStatus() {
