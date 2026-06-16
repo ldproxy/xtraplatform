@@ -31,19 +31,19 @@ import org.immutables.value.Value.Default;
  * @langAll <code>
  * ```yml
  * auditLog:
- *   enabled: true # default false
- *   retries: 3 # default 3
- *   type: JSON_PRETTY # default JSON
- *   pathPrefix: "{api}/{date}/subdirectory" # default {api}/{date}
+ *   enabled: true
+ *   retries: 3
+ *   type: JSON_PRETTY
+ *   pathPrefix: "{api}/{date}/subdirectory"
  *   headers:
- *     included: [ "*" ] # default [*]
- *     excluded: [ "Accept" ] # default []
+ *     included: [ "*" ]
+ *     excluded: [ "Accept" ]
  *   claims:
- *     included: [ "*" ] # default []
- *     excluded: [ ] # default []
+ *     included: [ "*" ]
+ *     excluded: [ ]
  *   httpStatus:
- *     included: [ "200" ] # default [200]
- *     excluded: [ ] # default []
+ *     included: [ "200" ]
+ *     excluded: [ ]
  * ```
  *     </code>
  * @ref:cfgProperties {@link de.ii.xtraplatform.base.domain.ImmutableAuditLogConfiguration}
