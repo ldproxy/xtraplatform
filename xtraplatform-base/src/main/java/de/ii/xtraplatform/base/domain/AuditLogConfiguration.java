@@ -32,7 +32,7 @@ import org.immutables.value.Value.Default;
  * ```yml
  * auditLog:
  *   enabled: true # default false
- *   retries: 3
+ *   retries: 3 # default 3
  *   type: JSON_PRETTY # default JSON
  *   pathPrefix: "{api}/{date}/subdirectory" # default {api}/{date}
  *   headers:
@@ -66,11 +66,12 @@ import org.immutables.value.Value.Default;
 public interface AuditLogConfiguration {
 
   /**
-   * @langEn If `true`, audit logging is enabled for all APIs except it's explicitly disabled in the
-   *     [API config](../services/#audit-logging). Audit logging is globally deactivated if `false`.
-   * @langDe Wenn `true`, wird das Audit-Logging für alle APIs eingeschaltet, außer es ist in der
-   *     [API-Konfiguration](../services/#audit-logging) explizit deaktiviert. Audit-Logging ist
-   *     global deaktiviert wenn `false`.
+   * @langEn If `true`, audit logging is enabled for all APIs. APIs can be explicitly disabled in
+   *     the [API config](../../services/#audit-logging). Audit logging is globally deactivated if
+   *     `false`.
+   * @langDe Wenn `true`, wird das Audit-Logging für alle APIs eingeschaltet. Einzelne APIs können
+   *     in der [API-Konfiguration](../../services/#audit-logging) explizit deaktiviert werden.
+   *     Audit-Logging ist global deaktiviert, wenn `false`.
    * @default false
    */
   @Default
@@ -95,7 +96,7 @@ public interface AuditLogConfiguration {
    *     the API ID and the request's ISO date, respectively. For example, log files for
    *     `{api}/foo/{date}/bar` could be stored at
    *     `resources/logs/audit/vineyards/foo/2026-06-03/bar`.
-   * @langDe Gibt den Pfad an, der vor der Log-Datei angehängt werden soll. Dabei werden `{api}` und
+   * @langDe Gibt den Pfad an, der der Log-Datei vorangestellt werden soll. Dabei werden `{api}` und
    *     `{date}` jeweils mit der API-ID bzw. dem ISO-Datum der Anfrage ersetzt. Beispielsweise
    *     könnten die Log-Dateien für `{api}/foo/{date}/bar` unter
    *     `resources/logs/audit/vineyards/foo/2026-06-03/bar` gespeichert werden.
