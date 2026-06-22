@@ -208,8 +208,7 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
   private Stream<EntityEvent> processEvent(EntityEvent event) {
 
-    if (!event.isDelete()
-        && (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format()))) {
+    if (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format())) {
       return Stream.empty();
     }
 
