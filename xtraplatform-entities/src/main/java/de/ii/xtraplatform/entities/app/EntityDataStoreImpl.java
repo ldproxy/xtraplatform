@@ -263,6 +263,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             event.asPathNoType(),
             event.source().orElse("UNKNOWN"));
       }
+      return List.of();
     }
 
     if (!EntityDataStore.EVENT_TYPE_OVERRIDES.equals(event.type())) {
