@@ -85,9 +85,6 @@ class JacksonHelper<T> {
   }
 
   boolean isEmpty(byte[] payload) {
-    if (isNull(payload)) {
-      return true;
-    }
     String payloadString = new String(payload, StandardCharsets.UTF_8);
     return JSON_EMPTY.matcher(payloadString).matches()
         || YAML_EMPTY.matcher(payloadString).matches();
