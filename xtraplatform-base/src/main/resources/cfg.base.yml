@@ -71,9 +71,9 @@ metrics:
   reportOnStop: false
 
 auditLog:
-  enabled: false
+  enabled: ${AUDIT_LOG:-false}
   retries: 3
-  type: ${TYPE:-JSON}
+  type: JSON
   pathPrefix: '{api}/{date}'
   headers:
     included: [ '*' ]

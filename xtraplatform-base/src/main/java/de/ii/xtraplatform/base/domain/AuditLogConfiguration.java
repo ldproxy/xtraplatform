@@ -23,18 +23,24 @@ import org.immutables.value.Value.Default;
  * @langEn # AuditLog
  *     <p>## Options
  *     <p>{@docTable:properties}
- *     <p>Example configuration:
+ *     <p>## Storage
+ *     <p>The log entries are stored in the resource store in the `logs/audit` directory. The file
+ *     name matches the request id from the application log.
+ *     <p>## Example
  * @langDe # AuditLog
  *     <p>## Optionen
  *     <p>{@docTable:properties}
- *     <p>Beispiel Konfiguration:
+ *     <p>## Speicherung
+ *     <p>Die Log-Einträge werden im Ressourcen-Store im Verzeichnis `logs/audit` abgelegt. Der
+ *     Dateiname entspricht der Request-ID aus dem Anwendungsprotokoll.
+ *     <p>## Beispiel
  * @langAll <code>
  * ```yml
  * auditLog:
  *   enabled: true
  *   retries: 3
  *   type: JSON_PRETTY
- *   pathPrefix: "{api}/{date}/subdirectory"
+ *   pathPrefix: "mysubdirectory/{api}/{date}"
  *   headers:
  *     included: [ "*" ]
  *     excluded: [ "Accept" ]
@@ -67,12 +73,13 @@ public interface AuditLogConfiguration {
 
   /**
    * @langEn If `true`, audit logging is enabled for all APIs. APIs can be explicitly disabled in
-   *     the [API config](../../services/#audit-logging). Audit logging is globally deactivated if
-   *     `false`.
+   *     the [API configuration](../../services/#audit-logging). Audit logging is globally disabled
+   *     if `false`.
    * @langDe Wenn `true`, wird das Audit-Logging für alle APIs eingeschaltet. Einzelne APIs können
    *     in der [API-Konfiguration](../../services/#audit-logging) explizit deaktiviert werden.
    *     Audit-Logging ist global deaktiviert, wenn `false`.
    * @default false
+   * @since 4.8
    */
   @Default
   default boolean getEnabled() {
@@ -80,11 +87,15 @@ public interface AuditLogConfiguration {
   }
 
   /**
-   * @langEn Indicates how often the write process should be retried on errors. Should be set to 0
-   *     if no retries are desired.
-   * @langDe Gibt an, wie oft der Schreibprozess bei Fehlern wiederholt werden soll. Sollte auf 0
-   *     gesetzt werden, falls keine Neuversuche erwünscht sind.
+   * @langEn Indicates how often the write process should be retried on errors. Should be set to `0`
+   *     if no retries are desired. If writing fails after the specified number of retries, the log
+   *     entry will be written to the application log.
+   * @langDe Gibt an, wie oft der Schreibprozess bei Fehlern wiederholt werden soll. Sollte auf `0`
+   *     gesetzt werden, falls keine Wiederholungen erwünscht sind. Wenn das Schreiben nach der
+   *     angegebenen Anzahl von Wiederholungen fehlschlägt, wird der Log-Eintrag ins
+   *     Anwendungsprotokoll geschrieben.
    * @default 3
+   * @since 4.8
    */
   @Default
   default int getRetries() {
@@ -94,13 +105,14 @@ public interface AuditLogConfiguration {
   /**
    * @langEn Specifies the path to prepend to the log file. `{api}` and `{date}` are replaced with
    *     the API ID and the request's ISO date, respectively. For example, log files for
-   *     `{api}/foo/{date}/bar` could be stored at
+   *     `{api}/foo/{date}/bar` would be stored at
    *     `resources/logs/audit/vineyards/foo/2026-06-03/bar`.
    * @langDe Gibt den Pfad an, der der Log-Datei vorangestellt werden soll. Dabei werden `{api}` und
    *     `{date}` jeweils mit der API-ID bzw. dem ISO-Datum der Anfrage ersetzt. Beispielsweise
    *     könnten die Log-Dateien für `{api}/foo/{date}/bar` unter
    *     `resources/logs/audit/vineyards/foo/2026-06-03/bar` gespeichert werden.
    * @default {api}/{date}
+   * @since 4.8
    */
   @Default
   default String getPathPrefix() {
@@ -113,6 +125,7 @@ public interface AuditLogConfiguration {
    * @langDe Gibt an, in welchem Format die Logs gespeichert werden. Unterstützt werden momentan
    *     `JSON` und `JSON_PRETTY` (formatiertes JSON).
    * @default JSON
+   * @since 4.8
    */
   @Default
   default TYPE getType() {
@@ -121,14 +134,14 @@ public interface AuditLogConfiguration {
 
   /**
    * @langEn The `included` list specifies which headers should be logged. The `excluded` list
-   *     specifies which headers would be logged according to `included` but should not be logged.
-   *     The special value `*` can be used for both lists and covers all headers. If `excluded = [
-   *     '*' ]`, no headers are logged.
+   *     specifies which headers from `included` should not be logged. The special value `*` can be
+   *     used for both lists and covers all headers. If `excluded: [ '*' ]`, no headers are logged.
    * @langDe Die `included`-Liste gibt an, welche Header geloggt werden sollen. Die `excluded`-Liste
-   *     gibt an, welche Header gemäß `included` geloggt würden, aber nicht geloggt werden sollen.
-   *     Der spezielle Wert `*` kann für beide Listen verwendet werden und umfasst alle Header. Wenn
-   *     `excluded = [ '*' ]`, werden keine Header geloggt.
+   *     gibt an welche Header aus `included` nicht geloggt werden sollen. Der spezielle Wert `*`
+   *     kann für beide Listen verwendet werden und umfasst alle Header. Wenn `excluded: [ '*' ]`,
+   *     werden keine Header geloggt.
    * @default included: [ '*' ], excluded: []
+   * @since 4.8
    */
   @Default
   default HeadersConfiguration getHeaders() {
@@ -137,12 +150,11 @@ public interface AuditLogConfiguration {
 
   /**
    * @langEn Specifies which claims from the token should be logged and which should explicitly not
-   *     be logged by using `included`/`excluded` lists. The exact logic is the same as in
-   *     `headers`.
-   * @langDe Gibt mit `included`/`excluded`-Listen an, welche Claims aus dem Token geloggt werden
-   *     sollen bzw. explizit nicht geloggt werden dürfen. Die genaue Logik entspricht der in
-   *     `headers`.
+   *     be logged. Uses the same `included`/`excluded` logic as `headers`.
+   * @langDe Gibt an, welche Claims aus dem Token geloggt werden sollen und welche explizit nicht
+   *     geloggt werden sollen. Verwendet die gleiche `included`/`excluded`-Logik wie `headers`.
    * @default included: [], excluded: []
+   * @since 4.8
    */
   @Default
   default ClaimsConfiguration getClaims() {
@@ -151,12 +163,12 @@ public interface AuditLogConfiguration {
 
   /**
    * @langEn Specifies for which HTTP status codes requests should be logged and which should
-   *     explicitly not be logged by using `included`/`excluded` lists. The exact logic is the same
-   *     as in `headers`.
-   * @langDe Gibt mit `included`/`excluded`-Listen an, bei welchen HTTP-Status-Codes Anfragen
-   *     geloggt werden sollen bzw. explizit nicht geloggt werden dürfen. Die genaue Logik
-   *     entspricht der in `headers`.
+   *     explicitly not be logged. Uses the same `included`/`excluded` logic as `headers`.
+   * @langDe Gibt an, für welche HTTP-Statuscodes Anfragen geloggt werden sollen und welche explizit
+   *     nicht geloggt werden sollen. Verwendet die gleiche `included`/`excluded`-Logik wie
+   *     `headers`.
    * @default included: [ '200' ], excluded: []
+   * @since 4.8
    */
   @Default
   default HttpStatusConfiguration getHttpStatus() {
