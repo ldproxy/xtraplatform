@@ -34,6 +34,8 @@ public interface User extends Principal {
 
   Map<String, Set<String>> getApiPermissions();
 
+  Map<String, Object> getClaims();
+
   @Value.Default
   default Role getRole() {
     return Role.NONE;

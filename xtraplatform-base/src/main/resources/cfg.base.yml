@@ -69,3 +69,18 @@ metrics:
   frequency: 1 minute
   reporters: [ ]
   reportOnStop: false
+
+auditLog:
+  enabled: ${AUDIT_LOG:-false}
+  retries: 3
+  type: JSON
+  pathPrefix: '{api}/{date}'
+  headers:
+    included: [ '*' ]
+    excluded: [ ]
+  claims:
+    included: [ ]
+    excluded: [ ]
+  httpStatus:
+    included: [ '200' ]
+    excluded: [ ]
