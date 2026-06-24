@@ -20,14 +20,14 @@ import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
 /**
- * @langEn # AuditLog
+ * @langEn # Audit Logging
  *     <p>## Options
  *     <p>{@docTable:properties}
  *     <p>## Storage
  *     <p>The log entries are stored in the resource store in the `logs/audit` directory. The file
  *     name matches the request id from the application log.
  *     <p>## Example
- * @langDe # AuditLog
+ * @langDe # Audit Logging
  *     <p>## Optionen
  *     <p>{@docTable:properties}
  *     <p>## Speicherung
