@@ -204,13 +204,11 @@ import org.immutables.value.Value.Default;
  *     "features" : [
  *       {
  *         "id" : "460258",
- *         "name" : "Kupp",
- *         "region" : "Mosel"
+ *         "name" : "Kupp"
  *       },
  *       {
  *         "id" : "511109",
- *         "name" : "Höll",
- *         "region" : "Nahe"
+ *         "name" : "Höll"
  *       }
  *     ]
  *   }
