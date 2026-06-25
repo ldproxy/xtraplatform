@@ -154,6 +154,7 @@ public abstract class AppConfiguration extends Configuration {
   /**
    * @langEn See [AuditLog](120-auditLog.md).
    * @langDe Siehe [AuditLog](120-auditLog.md).
+   * @since v4.8
    */
   @JsonProperty("auditLog")
   @Valid
