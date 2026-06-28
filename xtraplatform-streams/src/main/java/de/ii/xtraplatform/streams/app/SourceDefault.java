@@ -26,6 +26,7 @@ public class SourceDefault<T> implements Source<T> {
     PUBLISHER,
     SINGLE,
     INPUT_STREAM,
+    GUARDED,
   }
 
   private final Type type;
@@ -37,6 +38,9 @@ public class SourceDefault<T> implements Source<T> {
   private Source<T> prepend;
   private Source<T> mergeSorted;
   private Comparator<T> mergeSortedComparator;
+  private Runnable acquire;
+  private Runnable release;
+  private Source<T> guardedInner;
 
   public SourceDefault(Iterable<T> iterable) {
     this(Type.ITERABLE, iterable, null, null, null);
@@ -52,6 +56,13 @@ public class SourceDefault<T> implements Source<T> {
 
   public SourceDefault(InputStream inputStream) {
     this(Type.INPUT_STREAM, null, null, null, inputStream);
+  }
+
+  public SourceDefault(Runnable acquire, Runnable release, Source<T> guardedInner) {
+    this(Type.GUARDED, null, null, null, null);
+    this.acquire = acquire;
+    this.release = release;
+    this.guardedInner = guardedInner;
   }
 
   SourceDefault(
@@ -147,5 +158,17 @@ public class SourceDefault<T> implements Source<T> {
 
   public Optional<Comparator<T>> getMergeSortedComparator() {
     return Optional.ofNullable(mergeSortedComparator);
+  }
+
+  public Runnable getAcquire() {
+    return acquire;
+  }
+
+  public Runnable getRelease() {
+    return release;
+  }
+
+  public Source<T> getGuardedInner() {
+    return guardedInner;
   }
 }

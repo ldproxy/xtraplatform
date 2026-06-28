@@ -24,7 +24,8 @@ public class TransformerDefault<T, U> implements Transformer<T, U> {
     FILTER,
     PEEK,
     REDUCE,
-    FLATMAP
+    FLATMAP,
+    FLATMAP_EAGER
   }
 
   private final Type type;
@@ -37,6 +38,8 @@ public class TransformerDefault<T, U> implements Transformer<T, U> {
   private Source<U> prepend;
   private Source<U> mergeSorted;
   private Comparator<U> mergeSortedComparator;
+  private int prefetch;
+  private int maxConcurrency;
 
   public TransformerDefault(Function<T, U> function) {
     this(Type.MAP, function, null, null, null, null, null);
@@ -44,6 +47,15 @@ public class TransformerDefault<T, U> implements Transformer<T, U> {
 
   public static <T, U> TransformerDefault<T, U> flatMap(Function<T, Source<U>> function) {
     return new TransformerDefault<>(Type.FLATMAP, null, null, null, null, null, function);
+  }
+
+  public static <T, U> TransformerDefault<T, U> flatMapConcurrent(
+      Function<T, Source<U>> function, int maxConcurrency, int prefetch) {
+    TransformerDefault<T, U> transformer =
+        new TransformerDefault<>(Type.FLATMAP_EAGER, null, null, null, null, null, function);
+    transformer.maxConcurrency = maxConcurrency;
+    transformer.prefetch = prefetch;
+    return transformer;
   }
 
   public TransformerDefault(Predicate<T> predicate) {
@@ -121,6 +133,14 @@ public class TransformerDefault<T, U> implements Transformer<T, U> {
 
   public Function<T, Source<U>> getFlatMap() {
     return flatMap;
+  }
+
+  public int getPrefetch() {
+    return prefetch;
+  }
+
+  public int getMaxConcurrency() {
+    return maxConcurrency;
   }
 
   public Optional<Source<U>> getPrepend() {
