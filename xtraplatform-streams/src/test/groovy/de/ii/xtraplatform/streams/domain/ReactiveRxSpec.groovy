@@ -203,6 +203,28 @@ class ReactiveRxSpec extends Specification {
         e.cause instanceof IllegalStateException
     }
 
+    def "flatMapConcurrent preserves the order of the inner sources"() {
+        given:
+        // each of the 10 inner sources expands to a contiguous 10-block; with up to 4 subscribed
+        // concurrently the blocks must still come out strictly in order (0..99), never interleaved
+        Reactive.Stream<Map<String, Object>> stream = Source.iterable(0..9)
+                .via(Transformer.flatMapConcurrent({ Integer i -> Source.iterable((i * 10)..(i * 10 + 9)) }, 4, 8))
+                .to(Sink.ignore())
+                .withResult([ids: []] as Map<String, Object>)
+                .handleError((result, throwable) -> { result.error = throwable; return result; })
+                .handleItem((result, id) -> {
+                    result.ids << id
+                    return result
+                })
+
+        when:
+        def result = runStream(stream)
+
+        then:
+        result.error == null
+        result.ids == (0..99).toList()
+    }
+
     static Transformer<Integer, Integer> transformerLogging() {
         return Transformer.peek((Integer i) -> println(i))
     }
