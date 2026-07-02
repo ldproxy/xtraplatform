@@ -213,8 +213,16 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
     return Objects.isNull(prefix) ? root.resolve(path) : root.resolve(prefix.relativize(path));
   }
 
+  // The resolved path must stay inside the store root. This rejects keys containing `..` segments
+  // or an absolute path that would otherwise escape the root (e.g. via full() -> root.resolve(..)).
+  // Every read/write/delete method gates on canHandle (directly or via has), so a traversal key is
+  // treated as "not handled" — a no-op / not-found — rather than escaping the store.
+  private boolean isContained(Path path) {
+    return full(path).normalize().startsWith(root.normalize());
+  }
+
   @Override
   public boolean canHandle(Path path) {
-    return Objects.isNull(prefix) || path.startsWith(prefix);
+    return (Objects.isNull(prefix) || path.startsWith(prefix)) && isContained(path);
   }
 }
