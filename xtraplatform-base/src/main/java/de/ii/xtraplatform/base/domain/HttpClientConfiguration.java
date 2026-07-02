@@ -31,6 +31,24 @@ import de.ii.xtraplatform.docs.DocFile;
  *       - '*.example.org'
  * ```
  * </code>
+ *     <p>## TLS
+ *     <p>When the application connects to an external service over `https` (for example a WFS or
+ *     tile backend), the following settings control how the certificate of the remote service is
+ *     validated. The current defaults are `verifyHostname: false` and `trustSelfSignedCertificates:
+ *     true`, i.e. the hostname of the certificate is not verified and self-signed certificates are
+ *     accepted. For connections to services with valid certificates it is recommended to enable
+ *     strict validation:
+ *     <p><code>
+ * ```yaml
+ * httpClient:
+ *   tls:
+ *     verifyHostname: true
+ *     trustSelfSignedCertificates: false
+ * ```
+ * </code>
+ *     <p>In v5.0 these secure values will become the defaults. Deployments that connect to services
+ *     with self-signed or otherwise non-verifiable certificates will then have to set
+ *     `verifyHostname: false` and `trustSelfSignedCertificates: true` explicitly.
  *     <p>
  * @langDe # HTTP Client
  *     <p>## HTTP Proxy
@@ -53,6 +71,24 @@ import de.ii.xtraplatform.docs.DocFile;
  *       - '*.example.org'
  * ```
  * </code>
+ *     <p>## TLS
+ *     <p>Wenn die Applikation sich über `https` mit einem externen Dienst verbindet (zum Beispiel
+ *     einem WFS- oder Tile-Backend), steuern die folgenden Einstellungen, wie das Zertifikat des
+ *     entfernten Dienstes geprüft wird. Die aktuellen Standardwerte sind `verifyHostname: false`
+ *     und `trustSelfSignedCertificates: true`, d.h. der Hostname des Zertifikats wird nicht geprüft
+ *     und selbstsignierte Zertifikate werden akzeptiert. Für Verbindungen zu Diensten mit gültigen
+ *     Zertifikaten wird empfohlen, die strikte Prüfung zu aktivieren:
+ *     <p><code>
+ * ```yaml
+ * httpClient:
+ *   tls:
+ *     verifyHostname: true
+ *     trustSelfSignedCertificates: false
+ * ```
+ * </code>
+ *     <p>In v5.0 werden diese sicheren Werte zu den Standardwerten. Deployments, die sich mit
+ *     Diensten mit selbstsignierten oder anderweitig nicht verifizierbaren Zertifikaten verbinden,
+ *     müssen dann `verifyHostname: false` und `trustSelfSignedCertificates: true` explizit setzen.
  *     <p>
  */
 @DocFile(path = "application/20-configuration", name = "97-http-client.md")
