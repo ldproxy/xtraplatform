@@ -86,6 +86,17 @@ public interface Reactive {
     static Source<byte[]> inputStream(InputStream inputStream) {
       return new SourceDefault<>(inputStream);
     }
+
+    /**
+     * Wraps {@code inner} so that {@code acquire} runs once when the source is subscribed and
+     * {@code release} runs once when it terminates (completion, error, or cancellation). The
+     * acquire/release run on a worker thread, so a blocking {@code acquire} (e.g. acquiring
+     * connection permits from a semaphore) does not block the subscribing thread. Used to bound the
+     * connections in flight across concurrently running sub-queries.
+     */
+    static <T> Source<T> guarded(Runnable acquire, Runnable release, Source<T> inner) {
+      return new SourceDefault<>(acquire, release, inner);
+    }
   }
 
   interface Transformer<T, U> {
@@ -144,6 +155,18 @@ public interface Reactive {
 
     static <T, U> Transformer<T, U> flatMap(Function<T, Source<U>> flatMap) {
       return TransformerDefault.flatMap(flatMap);
+    }
+
+    /**
+     * Like {@link #flatMap(Function)} but subscribes to up to {@code maxConcurrency} of the mapped
+     * inner sources concurrently while still emitting their items strictly in the original order
+     * (RxJava {@code concatMapEager}). Each inner source may run ahead by up to {@code prefetch}
+     * buffered items (0 selects the implementation default). Use to overlap independent inner
+     * sources (e.g. parallel SQL sub-queries) without reordering the output.
+     */
+    static <T, U> Transformer<T, U> flatMapConcurrent(
+        Function<T, Source<U>> flatMap, int maxConcurrency, int prefetch) {
+      return TransformerDefault.flatMapConcurrent(flatMap, maxConcurrency, prefetch);
     }
   }
 

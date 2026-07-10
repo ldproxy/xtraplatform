@@ -13,6 +13,7 @@ import de.ii.xtraplatform.streams.domain.Reactive;
 import hu.akarnokd.rxjava3.operators.Flowables;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.processors.UnicastProcessor;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.reactivex.rxjava3.subscribers.DefaultSubscriber;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -130,6 +131,17 @@ public class ReactiveRx implements Reactive {
                     byteBuffer ->
                         Arrays.copyOfRange(
                             byteBuffer.array(), byteBuffer.position(), byteBuffer.limit()));
+      case GUARDED:
+        // acquire on subscribe, release on terminate; run on a worker thread (subscribeOn) so a
+        // blocking acquire does not block the subscribing/drain thread
+        return Flowable.using(
+                () -> {
+                  source.getAcquire().run();
+                  return Boolean.TRUE;
+                },
+                ignored -> assemble(source.getGuardedInner()),
+                ignored -> source.getRelease().run())
+            .subscribeOn(Schedulers.io());
     }
 
     throw new IllegalStateException();
@@ -197,6 +209,11 @@ public class ReactiveRx implements Reactive {
         return flowable.reduce(transformer.getItem(), transformer.getReducer()::apply).toFlowable();
       case FLATMAP:
         return flowable.concatMap(u -> assemble(transformer.getFlatMap().apply(u)));
+      case FLATMAP_EAGER:
+        return flowable.concatMapEager(
+            u -> assemble(transformer.getFlatMap().apply(u)),
+            transformer.getMaxConcurrency(),
+            transformer.getPrefetch() > 0 ? transformer.getPrefetch() : Flowable.bufferSize());
     }
 
     throw new IllegalStateException();
