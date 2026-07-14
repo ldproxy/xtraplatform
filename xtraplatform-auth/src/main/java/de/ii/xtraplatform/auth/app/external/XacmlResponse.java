@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.auth.app.external;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Strings;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.Objects;
 
 @SuppressWarnings("PMD.CognitiveComplexity")
 public class XacmlResponse {
+  @JsonProperty("Response")
   public List<XacmlResponse.Response> response;
 
   boolean isAllowed() {
@@ -70,27 +72,42 @@ public class XacmlResponse {
   }
 
   static class Response {
-    String decision;
-    Status status;
-    List<Obligation> obligations;
+    @JsonProperty("Decision")
+    public String decision;
+
+    @JsonProperty("Status")
+    public Status status;
+
+    @JsonProperty("Obligations")
+    public List<Obligation> obligations;
   }
 
   static class Status {
-    StatusCode statusCode;
-    String statusMessage;
+    @JsonProperty("StatusCode")
+    public StatusCode statusCode;
+
+    @JsonProperty("StatusMessage")
+    public String statusMessage;
   }
 
   static class StatusCode {
-    String value;
+    @JsonProperty("Value")
+    public String value;
   }
 
   static class Obligation {
-    String id;
-    List<Attribute> attributeAssignment;
+    @JsonProperty("Id")
+    public String id;
+
+    @JsonProperty("AttributeAssignment")
+    public List<Attribute> attributeAssignment;
   }
 
   static class Attribute {
-    String attributeId;
-    String value;
+    @JsonProperty("AttributeId")
+    public String attributeId;
+
+    @JsonProperty("Value")
+    public String value;
   }
 }
