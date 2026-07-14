@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.auth.app.external;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
@@ -24,9 +25,10 @@ import java.util.Optional;
  */
 public class XacmlRequest {
   private static final String PREFIX_GEO = "ldproxy:feature:geometry";
-
-  public final Map<String, Object> request;
   private static final String ATTRIBUTE = "Attribute";
+
+  @JsonProperty("Request")
+  public final Map<String, Object> request;
 
   public XacmlRequest(
       XacmlJsonVersion version,
@@ -118,23 +120,16 @@ public class XacmlRequest {
                 action)));
   }
 
-  static class Attribute {
-    public final String attributeId;
-    public final Object value;
-    public final String dataType;
-
+  record Attribute(
+      @JsonProperty("AttributeId") String attributeId,
+      @JsonProperty("Value") Object value,
+      @JsonProperty("DataType") String dataType) {
     Attribute(String attributeId, String value) {
       this(attributeId, value, "http://www.w3.org/2001/XMLSchema#string");
     }
 
     Attribute(String attributeId, Object value) {
       this(attributeId, value, "http://www.w3.org/2001/XMLSchema#" + inferType(value));
-    }
-
-    Attribute(String attributeId, Object value, String dataType) {
-      this.attributeId = attributeId;
-      this.value = value;
-      this.dataType = dataType;
     }
 
     private static String inferType(Object value) {

@@ -114,7 +114,7 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
-          "XACML {}",
+          "XACML request: {}",
           JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlRequest));
     }
     return JSON_MAPPER.writeValueAsBytes(xacmlRequest);
@@ -123,12 +123,15 @@ public class PolicyDeciderXacmlJson implements PolicyDecider {
   private XacmlResponse getXacmlResponse(InputStream response) throws IOException {
     String s = new String(response.readAllBytes(), StandardCharsets.UTF_8);
 
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("XACML raw response: {}", s);
+    }
+
     XacmlResponse xacmlResponse = JSON_MAPPER.readValue(s, XacmlResponse.class);
 
     if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("XACML R {}", s);
       LOGGER.debug(
-          "XACML R {}",
+          "XACML response: {}",
           JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(xacmlResponse));
     }
 
