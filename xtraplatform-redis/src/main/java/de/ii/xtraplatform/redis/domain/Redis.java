@@ -8,12 +8,15 @@
 package de.ii.xtraplatform.redis.domain;
 
 import de.ii.xtraplatform.base.domain.resiliency.Volatile2;
+import redis.clients.jedis.commands.JedisBinaryCommands;
 import redis.clients.jedis.commands.JedisCommands;
 import redis.clients.jedis.json.commands.RedisJsonCommands;
 
 public interface Redis extends Volatile2 {
 
   JedisCommands cmd();
+
+  JedisBinaryCommands binary();
 
   RedisJsonCommands json();
 

@@ -9,6 +9,7 @@ package de.ii.xtraplatform.cache.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.cache.domain.Cache;
 import de.ii.xtraplatform.cache.domain.CacheDriver;
@@ -28,17 +29,18 @@ public class CacheImpl implements Cache, AppLifeCycle {
   private static final Logger LOGGER = LoggerFactory.getLogger(CacheImpl.class);
 
   private final Lazy<Set<CacheDriver>> drivers;
+  private final String type;
 
   private CacheDriver driver;
 
   @Inject
-  public CacheImpl(Lazy<Set<CacheDriver>> drivers) {
+  public CacheImpl(Lazy<Set<CacheDriver>> drivers, AppContext appContext) {
     this.drivers = drivers;
+    this.type = appContext.getConfiguration().getRedis().getNodes().isEmpty() ? "FS" : "REDIS";
   }
 
   @Override
   public CompletionStage<Void> onStart(boolean isStartupAsync) {
-    String type = "FS";
     this.driver =
         drivers.get().stream()
             .filter(cacheDriver -> Objects.equals(cacheDriver.getType(), type))

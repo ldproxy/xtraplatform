@@ -18,12 +18,11 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.commands.JedisCommands;
+import redis.clients.jedis.commands.JedisBinaryCommands;
 
 /**
  * Redis-backed CacheDriver, sharing the same Redis connection as JobQueueBackendRedis (s. Redis,
@@ -46,15 +45,15 @@ import redis.clients.jedis.commands.JedisCommands;
  * </ul>
  *
  * <p>Values are serialized identically to CacheDriverFs (String passthrough as UTF-8, everything
- * else via Jackson SMILE) and then Base64-encoded, since the Jedis command surface used here
- * (JedisCommands, via Redis.cmd()) is String-only, not binary-safe.
+ * else via Jackson SMILE) and stored as raw bytes via Redis.binary() (JedisBinaryCommands), which
+ * is binary-safe - no Base64 detour needed.
  *
- * <p>Redis.cmd() can legitimately return null - RedisImpl only actually connects lazily from its
+ * <p>Redis.binary() can legitimately return null - RedisImpl only actually connects lazily from its
  * periodic Volatile2 health check (s. RedisImpl's check()/connect()), not synchronously at startup,
  * so there's a window (and, if the connection is ever lost, an ongoing possibility) where no client
  * is available yet. Every method here treats that the same as a cache miss/no-op rather than
- * throwing, instead of assuming cmd() is always ready like CacheDriverFs's filesystem access always
- * is.
+ * throwing, instead of assuming binary() is always ready like CacheDriverFs's filesystem access
+ * always is.
  */
 @Singleton
 @AutoBind
@@ -94,12 +93,12 @@ public class CacheDriverRedis implements CacheDriver {
 
   @Override
   public boolean has(String key, String validator) {
-    JedisCommands cmd = cmd();
+    JedisBinaryCommands cmd = cmd();
     if (Objects.isNull(cmd)) {
       return false;
     }
 
-    boolean exists = cmd.hexists(redisKey(key), validator);
+    boolean exists = cmd.hexists(redisKey(key), validatorField(validator));
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Cache has({}, {}) -> {}", key, validator, exists);
     }
@@ -113,13 +112,13 @@ public class CacheDriverRedis implements CacheDriver {
 
   @Override
   public <T> Optional<T> get(String key, String validator, Class<T> clazz) {
-    JedisCommands cmd = cmd();
+    JedisBinaryCommands cmd = cmd();
     if (Objects.isNull(cmd)) {
       return Optional.empty();
     }
 
-    String encoded = cmd.hget(redisKey(key), validator);
-    if (Objects.isNull(encoded)) {
+    byte[] value = cmd.hget(redisKey(key), validatorField(validator));
+    if (Objects.isNull(value)) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Cache get({}, {}) -> miss", key, validator);
       }
@@ -127,11 +126,11 @@ public class CacheDriverRedis implements CacheDriver {
     }
 
     try {
-      T value = deserialize(Base64.getDecoder().decode(encoded), clazz);
+      T deserialized = deserialize(value, clazz);
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Cache get({}, {}) -> hit ({})", key, validator, value);
+        LOGGER.debug("Cache get({}, {}) -> hit ({})", key, validator, deserialized);
       }
-      return Optional.ofNullable(value);
+      return Optional.ofNullable(deserialized);
     } catch (IOException e) {
       LOGGER.error("CACHE DESER", e);
       return Optional.empty();
@@ -160,7 +159,7 @@ public class CacheDriverRedis implements CacheDriver {
 
   @Override
   public void del(String key) {
-    JedisCommands cmd = cmd();
+    JedisBinaryCommands cmd = cmd();
     if (Objects.isNull(cmd)) {
       return;
     }
@@ -172,16 +171,16 @@ public class CacheDriverRedis implements CacheDriver {
   }
 
   private void write(String key, String validator, Object value, int ttl) {
-    JedisCommands cmd = cmd();
+    JedisBinaryCommands cmd = cmd();
     if (Objects.isNull(cmd)) {
       return;
     }
 
     try {
-      String encoded = Base64.getEncoder().encodeToString(serialize(value));
-      String redisKey = redisKey(key);
+      byte[] serialized = serialize(value);
+      byte[] redisKey = redisKey(key);
 
-      cmd.hset(redisKey, validator, encoded);
+      cmd.hset(redisKey, validatorField(validator), serialized);
 
       if (ttl > 0) {
         cmd.expire(redisKey, ttl);
@@ -197,16 +196,20 @@ public class CacheDriverRedis implements CacheDriver {
     }
   }
 
-  private JedisCommands cmd() {
-    JedisCommands cmd = redis.cmd();
+  private JedisBinaryCommands cmd() {
+    JedisBinaryCommands cmd = redis.binary();
     if (Objects.isNull(cmd) && LOGGER.isDebugEnabled()) {
       LOGGER.debug("Cache unavailable, redis is not connected yet");
     }
     return cmd;
   }
 
-  private String redisKey(String key) {
-    return KEY_PREFIX + key;
+  private byte[] redisKey(String key) {
+    return (KEY_PREFIX + key).getBytes(StandardCharsets.UTF_8);
+  }
+
+  private byte[] validatorField(String validator) {
+    return validator.getBytes(StandardCharsets.UTF_8);
   }
 
   private byte[] serialize(Object obj) throws IOException {
