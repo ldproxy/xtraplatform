@@ -336,6 +336,9 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     Identifier defaultsIdentifier = EntityDataStore.defaults(identifier, entitySubtype);
 
     if (defaultsStore.has(defaultsIdentifier)) {
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("ENTITY {} defaults builder: exact {}", identifier, defaultsIdentifier);
+      }
       return defaultsStore.getBuilder(defaultsIdentifier);
     }
 
@@ -343,8 +346,14 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
       Identifier parent = parent(defaultsIdentifier, i);
 
       if (defaultsStore.has(parent)) {
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace("ENTITY {} defaults builder: parent {}", identifier, parent);
+        }
         return defaultsStore.getBuilder(parent);
       }
+    }
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("ENTITY {} defaults builder: none, using data builder", identifier);
     }
 
     return (EntityDataBuilder<EntityData>)

@@ -222,7 +222,9 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
     List<Identifier> cacheKeys = getCacheKeys(defaultsPath, subTypes);
 
-    // LOGGER.debug("Applying to subtypes as well 2: {} ### {}", event.identifier(), cacheKeys);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("DEFAULTS event {} -> cache keys {}", event.identifier(), cacheKeys);
+    }
 
     return cacheKeys.stream()
         .map(
@@ -355,6 +357,12 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
 
   private Map<String, Object> getDefaults(Identifier identifier) {
     if (eventSourcing.has(identifier)) {
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace(
+            "DEFAULTS lookup {} -> exact hit, keys {}",
+            identifier,
+            eventSourcing.get(identifier).keySet());
+      }
       return eventSourcing.get(identifier);
     }
 
@@ -365,6 +373,13 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
               .path(identifier.path().subList(i, identifier.path().size()))
               .build();
       if (eventSourcing.has(parent)) {
+        if (LOGGER.isTraceEnabled()) {
+          LOGGER.trace(
+              "DEFAULTS lookup {} -> parent hit {}, keys {}",
+              identifier,
+              parent,
+              eventSourcing.get(parent).keySet());
+        }
         try {
 
           return valueEncodingMap.deserialize(
@@ -378,6 +393,9 @@ public class EntityDataDefaultsStoreImpl extends AbstractMergeableKeyValueStore<
       }
     }
 
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("DEFAULTS lookup {} -> no defaults found", identifier);
+    }
     return new LinkedHashMap<>();
   }
 

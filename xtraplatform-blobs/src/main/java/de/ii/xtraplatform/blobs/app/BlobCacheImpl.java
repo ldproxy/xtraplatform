@@ -55,7 +55,21 @@ public class BlobCacheImpl implements BlobCache {
 
   private Path getCachePath(Path path, String eTag) {
     String fileDir = path.getFileName().toString().replaceAll("\\.", "_");
+    // The eTag comes from the (remote) source and becomes a path segment; reduce it to safe
+    // filename
+    // characters so it cannot contain separators or `..`.
+    String safeETag = eTag.replaceAll("[^A-Za-z0-9._-]", "_");
 
-    return tmpDirectory.resolve(path.getParent()).resolve(fileDir).resolve(eTag);
+    Path cachePath =
+        tmpDirectory.resolve(path.getParent()).resolve(fileDir).resolve(safeETag).normalize();
+
+    // Defense-in-depth: `path` may carry `..` segments; ensure the cache entry stays inside the
+    // cache directory.
+    if (!cachePath.startsWith(tmpDirectory.normalize())) {
+      throw new IllegalArgumentException(
+          "The cache path for '" + path + "' would escape the cache directory.");
+    }
+
+    return cachePath;
   }
 }
