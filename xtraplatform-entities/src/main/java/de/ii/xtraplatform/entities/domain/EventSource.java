@@ -124,6 +124,7 @@ public class EventSource {
     Matcher pathMatcher = pathPattern.matcher(fullRelPath.toString());
 
     if (!pathMatcher.find()) {
+      warnIgnoredFile(fullRelPath);
       return null;
     }
 
@@ -137,6 +138,7 @@ public class EventSource {
     }
 
     if (Objects.isNull(eventType) || Objects.isNull(eventId)) {
+      warnIgnoredFile(fullRelPath);
       return null;
     }
 
@@ -166,6 +168,18 @@ public class EventSource {
         .format(eventPayloadFormat.orElse(null))
         .source(source.getLabel())
         .build();
+  }
+
+  // A file that matches no path pattern is not an event and was previously
+  // dropped without any hint, which makes layout mistakes hard to spot.
+  private void warnIgnoredFile(Path fullRelPath) {
+    if (LOGGER.isWarnEnabled() && !fullRelPath.getFileName().toString().startsWith(".")) {
+      LOGGER.warn(
+          "Ignoring file in store source {}: '{}' does not match the expected layout '{}'",
+          source.getLabel(),
+          fullRelPath,
+          KEY_PATTERN);
+    }
   }
 
   private Path applyPrefixes(Path path) {
