@@ -32,6 +32,7 @@ import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.RedisClient;
 import redis.clients.jedis.RedisClusterClient;
 import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.commands.JedisBinaryCommands;
 import redis.clients.jedis.commands.JedisCommands;
 import redis.clients.jedis.json.commands.RedisJsonCommands;
 
@@ -108,6 +109,11 @@ public class RedisImpl extends AbstractVolatilePolling implements Redis, AppLife
 
   @Override
   public JedisCommands cmd() {
+    return jedis;
+  }
+
+  @Override
+  public JedisBinaryCommands binary() {
     return jedis;
   }
 
