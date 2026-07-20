@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.redis.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
+import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.cache.domain.CacheDriver;
 import de.ii.xtraplatform.redis.domain.Redis;
@@ -54,6 +55,11 @@ import redis.clients.jedis.commands.JedisBinaryCommands;
  * is available yet. Every method here treats that the same as a cache miss/no-op rather than
  * throwing, instead of assuming binary() is always ready like CacheDriverFs's filesystem access
  * always is.
+ *
+ * <p>Keys are scoped by a cluster id (RedisConfiguration.getCluster(), falling back to
+ * AppContext.getInstanceName() if not set), so only instances sharing the same configuration - and
+ * thus the same cluster id - share cache entries; instances pointed at the same Redis but with a
+ * different/absent cluster id get their own separate key namespace.
  */
 @Singleton
 @AutoBind
@@ -66,11 +72,18 @@ public class CacheDriverRedis implements CacheDriver {
 
   private final Redis redis;
   private final ValueEncoding<Object> valueEncoding;
+  private final String clusterId;
 
   @Inject
-  public CacheDriverRedis(Redis redis, Jackson jackson) {
+  public CacheDriverRedis(Redis redis, Jackson jackson, AppContext appContext) {
     this.redis = redis;
     this.valueEncoding = new ValueEncodingJackson<>(jackson, null, false);
+    this.clusterId =
+        appContext
+            .getConfiguration()
+            .getRedis()
+            .getCluster()
+            .orElseGet(appContext::getInstanceName);
   }
 
   @Override
@@ -205,7 +218,7 @@ public class CacheDriverRedis implements CacheDriver {
   }
 
   private byte[] redisKey(String key) {
-    return (KEY_PREFIX + key).getBytes(StandardCharsets.UTF_8);
+    return (KEY_PREFIX + clusterId + ":" + key).getBytes(StandardCharsets.UTF_8);
   }
 
   private byte[] validatorField(String validator) {

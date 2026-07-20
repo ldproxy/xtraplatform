@@ -14,6 +14,7 @@ import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import java.util.List;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
@@ -40,7 +41,6 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Value.Modifiable
 @JsonDeserialize(as = ModifiableRedisConfiguration.class)
-@FunctionalInterface
 public interface RedisConfiguration {
 
   /**
@@ -51,4 +51,16 @@ public interface RedisConfiguration {
    * @default []
    */
   List<String> getNodes();
+
+  /**
+   * @langEn Identifies a group of instances that share state (e.g. cache entries) through Redis.
+   *     Only instances with the same configuration should use the same value. If not set, falls
+   *     back to the instance name.
+   * @langDe Identifiziert eine Gruppe von Instanzen, die sich über Redis Zustand (z.B.
+   *     Cache-Einträge) teilen. Nur Instanzen mit der gleichen Konfiguration sollten den gleichen
+   *     Wert verwenden. Falls nicht gesetzt, wird der Instanzname verwendet.
+   * @since v4.8
+   * @default optional
+   */
+  Optional<String> getCluster();
 }
