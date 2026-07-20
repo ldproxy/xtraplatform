@@ -19,6 +19,8 @@ import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,8 +51,15 @@ public class TokenAuthenticator implements Authenticator<String, User> {
     if (authConfig.getUserInfo().isPresent()) {
       UserInfo userInfoProvider = authConfig.getUserInfo().get();
       try {
+        // URL-encode the (client-supplied) token before interpolating it into the endpoint URL, so
+        // it cannot inject extra query parameters or path segments. The raw token is still sent in
+        // the Authorization header below.
+        String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
         String url =
-            userInfoProvider.getEndpoint().replace("{{token}}", token).replace("{token}", token);
+            userInfoProvider
+                .getEndpoint()
+                .replace("{{token}}", encodedToken)
+                .replace("{token}", encodedToken);
         try (InputStream response =
             httpClient.getAsInputStream(url, Map.of("Authorization", "Bearer " + token))) {
 

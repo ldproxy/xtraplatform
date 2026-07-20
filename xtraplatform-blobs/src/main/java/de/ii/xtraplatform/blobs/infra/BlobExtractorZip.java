@@ -41,7 +41,16 @@ public class BlobExtractorZip implements BlobExtractor {
                 return;
               }
               Path entry = archiveRoot.relativize(zipEntry);
-              Path target = targetRoot.resolve(entry);
+              Path target = targetRoot.resolve(entry).normalize();
+
+              // Zip-slip guard: an entry name with `..` segments must not write outside the target
+              // directory.
+              if (!target.startsWith(targetRoot.normalize())) {
+                if (LOGGER.isWarnEnabled()) {
+                  LOGGER.warn("Skipping zip entry outside the target directory: {}", zipEntry);
+                }
+                return;
+              }
 
               if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("Extracting to {} {}", target, includeEntry.test(entry));
