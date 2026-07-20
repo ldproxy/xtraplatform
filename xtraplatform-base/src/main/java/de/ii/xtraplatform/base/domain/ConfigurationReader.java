@@ -21,8 +21,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
+import de.ii.xtraplatform.base.app.SubstitutionsImpl;
 import de.ii.xtraplatform.base.domain.Constants.ENV;
-import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.logging.common.AbstractAppenderFactory;
@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.apache.commons.text.StringSubstitutor;
 
 @SuppressWarnings("PMD.AvoidCatchingGenericException")
 public class ConfigurationReader {
@@ -83,7 +84,7 @@ public class ConfigurationReader {
   private final Map<String, ByteSource> configsToMergeAfterBase;
   private final ObjectMapper mapper;
   private final ObjectMapper mergeMapper;
-  private final EnvironmentVariableSubstitutor envSubstitutor;
+  private final StringSubstitutor envSubstitutor;
 
   public ConfigurationReader(Map<String, ByteSource> configsToMergeAfterBase) {
     this.configsToMergeAfterBase = configsToMergeAfterBase;
@@ -100,7 +101,7 @@ public class ConfigurationReader {
 
     this.mergeMapper = getMergeMapper(mapper);
 
-    this.envSubstitutor = new EnvironmentVariableSubstitutor(false);
+    this.envSubstitutor = new SubstitutionsImpl().getSubstitutor(false, false);
   }
 
   public ObjectMapper getMapper() {

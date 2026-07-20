@@ -149,6 +149,12 @@ public class AppLauncher implements AppContext {
 
     this.cfg = configurationReader.loadMergedConfig(cfgs, env);
 
+    Map<String, InputStream> cfgsRecursed = getCfgs(cfg.getStore().getSources());
+
+    if (cfgsRecursed.size() > cfgs.size()) {
+      this.cfg = configurationReader.loadMergedConfig(cfgsRecursed, env);
+    }
+
     cfg.getLoggingFactory().configure(new MetricRegistry(), "xtraplatform", Optional.of(buffer));
 
     if (LOGGER.isDebugEnabled()) {
@@ -159,7 +165,7 @@ public class AppLauncher implements AppContext {
       LOGGER.debug("Data directory: {}", dataDir);
       LOGGER.debug("Environment: {}", env);
       LOGGER.debug("Base configurations: {}", configurationReader.getBaseConfigs(env).keySet());
-      LOGGER.debug("User configurations: {}", cfgs.keySet());
+      LOGGER.debug("User configurations: {}", cfgsRecursed.keySet());
     }
     if (LOGGER.isDebugEnabled(LogContext.MARKER.DUMP)) {
       LOGGER.debug(

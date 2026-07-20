@@ -41,6 +41,10 @@ public class SubstitutionsImpl implements Substitutions {
     this.constants = extract(appContext.getConfiguration().getSubstitutions(), "");
   }
 
+  public SubstitutionsImpl() {
+    this.constants = Map.of();
+  }
+
   @Override
   public StringSubstitutor getSubstitutor(boolean strict, boolean substitutionInVariables) {
     return new VariableSubstitutor(strict, substitutionInVariables);
