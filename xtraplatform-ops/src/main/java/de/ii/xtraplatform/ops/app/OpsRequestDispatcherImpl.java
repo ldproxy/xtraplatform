@@ -9,6 +9,7 @@ package de.ii.xtraplatform.ops.app;
 
 import static io.dropwizard.metrics.servlets.HealthCheckServlet.HEALTH_CHECK_HTTP_STATUS_INDICATOR;
 
+import com.codahale.metrics.MetricRegistry;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppContext;
@@ -19,6 +20,9 @@ import io.dropwizard.metrics.servlets.HealthCheckServlet;
 import io.dropwizard.metrics.servlets.MetricsServlet;
 import io.dropwizard.metrics.servlets.PingServlet;
 import io.dropwizard.metrics.servlets.ThreadDumpServlet;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.dropwizard.DropwizardExports;
+import io.prometheus.client.exporter.common.TextFormat;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.jaxrs2.Reader;
@@ -47,6 +51,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -75,6 +80,7 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
   private final Lazy<Set<OpsEndpoint>> subEndpoints;
   private Servlet tasksServlet;
   private final OpenAPI openAPI;
+  private CollectorRegistry prometheusRegistry;
 
   @Inject
   OpsRequestDispatcherImpl(AppContext appContext, Lazy<Set<OpsEndpoint>> subEndpoints) {
@@ -111,7 +117,8 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
 
   @Override
   @SuppressWarnings("PMD.AvoidCatchingGenericException")
-  public void init(ServletConfig servletConfig, ServletHolder tasksServlet) {
+  public void init(
+      ServletConfig servletConfig, ServletHolder tasksServlet, MetricRegistry metricRegistry) {
     try {
       // otherwise health endpoint will return 500 when not all health checks are healthy
       servletConfig.getServletContext().setAttribute(HEALTH_CHECK_HTTP_STATUS_INDICATOR, false);
@@ -120,6 +127,9 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
       metricsServlet.init(servletConfig);
       pingServlet.init(servletConfig);
       threadDumpServlet.init(servletConfig);
+
+      this.prometheusRegistry = new CollectorRegistry();
+      this.prometheusRegistry.register(new DropwizardExports(metricRegistry));
 
       tasksServlet.start();
       tasksServlet.initialize();
@@ -321,6 +331,31 @@ public class OpsRequestDispatcherImpl implements OpsRequestDispatcher {
       throws ServletException, IOException {
     CorsFilter.addCorsHeaders(response);
     metricsServlet.service(request, response);
+  }
+
+  @GET
+  @Path("/api/metrics/prometheus")
+  @Produces(TextFormat.CONTENT_TYPE_004)
+  @Operation(
+      summary = "Get metrics in Prometheus format",
+      description =
+          "Returns the metrics of the application in the Prometheus text exposition format.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Successful operation",
+        content = @Content(mediaType = TextFormat.CONTENT_TYPE_004)),
+    @ApiResponse(responseCode = "500", description = "Internal server error")
+  })
+  public void metricsPrometheus(@Context HttpServletResponse response) throws IOException {
+    CorsFilter.addCorsHeaders(response);
+    response.setStatus(HttpServletResponse.SC_OK);
+    response.setContentType(TextFormat.CONTENT_TYPE_004);
+
+    try (Writer writer = response.getWriter()) {
+      TextFormat.writeFormat(
+          TextFormat.CONTENT_TYPE_004, writer, prometheusRegistry.metricFamilySamples());
+    }
   }
 
   public enum PingResponse {
