@@ -52,11 +52,13 @@ public class SubstitutionsImpl implements Substitutions {
 
   private String lookup(String key) {
     String envKey = key.replaceAll("\\.", "_");
+    String constKey = key;
     String transformer = "";
 
     if (envKey.contains(">")) {
       transformer = envKey.substring(envKey.indexOf('>') + 1);
       envKey = envKey.substring(0, envKey.indexOf('>'));
+      constKey = constKey.substring(0, constKey.indexOf('>'));
     }
 
     String value = System.getenv(envKey);
@@ -71,8 +73,8 @@ public class SubstitutionsImpl implements Substitutions {
       return transform(value, transformer);
     }
 
-    if (constants.containsKey(key)) {
-      return constants.get(key);
+    if (constants.containsKey(constKey)) {
+      return constants.get(constKey);
     }
 
     return null;
