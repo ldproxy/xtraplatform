@@ -8,6 +8,7 @@
 package de.ii.xtraplatform.base.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonMerge;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.ii.xtraplatform.docs.DocFile;
@@ -139,6 +140,7 @@ public abstract class AppConfiguration extends Configuration {
    * @langDe Siehe [Substitutionen](95-substitutions.md).
    */
   @JsonProperty("substitutions")
+  @JsonMerge
   @Valid
   public abstract Map<String, Object> getSubstitutions();
 
