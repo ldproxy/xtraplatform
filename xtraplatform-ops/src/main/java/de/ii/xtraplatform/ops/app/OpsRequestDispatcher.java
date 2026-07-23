@@ -7,11 +7,12 @@
  */
 package de.ii.xtraplatform.ops.app;
 
+import com.codahale.metrics.MetricRegistry;
 import jakarta.servlet.ServletConfig;
 import org.eclipse.jetty.servlet.ServletHolder;
 
 @FunctionalInterface
 public interface OpsRequestDispatcher {
 
-  void init(ServletConfig servletConfig, ServletHolder tasksServlet);
+  void init(ServletConfig servletConfig, ServletHolder tasksServlet, MetricRegistry metricRegistry);
 }

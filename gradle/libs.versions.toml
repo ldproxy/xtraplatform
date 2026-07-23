@@ -15,6 +15,7 @@ rs = '1.0.4'
 uuid = '5.2.0'
 jsr305 = '3.0.2'
 jedis = '7.5.3'
+prometheus-simpleclient = '0.16.0'
 
 [libraries]
 # auth
@@ -63,8 +64,14 @@ rs = { module = "org.reactivestreams:reactive-streams", version.ref = "rs" }
 #redis
 jedis = { module = "redis.clients:jedis", version.ref = "jedis" }
 
+#metrics
+prometheus-simpleclient = { module = "io.prometheus:simpleclient", version.ref = "prometheus-simpleclient" }
+prometheus-simpleclient-dropwizard = { module = "io.prometheus:simpleclient_dropwizard", version.ref = "prometheus-simpleclient" }
+prometheus-simpleclient-common = { module = "io.prometheus:simpleclient_common", version.ref = "prometheus-simpleclient" }
+
 [bundles]
 auth = ["jjwt-api", "jjwt-impl", "jjwt-jackson"]
 openapi = ["swagger-jaxrs2", "swagger-models", "swagger-annotations", "swagger-integration", "swagger-core", "swagger-classgraph"]
 runtime = ["dropwizard-core", "dropwizard-views-mustache", "dropwizard-client", "dropwizard-auth", "dropwizard-json-logging",
   "jackson-afterburner", "jackson-xml", "jackson-smile", "commons-codec", "threeten-extra", "xml-bind-api", "jsr305"]
+prometheus = ["prometheus-simpleclient", "prometheus-simpleclient-dropwizard", "prometheus-simpleclient-common"]

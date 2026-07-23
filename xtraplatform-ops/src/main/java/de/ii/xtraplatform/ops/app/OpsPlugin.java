@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.ops.app;
 
+import com.codahale.metrics.MetricRegistry;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppConfiguration;
 import de.ii.xtraplatform.web.domain.DropwizardPlugin;
@@ -33,6 +34,7 @@ public class OpsPlugin implements DropwizardPlugin {
 
   private final OpsRequestDispatcher opsRequestDispatcher;
   private ServletHolder tasksServlet;
+  private MetricRegistry metricRegistry;
 
   @Inject
   OpsPlugin(OpsRequestDispatcher opsRequestDispatcher) {
@@ -42,6 +44,7 @@ public class OpsPlugin implements DropwizardPlugin {
   @Override
   @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
   public void init(AppConfiguration configuration, Environment environment) {
+    this.metricRegistry = environment.metrics();
     ServletHandler servletHandler = environment.getAdminContext().getServletHandler();
     ServletHolder[] holders = servletHandler.getServlets();
     ServletMapping[] mappings = servletHandler.getServletMappings();
@@ -84,7 +87,7 @@ public class OpsPlugin implements DropwizardPlugin {
       @Override
       public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        opsRequestDispatcher.init(config, tasksServlet);
+        opsRequestDispatcher.init(config, tasksServlet, metricRegistry);
       }
     };
   }
