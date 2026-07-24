@@ -16,13 +16,9 @@ public interface JobQueueV2 {
 
   JobV2 createJob(String type, Map<String, Object> inputs, Object details);
 
-  void push(JobV2 job);
+  CompletableFuture<JobV2> push(JobV2 job);
 
-  void push(JobV2 job, Consumer<JobV2> onChange);
-
-  CompletableFuture<JobV2> pushSync(JobV2 job);
-
-  CompletableFuture<JobV2> pushSync(JobV2 job, Consumer<JobV2> onChange);
+  CompletableFuture<JobV2> push(JobV2 job, Consumer<JobV2> onChange);
 
   JobV2 get(String jobId);
 }

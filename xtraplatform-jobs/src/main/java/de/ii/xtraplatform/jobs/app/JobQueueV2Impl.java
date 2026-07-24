@@ -66,14 +66,8 @@ public class JobQueueV2Impl implements JobQueueV2 {
     return jobs.get(jobId);
   }
 
-  @Override
-  public void push(JobV2 job) {
-    push(job, j -> {});
-  }
-
   @SuppressWarnings("PMD.AvoidCatchingGenericException")
-  @Override
-  public void push(JobV2 job, Consumer<JobV2> onChange) {
+  private void doPush(JobV2 job, Consumer<JobV2> onChange) {
     JobV2Impl jobV2 = (JobV2Impl) job;
     jobs.put(job.getId(), jobV2);
 
@@ -147,12 +141,12 @@ public class JobQueueV2Impl implements JobQueueV2 {
   }
 
   @Override
-  public CompletableFuture<JobV2> pushSync(JobV2 job) {
-    return pushSync(job, j -> {});
+  public CompletableFuture<JobV2> push(JobV2 job) {
+    return push(job, j -> {});
   }
 
   @Override
-  public CompletableFuture<JobV2> pushSync(JobV2 job, Consumer<JobV2> onChange) {
+  public CompletableFuture<JobV2> push(JobV2 job, Consumer<JobV2> onChange) {
 
     CompletableFuture<JobV2> future = new CompletableFuture<>();
 
@@ -164,7 +158,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
           }
         };
 
-    push(job, onChangeWrapper);
+    doPush(job, onChangeWrapper);
 
     return future;
   }
