@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -40,16 +41,20 @@ public interface JobV2Impl extends JobV2 {
   @Override
   Object getDetails();
 
-  List<? extends JobV2Impl> getFollowUps();
+  @Value.Default
+  default List<JobV2Impl> getFollowUps() {
+    return List.of();
+  }
 
   OptionalInt getTimeout();
 
   OptionalInt getRetries();
 
-  /*@Value.Default
+  @Override
+  @Value.Default
   default AtomicReference<List<String>> getErrors() {
     return new AtomicReference<>(List.of());
-  }*/
+  }
 
   @Override
   @Value.Default
@@ -92,6 +97,7 @@ public interface JobV2Impl extends JobV2 {
   }
 
   @Override
+  @Value.Default
   default int getProgress() {
     int total = getTotal().get();
 

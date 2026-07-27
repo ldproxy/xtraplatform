@@ -9,8 +9,10 @@ package de.ii.xtraplatform.jobs.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.jobs.domain.ImmutableJobV2Impl;
+import de.ii.xtraplatform.jobs.domain.ImmutableJobV2Impl.Builder;
 import de.ii.xtraplatform.jobs.domain.JobQueueV2;
 import de.ii.xtraplatform.jobs.domain.JobV2;
+import de.ii.xtraplatform.jobs.domain.JobV2.Status;
 import de.ii.xtraplatform.jobs.domain.JobV2Impl;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -25,9 +27,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+// THIS IS JUST A MOCKUP
 @Singleton
 @AutoBind
 public class JobQueueV2Impl implements JobQueueV2 {
@@ -48,7 +52,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
   @Override
   public JobV2 createJob(String type, Map<String, Object> inputs) {
-    return createJob(type, inputs, null);
+    return createJob(type, inputs, 42);
   }
 
   @Override
@@ -75,11 +79,11 @@ public class JobQueueV2Impl implements JobQueueV2 {
     scheduler.schedule(
         () -> {
           JobV2Impl newJob =
-              new ImmutableJobV2Impl.Builder()
+              new Builder()
                   .from(jobV2)
                   .startedAt(new AtomicLong(Instant.now().getEpochSecond()))
                   .updatedAt(new AtomicLong(Instant.now().getEpochSecond()))
-                  .status(JobV2.Status.RUNNING)
+                  .status(Status.RUNNING)
                   .build();
           jobs.put(job.getId(), newJob);
 
@@ -92,8 +96,8 @@ public class JobQueueV2Impl implements JobQueueV2 {
     scheduler.schedule(
         () -> {
           JobV2Impl newJob =
-              new ImmutableJobV2Impl.Builder()
-                  .from(jobV2)
+              new Builder()
+                  .from(jobs.get(job.getId()))
                   .updatedAt(new AtomicLong(Instant.now().getEpochSecond()))
                   .current(new AtomicInteger(60))
                   .build();
@@ -101,7 +105,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
           onChange.accept(newJob);
         },
-        5,
+        2,
         TimeUnit.SECONDS);
 
     // Finished job
@@ -111,12 +115,12 @@ public class JobQueueV2Impl implements JobQueueV2 {
             Map<String, Object> results = processesMap.get(job.getType()).apply(job.getInputs());
 
             JobV2Impl newJob =
-                new ImmutableJobV2Impl.Builder()
-                    .from(jobV2)
+                new Builder()
+                    .from(jobs.get(job.getId()))
                     .updatedAt(new AtomicLong(Instant.now().getEpochSecond()))
                     .finishedAt(new AtomicLong(Instant.now().getEpochSecond()))
                     .current(new AtomicInteger(100))
-                    .status(JobV2.Status.SUCCESSFUL)
+                    .status(Status.SUCCESSFUL)
                     .outputs(results)
                     .build();
             jobs.put(job.getId(), newJob);
@@ -124,19 +128,19 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
           } catch (Throwable e) {
             JobV2Impl newJob =
-                new ImmutableJobV2Impl.Builder()
-                    .from(jobV2)
+                new Builder()
+                    .from(jobs.get(job.getId()))
                     .updatedAt(new AtomicLong(Instant.now().getEpochSecond()))
                     .finishedAt(new AtomicLong(Instant.now().getEpochSecond()))
                     .current(new AtomicInteger(100))
-                    .status(JobV2.Status.FAILED)
-                    .errors(List.of(e.getMessage()))
+                    .status(Status.FAILED)
+                    .errors(new AtomicReference<>(List.of(e.getMessage())))
                     .build();
             jobs.put(job.getId(), newJob);
             onChange.accept(newJob);
           }
         },
-        10,
+        3,
         TimeUnit.SECONDS);
   }
 

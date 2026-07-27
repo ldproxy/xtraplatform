@@ -10,6 +10,7 @@ package de.ii.xtraplatform.jobs.domain;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 public interface JobV2 {
 
@@ -42,7 +43,7 @@ public interface JobV2 {
   int getProgress();
 
   // ???
-  List<String> getErrors();
+  AtomicReference<List<String>> getErrors();
 
   // ???
   Object getDetails();
