@@ -21,4 +21,6 @@ public interface JobQueueV2 {
   CompletableFuture<JobV2> push(JobV2 job, Consumer<JobV2> onChange);
 
   JobV2 get(String jobId);
+
+  void cancel(String jobId);
 }

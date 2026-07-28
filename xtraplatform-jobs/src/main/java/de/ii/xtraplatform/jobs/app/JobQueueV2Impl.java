@@ -31,6 +31,7 @@ import java.util.function.Function;
 // THIS IS JUST A MOCKUP
 @Singleton
 @AutoBind
+@SuppressWarnings("PMD.AvoidSynchronizedStatement")
 public class JobQueueV2Impl implements JobQueueV2 {
 
   private final Map<String, JobV2Impl> jobs = new ConcurrentHashMap<>();
@@ -63,85 +64,6 @@ public class JobQueueV2Impl implements JobQueueV2 {
   }
 
   @Override
-  public JobV2 get(String jobId) {
-    return jobs.get(jobId);
-  }
-
-  @SuppressWarnings("PMD.AvoidCatchingGenericException")
-  private void doPush(JobV2 job, Consumer<JobV2> onChange) {
-    JobV2Impl jobV2 = (JobV2Impl) job;
-    jobs.put(job.getId(), jobV2);
-
-    // Start job
-    scheduler.schedule(
-        () -> {
-          JobV2Impl newJob =
-              new Builder()
-                  .from(jobV2)
-                  .startedAt(Instant.now().getEpochSecond())
-                  .updatedAt(Instant.now().getEpochSecond())
-                  .status(Status.RUNNING)
-                  .build();
-          jobs.put(job.getId(), newJob);
-
-          onChange.accept(newJob);
-        },
-        1,
-        TimeUnit.SECONDS);
-
-    // Update job
-    scheduler.schedule(
-        () -> {
-          JobV2Impl newJob =
-              new Builder()
-                  .from(jobs.get(job.getId()))
-                  .updatedAt(Instant.now().getEpochSecond())
-                  .current(60)
-                  .build();
-          jobs.put(job.getId(), newJob);
-
-          onChange.accept(newJob);
-        },
-        2,
-        TimeUnit.SECONDS);
-
-    // Finished job
-    scheduler.schedule(
-        () -> {
-          try {
-            Map<String, Object> results = processesMap.get(job.getType()).apply(job.getInputs());
-
-            JobV2Impl newJob =
-                new Builder()
-                    .from(jobs.get(job.getId()))
-                    .updatedAt(Instant.now().getEpochSecond())
-                    .finishedAt(Instant.now().getEpochSecond())
-                    .current(100)
-                    .status(Status.SUCCESSFUL)
-                    .outputs(results)
-                    .build();
-            jobs.put(job.getId(), newJob);
-            onChange.accept(newJob);
-
-          } catch (Throwable e) {
-            JobV2Impl newJob =
-                new Builder()
-                    .from(jobs.get(job.getId()))
-                    .updatedAt(Instant.now().getEpochSecond())
-                    .finishedAt(Instant.now().getEpochSecond())
-                    .current(100)
-                    .status(Status.FAILED)
-                    .errors(List.of(e.getMessage()))
-                    .build();
-            jobs.put(job.getId(), newJob);
-            onChange.accept(newJob);
-          }
-        },
-        3,
-        TimeUnit.SECONDS);
-  }
-
-  @Override
   public CompletableFuture<JobV2> push(JobV2 job) {
     return push(job, j -> {});
   }
@@ -153,7 +75,13 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
     Consumer<JobV2> onChangeWrapper =
         j -> {
+          if (j.getStatus() == Status.DISMISSED) {
+            future.complete(j);
+            return;
+          }
+
           onChange.accept(j);
+
           if (j.getStatus() == JobV2.Status.SUCCESSFUL || j.getStatus() == JobV2.Status.FAILED) {
             future.complete(j);
           }
@@ -162,6 +90,137 @@ public class JobQueueV2Impl implements JobQueueV2 {
     doPush(job, onChangeWrapper);
 
     return future;
+  }
+
+  @Override
+  public JobV2 get(String jobId) {
+    synchronized (jobs) {
+      return jobs.get(jobId);
+    }
+  }
+
+  private void put(JobV2Impl job) {
+    synchronized (jobs) {
+      jobs.put(job.getId(), job);
+    }
+  }
+
+  @Override
+  public void cancel(String jobId) {
+    synchronized (jobs) {
+      JobV2Impl job = jobs.get(jobId);
+      if (job != null) {
+        JobV2Impl newJob =
+            new Builder()
+                .from(job)
+                .updatedAt(Instant.now().getEpochSecond())
+                .finishedAt(Instant.now().getEpochSecond())
+                .current(100)
+                .status(Status.DISMISSED)
+                .build();
+        jobs.put(jobId, newJob);
+      }
+    }
+  }
+
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
+  private void doPush(JobV2 job, Consumer<JobV2> onChange) {
+    put((JobV2Impl) job);
+
+    // Start job
+    scheduler.schedule(
+        () -> {
+          JobV2Impl jobV2 = (JobV2Impl) get(job.getId());
+          if (jobV2 == null) {
+            return;
+          }
+          if (jobV2.getStatus() == Status.DISMISSED) {
+            onChange.accept(jobV2);
+            return;
+          }
+
+          JobV2Impl newJob =
+              new Builder()
+                  .from(jobV2)
+                  .startedAt(Instant.now().getEpochSecond())
+                  .updatedAt(Instant.now().getEpochSecond())
+                  .status(Status.RUNNING)
+                  .build();
+          put(newJob);
+
+          onChange.accept(newJob);
+        },
+        1,
+        TimeUnit.SECONDS);
+
+    // Update job
+    scheduler.schedule(
+        () -> {
+          JobV2Impl jobV2 = (JobV2Impl) get(job.getId());
+          if (jobV2 == null) {
+            return;
+          }
+          if (jobV2.getStatus() == Status.DISMISSED) {
+            onChange.accept(jobV2);
+            return;
+          }
+
+          JobV2Impl newJob =
+              new Builder()
+                  .from(jobV2)
+                  .updatedAt(Instant.now().getEpochSecond())
+                  .current(60)
+                  .build();
+          put(newJob);
+
+          onChange.accept(newJob);
+        },
+        2,
+        TimeUnit.SECONDS);
+
+    // Finished job
+    scheduler.schedule(
+        () -> {
+          JobV2Impl jobV2 = (JobV2Impl) get(job.getId());
+          if (jobV2 == null) {
+            return;
+          }
+          if (jobV2.getStatus() == Status.DISMISSED) {
+            onChange.accept(jobV2);
+            return;
+          }
+
+          try {
+            Map<String, Object> results = processesMap.get(job.getType()).apply(job.getInputs());
+
+            JobV2Impl newJob =
+                new Builder()
+                    .from(jobV2)
+                    .updatedAt(Instant.now().getEpochSecond())
+                    .finishedAt(Instant.now().getEpochSecond())
+                    .current(100)
+                    .status(Status.SUCCESSFUL)
+                    .outputs(results)
+                    .build();
+            put(newJob);
+            onChange.accept(newJob);
+
+          } catch (Throwable e) {
+            JobV2Impl newJob =
+                new Builder()
+                    .from(jobV2)
+                    .updatedAt(Instant.now().getEpochSecond())
+                    .finishedAt(Instant.now().getEpochSecond())
+                    .current(100)
+                    .status(Status.FAILED)
+                    .errors(List.of(e.getMessage()))
+                    .build();
+            put(newJob);
+            onChange.accept(newJob);
+          }
+        },
+        3,
+        TimeUnit.SECONDS);
   }
 
   /***
