@@ -9,8 +9,7 @@ package de.ii.xtraplatform.jobs.domain;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nullable;
 
 public interface JobV2 {
 
@@ -26,13 +25,13 @@ public interface JobV2 {
 
   String getType();
 
-  AtomicLong getCreatedAt();
+  long getCreatedAt();
 
-  AtomicLong getStartedAt();
+  long getStartedAt();
 
-  AtomicLong getUpdatedAt();
+  long getUpdatedAt();
 
-  AtomicLong getFinishedAt();
+  long getFinishedAt();
 
   Status getStatus();
 
@@ -43,8 +42,9 @@ public interface JobV2 {
   int getProgress();
 
   // ???
-  AtomicReference<List<String>> getErrors();
+  List<String> getErrors();
 
   // ???
+  @Nullable
   Object getDetails();
 }

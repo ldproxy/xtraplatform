@@ -25,9 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -60,7 +57,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
     return new ImmutableJobV2Impl.Builder()
         .type(type)
         .inputs(inputs)
-        .total(new AtomicInteger(100))
+        .total(100)
         .details(details)
         .build();
   }
@@ -81,8 +78,8 @@ public class JobQueueV2Impl implements JobQueueV2 {
           JobV2Impl newJob =
               new Builder()
                   .from(jobV2)
-                  .startedAt(new AtomicLong(Instant.now().getEpochSecond()))
-                  .updatedAt(new AtomicLong(Instant.now().getEpochSecond()))
+                  .startedAt(Instant.now().getEpochSecond())
+                  .updatedAt(Instant.now().getEpochSecond())
                   .status(Status.RUNNING)
                   .build();
           jobs.put(job.getId(), newJob);
@@ -98,8 +95,8 @@ public class JobQueueV2Impl implements JobQueueV2 {
           JobV2Impl newJob =
               new Builder()
                   .from(jobs.get(job.getId()))
-                  .updatedAt(new AtomicLong(Instant.now().getEpochSecond()))
-                  .current(new AtomicInteger(60))
+                  .updatedAt(Instant.now().getEpochSecond())
+                  .current(60)
                   .build();
           jobs.put(job.getId(), newJob);
 
@@ -117,9 +114,9 @@ public class JobQueueV2Impl implements JobQueueV2 {
             JobV2Impl newJob =
                 new Builder()
                     .from(jobs.get(job.getId()))
-                    .updatedAt(new AtomicLong(Instant.now().getEpochSecond()))
-                    .finishedAt(new AtomicLong(Instant.now().getEpochSecond()))
-                    .current(new AtomicInteger(100))
+                    .updatedAt(Instant.now().getEpochSecond())
+                    .finishedAt(Instant.now().getEpochSecond())
+                    .current(100)
                     .status(Status.SUCCESSFUL)
                     .outputs(results)
                     .build();
@@ -130,11 +127,11 @@ public class JobQueueV2Impl implements JobQueueV2 {
             JobV2Impl newJob =
                 new Builder()
                     .from(jobs.get(job.getId()))
-                    .updatedAt(new AtomicLong(Instant.now().getEpochSecond()))
-                    .finishedAt(new AtomicLong(Instant.now().getEpochSecond()))
-                    .current(new AtomicInteger(100))
+                    .updatedAt(Instant.now().getEpochSecond())
+                    .finishedAt(Instant.now().getEpochSecond())
+                    .current(100)
                     .status(Status.FAILED)
-                    .errors(new AtomicReference<>(List.of(e.getMessage())))
+                    .errors(List.of(e.getMessage()))
                     .build();
             jobs.put(job.getId(), newJob);
             onChange.accept(newJob);
