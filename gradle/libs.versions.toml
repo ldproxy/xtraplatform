@@ -1,7 +1,7 @@
 [versions]
 jjwt = '0.13.0'
 swagger = '2.2.52'
-classgraph = "4.8.184"
+classgraph = "4.8.186"
 dropwizard = '4.0.17'
 jackson = '2.21.0'
 commons-codec = '1.22.0'
