@@ -20,6 +20,7 @@ import java.security.InvalidParameterException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -28,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-// THIS IS JUST A MOCKUP
+// This is just a mock
 @Singleton
 @AutoBind
 @SuppressWarnings("PMD.AvoidSynchronizedStatement")
@@ -50,7 +51,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
   @Override
   public JobV2 createJob(String type, Map<String, Object> inputs) {
-    return createJob(type, inputs, 42);
+    return createJob(type, inputs, Optional.empty());
   }
 
   @Override
@@ -150,7 +151,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
           onChange.accept(newJob);
         },
-        1,
+        3,
         TimeUnit.SECONDS);
 
     // Update job
@@ -175,7 +176,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
           onChange.accept(newJob);
         },
-        2,
+        6,
         TimeUnit.SECONDS);
 
     // Finished job
@@ -219,7 +220,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
             onChange.accept(newJob);
           }
         },
-        3,
+        9,
         TimeUnit.SECONDS);
   }
 
