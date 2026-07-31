@@ -20,7 +20,6 @@ import java.security.InvalidParameterException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -51,11 +50,11 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
   @Override
   public JobV2 createJob(String type, Map<String, Object> inputs) {
-    return createJob(type, inputs, Optional.empty());
+    return createJob(type, inputs, Map.of());
   }
 
   @Override
-  public JobV2 createJob(String type, Map<String, Object> inputs, Object details) {
+  public JobV2 createJob(String type, Map<String, Object> inputs, Map<String, Object> details) {
     return new ImmutableJobV2Impl.Builder()
         .type(type)
         .inputs(inputs)

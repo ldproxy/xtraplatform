@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.uuid.Generators;
 import com.fasterxml.uuid.NoArgGenerator;
 import java.time.Instant;
+import java.util.Map;
 import java.util.OptionalInt;
 import org.immutables.value.Value;
 
@@ -35,7 +36,7 @@ public interface JobV2Impl extends JobV2 {
   String getType();
 
   @Override
-  Object getDetails();
+  Map<String, Object> getDetails();
 
   OptionalInt getTimeout();
 

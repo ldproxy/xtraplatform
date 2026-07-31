@@ -46,5 +46,5 @@ public interface JobV2 {
 
   // ???
   @Nullable
-  Object getDetails();
+  Map<String, Object> getDetails();
 }

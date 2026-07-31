@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 public interface JobQueueV2 {
   JobV2 createJob(String type, Map<String, Object> inputs);
 
-  JobV2 createJob(String type, Map<String, Object> inputs, Object details);
+  JobV2 createJob(String type, Map<String, Object> inputs, Map<String, Object> details);
 
   CompletableFuture<JobV2> push(JobV2 job);
 
