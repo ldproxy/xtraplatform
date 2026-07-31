@@ -71,6 +71,7 @@ public interface BaseJob {
     return new AtomicInteger(0);
   }
 
+  @SuppressWarnings("PMD.UselessParentheses")
   default int getPercent() {
     int total = getTotal().get();
 
@@ -87,7 +88,7 @@ public interface BaseJob {
       return 100;
     }
 
-    return (int) (((float) Math.max(current, 0)) / total) * 100;
+    return (int) ((((float) Math.max(current, 0)) / total) * 100);
   }
 
   default boolean isStarted() {
