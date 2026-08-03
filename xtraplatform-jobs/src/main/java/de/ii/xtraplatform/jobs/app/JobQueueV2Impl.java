@@ -43,7 +43,9 @@ public class JobQueueV2Impl implements JobQueueV2 {
           "EchoProcess",
           this::echoProcess,
           "AdditionProcess",
-          this::additionProcess);
+          this::additionProcess,
+          "ArrayProcess",
+          this::arrayProcess);
 
   @Inject
   public JobQueueV2Impl() {}
@@ -150,7 +152,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
           onChange.accept(newJob);
         },
-        3,
+        1,
         TimeUnit.SECONDS);
 
     // Update job
@@ -175,7 +177,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
           onChange.accept(newJob);
         },
-        6,
+        2,
         TimeUnit.SECONDS);
 
     // Finished job
@@ -219,7 +221,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
             onChange.accept(newJob);
           }
         },
-        9,
+        3,
         TimeUnit.SECONDS);
   }
 
@@ -230,6 +232,10 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
   private Map<String, Object> echoProcess(Map<String, Object> inputs) {
     return inputs;
+  }
+
+  private Map<String, Object> arrayProcess(Map<String, Object> inputs) {
+    return Map.of("arrayN", List.of(1, 2, 3, inputs.size()));
   }
 
   @SuppressWarnings("PMD.UnusedFormalParameter")
