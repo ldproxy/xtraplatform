@@ -97,8 +97,6 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
       volatileRegistry.onAvailable(oidc).toCompletableFuture().join();
     }
 
-    long clockSkew = 3600;
-
     this.signingKey = getKey();
     this.claimsProvider =
         authConfig.getProviders().values().stream()
@@ -108,17 +106,17 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
             .orElse(new IdentityProvider() {});
     this.parser =
         oidc.isEnabled() && oidc instanceof SigningKeyResolver
-            ? createParser(null, (SigningKeyResolver) oidc, claimsProvider, clockSkew)
-            : createParser(signingKey, null, claimsProvider, clockSkew);
+            ? createParser(null, (SigningKeyResolver) oidc, claimsProvider)
+            : createParser(signingKey, null, claimsProvider);
 
     return CompletableFuture.completedFuture(null);
   }
 
   private static JwtParser createParser(
-      Key key, SigningKeyResolver keyResolver, IdentityProvider claimsProvider, long clockSkew) {
+      Key key, SigningKeyResolver keyResolver, IdentityProvider claimsProvider) {
     JwtParserBuilder jwtParserBuilder =
         Jwts.parser()
-            .clockSkewSeconds(clockSkew)
+            .clockSkewSeconds(claimsProvider.getClockSkew().toSeconds())
             .json(new JacksonDeserializer<>(listType(claimsProvider.getClaims().getAudience())))
             .json(new JacksonDeserializer<>(listType(claimsProvider.getClaims().getScopes())))
             .json(new JacksonDeserializer<>(listType(claimsProvider.getClaims().getPermissions())));

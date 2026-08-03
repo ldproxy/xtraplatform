@@ -18,6 +18,7 @@ import de.ii.xtraplatform.docs.DocStep.Step;
 import de.ii.xtraplatform.docs.DocTable;
 import de.ii.xtraplatform.docs.DocTable.ColumnSet;
 import de.ii.xtraplatform.docs.DocVar;
+import io.dropwizard.util.Duration;
 import java.util.Map;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -528,6 +529,17 @@ public interface AuthConfiguration {
     @Value.Default
     default ImmutableClaims getClaims() {
       return new ImmutableClaims.Builder().build();
+    }
+
+    /**
+     * @langEn Allowed clock skew for validating token expiration.
+     * @langDe Erlaubte Zeitabweichung beim Validieren des Token-Ablaufs.
+     * @since v4.8
+     * @default 5m
+     */
+    @Value.Default
+    default Duration getClockSkew() {
+      return Duration.minutes(5);
     }
   }
 
