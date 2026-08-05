@@ -16,8 +16,8 @@ import de.ii.xtraplatform.jobs.domain.JobV2.Status;
 import de.ii.xtraplatform.jobs.domain.JobV2Impl;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import java.security.InvalidParameterException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -38,10 +38,10 @@ public class JobQueueV2Impl implements JobQueueV2 {
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(8);
   private final Map<String, Function<Map<String, Object>, Map<String, Object>>> processesMap =
       Map.of(
-          "AnswerProcess",
-          this::answerProcess,
           "EchoProcess",
           this::echoProcess,
+          "AnswerProcess",
+          this::answerProcess,
           "AdditionProcess",
           this::additionProcess,
           "ArrayProcess",
@@ -227,7 +227,6 @@ public class JobQueueV2Impl implements JobQueueV2 {
 
   /***
    * Functions for faking the job queue
-   * ToDo Remove after integrating the job queue
    ***/
 
   private Map<String, Object> echoProcess(Map<String, Object> inputs) {
@@ -235,7 +234,14 @@ public class JobQueueV2Impl implements JobQueueV2 {
   }
 
   private Map<String, Object> arrayProcess(Map<String, Object> inputs) {
-    return Map.of("arrayN", List.of(1, 2, 3, inputs.size()));
+    int n = (Integer) inputs.get("N");
+
+    List<Integer> arrayN = new ArrayList<>();
+    for (int i = 1; i <= n; i++) {
+      arrayN.add(i);
+    }
+
+    return Map.of("arrayN", arrayN);
   }
 
   @SuppressWarnings("PMD.UnusedFormalParameter")
@@ -244,13 +250,8 @@ public class JobQueueV2Impl implements JobQueueV2 {
   }
 
   private Map<String, Object> additionProcess(Map<String, Object> inputs) {
-    if (!inputs.containsKey("firstAddend") || !inputs.containsKey("secondAddend")) {
-      throw new InvalidParameterException("Wrong inputs");
-    }
-
     int firstAddend = (Integer) inputs.get("firstAddend");
     int secondAddend = (Integer) inputs.get("secondAddend");
-
     return Map.of("sum", firstAddend + secondAddend);
   }
 }
