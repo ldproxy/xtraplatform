@@ -44,8 +44,8 @@ public class JobQueueV2Impl implements JobQueueV2 {
           this::answerProcess,
           "AdditionProcess",
           this::additionProcess,
-          "ArrayProcess",
-          this::arrayProcess);
+          "CountingProcess",
+          this::countingProcess);
 
   @Inject
   public JobQueueV2Impl() {}
@@ -233,7 +233,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
     return inputs;
   }
 
-  private Map<String, Object> arrayProcess(Map<String, Object> inputs) {
+  private Map<String, Object> countingProcess(Map<String, Object> inputs) {
     int n = (Integer) inputs.get("N");
 
     List<Integer> arrayN = new ArrayList<>();
@@ -241,7 +241,7 @@ public class JobQueueV2Impl implements JobQueueV2 {
       arrayN.add(i);
     }
 
-    return Map.of("arrayN", arrayN);
+    return Map.of("numbers", arrayN);
   }
 
   @SuppressWarnings("PMD.UnusedFormalParameter")
