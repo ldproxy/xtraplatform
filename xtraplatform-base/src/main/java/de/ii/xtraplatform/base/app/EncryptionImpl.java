@@ -9,28 +9,42 @@ package de.ii.xtraplatform.base.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.base.domain.AppContext;
-import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.Encryption;
 import de.ii.xtraplatform.base.domain.EncryptionConfiguration;
+import de.ii.xtraplatform.base.domain.LogContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Symmetric encryption for data. The stored representation is {@code nonce (12 bytes) || ciphertext
  * || tag (16 bytes)} using AES-256-GCM.
+ *
+ * <p>Cipher, key and RNG are resolved in the constructor, so that everything an operation needs is
+ * in place as soon as this class is injected. It cannot be done in an {@link
+ * de.ii.xtraplatform.base.domain.AppLifeCycle} callback: this class is provided by the encapsulated
+ * component of the base layer, and that component's {@code AppLifeCycle} contributions do not reach
+ * the set that the launcher starts, so the callback would never run.
+ *
+ * <p>The constructor never throws, for anything: it runs inside whichever injection first needs
+ * encryption, and a failure there would abort that unrelated injection instead of reporting a
+ * configuration problem. An unusable key or runtime is logged and leaves encryption disabled, which
+ * fails the startup of every provider that declares encrypted properties.
  */
 @AutoBind
 @Singleton
-@SuppressWarnings({"PMD.ConstructorCallsOverridableMethod", "PMD.AvoidSynchronizedStatement"})
-public class EncryptionImpl implements Encryption, AppLifeCycle {
+@SuppressWarnings("PMD.AvoidSynchronizedStatement")
+public class EncryptionImpl implements Encryption {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionImpl.class);
 
   public static final int KEY_LENGTH = 32;
   public static final int NONCE_LENGTH = 12;
@@ -38,62 +52,55 @@ public class EncryptionImpl implements Encryption, AppLifeCycle {
   private static final String ALGORITHM = "AES";
   private static final String CIPHER = "AES/GCM/NoPadding";
 
-  private final EncryptionConfiguration configuration;
-  private final boolean hasValidKey;
-  private SecretKeySpec secretKey;
-  private Cipher cipher;
-  private SecureRandom random;
+  private final SecretKeySpec secretKey;
+  private final Cipher cipher;
+  private final SecureRandom random;
 
   @Inject
   EncryptionImpl(AppContext appContext) {
-    this.configuration = appContext.getConfiguration().getEncryption();
-    this.hasValidKey =
-        configuration.getKey().isPresent() && isValidKey(configuration.getKey().get());
+    this(appContext.getConfiguration().getEncryption());
   }
 
   // For testing only
   EncryptionImpl(String key) {
-    this.configuration = () -> Optional.ofNullable(key);
-    this.hasValidKey =
-        configuration.getKey().isPresent() && isValidKey(configuration.getKey().get());
-    onStart(false);
+    this(() -> Optional.ofNullable(key));
   }
 
-  @Override
-  public int getPriority() {
-    return 10;
-  }
+  @SuppressWarnings("PMD.AvoidCatchingGenericException")
+  private EncryptionImpl(EncryptionConfiguration configuration) {
+    SecretKeySpec parsedKey = null;
+    Cipher gcmCipher = null;
+    SecureRandom nonceSource = null;
 
-  @Override
-  public CompletionStage<Void> onStart(boolean isStartupAsync) {
-    if (hasValidKey) {
-      byte[] key = parseKey(configuration.getKey().get());
-
-      this.secretKey = new SecretKeySpec(key, ALGORITHM);
-      this.random = new SecureRandom();
+    if (configuration.getKey().isPresent()) {
       try {
-        this.cipher = Cipher.getInstance(CIPHER);
-      } catch (GeneralSecurityException e) {
-        throw new IllegalStateException("AES-256-GCM is not available in this runtime.", e);
+        Cipher aesGcm = Cipher.getInstance(CIPHER);
+        SecureRandom secureRandom = new SecureRandom();
+        SecretKeySpec key = new SecretKeySpec(parseKey(configuration.getKey().get()), ALGORITHM);
+
+        // published together, so a failure cannot leave a partially set up instance behind
+        gcmCipher = aesGcm;
+        nonceSource = secureRandom;
+        parsedKey = key;
+      } catch (Throwable e) {
+        LogContext.error(LOGGER, e, "Encryption is disabled");
       }
     }
-    return AppLifeCycle.super.onStart(isStartupAsync);
+
+    this.secretKey = parsedKey;
+    this.cipher = gcmCipher;
+    this.random = nonceSource;
   }
 
   @Override
   public boolean isEnabled() {
-    return hasValidKey;
-  }
-
-  @Override
-  public boolean isAvailable() {
-    return isEnabled() && secretKey != null && cipher != null && random != null;
+    return secretKey != null;
   }
 
   @Override
   public byte[] encrypt(byte[] data) {
-    if (!isAvailable()) {
-      throw new IllegalStateException("Encryption is not available.");
+    if (!isEnabled()) {
+      throw new IllegalStateException("Encryption is not enabled.");
     }
 
     byte[] nonce = new byte[NONCE_LENGTH];
@@ -117,8 +124,8 @@ public class EncryptionImpl implements Encryption, AppLifeCycle {
 
   @Override
   public byte[] decrypt(byte[] encrypted, String errorContext) {
-    if (!isAvailable()) {
-      throw new IllegalStateException("Encryption is not available.");
+    if (!isEnabled()) {
+      throw new IllegalStateException("Encryption is not enabled.");
     }
 
     if (encrypted.length <= NONCE_LENGTH + TAG_LENGTH_BITS / 8) {
@@ -142,26 +149,17 @@ public class EncryptionImpl implements Encryption, AppLifeCycle {
     }
   }
 
-  private static boolean isValidKey(String base64Key) {
-    try {
-      byte[] key = Base64.getDecoder().decode(base64Key);
-      return key.length == KEY_LENGTH;
-    } catch (IllegalArgumentException e) {
-      return false;
-    }
-  }
-
   private static byte[] parseKey(String base64Key) {
     byte[] key;
     try {
       key = Base64.getDecoder().decode(base64Key);
     } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("The encryption key is not valid Base64.", e);
+      throw new IllegalArgumentException("the configured encryption key is not valid Base64", e);
     }
     if (key.length != KEY_LENGTH) {
       throw new IllegalArgumentException(
           String.format(
-              "The encryption key must be %d bytes long (AES-256), found %d bytes.",
+              "the configured encryption key must be %d bytes long (AES-256), found %d bytes",
               KEY_LENGTH, key.length));
     }
     return key;
