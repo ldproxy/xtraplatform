@@ -10,6 +10,8 @@ package de.ii.xtraplatform.base.domain;
 public interface Encryption {
   boolean isEnabled();
 
+  boolean isAvailable();
+
   byte[] encrypt(byte[] data);
 
   default byte[] decrypt(byte[] data) {

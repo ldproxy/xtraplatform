@@ -39,6 +39,7 @@ public class EncryptionImpl implements Encryption, AppLifeCycle {
   private static final String CIPHER = "AES/GCM/NoPadding";
 
   private final EncryptionConfiguration configuration;
+  private final boolean hasValidKey;
   private SecretKeySpec secretKey;
   private Cipher cipher;
   private SecureRandom random;
@@ -46,17 +47,26 @@ public class EncryptionImpl implements Encryption, AppLifeCycle {
   @Inject
   EncryptionImpl(AppContext appContext) {
     this.configuration = appContext.getConfiguration().getEncryption();
+    this.hasValidKey =
+        configuration.getKey().isPresent() && isValidKey(configuration.getKey().get());
   }
 
   // For testing only
   EncryptionImpl(String key) {
     this.configuration = () -> Optional.ofNullable(key);
+    this.hasValidKey =
+        configuration.getKey().isPresent() && isValidKey(configuration.getKey().get());
     onStart(false);
   }
 
   @Override
+  public int getPriority() {
+    return 10;
+  }
+
+  @Override
   public CompletionStage<Void> onStart(boolean isStartupAsync) {
-    if (configuration.getKey().isPresent()) {
+    if (hasValidKey) {
       byte[] key = parseKey(configuration.getKey().get());
 
       this.secretKey = new SecretKeySpec(key, ALGORITHM);
@@ -72,11 +82,20 @@ public class EncryptionImpl implements Encryption, AppLifeCycle {
 
   @Override
   public boolean isEnabled() {
-    return secretKey != null && cipher != null && random != null;
+    return hasValidKey;
+  }
+
+  @Override
+  public boolean isAvailable() {
+    return isEnabled() && secretKey != null && cipher != null && random != null;
   }
 
   @Override
   public byte[] encrypt(byte[] data) {
+    if (!isAvailable()) {
+      throw new IllegalStateException("Encryption is not available.");
+    }
+
     byte[] nonce = new byte[NONCE_LENGTH];
     random.nextBytes(nonce);
     try {
@@ -98,6 +117,10 @@ public class EncryptionImpl implements Encryption, AppLifeCycle {
 
   @Override
   public byte[] decrypt(byte[] encrypted, String errorContext) {
+    if (!isAvailable()) {
+      throw new IllegalStateException("Encryption is not available.");
+    }
+
     if (encrypted.length <= NONCE_LENGTH + TAG_LENGTH_BITS / 8) {
       throw new IllegalStateException(
           String.format("Decryption failed%s: the stored value is too short.", errorContext));
@@ -116,6 +139,15 @@ public class EncryptionImpl implements Encryption, AppLifeCycle {
     } catch (GeneralSecurityException e) {
       throw new IllegalStateException(
           String.format("Decryption failed %s: wrong key or corrupted value.", errorContext), e);
+    }
+  }
+
+  private static boolean isValidKey(String base64Key) {
+    try {
+      byte[] key = Base64.getDecoder().decode(base64Key);
+      return key.length == KEY_LENGTH;
+    } catch (IllegalArgumentException e) {
+      return false;
     }
   }
 

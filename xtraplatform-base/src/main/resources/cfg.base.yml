@@ -84,3 +84,5 @@ auditLog:
   httpStatus:
     included: [ '200' ]
     excluded: [ ]
+
+  encryption: {}
