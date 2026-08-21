@@ -14,7 +14,6 @@ import de.ii.xtraplatform.base.domain.Encryption;
 import de.ii.xtraplatform.base.domain.EncryptionConfiguration;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -77,14 +76,14 @@ public class EncryptionImpl implements Encryption, AppLifeCycle {
   }
 
   @Override
-  public byte[] encrypt(String data) {
+  public byte[] encrypt(byte[] data) {
     byte[] nonce = new byte[NONCE_LENGTH];
     random.nextBytes(nonce);
     try {
       byte[] ciphertext;
       synchronized (this) {
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(TAG_LENGTH_BITS, nonce));
-        ciphertext = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
+        ciphertext = cipher.doFinal(data);
       }
 
       byte[] encrypted = new byte[NONCE_LENGTH + ciphertext.length];
@@ -98,22 +97,22 @@ public class EncryptionImpl implements Encryption, AppLifeCycle {
   }
 
   @Override
-  public String decrypt(byte[] encrypted, String errorContext) {
+  public byte[] decrypt(byte[] encrypted, String errorContext) {
     if (encrypted.length <= NONCE_LENGTH + TAG_LENGTH_BITS / 8) {
       throw new IllegalStateException(
           String.format("Decryption failed%s: the stored value is too short.", errorContext));
     }
     try {
-      byte[] plaintext;
+      byte[] decrypted;
       synchronized (this) {
         cipher.init(
             Cipher.DECRYPT_MODE,
             secretKey,
             new GCMParameterSpec(TAG_LENGTH_BITS, encrypted, 0, NONCE_LENGTH));
-        plaintext = cipher.doFinal(encrypted, NONCE_LENGTH, encrypted.length - NONCE_LENGTH);
+        decrypted = cipher.doFinal(encrypted, NONCE_LENGTH, encrypted.length - NONCE_LENGTH);
       }
 
-      return new String(plaintext, StandardCharsets.UTF_8);
+      return decrypted;
     } catch (GeneralSecurityException e) {
       throw new IllegalStateException(
           String.format("Decryption failed %s: wrong key or corrupted value.", errorContext), e);

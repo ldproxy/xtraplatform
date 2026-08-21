@@ -16,6 +16,7 @@ import de.ii.xtraplatform.blobs.domain.BlobLocals;
 import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobWriter;
 import de.ii.xtraplatform.blobs.domain.ImmutableBlob;
+import io.minio.AppendObjectArgs;
 import io.minio.ListObjectsArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -183,6 +184,26 @@ public class BlobSourceS3 implements BlobSource, BlobWriter, BlobLocals, Closeab
       minioClient.putObject(
           PutObjectArgs.builder().bucket(bucket).object(pathHelper.full(path)).stream(
                   buffer, (long) buffer.available(), (long) -1)
+              .build());
+    } catch (Throwable e) {
+      throw new IOException("S3 Driver", e);
+    }
+  }
+
+  @Override
+  public void append(Path path, InputStream content) throws IOException {
+    if (!pathHelper.canHandle(path)) {
+      return;
+    }
+
+    try (ByteArrayInputStream buffer = new ByteArrayInputStream(content.readAllBytes())) {
+      if (LOGGER.isDebugEnabled(MARKER.S3)) {
+        LOGGER.debug(MARKER.S3, "S3 append content {}", path);
+      }
+
+      minioClient.appendObject(
+          AppendObjectArgs.builder().bucket(bucket).object(pathHelper.full(path)).stream(
+                  buffer, (long) buffer.available())
               .build());
     } catch (Throwable e) {
       throw new IOException("S3 Driver", e);

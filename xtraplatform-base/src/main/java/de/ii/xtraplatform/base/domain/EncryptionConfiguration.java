@@ -18,13 +18,14 @@ import org.immutables.value.Value;
 
 /**
  * @langEn # Encryption
- *     <p>Encryption configuration for sensitive data. The symmetric key must be 32 bytes long
- *     (AES-256).
+ *     <p>Encryption configuration for sensitive data. May be used to encrypt data at rest, e.g.
+ *     feature properties or resources. The symmetric key must be 32 (AES-256).
  *     <p>## Options
  *     <p>{@docTable:properties}
  * @langDe # Verschlüsselung
- *     <p>Konfiguration der Verschlüsselung für sensible Daten. Der symmetrische Schlüssel muss 32
- *     Bytes lang sein (AES-256).
+ *     <p>Konfiguration der Verschlüsselung für sensible Daten. Kann verwendet werden, um Daten im
+ *     Ruhezustand zu verschlüsseln, z.B. Feature-Properties oder Ressourcen. Der symmetrische
+ *     Schlüssel muss 32 Bytes lang sein (AES-256).
  *     <p>## Optionen
  *     <p>{@docTable:properties}
  * @ref:cfgProperties {@link ImmutableEncryptionConfiguration}

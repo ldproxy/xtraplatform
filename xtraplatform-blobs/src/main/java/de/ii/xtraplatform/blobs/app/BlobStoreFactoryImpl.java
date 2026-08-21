@@ -9,6 +9,7 @@ package de.ii.xtraplatform.blobs.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.Encryption;
 import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
@@ -25,18 +26,23 @@ public class BlobStoreFactoryImpl implements BlobStoreFactory {
 
   private final Store store;
   private final VolatileRegistry volatileRegistry;
+  private final Encryption encryption;
   private final Lazy<Set<BlobStoreDriver>> drivers;
 
   @Inject
   BlobStoreFactoryImpl(
-      Store store, VolatileRegistry volatileRegistry, Lazy<Set<BlobStoreDriver>> drivers) {
+      Store store,
+      VolatileRegistry volatileRegistry,
+      Encryption encryption,
+      Lazy<Set<BlobStoreDriver>> drivers) {
     this.store = store;
     this.volatileRegistry = volatileRegistry;
+    this.encryption = encryption;
     this.drivers = drivers;
   }
 
   @Override
   public BlobStore createBlobStore(Content contentType) {
-    return new BlobStoreImpl(store, volatileRegistry, drivers, contentType);
+    return new BlobStoreImpl(store, volatileRegistry, encryption, drivers, contentType);
   }
 }

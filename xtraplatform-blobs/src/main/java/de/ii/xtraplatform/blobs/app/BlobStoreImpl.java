@@ -12,6 +12,7 @@ import static de.ii.xtraplatform.base.domain.util.LambdaWithException.mayThrow;
 import com.codahale.metrics.health.HealthCheck;
 import com.google.common.collect.Lists;
 import dagger.Lazy;
+import de.ii.xtraplatform.base.domain.Encryption;
 import de.ii.xtraplatform.base.domain.LogContext;
 import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreSource;
@@ -26,6 +27,8 @@ import de.ii.xtraplatform.blobs.domain.BlobSource;
 import de.ii.xtraplatform.blobs.domain.BlobStore;
 import de.ii.xtraplatform.blobs.domain.BlobStoreDriver;
 import de.ii.xtraplatform.blobs.domain.BlobWriterReader;
+import de.ii.xtraplatform.blobs.domain.ImmutableBlob;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -44,7 +47,8 @@ import org.slf4j.LoggerFactory;
   "PMD.CyclomaticComplexity",
   "PMD.CouplingBetweenObjects",
   "PMD.GodClass",
-  "PMD.AvoidCatchingGenericException"
+  "PMD.AvoidCatchingGenericException",
+  "PMD.TooManyMethods"
 })
 public class BlobStoreImpl extends AbstractVolatileComposedPolling
     implements BlobStore, BlobWriterReader {
@@ -53,6 +57,7 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
 
   private final Store store;
   private final VolatileRegistry volatileRegistry;
+  private final Encryption encryption;
   private final Lazy<Set<BlobStoreDriver>> drivers;
 
   private final List<BlobSource> blobReaders;
@@ -63,11 +68,13 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
   public BlobStoreImpl(
       Store store,
       VolatileRegistry volatileRegistry,
+      Encryption encryption,
       Lazy<Set<BlobStoreDriver>> drivers,
       Content contentType) {
     super(volatileRegistry, "read", "write");
     this.store = store;
     this.volatileRegistry = volatileRegistry;
+    this.encryption = encryption;
     this.drivers = drivers;
     this.blobReaders = new ArrayList<>();
     this.blobWriters = new ArrayList<>();
@@ -246,6 +253,24 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
   }
 
   @Override
+  public Optional<InputStream> contentEncrypted(Path path) throws IOException {
+    if (!encryption.isEnabled()) {
+      LOGGER.error("Encryption is not enabled, cannot read encrypted content.");
+      return Optional.empty();
+    }
+
+    Optional<InputStream> content = content(path);
+
+    if (content.isPresent()) {
+      byte[] bytes = content.get().readAllBytes();
+      InputStream decryptedContent = new ByteArrayInputStream(encryption.decrypt(bytes));
+      return Optional.of(decryptedContent);
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<Blob> get(Path path) throws IOException {
     for (BlobReader source : blobReaders) {
       if (source.canHandle(path)) {
@@ -255,6 +280,30 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
           return blob;
         }
       }
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<Blob> getEncrypted(Path path) throws IOException {
+    if (!encryption.isEnabled()) {
+      LOGGER.error("Encryption is not enabled, cannot read encrypted content.");
+      return Optional.empty();
+    }
+
+    Optional<Blob> blob = get(path);
+
+    if (blob.isPresent()) {
+      Blob original = blob.get();
+      return Optional.of(
+          ImmutableBlob.of(
+              original.path(),
+              original.size(),
+              original.lastModified(),
+              Optional.ofNullable(original.eTag()),
+              Optional.ofNullable(original.contentType()),
+              () -> new ByteArrayInputStream(encryption.decrypt(original.content()))));
     }
 
     return Optional.empty();
@@ -319,6 +368,37 @@ public class BlobStoreImpl extends AbstractVolatileComposedPolling
 
     LOGGER.error(
         "Cannot write {} at '{}', no writable source found.", contentType.getPrefix(), path);
+  }
+
+  @Override
+  public void putEncrypted(Path path, InputStream content) throws IOException {
+    if (!encryption.isEnabled()) {
+      LOGGER.error("Encryption is not enabled, cannot write encrypted content.");
+      return;
+    }
+
+    byte[] bytes = content.readAllBytes();
+    InputStream encryptedContent = new ByteArrayInputStream(encryption.encrypt(bytes));
+
+    put(path, encryptedContent);
+  }
+
+  @Override
+  public void append(Path path, InputStream content) throws IOException {
+    if (isReadOnly) {
+      LOGGER.error("Store is operating in read-only mode, write operations are not allowed.");
+      return;
+    }
+
+    for (BlobSource source : blobWriters) {
+      if (source.canHandle(path)) {
+        source.writer().append(path, content);
+        return;
+      }
+    }
+
+    LOGGER.error(
+        "Cannot append {} at '{}', no writable source found.", contentType.getPrefix(), path);
   }
 
   @Override

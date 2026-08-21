@@ -20,7 +20,7 @@ import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 public interface ResourceStore
-    extends BlobReader, BlobWriter, BlobLocals, Volatile2, VolatileRegistered {
+    extends BlobReader, BlobWriter, BlobLocals, BlobEncryption, Volatile2, VolatileRegistered {
 
   CompletableFuture<Void> onReady();
 
@@ -86,8 +86,18 @@ public interface ResourceStore
     }
 
     @Override
+    public Optional<InputStream> contentEncrypted(Path path) throws IOException {
+      return delegate.contentEncrypted(prefix.resolve(path));
+    }
+
+    @Override
     public Optional<Blob> get(Path path) throws IOException {
       return delegateWriter.get(prefix.resolve(path), writable);
+    }
+
+    @Override
+    public Optional<Blob> getEncrypted(Path path) throws IOException {
+      return delegate.getEncrypted(prefix.resolve(path));
     }
 
     @Override
@@ -129,6 +139,16 @@ public interface ResourceStore
     @Override
     public void put(Path path, InputStream content) throws IOException {
       delegate.put(prefix.resolve(path), content);
+    }
+
+    @Override
+    public void putEncrypted(Path path, InputStream content) throws IOException {
+      delegate.putEncrypted(prefix.resolve(path), content);
+    }
+
+    @Override
+    public void append(Path path, InputStream content) throws IOException {
+      delegate.append(prefix.resolve(path), content);
     }
 
     @Override

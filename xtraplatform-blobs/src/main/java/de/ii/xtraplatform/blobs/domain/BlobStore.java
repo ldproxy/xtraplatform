@@ -7,6 +7,6 @@
  */
 package de.ii.xtraplatform.blobs.domain;
 
-public interface BlobStore extends BlobReader, BlobWriter, BlobLocals {
+public interface BlobStore extends BlobReader, BlobWriter, BlobLocals, BlobEncryption {
   void start();
 }

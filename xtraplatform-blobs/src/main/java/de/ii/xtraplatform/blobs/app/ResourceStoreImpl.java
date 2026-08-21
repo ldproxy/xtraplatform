@@ -10,6 +10,7 @@ package de.ii.xtraplatform.blobs.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import dagger.Lazy;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
+import de.ii.xtraplatform.base.domain.Encryption;
 import de.ii.xtraplatform.base.domain.Store;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
@@ -30,8 +31,11 @@ public class ResourceStoreImpl extends BlobStoreImpl implements ResourceStore, A
 
   @Inject
   public ResourceStoreImpl(
-      Store store, VolatileRegistry volatileRegistry, Lazy<Set<BlobStoreDriver>> drivers) {
-    super(store, volatileRegistry, drivers, Content.RESOURCES);
+      Store store,
+      VolatileRegistry volatileRegistry,
+      Encryption encryption,
+      Lazy<Set<BlobStoreDriver>> drivers) {
+    super(store, volatileRegistry, encryption, drivers, Content.RESOURCES);
     this.ready = new CompletableFuture<>();
   }
 

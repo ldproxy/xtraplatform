@@ -10,11 +10,11 @@ package de.ii.xtraplatform.base.domain;
 public interface Encryption {
   boolean isEnabled();
 
-  byte[] encrypt(String data);
+  byte[] encrypt(byte[] data);
 
-  default String decrypt(byte[] data) {
+  default byte[] decrypt(byte[] data) {
     return decrypt(data, "");
   }
 
-  String decrypt(byte[] data, String errorContext);
+  byte[] decrypt(byte[] data, String errorContext);
 }

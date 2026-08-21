@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -169,6 +170,30 @@ public class BlobSourceFs implements BlobSource, BlobWriter, BlobLocals {
 
       try (content;
           OutputStream file = Files.newOutputStream(filePath)) {
+        content.transferTo(file);
+      }
+    }
+  }
+
+  @Override
+  public void append(Path path, InputStream content) throws IOException {
+    if (!canHandle(path)) {
+      return;
+    }
+
+    Path filePath = full(path);
+
+    if (!Files.exists(filePath) || Files.isWritable(filePath)) {
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Appending blob at {}", filePath + " (creating if not exists)");
+      }
+
+      Files.createDirectories(filePath.getParent());
+
+      try (content;
+          OutputStream file =
+              Files.newOutputStream(
+                  filePath, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
         content.transferTo(file);
       }
     }
