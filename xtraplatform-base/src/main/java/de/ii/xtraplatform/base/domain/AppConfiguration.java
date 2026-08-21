@@ -162,6 +162,15 @@ public abstract class AppConfiguration extends Configuration {
   @Valid
   public abstract AuditLogConfiguration getAuditLog();
 
+  /**
+   * @langEn See [Encryption](130-encryption.md).
+   * @langDe Siehe [Verschlüsselung](130-encryption.md).
+   * @since v4.9
+   */
+  @JsonProperty("encryption")
+  @Valid
+  public abstract EncryptionConfiguration getEncryption();
+
   @JsonIgnore
   @Override
   public void setServerFactory(ServerFactory factory) {
