@@ -85,4 +85,4 @@ auditLog:
     included: [ '200' ]
     excluded: [ ]
 
-  encryption: {}
+encryption: {}
