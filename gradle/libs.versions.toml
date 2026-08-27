@@ -16,6 +16,7 @@ uuid = '5.2.0'
 jsr305 = '3.0.2'
 jedis = '8.0.0'
 prometheus-simpleclient = '0.16.0'
+bouncy-castle = '1.85'
 
 [libraries]
 # auth
@@ -69,9 +70,12 @@ prometheus-simpleclient = { module = "io.prometheus:simpleclient", version.ref =
 prometheus-simpleclient-dropwizard = { module = "io.prometheus:simpleclient_dropwizard", version.ref = "prometheus-simpleclient" }
 prometheus-simpleclient-common = { module = "io.prometheus:simpleclient_common", version.ref = "prometheus-simpleclient" }
 
+bouncy-castle = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncy-castle" }
+bouncy-castle-provider = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncy-castle" }
+
 [bundles]
 auth = ["jjwt-api", "jjwt-impl", "jjwt-jackson"]
 openapi = ["swagger-jaxrs2", "swagger-models", "swagger-annotations", "swagger-integration", "swagger-core", "swagger-classgraph"]
 runtime = ["dropwizard-core", "dropwizard-views-mustache", "dropwizard-client", "dropwizard-auth", "dropwizard-json-logging",
-  "jackson-afterburner", "jackson-xml", "jackson-smile", "commons-codec", "threeten-extra", "xml-bind-api", "jsr305"]
+  "jackson-afterburner", "jackson-xml", "jackson-smile", "commons-codec", "threeten-extra", "xml-bind-api", "jsr305", "bouncy-castle", "bouncy-castle-provider"]
 prometheus = ["prometheus-simpleclient", "prometheus-simpleclient-dropwizard", "prometheus-simpleclient-common"]
