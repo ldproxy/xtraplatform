@@ -16,7 +16,7 @@ uuid = '5.2.0'
 jsr305 = '3.0.2'
 jedis = '8.0.1'
 prometheus-simpleclient = '0.16.0'
-bouncy-castle = '1.85'
+bouncy-castle = '1.85.2'
 
 [libraries]
 # auth
