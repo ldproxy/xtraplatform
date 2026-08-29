@@ -16,7 +16,8 @@ uuid = '5.2.0'
 jsr305 = '3.0.2'
 jedis = '8.0.1'
 prometheus-simpleclient = '0.16.0'
-bouncy-castle = '1.85.2'
+bouncy-castle = '1.85'
+bouncy-castle-provider = '1.85.2'
 
 [libraries]
 # auth
@@ -71,7 +72,7 @@ prometheus-simpleclient-dropwizard = { module = "io.prometheus:simpleclient_drop
 prometheus-simpleclient-common = { module = "io.prometheus:simpleclient_common", version.ref = "prometheus-simpleclient" }
 
 bouncy-castle = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncy-castle" }
-bouncy-castle-provider = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncy-castle" }
+bouncy-castle-provider = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncy-castle-provider" }
 
 [bundles]
 auth = ["jjwt-api", "jjwt-impl", "jjwt-jackson"]
