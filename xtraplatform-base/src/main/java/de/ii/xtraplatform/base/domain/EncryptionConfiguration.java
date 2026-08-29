@@ -45,17 +45,25 @@ import org.immutables.value.Value;
 @Value.Immutable
 @Value.Modifiable
 @JsonDeserialize(as = ModifiableEncryptionConfiguration.class)
-@SuppressWarnings("PMD.ImplicitFunctionalInterface")
 public interface EncryptionConfiguration {
 
   /**
-   * @langEn The symmetric key for encryption, encoded as Base64. The decoded key must be 32 bytes
-   *     long (AES-256). It is recommended to reference an environment variable, e.g.
-   *     `${ENCRYPTION_KEY}`, instead of storing the key in the configuration.
-   * @langDe Der symmetrische Schlüssel für Verschlüsselung, kodiert als Base64. Der dekodierte
-   *     Schlüssel muss 32 Bytes lang sein (AES-256). Es wird empfohlen, eine Umgebungsvariable zu
-   *     referenzieren, z.B. `${ENCRYPTION_KEY}`, statt den Schlüssel in der Konfiguration zu
-   *     speichern.
+   * @langEn A file with the symmetric key for encryption. The key must be 32 bytes long (AES-256).
+   * @langDe Eine Datei mit dem symmetrischen Schlüssel für die Verschlüsselung. Der Schlüssel muss
+   *     32 Bytes lang sein (AES-256).
+   * @since v4.9
+   * @default null
+   */
+  Optional<String> getKeyFile();
+
+  /**
+   * @langEn Instead of a key file, the key might also be provided inline, encoded as Base64. The
+   *     decoded key must be 32 bytes long (AES-256). It is recommended to reference an environment
+   *     variable, e.g. `${ENCRYPTION_KEY}`, instead of storing the key in the configuration.
+   * @langDe Anstatt einer Schlüsseldatei kann der Schlüssel auch inline angegeben werden, kodiert
+   *     als Base64. Der dekodierte Schlüssel muss 32 Bytes lang sein (AES-256). Es wird empfohlen,
+   *     eine Umgebungsvariable zu referenzieren, z.B. `${ENCRYPTION_KEY}`, statt den Schlüssel in
+   *     der Konfiguration zu speichern.
    * @since v4.9
    * @default null
    */

@@ -14,6 +14,9 @@ import de.ii.xtraplatform.base.domain.EncryptionConfiguration;
 import de.ii.xtraplatform.base.domain.LogContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -58,33 +61,53 @@ public class EncryptionImpl implements Encryption {
 
   @Inject
   EncryptionImpl(AppContext appContext) {
-    this(appContext.getConfiguration().getEncryption());
+    this(appContext.getConfiguration().getEncryption(), appContext.getDataDir());
   }
 
   // For testing only
   EncryptionImpl(String key) {
-    this(() -> Optional.ofNullable(key));
+    this(
+        new EncryptionConfiguration() {
+          @Override
+          public Optional<String> getKeyFile() {
+            return Optional.empty();
+          }
+
+          @Override
+          public Optional<String> getKey() {
+            return Optional.ofNullable(key);
+          }
+        },
+        Path.of("").toAbsolutePath());
   }
 
   @SuppressWarnings("PMD.AvoidCatchingGenericException")
-  private EncryptionImpl(EncryptionConfiguration configuration) {
+  private EncryptionImpl(EncryptionConfiguration configuration, Path dataDir) {
     SecretKeySpec parsedKey = null;
     Cipher gcmCipher = null;
     SecureRandom nonceSource = null;
 
-    if (configuration.getKey().isPresent()) {
-      try {
+    try {
+      Optional<byte[]> keyBytes =
+          configuration
+              .getKeyFile()
+              .map(dataDir::resolve)
+              .filter(Files::exists)
+              .map(EncryptionImpl::parseKeyFile)
+              .or(() -> configuration.getKey().map(EncryptionImpl::parseKeyBase64));
+
+      if (keyBytes.isPresent()) {
         Cipher aesGcm = Cipher.getInstance(CIPHER);
         SecureRandom secureRandom = new SecureRandom();
-        SecretKeySpec key = new SecretKeySpec(parseKey(configuration.getKey().get()), ALGORITHM);
+        SecretKeySpec key = new SecretKeySpec(keyBytes.get(), ALGORITHM);
 
         // published together, so a failure cannot leave a partially set up instance behind
         gcmCipher = aesGcm;
         nonceSource = secureRandom;
         parsedKey = key;
-      } catch (Throwable e) {
-        LogContext.error(LOGGER, e, "Encryption is disabled");
       }
+    } catch (Throwable e) {
+      LogContext.error(LOGGER, e, "Encryption is disabled");
     }
 
     this.secretKey = parsedKey;
@@ -149,13 +172,27 @@ public class EncryptionImpl implements Encryption {
     }
   }
 
-  private static byte[] parseKey(String base64Key) {
+  private static byte[] parseKeyBase64(String base64Key) {
     byte[] key;
     try {
       key = Base64.getDecoder().decode(base64Key);
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("the configured encryption key is not valid Base64", e);
     }
+    return parseKey(key);
+  }
+
+  private static byte[] parseKeyFile(Path keyFile) {
+    byte[] key;
+    try {
+      key = Files.readAllBytes(keyFile);
+    } catch (IOException e) {
+      throw new IllegalArgumentException("the configured encryption key file could not be read", e);
+    }
+    return parseKey(key);
+  }
+
+  private static byte[] parseKey(byte[] key) {
     if (key.length != KEY_LENGTH) {
       throw new IllegalArgumentException(
           String.format(
