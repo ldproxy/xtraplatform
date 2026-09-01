@@ -91,6 +91,7 @@ public class EncryptionImpl implements Encryption {
       Optional<byte[]> keyBytes =
           configuration
               .getKeyFile()
+              .filter(keyFile -> !keyFile.isBlank())
               .map(dataDir::resolve)
               .filter(Files::exists)
               .map(EncryptionImpl::parseKeyFile)
