@@ -152,7 +152,10 @@ public class EncryptionImpl implements Encryption {
       throw new IllegalStateException("Encryption is not enabled.");
     }
 
-    if (encrypted.length <= NONCE_LENGTH + TAG_LENGTH_BITS / 8) {
+    // The nonce and the tag are the whole of the encryption of an empty value, so a value of
+    // exactly that length is the shortest valid one — not a too-short one. Rejecting it made
+    // `encrypt("")` produce a value its own `decrypt` refused to read back.
+    if (encrypted.length < NONCE_LENGTH + TAG_LENGTH_BITS / 8) {
       throw new IllegalStateException(
           String.format("Decryption failed%s: the stored value is too short.", errorContext));
     }
