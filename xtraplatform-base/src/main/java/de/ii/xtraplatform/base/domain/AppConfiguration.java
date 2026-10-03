@@ -104,12 +104,31 @@ public abstract class AppConfiguration extends Configuration {
   public abstract JobsConfiguration getJobs();
 
   public int getJobConcurrency() {
+    return getJobs().getMaxConcurrent();
+  }
+
+  /**
+   * Migrates the deprecated `backgroundTasks.maxThreads` to `jobs.maxConcurrent`. The deprecated
+   * value is only applied if `jobs.maxConcurrent` is not set explicitly (i.e. still has its default
+   * value).
+   */
+  @Value.Check
+  protected AppConfiguration migrateBackgroundTasks() {
     if (Objects.nonNull(getBackgroundTasks())
         && getBackgroundTasks().getMaxThreads() > 1
+        && Objects.nonNull(getJobs())
         && getJobs().getMaxConcurrent() == 1) {
-      return getBackgroundTasks().getMaxThreads();
+      return new ImmutableAppConfiguration.Builder()
+          .from(this)
+          .jobs(
+              new ImmutableJobsConfiguration.Builder()
+                  .from(getJobs())
+                  .maxConcurrent(getBackgroundTasks().getMaxThreads())
+                  .build())
+          .build();
     }
-    return getJobs().getMaxConcurrent();
+
+    return this;
   }
 
   /**

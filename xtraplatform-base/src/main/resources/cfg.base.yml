@@ -14,7 +14,7 @@ auth: { }
 
 jobs:
   queue: ${JOBS_QUEUE:-LOCAL}
-  maxConcurrentJobs: ${JOBS_MAX_CONCURRENT_JOBS:-1}
+  maxConcurrent: ${JOBS_MAX_CONCURRENT_JOBS:-1}
 
 redis:
   nodes: ${REDIS_NODES:-[]}
