@@ -112,8 +112,8 @@ public class CacheDriverRedis implements CacheDriver {
     }
 
     boolean exists = cmd.hexists(redisKey(key), validatorField(validator));
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Cache has({}, {}) -> {}", key, validator, exists);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Cache has({}, {}) -> {}", key, validator, exists);
     }
     return exists;
   }
@@ -132,16 +132,16 @@ public class CacheDriverRedis implements CacheDriver {
 
     byte[] value = cmd.hget(redisKey(key), validatorField(validator));
     if (Objects.isNull(value)) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Cache get({}, {}) -> miss", key, validator);
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Cache get({}, {}) -> miss", key, validator);
       }
       return Optional.empty();
     }
 
     try {
       T deserialized = deserialize(value, clazz);
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Cache get({}, {}) -> hit ({})", key, validator, deserialized);
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Cache get({}, {}) -> hit ({})", key, validator, deserialized);
       }
       return Optional.ofNullable(deserialized);
     } catch (IOException e) {
@@ -177,8 +177,8 @@ public class CacheDriverRedis implements CacheDriver {
       return;
     }
 
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Cache del({})", key);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("Cache del({})", key);
     }
     cmd.del(redisKey(key));
   }
@@ -201,8 +201,8 @@ public class CacheDriverRedis implements CacheDriver {
         cmd.persist(redisKey);
       }
 
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Cache put({}, {}, ttl={})", key, validator, ttl);
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Cache put({}, {}, ttl={})", key, validator, ttl);
       }
     } catch (IOException e) {
       // ignore, same as CacheDriverFs
