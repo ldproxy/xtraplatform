@@ -24,3 +24,8 @@ moduleInfo {
         'io.swagger.v3.core.converter.ModelConverter',
     ]
 }
+
+// copied from swagger-ui-dist to src/main/resources/de/ii/xtraplatform/openapi/assets
+sbom {
+    component name: 'swagger-ui-dist', version: '5.4.2', purl: 'pkg:npm/swagger-ui-dist@5.4.2', license: 'Apache-2.0', website: 'https://github.com/swagger-api/swagger-ui'
+}
