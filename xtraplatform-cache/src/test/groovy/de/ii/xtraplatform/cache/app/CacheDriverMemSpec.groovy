@@ -70,7 +70,7 @@ class CacheDriverMemSpec extends Specification{
 
         then:
         cacheDriverMem.has(key)
-        cacheDriverMem.get(key, List<Integer>).map(value::equals).orElse(false)
+        cacheDriverMem.get(key, List).map(value::equals).orElse(false)
     }
 
     def 'Test put get has Map'() {
@@ -83,7 +83,7 @@ class CacheDriverMemSpec extends Specification{
 
         then:
         cacheDriverMem.has(key)
-        cacheDriverMem.get(key, Map<Integer, String>).map(value::equals).orElse(false)
+        cacheDriverMem.get(key, Map).map(value::equals).orElse(false)
     }
 
     def 'Test put get has with validator'() {
