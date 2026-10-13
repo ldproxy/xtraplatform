@@ -192,6 +192,9 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
         if (Objects.nonNull(map)) {
           for (int i = 0; i < subKeys.size(); i++) {
             Object entry = map.get(subKeys.get(i));
+            if (Objects.isNull(entry)) {
+              break;
+            }
             if (i == subKeys.size() - 1) {
               list.addAll(parseList(entry, subKeys.get(i)));
               break;
@@ -205,7 +208,9 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
         }
       } else {
         Object entry = claims.get(baseKey, Object.class);
-        list.addAll(parseList(entry, baseKey));
+        if (Objects.nonNull(entry)) {
+          list.addAll(parseList(entry, baseKey));
+        }
       }
     } catch (Throwable e) {
       LogContext.error(LOGGER, e, "Claim '{}' cannot be resolved for given token", claim);

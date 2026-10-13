@@ -27,11 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-@SuppressWarnings({
-  "PMD.TypeParameterNamingConventions",
-  "PMD.CouplingBetweenObjects",
-  "PMD.AvoidCatchingGenericException"
-})
+@SuppressWarnings({"PMD.TypeParameterNamingConventions", "PMD.AvoidCatchingGenericException"})
 public class StreamDefault<V, W>
     implements BasicStream<V, W>, StreamWithResult<V, W>, StreamContext<W> {
 

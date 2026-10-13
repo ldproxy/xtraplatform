@@ -55,7 +55,6 @@ import org.threeten.extra.Interval;
  */
 @Singleton
 @AutoBind
-@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class JacksonProvider implements Jackson {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JacksonProvider.class);

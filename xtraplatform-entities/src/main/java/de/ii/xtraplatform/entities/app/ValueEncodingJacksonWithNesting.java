@@ -38,11 +38,7 @@ public class ValueEncodingJacksonWithNesting<T> extends ValueEncodingJackson<T>
   }
 
   @Override
-  @SuppressWarnings({
-    "PMD.AvoidCatchingGenericException",
-    "PMD.LooseCoupling",
-    "PMD.UseDiamondOperator"
-  })
+  @SuppressWarnings({"PMD.AvoidCatchingGenericException", "PMD.LooseCoupling"})
   public byte[] nestPayload(
       byte[] payload,
       String formatString,
