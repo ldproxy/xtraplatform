@@ -37,7 +37,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-public class EntityDeserialization {
+public final class EntityDeserialization {
 
   public static final Module DESERIALIZE_MERGEABLE_MAP_BUILDER_WRAPPER =
       new SimpleModule()
@@ -107,9 +107,7 @@ public class EntityDeserialization {
 
         JsonDeserializer<Object> orig = prop.getValueDeserializer();
         JsonDeserializer<Object> unwrapping = orig.unwrappingDeserializer(xform);
-        if (!Objects.equals(unwrapping, orig)
-            && unwrapping != null
-            && unwrapping instanceof BeanDeserializer) {
+        if (!Objects.equals(unwrapping, orig) && unwrapping instanceof BeanDeserializer) {
           SettableBeanProperty mapProp = ((BeanDeserializer) unwrapping).findProperty("map");
           if (mapProp != null) {
             List<SettableBeanProperty> beanProperties =
@@ -226,4 +224,6 @@ public class EntityDeserialization {
               });
         }
       };
+
+  private EntityDeserialization() {}
 }

@@ -117,7 +117,7 @@ class CacheDriverFsSpec extends Specification{
 
         then:
         cacheDriverFs.has(key)
-        cacheDriverFs.get(key, List<Integer>).map(value::equals).orElse(false)
+        cacheDriverFs.get(key, List).map(value::equals).orElse(false)
     }
 
     def 'Test put get has Map'() {

@@ -20,7 +20,6 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @JsonDeserialize(builder = ImmutableJobSet.Builder.class)
-@SuppressWarnings("PMD.UseObjectForClearerAPI")
 public interface JobSet extends BaseJob {
 
   @SuppressWarnings("PMD.DataClass")
