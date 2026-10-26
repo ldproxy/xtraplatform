@@ -1,3 +1,7 @@
+plugins {
+    id 'com.github.node-gradle.node' version '7.1.0'
+}
+
 maturity = 'MATURE'
 maintenance = 'FULL'
 description = 'Operations dashboard and API.'
@@ -9,4 +13,29 @@ dependencies {
     provided project(':xtraplatform-openapi')
 
     embedded libs.bundles.prometheus
+}
+
+ext {
+    generatedResourcesDir = new File(project.buildDir, 'generated/src/main/resources/')
+}
+
+node {
+    version = '22.12.0'
+    download = project.findProperty('downloadNode') != 'false' ?: false
+    // do not declare the repository, that is not allowed outside of settings.gradle
+    // it is automatically added by the settings plugin
+    distBaseUrl = null
+}
+
+// the dashboard is a static export of https://github.com/ldproxy/dashboard, published as npm package
+def copyDashboard = tasks.register('copyDashboard', Copy) {
+    dependsOn npmInstall
+    from 'node_modules/@xtradash/static/dashboard'
+    into new File(generatedResourcesDir, 'dashboard')
+}
+
+project.sourceSets.main.output.dir(generatedResourcesDir, builtBy: copyDashboard)
+
+sbom {
+    fragment files('node_modules/@xtradash/static/sbom.json').builtBy(npmInstall)
 }
