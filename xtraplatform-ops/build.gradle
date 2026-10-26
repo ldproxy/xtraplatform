@@ -25,7 +25,6 @@ node {
     // do not declare the repository, that is not allowed outside of settings.gradle
     // it is automatically added by the settings plugin
     distBaseUrl = null
-    npmInstallCommand = 'ci'
 }
 
 // the dashboard is a static export of https://github.com/ldproxy/dashboard, published as npm package
