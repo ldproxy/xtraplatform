@@ -26,11 +26,11 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.commands.JedisBinaryCommands;
 
 /**
- * Redis-backed CacheDriver, sharing the same Redis connection as JobQueueBackendRedis (s. Redis,
- * injected). Mirrors CacheDriverFs's shape: one Hash per key, the "validator" argument is the Hash
- * field name (CONTENT for the plain 2-arg has/get/put), so a single key can hold several
- * independently addressable entries under different validators, same as CacheDriverFs's
- * one-file-per-validator directory layout.
+ * Redis-backed CacheDriver, using the shared Redis connection (s. Redis, injected). Mirrors
+ * CacheDriverFs's shape: one Hash per key, the "validator" argument is the Hash field name (CONTENT
+ * for the plain 2-arg has/get/put), so a single key can hold several independently addressable
+ * entries under different validators, same as CacheDriverFs's one-file-per-validator directory
+ * layout.
  *
  * <p>Two deliberate deviations from CacheDriverFs, neither changes observable behavior:
  *

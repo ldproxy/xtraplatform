@@ -1,12 +1,11 @@
 
 maturity = 'CANDIDATE'
 maintenance = 'LOW'
-description = 'Redis Job Queue and Cache.'
-descriptionDe = 'Redis Job Queue und Cache.'
+description = 'Redis cache.'
+descriptionDe = 'Redis-Cache.'
 
 dependencies {
     provided project(':xtraplatform-cache')
-    provided project(':xtraplatform-jobs')
     provided project(':xtraplatform-values')
 
     embedded(libs.jedis) {
