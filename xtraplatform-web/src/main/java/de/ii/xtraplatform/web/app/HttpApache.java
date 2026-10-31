@@ -13,9 +13,11 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.web.domain.Http;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.client.HttpClientBuilder;
+import io.dropwizard.client.HttpClientConfiguration;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.net.URI;
+import java.util.Optional;
 
 @Singleton
 @AutoBind
@@ -25,11 +27,14 @@ public class HttpApache implements Http {
 
   @Inject
   public HttpApache(AppContext appContext) {
+    HttpClientConfiguration configuration = appContext.getConfiguration().getHttpClient();
+    // without a configured user agent the name of the client ("default") would be sent
+    if (configuration.getUserAgent().isEmpty()) {
+      configuration.setUserAgent(Optional.of(appContext.getName() + "/" + appContext.getVersion()));
+    }
     this.defaultClient =
         new HttpClientApache(
-            new HttpClientBuilder(new MetricRegistry())
-                .using(appContext.getConfiguration().getHttpClient())
-                .build("default"));
+            new HttpClientBuilder(new MetricRegistry()).using(configuration).build("default"));
   }
 
   @Override
