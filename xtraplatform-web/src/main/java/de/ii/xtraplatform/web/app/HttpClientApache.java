@@ -75,6 +75,31 @@ public class HttpClientApache implements HttpClient {
   @Override
   public InputStream postAsInputStream(
       String url, byte[] body, MediaType mediaType, Map<String, String> headers) {
+    return getAsInputStream(httpClient, httpPost(url, body, mediaType, headers));
+  }
+
+  @Override
+  public HttpResponse post(
+      String url, byte[] body, MediaType mediaType, Map<String, String> headers) {
+    HttpPost httpPost = httpPost(url, body, mediaType, headers);
+    logRequest(httpPost);
+
+    try {
+      return httpClient.execute(
+          httpPost,
+          response ->
+              HttpResponse.of(
+                  response.getCode(),
+                  Objects.nonNull(response.getEntity())
+                      ? EntityUtils.toByteArray(response.getEntity())
+                      : new byte[0]));
+    } catch (IOException e) {
+      throw new IllegalArgumentException(e);
+    }
+  }
+
+  private static HttpPost httpPost(
+      String url, byte[] body, MediaType mediaType, Map<String, String> headers) {
     HttpPost httpPost = new HttpPost(url);
     URI uri = URI.create(url);
     httpPost.addHeader("Content-Type", mediaType.toString());
@@ -89,11 +114,22 @@ public class HttpClientApache implements HttpClient {
       httpPost.setUri(URI.create(new URIBuilder(uri).setUserInfo(null).toString()));
     }
 
-    return getAsInputStream(httpClient, httpPost);
+    return httpPost;
+  }
+
+  private static InputStream getAsInputStream(CloseableHttpClient client, HttpUriRequest request) {
+    logRequest(request);
+
+    try (CloseableHttpResponse response = client.execute(request)) {
+      byte[] content = EntityUtils.toByteArray(response.getEntity());
+      return new java.io.ByteArrayInputStream(content);
+    } catch (IOException e) {
+      throw new IllegalArgumentException(e);
+    }
   }
 
   @SuppressWarnings("PMD.AvoidCatchingGenericException")
-  private static InputStream getAsInputStream(CloseableHttpClient client, HttpUriRequest request) {
+  private static void logRequest(HttpUriRequest request) {
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("HTTP {} request: {}", request.getMethod(), request.getRequestUri());
       LOGGER.debug("HTTP Headers: {}", (Object) request.getHeaders());
@@ -106,13 +142,6 @@ public class HttpClientApache implements HttpClient {
           // ignore
         }
       }
-    }
-
-    try (CloseableHttpResponse response = client.execute(request)) {
-      byte[] content = EntityUtils.toByteArray(response.getEntity());
-      return new java.io.ByteArrayInputStream(content);
-    } catch (IOException e) {
-      throw new IllegalArgumentException(e);
     }
   }
 }
