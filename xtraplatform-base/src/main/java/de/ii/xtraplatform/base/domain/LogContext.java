@@ -203,7 +203,7 @@ public final class LogContext {
     Object[] args = Arrays.copyOf(messagePrefixArgs, messagePrefixArgs.length + 1);
     args[messagePrefixArgs.length] = getMessage(throwable);
 
-    logThrowable(logger, Level.INFO, throwable, messagePrefix + MESSAGE_SUFFIX, args);
+    logThrowable(logger, Level.WARN, throwable, messagePrefix + MESSAGE_SUFFIX, args);
   }
 
   /**
