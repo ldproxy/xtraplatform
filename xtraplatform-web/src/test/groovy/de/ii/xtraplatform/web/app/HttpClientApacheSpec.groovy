@@ -42,6 +42,22 @@ class HttpClientApacheSpec extends Specification {
             }
             exchange.close()
         }
+        // /redirect answers with a redirect to /status/200
+        server.createContext("/redirect") { exchange ->
+            exchange.responseHeaders.add("Location", "${baseUrl}/status/200")
+            exchange.sendResponseHeaders(302, -1)
+            exchange.close()
+        }
+        // /headers answers with the method, two values of one header and a body of 10 bytes
+        server.createContext("/headers") { exchange ->
+            received << exchange.requestMethod + " " + exchange.requestHeaders.getFirst("X-Test") + " " + new String(exchange.requestBody.bytes, StandardCharsets.UTF_8)
+            exchange.responseHeaders.add("X-Value", "a")
+            exchange.responseHeaders.add("X-Value", "b")
+            byte[] response = "0123456789".getBytes(StandardCharsets.UTF_8)
+            exchange.sendResponseHeaders(200, response.length)
+            exchange.responseBody.write(response)
+            exchange.close()
+        }
         server.start()
         baseUrl = "http://localhost:${server.address.port}"
     }
@@ -82,6 +98,43 @@ class HttpClientApacheSpec extends Specification {
 
         where:
         status << [200, 500]
+    }
+
+    def "a request returns a redirect instead of following it"() {
+        given:
+        // the default Apache client follows redirects, like the client built by HttpApache
+        def following = new HttpClientApache(HttpClients.custom().disableAutomaticRetries().build())
+
+        when:
+        def response = following.send("GET", "${baseUrl}/redirect", [:], Optional.empty(), 1000)
+
+        then:
+        received == []
+        response.status == 302
+        response.headers["location"] == "${baseUrl}/status/200".toString()
+
+        cleanup:
+        following.httpClient.close()
+    }
+
+    def "a request sends the method, the headers and the body and returns the headers"() {
+        when:
+        def response = client.send("PUT", "${baseUrl}/headers", ["X-Test": "t", "Content-Type": "text/plain"], Optional.of('x'.getBytes(StandardCharsets.UTF_8)), 10)
+
+        then:
+        received == ["PUT t x"]
+        response.status == 200
+        response.headers["x-value"] == "a, b"
+        new String(response.body, StandardCharsets.UTF_8) == "0123456789"
+    }
+
+    def "a response larger than the maximum size fails"() {
+        when:
+        client.send("GET", "${baseUrl}/headers", [:], Optional.empty(), 9)
+
+        then:
+        def e = thrown(IllegalArgumentException)
+        e.message.contains("larger than 9 bytes")
     }
 
     def "a POST that cannot connect fails"() {
