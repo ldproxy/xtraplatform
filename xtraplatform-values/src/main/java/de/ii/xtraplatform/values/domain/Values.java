@@ -30,6 +30,16 @@ public interface Values<T> extends Volatile2 {
     return -1;
   }
 
+  /**
+   * The revision changes whenever a value is added, changed or removed, also by a reload. Data
+   * derived from the values can be cached as long as the revision is unchanged.
+   *
+   * @return the current revision, or -1 if changes are not tracked
+   */
+  default long getRevision() {
+    return -1;
+  }
+
   default List<String> ids(String... path) {
     return identifiers(path).stream().map(Identifier::id).collect(Collectors.toList());
   }
