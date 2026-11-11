@@ -72,6 +72,7 @@ public class ValueStoreImpl extends AbstractVolatile
   private final ValueEncodingJackson<StoredValue> valueEncoding;
   private final CompletableFuture<Void> ready;
   private final Map<Class<? extends StoredValue>, List<String>> valueTypes;
+  private final ValueRevisions revisions;
   private final Lock instanceLock;
 
   @Inject
@@ -93,6 +94,7 @@ public class ValueStoreImpl extends AbstractVolatile
     this.lastModified = new ConcurrentHashMap<>();
     this.ready = new CompletableFuture<>();
     this.valueTypes = new ConcurrentHashMap<>();
+    this.revisions = new ValueRevisions(valueFactories::getTypes);
     this.instanceLock = new ReentrantLock();
 
     valueEncoding.getMapper(FORMAT.YAML).setDefaultMergeable(false);
@@ -235,8 +237,11 @@ public class ValueStoreImpl extends AbstractVolatile
         }
       }
 
-      this.memCache.put(identifier, value);
+      StoredValue previous = this.memCache.put(identifier, value);
       this.lastModified.put(identifier, lm == -1 ? Instant.now().toEpochMilli() : lm);
+      if (!Objects.equals(previous, value)) {
+        revisions.onChange(identifier);
+      }
 
       return isInitialLoad || hasChanged;
     } catch (IOException e) {
@@ -311,9 +316,13 @@ public class ValueStoreImpl extends AbstractVolatile
     try {
       instanceLock.lock();
 
-      memCache.put(identifier, value);
+      StoredValue previous = memCache.put(identifier, value);
 
       lastModified.put(identifier, Instant.now().toEpochMilli());
+
+      if (!Objects.equals(previous, value)) {
+        revisions.onChange(identifier);
+      }
     } finally {
       instanceLock.unlock();
     }
@@ -343,6 +352,10 @@ public class ValueStoreImpl extends AbstractVolatile
       removed = memCache.remove(identifier);
 
       lastModified.remove(identifier);
+
+      if (Objects.nonNull(removed)) {
+        revisions.onChange(identifier);
+      }
     } finally {
       instanceLock.unlock();
     }
@@ -358,6 +371,11 @@ public class ValueStoreImpl extends AbstractVolatile
   @Override
   public long lastModified(Identifier identifier) {
     return lastModified.getOrDefault(identifier, Instant.now().toEpochMilli());
+  }
+
+  @Override
+  public long getRevision() {
+    return revisions.get();
   }
 
   @Override
@@ -382,6 +400,11 @@ public class ValueStoreImpl extends AbstractVolatile
       @Override
       public List<String> getValueType() {
         return valueTypes.get(type);
+      }
+
+      @Override
+      public long getRevision() {
+        return revisions.get(getValueType());
       }
     };
   }
