@@ -8,10 +8,10 @@
 package de.ii.xtraplatform.auth.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.auth.domain.ImmutableUser;
-import de.ii.xtraplatform.auth.domain.Role;
-import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthenticator;
+import de.ii.xtraplatform.base.domain.auth.ImmutableUser;
+import de.ii.xtraplatform.base.domain.auth.Role;
+import de.ii.xtraplatform.base.domain.auth.User;
 import de.ii.xtraplatform.entities.domain.EntityData;
 import de.ii.xtraplatform.entities.domain.EntityDataStore;
 import jakarta.inject.Inject;
@@ -68,7 +68,7 @@ public class InternalUserAuthenticator implements UserAuthenticator {
     logAuthenticated(SUPER_ADMIN.getId(), SUPER_ADMIN.getRole().toString(), password);
     long now = Instant.now().toEpochMilli();
     return Optional.of(
-        ImmutableUser.builder()
+        new ImmutableUser.Builder()
             .name(userData.getId())
             .role(userData.getRole())
             .forceChangePassword(userData.getPasswordExpiresAt().orElse(now) < now)
@@ -78,7 +78,10 @@ public class InternalUserAuthenticator implements UserAuthenticator {
   private Optional<User> authenticateFirstUser(String username, String password) {
     if (!isAccessRestricted) {
       return Optional.of(
-          ImmutableUser.builder().name(SUPER_ADMIN.getId()).role(SUPER_ADMIN.getRole()).build());
+          new ImmutableUser.Builder()
+              .name(SUPER_ADMIN.getId())
+              .role(SUPER_ADMIN.getRole())
+              .build());
     }
     if (Objects.equals(username, SUPER_ADMIN.getId())
         && PasswordHash.validatePassword(password, SUPER_ADMIN.getPassword())) {
@@ -87,7 +90,7 @@ public class InternalUserAuthenticator implements UserAuthenticator {
         de.ii.xtraplatform.auth.app.User.UserData firstUser =
             userRepository.put(SUPER_ADMIN.getId(), SUPER_ADMIN).get();
         return Optional.of(
-            ImmutableUser.builder()
+            new ImmutableUser.Builder()
                 .name(firstUser.getId())
                 .role(firstUser.getRole())
                 .forceChangePassword(true)

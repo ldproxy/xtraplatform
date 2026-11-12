@@ -8,7 +8,7 @@
 package de.ii.xtraplatform.auth.app;
 
 import de.ii.xtraplatform.auth.domain.TokenHandler;
-import de.ii.xtraplatform.auth.domain.User;
+import de.ii.xtraplatform.base.domain.auth.User;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import java.util.Optional;

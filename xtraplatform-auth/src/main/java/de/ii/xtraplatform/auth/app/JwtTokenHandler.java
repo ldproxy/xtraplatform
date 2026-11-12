@@ -9,17 +9,17 @@ package de.ii.xtraplatform.auth.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
 import com.google.common.base.Splitter;
-import de.ii.xtraplatform.auth.domain.ImmutableUser;
 import de.ii.xtraplatform.auth.domain.Oidc;
-import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.auth.domain.TokenHandler;
-import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AppLifeCycle;
 import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.IdentityProvider;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.Jwt;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.auth.ImmutableUser;
+import de.ii.xtraplatform.base.domain.auth.Role;
+import de.ii.xtraplatform.base.domain.auth.User;
 import de.ii.xtraplatform.base.domain.resiliency.VolatileRegistry;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import io.jsonwebtoken.Claims;
@@ -290,7 +290,7 @@ public class JwtTokenHandler implements TokenHandler, AppLifeCycle {
     try {
       Claims claimsJws = parser.parseSignedClaims(token).getPayload();
       User user =
-          ImmutableUser.builder()
+          new ImmutableUser.Builder()
               .name(read(claimsJws, claimsProvider.getClaims().getUserName()))
               .role(Role.fromString(Optional.ofNullable(read(claimsJws, "role")).orElse("USER")))
               .audience(readList(claimsJws, claimsProvider.getClaims().getAudience()))

@@ -8,8 +8,8 @@
 package de.ii.xtraplatform.auth.app
 
 import com.google.common.collect.ImmutableList
-import de.ii.xtraplatform.auth.domain.Role
-import de.ii.xtraplatform.auth.domain.User
+import de.ii.xtraplatform.base.domain.auth.Role
+import de.ii.xtraplatform.base.domain.auth.User
 import de.ii.xtraplatform.base.domain.AppConfiguration
 import de.ii.xtraplatform.base.domain.AppContext
 import de.ii.xtraplatform.base.domain.ModifiableAuthConfiguration

@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.auth.domain;
 
+import de.ii.xtraplatform.base.domain.auth.User;
 import java.util.Map;
 import java.util.Optional;
 

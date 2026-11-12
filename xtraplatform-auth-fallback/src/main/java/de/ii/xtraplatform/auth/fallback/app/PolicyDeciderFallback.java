@@ -10,7 +10,7 @@ package de.ii.xtraplatform.auth.fallback.app;
 import com.github.azahnen.dagger.annotations.AutoBind;
 import de.ii.xtraplatform.auth.domain.PolicyDecider;
 import de.ii.xtraplatform.auth.domain.PolicyDecision;
-import de.ii.xtraplatform.auth.domain.User;
+import de.ii.xtraplatform.base.domain.auth.User;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Map;

@@ -1,9 +1,9 @@
 package de.ii.xtraplatform.auth.app
 
-import de.ii.xtraplatform.auth.domain.ImmutableUser
+import de.ii.xtraplatform.base.domain.auth.ImmutableUser
 import de.ii.xtraplatform.auth.domain.Oidc
-import de.ii.xtraplatform.auth.domain.Role
-import de.ii.xtraplatform.auth.domain.User
+import de.ii.xtraplatform.base.domain.auth.Role
+import de.ii.xtraplatform.base.domain.auth.User
 import de.ii.xtraplatform.base.domain.*
 import de.ii.xtraplatform.blobs.domain.ResourceStore
 import spock.lang.Ignore
