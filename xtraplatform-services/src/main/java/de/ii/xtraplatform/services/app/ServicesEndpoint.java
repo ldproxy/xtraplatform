@@ -53,6 +53,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -242,7 +244,6 @@ public class ServicesEndpoint implements Endpoint {
   }
 
   @Path("/{service}/v{version}/")
-  @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   public ServiceEndpoint getVersionedServiceResource(
       @PathParam("service") String id,
       @QueryParam("callback") String callback,
@@ -256,14 +257,11 @@ public class ServicesEndpoint implements Endpoint {
 
       if (Objects.isNull(version)) {
         String redirectPath =
-            containerRequestContext
-                .getUriInfo()
-                .getAbsolutePath()
-                .getPath()
-                .replace(id, String.format("%s/v%d", id, apiVersion));
-        if (getExternalUri().isPresent()) {
-          redirectPath = getExternalUri().get().getPath() + redirectPath;
-        }
+            buildVersionRedirectPath(
+                getExternalUri().map(URI::getPath).orElse(null),
+                containerRequestContext.getUriInfo().getAbsolutePath().getPath(),
+                id,
+                apiVersion);
         URI redirectUri =
             containerRequestContext
                 .getUriInfo()
@@ -302,6 +300,24 @@ public class ServicesEndpoint implements Endpoint {
     }
 
     return s.get();
+  }
+
+  static String buildVersionRedirectPath(
+      String basePath, String requestPath, String id, int apiVersion) {
+    // only replace the service id path segment, not other occurrences of the id in the path
+    String versionedPath =
+        requestPath.replaceFirst(
+            "/" + Pattern.quote(id) + "(?=/|$)",
+            Matcher.quoteReplacement(String.format("/%s/v%d", id, apiVersion)));
+
+    if (Objects.isNull(basePath) || basePath.isEmpty()) {
+      return versionedPath;
+    }
+
+    // the external uri always ends with a slash, avoid "//" in the redirect
+    String base = basePath.endsWith("/") ? basePath.substring(0, basePath.length() - 1) : basePath;
+
+    return base + versionedPath;
   }
 
   private Optional<URI> getExternalUri() {
