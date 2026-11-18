@@ -13,10 +13,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import de.ii.xtraplatform.auth.domain.ImmutableUser;
-import de.ii.xtraplatform.auth.domain.User;
-import de.ii.xtraplatform.auth.domain.User.PolicyDecision;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.auth.ImmutableUser;
+import de.ii.xtraplatform.base.domain.auth.User;
+import de.ii.xtraplatform.base.domain.auth.User.PolicyDecision;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.DefaultUnauthorizedHandler;
@@ -112,7 +112,7 @@ public class ExternalDynamicAuthFilter<P extends Principal> extends AuthFilter<S
                 getEntityBody(requestContext));
 
         User user =
-            ImmutableUser.builder()
+            new ImmutableUser.Builder()
                 .from(requestContext.getSecurityContext().getUserPrincipal())
                 .policyDecision(policyDecision)
                 .build();

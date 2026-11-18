@@ -7,9 +7,11 @@
  */
 package de.ii.xtraplatform.services.domain;
 
+import de.ii.xtraplatform.base.domain.auth.User;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 
 public interface AuditLog {
   void createLog(String requestId);
@@ -26,7 +28,7 @@ public interface AuditLog {
 
   void setApi(String requestId, String api);
 
-  void setActor(String requestId, String actorType, String actorId, Map<String, Object> claims);
+  void setActor(String requestId, User actor);
 
   void setOperationMethod(String requestId, String method);
 
@@ -46,7 +48,8 @@ public interface AuditLog {
 
     void finish();
 
-    void setActor(String actorType, String actorId, Map<String, Object> claims);
+    void setActor(
+        String actorType, String actorId, Set<String> permissions, Map<String, Object> claims);
 
     void setOperationMethod(String method);
 

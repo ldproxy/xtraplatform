@@ -7,6 +7,8 @@
  */
 package de.ii.xtraplatform.auth.domain;
 
+import de.ii.xtraplatform.base.domain.auth.Role;
+import de.ii.xtraplatform.base.domain.auth.User;
 import io.dropwizard.auth.Authorizer;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import org.checkerframework.checker.nullness.qual.Nullable;

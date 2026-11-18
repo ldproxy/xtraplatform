@@ -18,6 +18,7 @@ import de.ii.xtraplatform.base.domain.AppContext;
 import de.ii.xtraplatform.base.domain.AuditLogConfiguration;
 import de.ii.xtraplatform.base.domain.Jackson;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.auth.User;
 import de.ii.xtraplatform.blobs.domain.ResourceStore;
 import de.ii.xtraplatform.services.domain.AuditLog;
 import jakarta.inject.Inject;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,13 +160,18 @@ public class AuditLogImpl implements AuditLog {
   }
 
   @Override
-  public void setActor(
-      String requestId, String actorType, String actorId, Map<String, Object> claims) {
+  public void setActor(String requestId, User actor) {
     if (isDisabled()) {
       return;
     }
     getOptionalLog(requestId)
-        .ifPresent(log -> log.setActor(actorType, actorId, filterClaims(claims)));
+        .ifPresent(
+            log ->
+                log.setActor(
+                    actor.getRole().toString(),
+                    actor.getName(),
+                    actor.getPermissions(log.getApi()),
+                    filterClaims(actor.getClaims())));
   }
 
   @Override
@@ -314,10 +321,16 @@ public class AuditLogImpl implements AuditLog {
     }
 
     @Override
-    public void setActor(String actorType, String actorId, Map<String, Object> claims) {
+    public void setActor(
+        String actorType, String actorId, Set<String> permissions, Map<String, Object> claims) {
       actor.put("type", actorType);
       actor.put("id", actorId);
-      actor.put("claims", claims);
+      if (Objects.nonNull(permissions) && !permissions.isEmpty()) {
+        actor.put("permissions", permissions);
+      }
+      if (Objects.nonNull(claims) && !claims.isEmpty()) {
+        actor.put("claims", claims);
+      }
     }
 
     @Override
@@ -332,11 +345,19 @@ public class AuditLogImpl implements AuditLog {
 
     @Override
     public void setOperationHeaders(MultivaluedMap<String, String> headers) {
+      if (Objects.isNull(headers) || headers.isEmpty()) {
+        operation.put("headers", Map.of());
+        return;
+      }
       operation.put("headers", reduceMultiValuedMap(headers));
     }
 
     @Override
     public void setOperationQueryParameter(MultivaluedMap<String, String> queryParameter) {
+      if (Objects.isNull(queryParameter) || queryParameter.isEmpty()) {
+        operation.put("parameter", Map.of());
+        return;
+      }
       operation.put("parameter", reduceMultiValuedMap(queryParameter));
     }
 
@@ -404,8 +425,8 @@ public class AuditLogImpl implements AuditLog {
     public Map<String, Object> getActor() {
       // Apply the anonymous user if no actor has been set
       if (!actor.containsKey("type") && !actor.containsKey("id")) {
-        actor.put("type", "AnonymousUser");
-        actor.put("id", "Anonymous");
+        actor.put("type", "ANONYMOUS");
+        actor.put("id", "anonymous");
       }
 
       return actor;

@@ -10,11 +10,11 @@ package de.ii.xtraplatform.auth.app.external;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
-import de.ii.xtraplatform.auth.domain.ImmutableUser;
-import de.ii.xtraplatform.auth.domain.Role;
-import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.base.domain.AuthConfiguration;
 import de.ii.xtraplatform.base.domain.AuthConfiguration.UserInfo;
+import de.ii.xtraplatform.base.domain.auth.ImmutableUser;
+import de.ii.xtraplatform.base.domain.auth.Role;
+import de.ii.xtraplatform.base.domain.auth.User;
 import de.ii.xtraplatform.web.domain.HttpClient;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
@@ -83,7 +83,8 @@ public class TokenAuthenticator implements Authenticator<String, User> {
                               userInfo.get(userInfoProvider.getClaims().getPermissions()))
                       .orElse(List.of());
 
-          return Optional.of(ImmutableUser.builder().name(name).role(role).scopes(scopes).build());
+          return Optional.of(
+              new ImmutableUser.Builder().name(name).role(role).scopes(scopes).build());
         }
       } catch (Throwable e) {
         if (LOGGER.isTraceEnabled()) {

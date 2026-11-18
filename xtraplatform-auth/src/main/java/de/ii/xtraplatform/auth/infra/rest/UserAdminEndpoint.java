@@ -11,8 +11,8 @@ import de.ii.xtraplatform.auth.app.ImmutableUserData;
 import de.ii.xtraplatform.auth.app.PasswordHash;
 import de.ii.xtraplatform.auth.app.User;
 import de.ii.xtraplatform.auth.app.User.UserData;
-import de.ii.xtraplatform.auth.domain.Role;
 import de.ii.xtraplatform.base.domain.LogContext;
+import de.ii.xtraplatform.base.domain.auth.Role;
 import de.ii.xtraplatform.entities.domain.EntityData;
 import de.ii.xtraplatform.entities.domain.EntityDataStore;
 import de.ii.xtraplatform.web.domain.Endpoint;
@@ -65,21 +65,21 @@ public class UserAdminEndpoint implements Endpoint {
   }
 
   @GET
-  public List<String> getUsers(@Auth de.ii.xtraplatform.auth.domain.User user) {
+  public List<String> getUsers(@Auth de.ii.xtraplatform.base.domain.auth.User user) {
     return userRepository.ids();
   }
 
   @GET
   @Path("/{id}")
   public User.UserData getUser(
-      @Auth de.ii.xtraplatform.auth.domain.User user, @PathParam("id") String id) {
+      @Auth de.ii.xtraplatform.base.domain.auth.User user, @PathParam("id") String id) {
     return userRepository.get(id);
   }
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   public User.UserData addUser(
-      @Auth de.ii.xtraplatform.auth.domain.User user, Map<String, String> request) {
+      @Auth de.ii.xtraplatform.base.domain.auth.User user, Map<String, String> request) {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("Adding user {}", request);
     }
@@ -109,7 +109,7 @@ public class UserAdminEndpoint implements Endpoint {
   @POST
   @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.PreserveStackTrace"})
   public Response updateUser(
-      @Auth de.ii.xtraplatform.auth.domain.User user,
+      @Auth de.ii.xtraplatform.base.domain.auth.User user,
       @PathParam("id") String id,
       Map<String, String> request) {
 
@@ -151,7 +151,8 @@ public class UserAdminEndpoint implements Endpoint {
 
   @DELETE
   @Path("/{id}")
-  public void deleteUser(@Auth de.ii.xtraplatform.auth.domain.User user, @PathParam("id") String id)
+  public void deleteUser(
+      @Auth de.ii.xtraplatform.base.domain.auth.User user, @PathParam("id") String id)
       throws IOException {
     userRepository.delete(id);
   }

@@ -8,8 +8,8 @@
 package de.ii.xtraplatform.auth.fallback.app;
 
 import com.github.azahnen.dagger.annotations.AutoBind;
-import de.ii.xtraplatform.auth.domain.User;
 import de.ii.xtraplatform.auth.domain.UserAuthorizer;
+import de.ii.xtraplatform.base.domain.auth.User;
 import de.ii.xtraplatform.web.domain.AuthProvider;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.AuthValueFactoryProvider;
