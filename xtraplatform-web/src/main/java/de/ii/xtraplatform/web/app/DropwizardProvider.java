@@ -105,6 +105,7 @@ public class DropwizardProvider implements AppLifeCycle {
 
     environment.jersey().register(new JsonProviderOptionalPretty(environment.getObjectMapper()));
     environment.jersey().register(new JacksonXmlBindXMLProvider());
+    environment.jersey().register(new XmlMapperResolver());
 
     appContext.getConfiguration().getServerFactory().build(environment);
 
