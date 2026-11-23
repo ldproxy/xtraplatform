@@ -44,5 +44,7 @@ moduleInfo {
             '!io.dropwizard.jackson.Discoverable': [],
             '!jakarta.xml.bind.JAXBContext'      : [],
             '!org.codehaus.stax2.validation*'    : [],
+            // conflicts with JacksonXmlBindXMLProvider registered in DropwizardProvider
+            'jakarta.ws.rs.ext.MessageBodyWriter': ['!com.fasterxml.jackson.jakarta.rs.xml.JacksonXMLProvider'],
     ]
 }
