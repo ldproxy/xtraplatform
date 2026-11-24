@@ -18,31 +18,39 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Singleton
 @AutoBind
 public class AuditLogResponseFilter implements ContainerResponseFilter {
 
+  private static final Set<Integer> ALL_STATUS_CODES =
+      Arrays.stream(Response.Status.values())
+          .map(Response.Status::getStatusCode)
+          .collect(Collectors.toSet());
+
   private final AuditLog auditLog;
-  private final List<String> included;
-  private final List<String> excluded;
+  private final Set<Integer> included;
+  private final Set<Integer> excluded;
 
   @Inject
   public AuditLogResponseFilter(AuditLog auditLog, AppContext appContext) {
     this.auditLog = auditLog;
-    this.included = appContext.getConfiguration().getAuditLog().getHttpStatus().getIncluded();
-    this.excluded = appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded();
+    this.included =
+        parseStatusCodes(appContext.getConfiguration().getAuditLog().getHttpStatus().getIncluded());
+    this.excluded =
+        parseStatusCodes(appContext.getConfiguration().getAuditLog().getHttpStatus().getExcluded());
   }
 
-  private boolean isStatusCodeIncluded(int statusCodeInt) {
-    String statusCode = String.valueOf(statusCodeInt);
-
-    return !excluded.contains("*")
-        && !excluded.contains(statusCode)
-        && (included.contains("*") || included.contains(statusCode));
+  private boolean isStatusCodeIncluded(int statusCode) {
+    return !excluded.contains(statusCode) && included.contains(statusCode);
   }
 
   @Override
@@ -77,7 +85,7 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
 
     if (responseContext.getEntity() instanceof JoinableStreamingOutput streamingOutput) {
       streamingOutput.whenComplete(
-          (throwable) -> {
+          throwable -> {
             int preStatusCode = responseContext.getStatus();
             int postStatusCode = getStatusCode(responseContext.getStatus(), throwable);
             writeLogEntry(requestId, preStatusCode, postStatusCode);
@@ -141,5 +149,31 @@ public class AuditLogResponseFilter implements ContainerResponseFilter {
       }
     }
     return statusCode;
+  }
+
+  private static Set<Integer> parseStatusCodes(List<String> codes) {
+    if (codes.contains("*")) {
+      return ALL_STATUS_CODES;
+    }
+    Set<Integer> statusCodes = new HashSet<>();
+
+    for (String code : codes) {
+      try {
+        if (code.endsWith("xx") && code.length() == 3) {
+          int prefix = Integer.parseInt(code.substring(0, 1));
+          statusCodes.addAll(
+              ALL_STATUS_CODES.stream().filter(c -> c / 100 == prefix).collect(Collectors.toSet()));
+        } else {
+          int parsedCode = Integer.parseInt(code);
+          if (ALL_STATUS_CODES.contains(parsedCode)) {
+            statusCodes.add(parsedCode);
+          }
+        }
+      } catch (NumberFormatException e) {
+        // ignore invalid codes
+      }
+    }
+
+    return statusCodes;
   }
 }

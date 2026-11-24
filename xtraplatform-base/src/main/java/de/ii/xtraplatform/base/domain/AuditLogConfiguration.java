@@ -54,7 +54,7 @@ import org.immutables.value.Value.Default;
  *     included: [ "realm_access", "resource_access" ]
  *     excluded: [ ]
  *   httpStatus:
- *     included: [ "200" ]
+ *     included: [ "2xx" ]
  *     excluded: [ ]
  * ```
  *     </code>
@@ -124,7 +124,7 @@ import org.immutables.value.Value.Default;
  *     included: [ "realm_access", "resource_access" ]
  *     excluded: [ ]
  *   httpStatus:
- *     included: [ "200" ]
+ *     included: [ "2xx" ]
  *     excluded: [ ]
  * ```
  *     </code>
@@ -325,11 +325,17 @@ public interface AuditLogConfiguration {
 
   /**
    * @langEn Specifies for which HTTP status codes requests should be logged and which should
-   *     explicitly not be logged. Uses the same `included`/`excluded` logic as `headers`.
+   *     explicitly not be logged. Uses the same `included`/`excluded` logic as `headers`. In
+   *     addition, the special values `2xx`, `3xx`, `4xx` and `5xx` can be used to cover all status
+   *     codes in the respective range. For example, if `included: [ '2xx' ]` and `excluded: [ '204'
+   *     ]`, all 2xx status codes except 204 will be logged.
    * @langDe Gibt an, für welche HTTP-Statuscodes Anfragen geloggt werden sollen und welche explizit
    *     nicht geloggt werden sollen. Verwendet die gleiche `included`/`excluded`-Logik wie
-   *     `headers`.
-   * @default included: [ '200' ], excluded: []
+   *     `headers`. Darüber hinaus können die speziellen Werte `2xx`, `3xx`, `4xx` und `5xx`
+   *     verwendet werden, um alle Statuscodes im jeweiligen Bereich abzudecken. Beispielsweise
+   *     werden bei `included: [ '2xx' ]` und `excluded: [ '204' ]` alle 2xx-Statuscodes außer 204
+   *     geloggt.
+   * @default included: [ '2xx' ], excluded: []
    * @since 4.8
    */
   @Default
@@ -383,7 +389,7 @@ public interface AuditLogConfiguration {
     @Value.Default
     @JsonMerge(OptBoolean.FALSE)
     default List<String> getIncluded() {
-      return List.of("200");
+      return List.of("2xx");
     }
 
     @Value.Default
