@@ -166,6 +166,7 @@ public class EventStoreDriverFs implements EventStoreDriver, Watcher, Writer {
                     })
                 .map(
                     watchEvent -> rootDir.relativize(watchDir.resolve((Path) watchEvent.context())))
+                .map(source::applyPrefixes)
                 .collect(Collectors.toList());
 
         if (!changedFiles.isEmpty()) {

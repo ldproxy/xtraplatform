@@ -182,7 +182,8 @@ public class EventSource {
     }
   }
 
-  private Path applyPrefixes(Path path) {
+  /** Maps a path relative to the source root to the canonical store layout. */
+  public Path applyPrefixes(Path path) {
     Path entitiesPath = Path.of(Content.ENTITIES.getPrefix());
 
     if (source.isSingleContent()) {

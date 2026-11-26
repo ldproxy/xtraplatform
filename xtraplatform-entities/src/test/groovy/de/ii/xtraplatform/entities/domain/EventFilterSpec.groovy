@@ -52,6 +52,36 @@ class EventFilterSpec extends Specification {
         !filter.matches(entity(Identifier.from("svc2", "services")))
     }
 
+    def 'change in a group reloads the changed entity'() {
+        given:
+        def filter = EventFilter.fromPath(Path.of(changed), ["services", "providers"] as Set)
+        def changedEntity = Identifier.from("svc1", "group1", "child", "services")
+
+        expect:
+        filter.isRestrictedToIds()
+        filter.matches(entity(changedEntity))
+        filter.matches(changedEntity)
+        !filter.matches(entity(Identifier.from("svc2", "group1", "child", "services")))
+
+        where:
+        changed << [
+                "entities/group1/child/services/svc1.yml",
+                "overrides/group1/child/services/svc1.yml",
+                "overrides/group1/child/services/svc1.api.yml",
+                "overrides/group1/child/services/svc1/api.yml"
+        ]
+    }
+
+    def 'changed type override in a group reloads every entity of the type'() {
+        given:
+        def filter = EventFilter.fromPath(
+                Path.of("overrides/group1/services/_type/api.yml"), ["services"] as Set)
+
+        expect:
+        !filter.isRestrictedToIds()
+        filter.matches(entity(Identifier.from("svc1", "group1", "services")))
+    }
+
     private static EntityEvent override(Identifier identifier) {
         event("overrides", identifier)
     }

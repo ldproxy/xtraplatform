@@ -21,6 +21,7 @@ import de.ii.xtraplatform.base.domain.StoreSource.Mode;
 import de.ii.xtraplatform.entities.domain.EntityDataDefaultsStore;
 import de.ii.xtraplatform.entities.domain.EntityDataOverridesPath;
 import de.ii.xtraplatform.entities.domain.EntityEvent;
+import de.ii.xtraplatform.entities.domain.EntityFactory;
 import de.ii.xtraplatform.entities.domain.EventFilter;
 import de.ii.xtraplatform.entities.domain.EventStore;
 import de.ii.xtraplatform.entities.domain.EventStoreDriver;
@@ -57,15 +58,21 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
 
   private final Store store;
   private final Lazy<Set<EventStoreDriver>> drivers;
+  private final Lazy<Set<EntityFactory>> entityFactories;
   private final EventSubscriptions subscriptions;
   private Optional<StoreSource> writableSource;
   private final boolean isReadOnly;
   private static final String EVENT_TYPE_ENTITIES = "entities";
 
   @Inject
-  EventStoreDefault(Store store, Lazy<Set<EventStoreDriver>> drivers, Reactive reactive) {
+  EventStoreDefault(
+      Store store,
+      Lazy<Set<EventStoreDriver>> drivers,
+      Lazy<Set<EntityFactory>> entityFactories,
+      Reactive reactive) {
     this.store = store;
     this.drivers = drivers;
+    this.entityFactories = entityFactories;
     this.subscriptions = new EventSubscriptionsImpl(reactive.runner("events"));
     this.writableSource = Optional.empty();
     this.isReadOnly = !store.isWritable();
@@ -75,6 +82,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
       Store store, EventStoreDriver eventStoreDriver, EventSubscriptions subscriptions) {
     this.store = store;
     this.drivers = () -> Set.of(eventStoreDriver);
+    this.entityFactories = Set::of;
     this.subscriptions = subscriptions;
     this.isReadOnly = !store.isWritable();
   }
@@ -147,7 +155,8 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                           storeSource,
                           changedFiles -> {
                             LOGGER.info("Store changes detected: {}", changedFiles);
-                            EventFilter replayFilter = EventFilter.fromPaths(changedFiles);
+                            EventFilter replayFilter =
+                                EventFilter.fromPaths(changedFiles, entityTypes());
 
                             if (LOGGER.isTraceEnabled()) {
                               LOGGER.trace("Replay filter {}", replayFilter);
@@ -377,6 +386,12 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
             // ignore
           }
         });
+  }
+
+  private Set<String> entityTypes() {
+    return entityFactories.get().stream()
+        .map(EntityFactory::type)
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   private static EntityEvent scopeTypeOverride(EntityEvent event, EventFilter filter) {

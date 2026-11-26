@@ -158,6 +158,23 @@ class EventSourceSpec extends Specification {
 
     // --- helpers ---
 
+    // --- applyPrefixes for watched paths ---
+
+    def 'watched path is mapped to the canonical store layout'() {
+        given:
+        def es = createEventSource(content)
+
+        expect:
+        es.applyPrefixes(Path.of(watched)) == Path.of(canonical)
+
+        where:
+        content           | watched                          || canonical
+        Content.ALL       | "instances/grp/services/a.yml"   || "entities/grp/services/a.yml"
+        Content.ALL       | "overrides/services/_type.yml"   || "overrides/services/_type.yml"
+        Content.INSTANCES | "grp/services/a.yml"             || "entities/grp/services/a.yml"
+        Content.OVERRIDES | "services/a.yml"                 || "overrides/services/a.yml"
+    }
+
     private static final Path ROOT = Path.of("/store")
 
     private Path storePath(String relativePath) {

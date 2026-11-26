@@ -11,6 +11,7 @@ import de.ii.xtraplatform.values.domain.Identifier;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -102,35 +103,51 @@ public interface EventFilter {
   }
 
   static EventFilter fromPath(Path path) {
+    return fromPath(path, Set.of());
+  }
+
+  /**
+   * @param path a store path like {@code entities/[groups/]type/id.yml}
+   * @param entityTypes the known entity types, used to tell groups from the entity type; without
+   *     them, the second path segment is assumed to be the entity type
+   */
+  static EventFilter fromPath(Path path, Set<String> entityTypes) {
     if (path.getNameCount() < 2) {
       return null;
     }
 
     String eventType = path.getName(0).toString();
-    String entityType = path.getName(1).toString();
-    int dotIdx = entityType.indexOf('.');
-    if (dotIdx != -1) {
-      entityType = entityType.substring(0, dotIdx);
-    }
+    int typeIndex = indexOfEntityType(path, entityTypes);
+    String entityType = withoutExtension(path.getName(typeIndex).toString());
 
     ImmutableEventFilter.Builder builder =
         ImmutableEventFilter.builder().addEventTypes(eventType).addEntityTypes(entityType);
     if ("defaults".equals(eventType)) {
       builder.addIds(WILDCARD);
-    } else if (path.getNameCount() > 2 && !changesTypeOverride(path)) {
-      String id = path.getName(2).toString();
-      if (id.contains(".")) {
-        id = id.substring(0, id.indexOf('.'));
-      }
-      builder.addIds(id);
+    } else if (path.getNameCount() > typeIndex + 1 && !changesTypeOverride(path, typeIndex)) {
+      builder.addIds(withoutExtension(path.getName(typeIndex + 1).toString()));
     }
 
     return builder.build();
   }
 
+  private static int indexOfEntityType(Path path, Set<String> entityTypes) {
+    for (int i = 1; i < path.getNameCount(); i++) {
+      if (entityTypes.contains(withoutExtension(path.getName(i).toString()))) {
+        return i;
+      }
+    }
+    return 1;
+  }
+
+  private static String withoutExtension(String segment) {
+    int dotIdx = segment.indexOf('.');
+    return dotIdx == -1 ? segment : segment.substring(0, dotIdx);
+  }
+
   // a changed type override affects every entity of the type, so all of them have to be reloaded
-  private static boolean changesTypeOverride(Path path) {
-    for (int i = 2; i < path.getNameCount(); i++) {
+  private static boolean changesTypeOverride(Path path, int typeIndex) {
+    for (int i = typeIndex + 1; i < path.getNameCount(); i++) {
       if (EntityDataOverridesPath.isTypeOverrideSegment(path.getName(i).toString())) {
         return true;
       }
@@ -138,10 +155,13 @@ public interface EventFilter {
     return false;
   }
 
-  static EventFilter fromPaths(List<Path> paths) {
+  static EventFilter fromPaths(List<Path> paths, Set<String> entityTypes) {
     ImmutableEventFilter.Builder builder = ImmutableEventFilter.builder();
 
-    paths.stream().map(EventFilter::fromPath).filter(Objects::nonNull).forEach(builder::from);
+    paths.stream()
+        .map(path -> fromPath(path, entityTypes))
+        .filter(Objects::nonNull)
+        .forEach(builder::from);
 
     return builder.build();
   }
