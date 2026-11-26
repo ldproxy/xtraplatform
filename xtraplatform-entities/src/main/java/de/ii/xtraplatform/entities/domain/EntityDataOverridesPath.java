@@ -18,6 +18,8 @@ import org.immutables.value.Value;
 @Value.Modifiable
 public interface EntityDataOverridesPath {
 
+  String TYPE_OVERRIDE_ID = "_type";
+
   Splitter DOT_SPLITTER = Splitter.on('.');
 
   static EntityDataOverridesPath from(Identifier identifier, Set<String> entityTypes) {
@@ -60,6 +62,10 @@ public interface EntityDataOverridesPath {
   String getEntityId();
 
   List<String> getKeyPath();
+
+  default boolean isTypeOverride() {
+    return TYPE_OVERRIDE_ID.equals(getEntityId());
+  }
 
   @Value.Lazy
   default Identifier asIdentifier() {

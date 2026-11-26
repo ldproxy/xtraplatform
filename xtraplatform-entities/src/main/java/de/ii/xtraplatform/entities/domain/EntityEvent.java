@@ -39,6 +39,13 @@ public interface EntityEvent extends TypedEvent, Comparable<EntityEvent> {
       return typeCompared;
     }
 
+    // type overrides (_type) should be applied before entity-specific overrides
+    boolean thisIsTypeOverride = isTypeOverride(identifier());
+    boolean otherIsTypeOverride = isTypeOverride(event.identifier());
+    if (thisIsTypeOverride != otherIsTypeOverride) {
+      return thisIsTypeOverride ? -1 : 1;
+    }
+
     return identifier().compareTo(event.identifier());
   }
 
@@ -61,5 +68,10 @@ public interface EntityEvent extends TypedEvent, Comparable<EntityEvent> {
   @Value.Auxiliary
   default boolean isDelete() {
     return Objects.equals(deleted(), true);
+  }
+
+  private static boolean isTypeOverride(Identifier identifier) {
+    return EntityDataOverridesPath.TYPE_OVERRIDE_ID.equals(identifier.id())
+        || identifier.path().contains(EntityDataOverridesPath.TYPE_OVERRIDE_ID);
   }
 }
