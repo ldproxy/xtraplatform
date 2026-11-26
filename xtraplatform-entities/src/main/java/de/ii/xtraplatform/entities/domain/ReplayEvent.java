@@ -7,6 +7,7 @@
  */
 package de.ii.xtraplatform.entities.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -17,4 +18,12 @@ import org.immutables.value.Value;
 public interface ReplayEvent extends EntityEvent {
 
   Optional<String> source();
+
+  /**
+   * Set when a type override is replayed for a reload of specific entities, so that it is only
+   * applied to those entities and not merged a second time into all others.
+   */
+  @JsonIgnore
+  @Value.Auxiliary
+  Optional<EventFilter> entityFilter();
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import de.ii.xtraplatform.base.domain.Jackson
 import de.ii.xtraplatform.entities.domain.EntityFactory
 import de.ii.xtraplatform.entities.domain.EntityFactoriesImpl
+import de.ii.xtraplatform.entities.domain.ImmutableEventFilter
 import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent
 import de.ii.xtraplatform.entities.domain.ReplayEvent
 import de.ii.xtraplatform.values.domain.Identifier
@@ -140,7 +141,7 @@ class EntityDataStoreImplProcessEventSpec extends Specification {
         def event = overrideEvent("_type", "services")
         def entity1 = Identifier.from("svc1", "services")
         def entity2 = Identifier.from("svc2", "services")
-        eventSourcing.getIdentifiers("services") >> [entity1, entity2]
+        eventSourcing.getIdentifiers() >> [entity1, entity2]
 
         when:
         def result = callProcessEvent(event)
@@ -150,10 +151,52 @@ class EntityDataStoreImplProcessEventSpec extends Specification {
         result.collect { it.identifier() } as Set == [entity1, entity2] as Set
     }
 
+    def 'type override without groups applies to entities of the type in every group'() {
+        given:
+        def event = overrideEvent("_type", "services")
+        def ungrouped = Identifier.from("svc1", "services")
+        def grouped = Identifier.from("svc2", "group1", "services")
+        def otherType = Identifier.from("prov1", "providers")
+        eventSourcing.getIdentifiers() >> [ungrouped, grouped, otherType]
+
+        expect:
+        callProcessEvent(event).collect { it.identifier() } as Set == [ungrouped, grouped] as Set
+    }
+
+    def 'type override with groups applies to entities in that group and its child groups'() {
+        given:
+        def event = overrideEvent("_type", "group1", "services")
+        def ungrouped = Identifier.from("svc1", "services")
+        def grouped = Identifier.from("svc2", "group1", "services")
+        def childGroup = Identifier.from("svc3", "group1", "child", "services")
+        def otherGroup = Identifier.from("svc4", "group2", "services")
+        def otherWithChild = Identifier.from("svc5", "group2", "group1", "services")
+        eventSourcing.getIdentifiers() >> [ungrouped, grouped, childGroup, otherGroup, otherWithChild]
+
+        expect:
+        callProcessEvent(event).collect { it.identifier() } as Set == [grouped, childGroup] as Set
+    }
+
+    def 'type override with entity filter applies only to the filtered entities'() {
+        given:
+        def filter = ImmutableEventFilter.builder()
+                .addEntityTypes("services")
+                .addIds("svc2")
+                .build()
+        def event = ImmutableReplayEvent.copyOf(overrideEvent("_type", "services"))
+                .withEntityFilter(filter)
+        def entity1 = Identifier.from("svc1", "services")
+        def entity2 = Identifier.from("svc2", "services")
+        eventSourcing.getIdentifiers() >> [entity1, entity2]
+
+        expect:
+        callProcessEvent(event).collect { it.identifier() } == [entity2]
+    }
+
     def 'type override with no matching entities returns empty'() {
         given:
         def event = overrideEvent("_type", "services")
-        eventSourcing.getIdentifiers("services") >> []
+        eventSourcing.getIdentifiers() >> []
 
         expect:
         callProcessEvent(event).isEmpty()
@@ -168,7 +211,7 @@ class EntityDataStoreImplProcessEventSpec extends Specification {
                 .payload("enabled: true".getBytes(StandardCharsets.UTF_8))
                 .build()
         def entity1 = Identifier.from("svc1", "services")
-        eventSourcing.getIdentifiers("services") >> [entity1]
+        eventSourcing.getIdentifiers() >> [entity1]
 
         def factory = Stub(EntityFactory)
         factory.getKeyPathAlias(_) >> Optional.empty()

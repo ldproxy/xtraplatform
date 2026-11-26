@@ -237,11 +237,7 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     return partialData;
   }
 
-  @SuppressWarnings({
-    "PMD.CyclomaticComplexity",
-    "PMD.CognitiveComplexity",
-    "PMD.CollapsibleIfStatements"
-  })
+  @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.CognitiveComplexity"})
   private List<ReplayEvent> processEvent(ReplayEvent event) {
 
     if (valueEncoding.isEmpty(event.payload()) || !valueEncoding.isSupported(event.format())) {
@@ -289,8 +285,8 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
     if (!eventSourcing.has(cacheKey)) {
       if (LOGGER.isWarnEnabled()) {
         LOGGER.warn("Ignoring override '{}', no matching entity found", event.asPath());
-        return List.of();
       }
+      return List.of();
     }
 
     return List.of(buildOverrideEvent(event, overridesPath, cacheKey));
@@ -298,24 +294,19 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
 
   private List<ReplayEvent> processTypeOverride(
       ReplayEvent event, EntityDataOverridesPath overridesPath) {
-    String entityType = overridesPath.getEntityType();
-    List<String> groups = overridesPath.getGroups();
-
     List<Identifier> matchingEntities =
-        eventSourcing
-            .getIdentifiers(
-                groups.isEmpty()
-                    ? new String[] {entityType}
-                    : ObjectArrays.concat(groups.toArray(new String[0]), entityType))
-            .stream()
+        eventSourcing.getIdentifiers().stream()
+            .filter(entity -> isOfTypeAndGroups(entity, overridesPath))
+            .filter(entity -> event.entityFilter().map(f -> f.matches(entity)).orElse(true))
             .collect(Collectors.toList());
 
     if (matchingEntities.isEmpty()) {
-      if (LOGGER.isWarnEnabled()) {
+      // a reload of specific entities may legitimately not include any entity of this type
+      if (event.entityFilter().isEmpty() && LOGGER.isWarnEnabled()) {
         LOGGER.warn(
             "Ignoring type override '{}', no matching entities found for type '{}'",
             event.asPath(),
-            entityType);
+            overridesPath.getEntityType());
       }
       return List.of();
     }
@@ -325,12 +316,25 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
           "Applying type override '{}' to {} entities of type '{}'",
           event.asPath(),
           matchingEntities.size(),
-          entityType);
+          overridesPath.getEntityType());
     }
 
     return matchingEntities.stream()
         .map(cacheKey -> buildOverrideEvent(event, overridesPath, cacheKey))
         .collect(Collectors.toList());
+  }
+
+  // like defaults, a type override applies to its group and all child groups
+  private static boolean isOfTypeAndGroups(
+      Identifier entity, EntityDataOverridesPath overridesPath) {
+    List<String> path = entity.path();
+    if (path.isEmpty() || !path.get(path.size() - 1).equals(overridesPath.getEntityType())) {
+      return false;
+    }
+    List<String> entityGroups = path.subList(0, path.size() - 1);
+    List<String> groups = overridesPath.getGroups();
+    return entityGroups.size() >= groups.size()
+        && groups.equals(entityGroups.subList(0, groups.size()));
   }
 
   private ReplayEvent buildOverrideEvent(

@@ -38,7 +38,8 @@ public interface EventFilter {
       boolean allow = getIds().contains(identifier.id()) || getIds().contains(WILDCARD);
 
       if (!allow && isOverride(event)) {
-        return getIds().contains(identifier.path().get(identifier.path().size() - 1));
+        return EntityDataOverridesPath.isTypeOverride(identifier)
+            || getIds().contains(identifier.path().get(identifier.path().size() - 1));
       }
 
       return allow;
@@ -59,6 +60,10 @@ public interface EventFilter {
     }
 
     return true;
+  }
+
+  default boolean isRestrictedToIds() {
+    return !getIds().isEmpty() && !getIds().contains(WILDCARD);
   }
 
   default boolean isDefault(EntityEvent event) {
@@ -112,7 +117,7 @@ public interface EventFilter {
         ImmutableEventFilter.builder().addEventTypes(eventType).addEntityTypes(entityType);
     if ("defaults".equals(eventType)) {
       builder.addIds(WILDCARD);
-    } else if (path.getNameCount() > 2) {
+    } else if (path.getNameCount() > 2 && !changesTypeOverride(path)) {
       String id = path.getName(2).toString();
       if (id.contains(".")) {
         id = id.substring(0, id.indexOf('.'));
@@ -121,6 +126,16 @@ public interface EventFilter {
     }
 
     return builder.build();
+  }
+
+  // a changed type override affects every entity of the type, so all of them have to be reloaded
+  private static boolean changesTypeOverride(Path path) {
+    for (int i = 2; i < path.getNameCount(); i++) {
+      if (EntityDataOverridesPath.isTypeOverrideSegment(path.getName(i).toString())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   static EventFilter fromPaths(List<Path> paths) {

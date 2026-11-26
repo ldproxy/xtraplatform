@@ -48,6 +48,19 @@ class EntityEventSpec extends Specification {
         entityOverride.compareTo(keyPathTypeOverride) > 0
     }
 
+    def 'dotted key-path type override sorts before entity override with uppercase or digit id'() {
+        given:
+        def typeOverride = event("overrides", Identifier.from("_type.connectionInfo", "providers"))
+        def entityOverride = event("overrides", Identifier.from(entityId, "providers"))
+
+        expect:
+        typeOverride.compareTo(entityOverride) < 0
+        entityOverride.compareTo(typeOverride) > 0
+
+        where:
+        entityId << ["Bergbau.connectionInfo", "2023.connectionInfo", "Bergbau"]
+    }
+
     def 'two type overrides sort by identifier'() {
         given:
         def a = event("overrides", Identifier.from("_type", "providers"))

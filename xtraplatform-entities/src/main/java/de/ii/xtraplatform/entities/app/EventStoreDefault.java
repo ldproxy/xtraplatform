@@ -19,6 +19,7 @@ import de.ii.xtraplatform.base.domain.StoreSource;
 import de.ii.xtraplatform.base.domain.StoreSource.Content;
 import de.ii.xtraplatform.base.domain.StoreSource.Mode;
 import de.ii.xtraplatform.entities.domain.EntityDataDefaultsStore;
+import de.ii.xtraplatform.entities.domain.EntityDataOverridesPath;
 import de.ii.xtraplatform.entities.domain.EntityEvent;
 import de.ii.xtraplatform.entities.domain.EventFilter;
 import de.ii.xtraplatform.entities.domain.EventStore;
@@ -27,6 +28,7 @@ import de.ii.xtraplatform.entities.domain.EventStoreSubscriber;
 import de.ii.xtraplatform.entities.domain.ImmutableEventFilter;
 import de.ii.xtraplatform.entities.domain.ImmutableReloadEvent;
 import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent;
+import de.ii.xtraplatform.entities.domain.ReplayEvent;
 import de.ii.xtraplatform.entities.infra.EventStoreDriverAdHoc;
 import de.ii.xtraplatform.streams.domain.Reactive;
 import de.ii.xtraplatform.values.api.ValueEncodingJackson;
@@ -130,6 +132,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
               }
             })
         .filter(startupFilter::matches)
+        .map(event -> scopeTypeOverride(event, startupFilter))
         .forEach(subscriptions::emitEvent);
   }
 
@@ -349,6 +352,7 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
                   }
                   return false;
                 })
+            .map(event -> scopeTypeOverride(event, filter))
             .sorted(Comparator.naturalOrder())
             .collect(Collectors.toList());
 
@@ -373,6 +377,16 @@ public class EventStoreDefault implements EventStore, AppLifeCycle {
             // ignore
           }
         });
+  }
+
+  private static EntityEvent scopeTypeOverride(EntityEvent event, EventFilter filter) {
+    if (event instanceof ReplayEvent
+        && filter.isRestrictedToIds()
+        && filter.isOverride(event)
+        && EntityDataOverridesPath.isTypeOverride(event.identifier())) {
+      return ImmutableReplayEvent.copyOf((ReplayEvent) event).withEntityFilter(filter);
+    }
+    return event;
   }
 
   private EventFilter getStartupFilter() {

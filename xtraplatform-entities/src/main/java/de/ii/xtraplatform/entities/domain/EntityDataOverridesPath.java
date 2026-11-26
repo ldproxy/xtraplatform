@@ -67,6 +67,16 @@ public interface EntityDataOverridesPath {
     return TYPE_OVERRIDE_ID.equals(getEntityId());
   }
 
+  /** Type overrides may be addressed as {@code _type}, {@code _type.a.b} or {@code _type/a/b}. */
+  static boolean isTypeOverride(Identifier identifier) {
+    return isTypeOverrideSegment(identifier.id())
+        || identifier.path().stream().anyMatch(EntityDataOverridesPath::isTypeOverrideSegment);
+  }
+
+  static boolean isTypeOverrideSegment(String segment) {
+    return TYPE_OVERRIDE_ID.equals(segment) || segment.startsWith(TYPE_OVERRIDE_ID + ".");
+  }
+
   @Value.Lazy
   default Identifier asIdentifier() {
     return ImmutableIdentifier.builder()
