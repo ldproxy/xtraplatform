@@ -1,11 +1,15 @@
 package de.ii.xtraplatform.entities.app
 
-import de.ii.xtraplatform.entities.domain.EntityDataStore
+import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.databind.ObjectMapper
+import de.ii.xtraplatform.base.domain.Jackson
 import de.ii.xtraplatform.entities.domain.EntityFactory
 import de.ii.xtraplatform.entities.domain.EntityFactoriesImpl
 import de.ii.xtraplatform.entities.domain.ImmutableReplayEvent
 import de.ii.xtraplatform.entities.domain.ReplayEvent
 import de.ii.xtraplatform.values.domain.Identifier
+import io.dropwizard.util.DataSize
+import org.objenesis.ObjenesisStd
 import spock.lang.Specification
 
 import java.nio.charset.StandardCharsets
@@ -20,12 +24,9 @@ class EntityDataStoreImplProcessEventSpec extends Specification {
 
     def setup() {
         eventSourcing = Stub(EventSourcing)
-        valueEncoding = Stub(ValueEncodingJacksonWithNesting)
+        valueEncoding = realValueEncoding()
         entityFactories = Stub(EntityFactoriesImpl)
 
-        // Defaults
-        valueEncoding.isEmpty(_) >> false
-        valueEncoding.isSupported(_) >> true
         entityFactories.getTypes() >> Set.of("services", "providers")
 
         store = createMinimalStore()
@@ -108,7 +109,6 @@ class EntityDataStoreImplProcessEventSpec extends Specification {
 
     def 'event with empty payload returns empty'() {
         given:
-        // isEmpty is final, so use actually empty content that matches the YAML_EMPTY or JSON_EMPTY patterns
         def event = ImmutableReplayEvent.builder()
                 .type("entities")
                 .identifier(Identifier.from("my-service", "services"))
@@ -122,16 +122,12 @@ class EntityDataStoreImplProcessEventSpec extends Specification {
 
     def 'event with unsupported format returns empty'() {
         given:
-        def unsupportedEncoding = Stub(ValueEncodingJacksonWithNesting) {
-            isEmpty(_) >> false
-            isSupported(_) >> false
-        }
-        store = createMinimalStore()
-        setField(store, "valueEncoding", unsupportedEncoding)
-        setField(store, "eventSourcing", eventSourcing)
-        setField(store, "entityFactories", entityFactories)
-
-        def event = entityEvent("my-service", "services")
+        def event = ImmutableReplayEvent.builder()
+                .type("entities")
+                .identifier(Identifier.from("my-service", "services"))
+                .format("xml")
+                .payload("<id>my-service</id>".getBytes(StandardCharsets.UTF_8))
+                .build()
 
         expect:
         callProcessEvent(event).isEmpty()
@@ -174,11 +170,9 @@ class EntityDataStoreImplProcessEventSpec extends Specification {
         def entity1 = Identifier.from("svc1", "services")
         eventSourcing.getIdentifiers("services") >> [entity1]
 
-        def nestedPayload = "apiDoc:\n  enabled: true".getBytes(StandardCharsets.UTF_8)
         def factory = Stub(EntityFactory)
         factory.getKeyPathAlias(_) >> Optional.empty()
         entityFactories.get("services") >> factory
-        valueEncoding.nestPayload(_, _, _, _) >> nestedPayload
 
         when:
         def result = callProcessEvent(event)
@@ -186,7 +180,7 @@ class EntityDataStoreImplProcessEventSpec extends Specification {
         then:
         result.size() == 1
         result[0].identifier() == entity1
-        result[0].payload() == nestedPayload
+        new String(result[0].payload(), StandardCharsets.UTF_8).trim() == "---\napiDoc:\n  enabled: true"
     }
 
     // --- Helpers ---
@@ -215,12 +209,16 @@ class EntityDataStoreImplProcessEventSpec extends Specification {
                 .build()
     }
 
+    private ValueEncodingJacksonWithNesting realValueEncoding() {
+        def jackson = Stub(Jackson) {
+            getDefaultObjectMapper() >> new ObjectMapper()
+            getNewObjectMapper(_) >> { args -> new ObjectMapper((JsonFactory) args[0]) }
+        }
+        return new ValueEncodingJacksonWithNesting(jackson, DataSize.megabytes(3), false)
+    }
+
     private static EntityDataStoreImpl createMinimalStore() {
-        def unsafeClass = Class.forName("sun.misc.Unsafe")
-        def unsafeField = unsafeClass.getDeclaredField("theUnsafe")
-        unsafeField.setAccessible(true)
-        def unsafe = unsafeField.get(null)
-        return (EntityDataStoreImpl) unsafe.allocateInstance(EntityDataStoreImpl)
+        return new ObjenesisStd().newInstance(EntityDataStoreImpl)
     }
 
     private static void setField(Object obj, String fieldName, Object value) {

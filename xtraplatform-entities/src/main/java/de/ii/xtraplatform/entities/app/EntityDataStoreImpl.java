@@ -66,9 +66,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -81,7 +78,9 @@ import org.slf4j.MDC;
 @SuppressWarnings({
   "PMD.GodClass",
   "PMD.AvoidCatchingGenericException",
-  "PMD.CouplingBetweenObjects"
+  "PMD.CouplingBetweenObjects",
+  "PMD.TooManyMethods",
+  "PMD.CyclomaticComplexity"
 })
 public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityData>
     implements EntityDataStore<EntityData>, AppLifeCycle {
@@ -312,10 +311,12 @@ public class EntityDataStoreImpl extends AbstractMergeableKeyValueStore<EntityDa
             .collect(Collectors.toList());
 
     if (matchingEntities.isEmpty()) {
-      LOGGER.warn(
-          "Ignoring type override '{}', no matching entities found for type '{}'",
-          event.asPath(),
-          entityType);
+      if (LOGGER.isWarnEnabled()) {
+        LOGGER.warn(
+            "Ignoring type override '{}', no matching entities found for type '{}'",
+            event.asPath(),
+            entityType);
+      }
       return List.of();
     }
 
